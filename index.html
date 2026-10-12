@@ -104,7 +104,7 @@ svg{display:block}
 .m-title .my{font-size:15px;color:var(--ink-2)}
 .head-icons{display:flex;gap:2px;padding-bottom:4px}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--ink-2);padding:6px 0 2px}
-.dow span:nth-child(6){color:var(--sat)} .dow span:nth-child(7){color:var(--sun)}
+.dow span.sat{color:var(--sat)} .dow span.sun{color:var(--sun)}
 .month{touch-action:pan-y}
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:32px repeat(3,19px) 15px;row-gap:2px;padding-bottom:8px;position:relative}
 .day{grid-row:1/-1;border-radius:12px;display:flex;flex-direction:column;align-items:center;position:relative;transition:background .15s}
@@ -371,6 +371,109 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
   box-shadow:var(--glass-shadow);padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;
   transition:transform .35s cubic-bezier(.3,1.35,.5,1),opacity .25s;z-index:40;max-width:calc(100% - 32px);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
+/* quick mood check-in */
+.quick{background:var(--surface);border-radius:20px;padding:12px 0 10px 14px;box-shadow:var(--shadow);margin-top:12px}
+.quick-h{display:flex;align-items:baseline;gap:8px;padding-right:14px}
+.quick-h b{font-size:14.5px}
+.quick-h small{font-size:11.5px;color:var(--ink-2)}
+.quick-row{display:flex;gap:4px;overflow-x:auto;padding:10px 10px 2px 0;scrollbar-width:none}
+.quick-row::-webkit-scrollbar{display:none}
+.qb{flex:none;width:60px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)}
+.qb i{width:38px;height:34px;background:var(--c);display:grid;place-items:center}
+.qb.more i{background:transparent;border:1.5px dashed var(--ink-3);color:var(--ink-3)}
+.qb.more .ico{width:16px;height:16px}
+.tl-sheet .quick{box-shadow:none;background:var(--surface-2);border:1px solid var(--line);margin:0 0 14px}
+/* on this day */
+.memory{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow);margin-top:10px}
+.memory .script{font-size:22px}
+.memory b{display:block;font-size:13px;margin-top:2px}
+.memory p{margin:4px 0 0;font-size:13.5px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.memory img{width:56px;height:56px;object-fit:cover;border-radius:10px}
+.wx{display:inline-flex;align-items:center;gap:3px}
+.wx .ico{width:14px;height:14px}
+/* drag to move on the timeline */
+.pill{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tl-item.dragging{z-index:4}
+.tl-item.dragging .pill{transform:scale(1.08);box-shadow:0 12px 26px rgba(0,0,0,.25)}
+.tl-item.dragging .meta,.tl-item.dragging .tm{color:var(--accent);font-weight:700}
+.tl-hint{font-size:11.5px;color:var(--ink-3);text-align:center;margin:16px 0 0}
+/* tasks */
+.icon-btn{position:relative}
+.badge{position:absolute;top:3px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;line-height:18px;text-align:center}
+.task-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.task{display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;gap:8px;align-items:center;background:var(--surface);border-radius:14px;padding:8px 6px 8px 12px}
+.task .chk{--c:var(--accent);width:26px;height:26px}
+.task .tt{font-size:15px;overflow-wrap:anywhere}
+.task.done .tt{color:var(--ink-3);text-decoration:line-through}
+.task .sched{font-size:12.5px;font-weight:700;color:var(--accent);padding:6px 6px;white-space:nowrap}
+.task .del{width:32px;height:32px;display:grid;place-items:center;color:var(--ink-3)}
+.task .del .ico{width:16px;height:16px}
+/* templates */
+.tpl-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.tpl-row::-webkit-scrollbar{display:none}
+.tpl{flex:none;display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;font-size:13px;background:color-mix(in srgb,var(--c) 18%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.tpl .ico{width:15px;height:15px;color:var(--c)}
+.tpl small{color:var(--ink-2)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;font-size:14px}
+.set-row small{color:var(--ink-2)}
+.set-row button{color:var(--sun);font-size:13px;padding:6px 8px;flex:none}
+/* repeat details */
+.wdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wdays button{height:40px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.wdays button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.until-row{display:flex;gap:8px;align-items:center}
+.until-row .inp{flex:1;min-width:0}
+.until-row button{flex:none;font-size:13px;color:var(--ink-2);padding:8px}
+.choice p{font-size:15px;margin:18px 4px 14px;line-height:1.7}
+.choice .col{display:flex;flex-direction:column;gap:10px}
+#toast.act{pointer-events:auto;display:flex;align-items:center;gap:14px}
+#toast button{color:var(--accent);font-weight:700;padding:2px 0}
+/* search filters */
+.filt{margin:0 0 12px}
+.filt .lb{font-size:12px;color:var(--ink-2);margin-bottom:6px;display:block}
+.filt .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.filt .chips::-webkit-scrollbar{display:none}
+.filt .chip{flex:none;display:inline-flex;align-items:center;gap:6px}
+.filt .chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.res-count{font-size:12px;color:var(--ink-2);margin:0 0 2px}
+/* plans x mood */
+.em-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 70px;gap:8px;align-items:center;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.em-row.h{border-top:0;padding:0 0 2px}
+.em-row .t{display:flex;align-items:center;gap:6px;min-width:0}
+.em-row .t i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.em-row .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.em-head{font-size:11px;color:var(--ink-2);text-align:center}
+.dv{position:relative;height:10px;background:var(--surface-2);border-radius:5px}
+.dv::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--ink-3)}
+.dv i{position:absolute;top:0;bottom:0;border-radius:5px}
+.dv i.up{left:50%;background:#EDA04B}
+.dv i.down{right:50%;background:#6C97C2}
+.dv.none{opacity:.35}
+/* monthly report */
+.report-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left}
+.report-btn b{font-size:15px}
+.report-btn small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+.report-btn .ico{color:var(--ink-3);flex:none}
+.rp-nav{display:flex;align-items:center;justify-content:space-between;margin:2px 0 4px}
+.rp-nav button{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--surface);color:var(--ink-2)}
+.rp-nav button:disabled{opacity:.3}
+.rp-title{text-align:center}
+.rp-title .script{font-size:28px}
+.rp-title h2{margin:0;font-size:22px}
+.balance{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:4px 0 8px;background:var(--surface-2)}
+.balance i{display:block;height:100%}
+.photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.photo-grid button{aspect-ratio:1;border-radius:10px;overflow:hidden;max-width:100%}
+.photo-grid img{width:100%;height:100%;object-fit:cover;display:block}
+.best{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;text-align:left;width:100%}
+.best .d{font-size:30px;font-weight:700;color:var(--accent);line-height:1}
+.best .d small{font-size:13px}
+.best b{display:block;font-size:13px}
+.best p{margin:2px 0 0;font-size:13.5px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.sheet .card{box-shadow:none}
+.mini-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.mini-chips>span{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;border-radius:999px;padding:4px 10px;background:var(--surface-2);border:1px solid var(--line)}
+.mini-chips i{width:9px;height:9px;border-radius:50%;background:var(--c)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -398,6 +501,11 @@ const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 const wd = s => P(s).getDay();
 const mondayOf = s => addDays(s, -((wd(s) + 6) % 7));
+const sunStart = () => S.settings.weekStart === 'sun';
+const weekStart = s => sunStart() ? addDays(s, -wd(s)) : mondayOf(s);
+const weekOrder = () => sunStart() ? [0, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 0];
+const dowHead = cls => weekOrder().map(w => `<span class="${cls}${w === 6 ? ' sat' : w === 0 ? ' sun' : ''}">${WD[w]}</span>`).join('');
+const hhmm = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const hm = t => t.replace(/^0(\d)/, '$1');
 const dur = m => m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `${m}分`;
@@ -441,11 +549,21 @@ const IC = {
   list:'<circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h7"/>',
   journal:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/>',
   wave:'<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0"/>',
+  inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  cloud:'<path d="M7 18h10.5a4 4 0 0 0 .3-8A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
+  rain:'<path d="M7 15h10.5a3.5 3.5 0 0 0 .3-7A5.5 5.5 0 0 0 6.6 8 3.6 3.6 0 0 0 7 15zM8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+  snow:'<path d="M7 14h10.5a3.5 3.5 0 0 0 .3-7A5.5 5.5 0 0 0 6.6 7 3.6 3.6 0 0 0 7 14z"/><path d="M8 18v.01M12 18v.01M16 18v.01M10 21v.01M14 21v.01"/>',
+  fog:'<path d="M4 9h16M3 13h18M5 17h14"/>',
+  upload:'<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
 };
 const ico = (k, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.star}</svg>`;
 const EV_ICONS = ['alarm','sun','moon','cup','bolt','book','pen','work','gym','food','heart','cart','music','leaf','cake','train','people','star'];
 const COLORS = ['#E07F78','#E9A23B','#6B88B0','#86B067','#9B4F6E','#4FA39B','#A68BD2','#8E8E96'];
 const HOLC = '#E9A23B';
+const ACCENTS = [['', 'コーラル', '#E07F78'], ['blue', 'ブルー', '#4F8ED6'], ['green', 'グリーン', '#4E9F72'], ['purple', 'パープル', '#8C78D4'], ['orange', 'オレンジ', '#DE8E2A'], ['pink', 'ピンク', '#D8628E']];
+const ICON_HINTS = [[/バイト|仕事|会議|MTG|ミーティング|出勤|面接|面談|打ち合わせ/i, 'work'], [/ジム|筋トレ|ランニング|運動|ヨガ|部活|練習|試合/, 'gym'], [/誕生日|記念日|バースデー/, 'cake'], [/ごはん|ご飯|ランチ|ディナー|飲み会|食事|朝食|夕食/, 'food'], [/授業|講義|勉強|試験|テスト|ゼミ|課題|レポート|演習|英会話|英語|塾|読書/, 'book'], [/旅行|出張|帰省|新幹線|飛行機/, 'train'], [/病院|歯医者|通院|クリニック|健診/, 'heart'], [/ライブ|コンサート|カラオケ|レッスン|音楽/, 'music'], [/買い物|ショッピング|販売/, 'cart'], [/カフェ|お茶|コーヒー/, 'cup'], [/友だち|友達|デート|遊び|会う/, 'people'], [/起床|起きる/, 'alarm'], [/寝る|就寝|睡眠/, 'moon']];
+const guessIcon = t => (ICON_HINTS.find(([re]) => re.test(t)) || [0, 'star'])[1];
 
 /* ================= feelings / tags ================= */
 const FEEL = [
@@ -457,11 +575,12 @@ const FEEL_GROUPS = [['Positive', 0, 8], ['Neutral', 8, 16], ['Negative', 16, 24
 const TAGS = ['仕事','勉強','バイト','家族','友だち','恋愛','趣味','運動','食事','カフェ','買い物','睡眠','旅行','ゲーム','音楽','お金'];
 const TAG_COLORS = ['#E07F78','#E9A23B','#86B067','#6B88B0','#A68BD2','#4FA39B','#D9B44A','#9B4F6E','#8E8E96'];
 const PROMPTS = ['今日いちばん心が動いた瞬間は？','最近「ありがとう」と思ったことは？','いま頭の中を占めていることは？','明日の自分にひとこと','今日がんばった小さなことは？','最近気になっている人やものは？','今週やめたいこと、続けたいことは？','体の調子はどう？','今日食べたもので一番おいしかったのは？','誰かに話したかったことは？'];
+const QUICK = ['嬉しい','楽しい','穏やか','普通','モヤモヤ','疲れた','不安','イライラ'];
 const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力なり','ことわざ'],['急がば回れ','ことわざ'],['七転び八起き','ことわざ'],['笑う門には福来る','ことわざ'],['明日は明日の風が吹く','ことわざ'],['塵も積もれば山となる','ことわざ'],['石の上にも三年','ことわざ'],['案ずるより産むが易し','ことわざ'],['住めば都','ことわざ'],['果報は寝て待て','ことわざ'],['一期一会','茶道の言葉']];
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], settings: { theme: 'system', name: '', holidays: true }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
@@ -504,13 +623,20 @@ function holidays(y) {
 const holName = s => S.settings.holidays ? holidays(+s.slice(0, 4)).get(s) : undefined;
 
 /* ================= events ================= */
-const REPEATS = [['none','なし'],['daily','毎日'],['weekdays','平日（月〜金）'],['weekly','毎週'],['monthly','毎月']];
+function repeatOptions(date) {
+  const d = P(date);
+  return [['none', 'なし'], ['daily', '毎日'], ['weekdays', '平日（月〜金）'], ['weekly', '毎週（曜日を選ぶ）'], ['monthly', `毎月${d.getDate()}日`], ['nth', `毎月 第${Math.ceil(d.getDate() / 7)}${WD[d.getDay()]}曜日`], ['yearly', `毎年${d.getMonth() + 1}月${d.getDate()}日`]];
+}
 function matches(ev, d) {
+  if (ev.skip && ev.skip[d]) return false;
+  if (ev.until && d > ev.until) return false;
   switch (ev.repeat) {
     case 'daily': return true;
     case 'weekdays': { const w = wd(d); return w >= 1 && w <= 5; }
-    case 'weekly': return wd(d) === wd(ev.date);
+    case 'weekly': return (ev.days && ev.days.length ? ev.days : [wd(ev.date)]).includes(wd(d));
     case 'monthly': return P(d).getDate() === P(ev.date).getDate();
+    case 'nth': { const a = P(d), b = P(ev.date); return a.getDay() === b.getDay() && Math.ceil(a.getDate() / 7) === Math.ceil(b.getDate() / 7); }
+    case 'yearly': return d.slice(5) === ev.date.slice(5);
     default: return d === ev.date;
   }
 }
@@ -520,7 +646,7 @@ function occurrences(from, to) {
     const span = ev.allDay && ev.endDate ? Math.max(0, diffDays(ev.date, ev.endDate)) : 0;
     if (!ev.repeat || ev.repeat === 'none') {
       const end = addDays(ev.date, span);
-      if (ev.date <= to && end >= from) out.push({ ev, date: ev.date, end });
+      if (ev.date <= to && end >= from && !(ev.skip && ev.skip[ev.date])) out.push({ ev, date: ev.date, end });
       continue;
     }
     const lo = addDays(from, -span);
@@ -574,15 +700,17 @@ function seed() {
   J({ d: 8, t: '22:00' }, ['普通'], ['勉強'], '図書館で過去問を解いた。可もなく不可もなく。');
   J({ d: 9, t: '21:00' }, ['面白い', '好き'], ['趣味', '友だち'], '友だちに勧められた映画を観た。ラストの展開が予想外で面白かった。');
   J({ d: 11, t: '22:30' }, ['不安'], ['勉強'], '来月の試験範囲が発表された。思っていたより広い。計画を立て直そう。');
+  S.tasks.push({ id: uid(), title: '部屋の掃除', done: false, sample: true }, { id: uid(), title: '図書館に本を返す', done: false, sample: true });
+  S.templates.push({ id: uid(), title: 'バイト', start: '18:00', end: '22:00', allDay: false, color: COLORS[5], icon: 'work', sample: true });
 }
-const hasSample = () => S.events.some(e => e.sample) || S.entries.some(e => e.sample);
+const hasSample = () => S.events.some(e => e.sample) || S.entries.some(e => e.sample) || S.tasks.some(e => e.sample) || S.templates.some(e => e.sample);
 const sampleBar = () => hasSample() ? `<div class="sample-bar"><span>サンプルの予定と日記を表示しています</span><button data-act="clearSample">サンプルを消す</button></div>` : '';
 
 /* ================= Calendar view (minical) ================= */
 function viewCal() {
   const F = P(st.calMonth), y = F.getFullYear(), mo = F.getMonth();
   const last = iso(new Date(y, mo + 1, 0));
-  const gs = mondayOf(st.calMonth), ge = addDays(mondayOf(last), 6), T = todayISO();
+  const gs = weekStart(st.calMonth), ge = addDays(weekStart(last), 6), T = todayISO();
   const items = occurrences(gs, ge).filter(o => !o.ev.routine).map(o => ({ title: o.ev.title, s: o.date, e: o.end, c: o.ev.color, all: !!o.ev.allDay, t: o.ev.start || '' }));
   for (let d = gs; d <= ge; d = addDays(d, 1)) { const h = holName(d); if (h) items.push({ title: h, s: d, e: d, c: HOLC, all: true, t: '', hol: true }); }
   const MAXL = 3; let weeks = '';
@@ -617,7 +745,7 @@ function viewCal() {
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
     </div>
   </div>
-  <div class="dow">${['月','火','水','木','金','土','日'].map(x => `<span>${x}</span>`).join('')}</div>
+  <div class="dow">${dowHead('')}</div>
   <div class="month" id="monthGrid" data-swipe="month">${weeks}</div>
   ${sampleBar()}
   ${dayDetail(st.sel)}`;
@@ -626,7 +754,7 @@ function evCard(o, d) {
   const ev = o.ev; let t;
   if (ev.allDay) t = `終日${o.date !== o.end ? `<small>〜${md(o.end)}</small>` : ''}`;
   else t = `<span class="num">${hm(ev.start)}</span><small class="num">〜${hm(ev.end)}</small>`;
-  return `<button class="ev-card${!ev.allDay && isDone(ev, d) ? ' done' : ''}" style="--c:${ev.color}" data-act="editEvent" data-id="${ev.id}" data-d="${d}">
+  return `<button class="ev-card${!ev.allDay && isDone(ev, d) ? ' done' : ''}" style="--c:${ev.color}" data-act="editEvent" data-id="${ev.id}" data-d="${o.date}">
     <span class="t">${t}</span><span class="stripe"></span><span class="ti">${esc(ev.title)}${ev.memo ? `<small>${esc(ev.memo.split('\n')[0])}</small>` : ''}</span></button>`;
 }
 function dayDetail(d) {
@@ -648,7 +776,7 @@ function miniEntry(e) {
 
 /* ================= Timeline view (Structured) ================= */
 function viewDay() {
-  const d = st.day, T = todayISO(), F = P(d), ws = mondayOf(d);
+  const d = st.day, T = todayISO(), F = P(d), ws = weekStart(d), nTask = S.tasks.filter(t => !t.done).length;
   let strip = '';
   for (let i = 0; i < 7; i++) {
     const x = addDays(ws, i), occ = onDay(x).slice(0, 4);
@@ -660,7 +788,7 @@ function viewDay() {
   const h = holName(d), es = entriesOn(d);
   let ad = '';
   if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
-  ad += all.map(o => `<button class="ad-item" style="--c:${o.ev.color}" data-act="editEvent" data-id="${o.ev.id}" data-d="${d}"><span class="circ">${ico(o.ev.icon)}</span><span>${esc(o.ev.title)}</span></button>`).join('');
+  ad += all.map(o => `<button class="ad-item" style="--c:${o.ev.color}" data-act="editEvent" data-id="${o.ev.id}" data-d="${o.date}"><span class="circ">${ico(o.ev.icon)}</span><span>${esc(o.ev.title)}</span></button>`).join('');
   let tl = '', prevEnd = null, nowShown = d !== T; const now = toMin(nowHM());
   for (const o of timed) {
     const ev = o.ev, s = toMin(ev.start), e = Math.max(s, toMin(ev.end)), len = e - s;
@@ -675,18 +803,16 @@ function viewDay() {
     prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
   if (!nowShown && timed.length) tl += `<div class="tl-now num">${nowHM()}</div>`;
-  const moodCard = es.length ? es.map(miniEntry).join('') :
-    `<button class="mood-prompt" data-act="newEntry" data-d="${d}"><span class="blobs"><i style="background:#EDAB5F;border-radius:${blob('a')}"></i><i style="background:#A2BF89;border-radius:${blob('b')}"></i><i style="background:#5D8998;border-radius:${blob('c')}"></i></span>
-      <span><b>${d === T ? '今日' : 'この日'}の気分を記録する</b>気持ちとできごとをひとこと</span></button>`;
+  const moodCard = es.length ? es.map(miniEntry).join('') : d <= T ? quickMood(d) : '';
   return `
   <div class="tl-head"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1>
-    <div class="head-icons"><button class="icon-btn" data-act="dayToday" aria-label="今日">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="dayToday" aria-label="今日">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
     ${moodCard}
     ${ad ? `<div class="allday-row">${ad}</div>` : ''}
-    ${timed.length ? `<div class="timeline">${tl}</div>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
+    ${timed.length ? `<div class="timeline">${tl}</div><p class="tl-hint">アイコンを長押しして上下に動かすと、時間を変えられます</p>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
     ${sampleBar()}
   </div>`;
 }
@@ -713,6 +839,8 @@ function viewJournal() {
     <div class="head-icons"><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
+  ${quickMood(T)}
+  ${memories(T)}
   <div class="cards-row">
     <div class="q-card"><span class="script">Today's Quote</span><p>${esc(q[0])}</p><small>${esc(q[1])}</small></div>
     <button class="q-card" data-act="newEntry" data-d="${T}" data-prompt="${esc(pr)}"><span class="script">Question</span><p>${esc(pr)}</p><small>タップして書く</small></button>
@@ -721,11 +849,36 @@ function viewJournal() {
   ${list}
   ${dates.length > st.jLimit ? `<button class="more-btn" data-act="jMore">もっと見る</button>` : ''}`;
 }
+function quickMood(d) {
+  return `<div class="quick"><div class="quick-h"><b>${d === todayISO() ? 'いまの気分は？' : 'この日の気分は？'}</b><small>タップするだけで記録できます</small></div>
+  <div class="quick-row">${QUICK.map(f => `<button class="qb" data-act="quickMood" data-f="${f}" data-d="${d}"><i style="--c:${feelInfo(f).color};border-radius:${blob(f)}"></i>${f}</button>`).join('')}
+  <button class="qb more" data-act="newEntry" data-d="${d}"><i style="border-radius:${blob('more')}">${ico('pen')}</i>詳しく書く</button></div></div>`;
+}
+function memories(T) {
+  const k = T.slice(5); if (k === '02-29') return '';
+  return S.entries.filter(e => e.date < T && e.date.slice(5) === k).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3).map(e =>
+    `<button class="memory" data-act="editEntry" data-id="${e.id}"><span style="min-width:0"><span class="script">On this day</span><b>${+T.slice(0, 4) - +e.date.slice(0, 4)}年前の今日</b><p>${esc(e.text || e.feelings.join('・'))}</p></span>${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`).join('');
+}
+function wxInfo(c) {
+  if (c === 0) return ['sun', '晴れ']; if (c <= 2) return ['sun', '晴れ時々くもり']; if (c === 3) return ['cloud', 'くもり'];
+  if (c <= 48) return ['fog', '霧']; if (c <= 67 || (c >= 80 && c <= 82)) return ['rain', '雨']; if (c <= 77 || c === 85 || c === 86) return ['snow', '雪']; return ['bolt', '雷雨'];
+}
+const wxChip = w => { if (!w) return ''; const [i, l] = wxInfo(w.code); return `<span class="wx">${ico(i)}${l} ${w.temp}°</span>`; };
+function getPos() { return new Promise((res, rej) => { if (!navigator.geolocation) return rej(new Error('no geo')); navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { timeout: 10000, maximumAge: 30 * 60 * 1000 }); }); }
+async function fetchWeather() {
+  const c = await getPos();
+  const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude.toFixed(2)}&longitude=${c.longitude.toFixed(2)}&current=temperature_2m,weather_code&timezone=auto`);
+  const j = await r.json(); return { code: j.current.weather_code, temp: Math.round(j.current.temperature_2m) };
+}
+async function attachWeather(e) {
+  if (!S.settings.weather || inFrame || e.date !== todayISO() || e.weather) return;
+  try { const w = await fetchWeather(); const x = S.entries.find(y => y.id === e.id); if (x) { x.weather = w; save(); if (!stack.length) render(); } } catch (err) {}
+}
 function entryCard(e) {
   return `<button class="entry" data-act="editEntry" data-id="${e.id}"><div style="min-width:0">
     ${e.feelings.length ? `<div class="feels">${e.feelings.map(f => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)}</span>`).join('')}</div>` : ''}
     <p>${esc(e.text) || '<span style="color:var(--ink-3)">（本文なし）</span>'}</p>
-    <div class="foot"><span class="num">${esc(e.time || '')}</span>${e.tags.map(t => `<span class="tg">#${esc(t)}</span>`).join('')}</div></div>
+    <div class="foot"><span class="num">${esc(e.time || '')}</span>${wxChip(e.weather)}${e.tags.map(t => `<span class="tg">#${esc(t)}</span>`).join('')}</div></div>
     ${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`;
 }
 
@@ -779,12 +932,76 @@ function insight(ws) {
       else if (b - a >= 0.4) lines.push('予定がない日のほうが、気持ちが落ち着いているようです。');
     }
   }
+  const em = eventMood(addDays(we, -59), we); if (em.lines[0]) lines.push(em.lines[0]);
   let dn = 0, dt = 0;
   for (let d = ws; d <= we && d <= T; d = addDays(d, 1)) for (const o of onDay(d)) if (!o.ev.allDay) { dt++; if (isDone(o.ev, d)) dn++; }
   if (dt) lines.push(`タイムラインの予定は${dt}件中${dn}件を完了（${Math.round(dn / dt * 100)}%）。`);
   const w = words(es.map(e => e.text)).slice(0, 3).map(x => `「${x[0]}」`);
   if (w.length) lines.push(`よく出てきた言葉は${w.join('')}。`);
   return lines;
+}
+function eventMood(from, to) {
+  const all = [], by = {}, T = todayISO(), mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const m = dayMood(d), ok = m && m.top; if (ok) all.push(m.score);
+    const nd = addDays(d, 1), m2 = nd <= T ? dayMood(nd) : null, seen = new Set();
+    for (const o of onDay(d)) {
+      if (o.ev.routine || seen.has(o.ev.title)) continue; seen.add(o.ev.title);
+      const b = by[o.ev.title] = by[o.ev.title] || { color: o.ev.color, same: [], next: [] };
+      if (ok) b.same.push(m.score);
+      if (m2 && m2.top) b.next.push(m2.score);
+    }
+  }
+  if (all.length < 4) return { rows: [], lines: [] };
+  const avg = mean(all), lines = [];
+  const rows = Object.entries(by).filter(([, b]) => b.same.length >= 2 || b.next.length >= 2)
+    .map(([t, b]) => ({ t, color: b.color, same: b.same.length >= 2 ? mean(b.same) - avg : null, next: b.next.length >= 2 ? mean(b.next) - avg : null }))
+    .sort((a, b) => Math.max(Math.abs(b.same || 0), Math.abs(b.next || 0)) - Math.max(Math.abs(a.same || 0), Math.abs(a.next || 0)));
+  for (const r of rows) {
+    if (r.same !== null && r.same >= 0.4) lines.push(`「${r.t}」の日は、前向きな気持ちになりやすいようです。`);
+    else if (r.same !== null && r.same <= -0.4) lines.push(`「${r.t}」の日は、気分が下がりがちです。`);
+    if (r.next !== null && r.next <= -0.4) lines.push(`「${r.t}」の次の日は、疲れが出やすいようです。`);
+    else if (r.next !== null && r.next >= 0.4) lines.push(`「${r.t}」の次の日は、気分がいい傾向があります。`);
+  }
+  return { rows: rows.slice(0, 8), lines };
+}
+const dvBar = v => v === null ? '<span class="dv none"></span>' : `<span class="dv"><i class="${v >= 0 ? 'up' : 'down'}" style="width:${Math.min(50, Math.abs(v) / 2 * 50).toFixed(1)}%"></i></span>`;
+function eventMoodCard() {
+  const T = todayISO(), em = eventMood(addDays(T, -59), T);
+  if (!em.rows.length) return `<section class="card"><h3>予定と気分 <span class="sub">直近60日</span></h3><p class="empty" style="padding:8px">同じ名前の予定が2回以上あり、その日か次の日に日記を書くと、予定ごとの気分の傾向がここに出ます</p></section>`;
+  return `<section class="card"><h3>予定と気分 <span class="sub">直近60日</span></h3>
+    ${em.lines.length ? `<ul class="ins-lines" style="margin-bottom:12px">${em.lines.slice(0, 4).map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
+    <div class="em-row h"><span></span><span class="em-head">その日</span><span class="em-head">次の日</span></div>
+    ${em.rows.map(r => `<div class="em-row" style="--c:${r.color}"><span class="t"><i></i><span>${esc(r.t)}</span></span>${dvBar(r.same)}${dvBar(r.next)}</div>`).join('')}
+    <p class="note">真ん中の線がふだんの気分です。右（オレンジ）にのびると高め、左（青）にのびると低めです。</p></section>`;
+}
+let rpOff = 0;
+function monthReport() {
+  const F = P(todayISO()); F.setDate(1); F.setMonth(F.getMonth() + rpOff);
+  const first = iso(F), last = iso(new Date(F.getFullYear(), F.getMonth() + 1, 0)), es = rangeEntries(first, last);
+  const head = `<div class="sh-bar"><span></span><b>月報</b><button class="r" data-act="close">閉じる</button></div>
+    <div class="rp-nav"><button data-act="rpMonth" data-n="-1" aria-label="前の月">${ico('left')}</button><div class="rp-title"><span class="script">Monthly</span><h2 class="num">${F.getFullYear()}年${F.getMonth() + 1}月</h2></div><button data-act="rpMonth" data-n="1" aria-label="次の月" ${rpOff >= 0 ? 'disabled' : ''}>${ico('right')}</button></div>`;
+  if (!es.length) return head + '<p class="empty">この月の日記はまだありません</p>';
+  const days = new Set(es.map(e => e.date)).size, photos = es.filter(e => e.photo), fc = {};
+  let p = 0, n = 0, z = 0;
+  for (const e of es) for (const f of e.feelings) { fc[f] = (fc[f] || 0) + 1; const sc = feelInfo(f).score; if (sc > 0) p++; else if (sc < 0) n++; else z++; }
+  const tot = p + n + z || 1, pc = v => Math.round(v / tot * 100);
+  const evCount = occurrences(first, last).filter(o => !o.ev.routine).length;
+  let best = null; for (let d = first; d <= last; d = addDays(d, 1)) { const m = dayMood(d); if (m && m.top && (!best || m.score > best.s)) best = { d, s: m.score }; }
+  const be = best && entriesOn(best.d)[0];
+  const top = Object.entries(fc).sort((a, b) => b[1] - a[1]).slice(0, 6), wl = words(es.map(e => e.text)).slice(0, 10), wmax = wl.length ? wl[0][1] : 1;
+  const em = eventMood(first, last);
+  return head + `
+  <section class="card stats"><div><b class="num">${es.length}</b><span>日記</span></div><div><b class="num">${days}</b><span>記録した日</span></div><div><b class="num">${evCount}</b><span>予定</span></div></section>
+  <section class="card"><h3>気持ちのバランス</h3>
+    <div class="balance"><i style="width:${pc(p)}%;background:#EDA04B"></i><i style="width:${pc(z)}%;background:#B4C680"></i><i style="width:${pc(n)}%;background:#6C97C2"></i></div>
+    <div class="legend"><span style="--c:#EDA04B"><i></i>前向き ${pc(p)}%</span><span style="--c:#B4C680"><i></i>ふつう ${pc(z)}%</span><span style="--c:#6C97C2"><i></i>沈んだ ${pc(n)}%</span></div>
+    <div class="mini-chips">${top.map(([f, c]) => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)} <span class="num">${c}</span></span>`).join('')}</div></section>
+  ${be ? `<section class="card"><h3>いちばんいい日</h3><button class="best" data-act="editEntry" data-id="${be.id}"><span class="d num">${P(best.d).getDate()}<small>日</small></span><span><b>${esc(be.feelings.join('・'))}</b><p>${esc(be.text) || '（本文なし）'}</p></span></button></section>` : ''}
+  <section class="card"><h3>よく書いたこと</h3>${donut(es)}</section>
+  ${wl.length ? `<section class="card"><h3>よく使った言葉</h3><div class="words">${wl.map(([w, c]) => `<span style="font-size:${(12 + (c / wmax) * 10).toFixed(1)}px">${esc(w)}</span>`).join('')}</div></section>` : ''}
+  ${em.lines.length ? `<section class="card"><h3>予定と気分</h3><ul class="ins-lines">${em.lines.slice(0, 4).map(l => `<li>${esc(l)}</li>`).join('')}</ul></section>` : ''}
+  ${photos.length ? `<section class="card"><h3>写真 <span class="sub">${photos.length}枚</span></h3><div class="photo-grid">${photos.map(e => `<button data-act="editEntry" data-id="${e.id}" aria-label="${jpDate(e.date)}の日記"><img src="${e.photo}" alt=""></button>`).join('')}</div></section>` : ''}`;
 }
 function smooth(pts, lo, hi) {
   let d = '';
@@ -842,11 +1059,12 @@ function viewReflect() {
   const wl = words(rs.map(e => e.text)).slice(0, 14), wmax = wl.length ? wl[0][1] : 1;
   let wk = ''; for (let i = 0; i < 7; i++) { const d = addDays(ws, i), e = entriesOn(d)[0]; wk += `<div><span class="w">${WD[wd(d)]}</span><i style="--c:${e ? dayMood(d).color : 'var(--line)'}"></i><span>${e ? esc(e.text || e.feelings.join('・')) : '—'}</span></div>`; }
   const mF = P(T); mF.setDate(1); mF.setMonth(mF.getMonth() + st.mcal); const mfirst = iso(mF), mlast = iso(new Date(mF.getFullYear(), mF.getMonth() + 1, 0));
-  let mc = ['月','火','水','木','金','土','日'].map(x => `<span class="h">${x}</span>`).join('');
-  for (let i = 0; i < (wd(mfirst) + 6) % 7; i++) mc += '<span></span>';
+  let mc = dowHead('h');
+  for (let i = 0; i < (sunStart() ? wd(mfirst) : (wd(mfirst) + 6) % 7); i++) mc += '<span></span>';
   for (let d = mfirst; d <= mlast; d = addDays(d, 1)) { const m = dayMood(d); mc += `<span class="c"><i class="${m ? 'on' : ''}" style="${m ? `background:${m.color};` : ''}border-radius:${blob(d)}"></i><span class="num">${P(d).getDate()}</span></span>`; }
   return `
   <div class="r-head"><span class="script">Reflection</span><h1>ふりかえり</h1></div>
+  <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
   <section class="card">
     <div class="ins-nav"><button data-act="iWeek" data-n="-1" aria-label="前の週">${ico('left')}</button>
       <div class="rng"><span class="card-eyebrow">Weekly Insight</span><b class="num">${st.iWeek === 0 ? '直近7日' : st.iWeek === -1 ? 'その前の7日' : ''} ${md(ws)} – ${md(we)}</b></div>
@@ -867,6 +1085,7 @@ function viewReflect() {
   <section class="card"><h3>気持ちのランキング <span class="sub">${n}日間</span></h3>
     ${rank.length ? `<div class="rank">${rank.map(([f, v]) => `<div style="--c:${feelInfo(f).color}"><span>${esc(f)}</span><span class="trk"><i style="width:${v / maxR * 100}%"></i></span><span class="c num">${v}</span></div>`).join('')}</div>` : '<p class="empty" style="padding:8px">この期間の記録はまだありません</p>'}
   </section>
+  ${eventMoodCard()}
   <section class="card"><h3>よく書いたこと <span class="sub">${n}日間</span></h3>${donut(rs)}</section>
   <section class="card"><h3>よく使う言葉 <span class="sub">${n}日間</span></h3>
     ${wl.length ? `<div class="words">${wl.map(([w, c]) => `<span style="font-size:${(12 + (c / wmax) * 10).toFixed(1)}px;font-weight:${c === wmax ? 700 : 500}">${esc(w)}</span>`).join('')}</div>` : '<p class="empty" style="padding:8px">日記を書くと、よく使う言葉がここに並びます</p>'}
@@ -906,10 +1125,15 @@ main.addEventListener('scroll', onScroll, { passive: true });
 function applyTheme() {
   const t = S.settings.theme, r = document.documentElement;
   if (t === 'light' || t === 'dark') r.dataset.theme = t; else delete r.dataset.theme;
+  const a = ACCENTS.find(x => x[0] === (S.settings.accent || '')); if (a && a[0]) r.style.setProperty('--accent', a[2]); else r.style.removeProperty('--accent');
   const m = $('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#F5EFEB';
 }
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); }
+function toast(msg, label, fn) {
+  const t = $('#toast'); t.textContent = msg; t.classList.toggle('act', !!fn);
+  if (fn) { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', () => { t.classList.remove('on', 'act'); fn(); }); t.append(b); }
+  t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on', 'act'), fn ? 4500 : 2400);
+}
 
 /* ================= sheets ================= */
 const stack = [];
@@ -942,6 +1166,10 @@ document.addEventListener('touchend', () => {
   if (dy > 120 || (dy > 40 && dy / (Date.now() - t) > 0.6)) closeSheet(); else sh.style.transform = '';
 });
 const topSheet = () => stack.length ? stack[stack.length - 1].firstElementChild : null;
+function choose(msg, opts) {
+  const sh = openSheet(`<div class="choice"><p>${esc(msg)}</p><div class="col">${opts.map(([l], i) => `<button class="btn${i ? '' : ' primary'}" data-ci="${i}">${esc(l)}</button>`).join('')}<button class="btn ghost" data-ci="-1">やめる</button></div></div>`, 'small');
+  sh.querySelectorAll('[data-ci]').forEach(b => b.addEventListener('click', () => { closeSheet(); const o = opts[+b.dataset.ci]; if (o) o[1](); else render(); }));
+}
 function confirmIn(msg, ok, fn) {
   const sh = openSheet(`<div class="confirm"><p>${esc(msg)}</p><div class="row2"><button class="btn ghost" data-act="close">やめる</button><button class="btn primary" id="cf-ok">${esc(ok)}</button></div></div>`, 'small');
   sh.querySelector('#cf-ok').addEventListener('click', () => { closeSheet(); fn(); });
@@ -949,17 +1177,23 @@ function confirmIn(msg, ok, fn) {
 
 /* ---- event editor ---- */
 let evDraft = null;
-function openEvent(id, date) {
+function openEvent(id, date, preset) {
   const ev = id ? S.events.find(e => e.id === id) : null;
-  evDraft = ev ? JSON.parse(JSON.stringify(ev)) : { id: null, title: '', date: date || todayISO(), endDate: '', allDay: false, start: nextSlot(), end: '', color: COLORS[0], icon: 'star', repeat: 'none', routine: false, memo: '', done: {} };
-  if (!evDraft.end) { const s = toMin(evDraft.start) + 60; evDraft.end = `${pad(Math.min(23, Math.floor(s / 60)))}:${pad(s >= 1440 ? 59 : s % 60)}`; }
+  evDraft = ev ? JSON.parse(JSON.stringify(ev)) : Object.assign({ id: null, title: '', date: date || todayISO(), endDate: '', allDay: false, start: nextSlot(), end: '', color: COLORS[0], icon: 'star', repeat: 'none', routine: false, memo: '', done: {} }, preset || {});
+  if (!evDraft.end) evDraft.end = hhmm(Math.min(1439, toMin(evDraft.start) + (evDraft._len || 60)));
+  if (ev && ev.repeat && ev.repeat !== 'none' && date) {
+    evDraft._occ = date; evDraft._seriesDate = ev.date; evDraft.date = date;
+    if (ev.allDay && ev.endDate) evDraft.endDate = addDays(date, diffDays(ev.date, ev.endDate));
+  }
+  if (ev) evDraft._iconSet = true;
   openSheet(eventForm(), 'full');
-  if (!ev) setTimeout(() => { const t = $('#ev-title'); t && t.focus({ preventScroll: true }); }, 450);
+  if (!ev && !evDraft.title) setTimeout(() => { const t = $('#ev-title'); t && t.focus({ preventScroll: true }); }, 450);
 }
-function nextSlot() { const d = new Date(); let m = d.getHours() * 60 + d.getMinutes(); m = Math.min(23 * 60, Math.ceil(m / 30) * 30); return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
+function nextSlot() { const d = new Date(); let m = d.getHours() * 60 + d.getMinutes(); m = Math.min(23 * 60, Math.ceil(m / 30) * 30); return hhmm(m); }
 function eventForm() {
-  const e = evDraft;
+  const e = evDraft, base = e._seriesDate || e.date, days = e.days && e.days.length ? e.days : [wd(base)];
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${e.id ? '予定を編集' : '新しい予定'}</b><button class="r" data-act="saveEvent">保存</button></div>
+  ${!e.id && S.templates.length ? `<div class="fld"><span class="lb">テンプレートから</span><div class="tpl-row">${S.templates.map(t => `<button class="tpl" style="--c:${t.color}" data-act="useTpl" data-id="${t.id}">${ico(t.icon)}${esc(t.title)}<small class="num">${t.allDay ? '終日' : hm(t.start)}</small></button>`).join('')}</div></div>` : ''}
   <div class="fld"><input class="inp title" id="ev-title" placeholder="予定のタイトル" value="${esc(e.title)}" maxlength="60" autocomplete="off"></div>
   <div class="fld"><span class="lb">アイコン</span><div class="iconpick" style="--c:${e.color}">${EV_ICONS.map(k => `<button data-act="evIcon" data-k="${k}" aria-pressed="${e.icon === k}" aria-label="${k}">${ico(k)}</button>`).join('')}</div></div>
   <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(c => `<button class="sw" style="--c:${c}" data-act="evColor" data-c="${c}" aria-pressed="${e.color === c}" aria-label="色 ${c}">${ico('check')}</button>`).join('')}</div></div>
@@ -967,20 +1201,58 @@ function eventForm() {
   <div class="row2"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div>
     ${e.allDay ? `<div class="fld"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>` : '<div></div>'}</div>
   ${e.allDay ? '' : `<div class="row2"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div>`}
-  <div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${REPEATS.map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+  <div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+  ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
+  ${e.repeat !== 'none' ? `<div class="fld"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}
   <div class="fld"><label class="toggle"><span>ルーティン<small>タイムラインにだけ表示し、月のカレンダーには出しません</small></span><input type="checkbox" id="ev-routine" ${e.routine ? 'checked' : ''}></label></div>
   <div class="fld"><label for="ev-memo">メモ</label><textarea class="inp" id="ev-memo" rows="3" style="min-height:80px">${esc(e.memo)}</textarea></div>
-  ${e.id && e.repeat !== 'none' ? '<p class="note">繰り返しの予定は、すべての回がまとめて変更されます。</p>' : ''}
-  <div class="sheet-actions"><button class="btn primary" data-act="saveEvent">保存する</button>${e.id ? `<button class="btn danger" data-act="delEvent">この予定を削除</button>` : ''}</div>`;
+  ${e._occ ? `<p class="note">繰り返しの予定です。保存するときに「この回だけ」か「すべての回」かを選べます。</p>` : ''}
+  <div class="sheet-actions"><button class="btn primary" data-act="saveEvent">保存する</button>
+    <button class="btn ghost" data-act="saveTpl">${ico('star')}テンプレートとして保存</button>
+    ${e._occ ? `<button class="btn danger" data-act="skipOcc">${md(e._occ)}の回だけ休みにする</button>` : ''}
+    ${e.id ? `<button class="btn danger" data-act="delEvent">${e._occ ? '繰り返しをすべて削除' : 'この予定を削除'}</button>` : ''}</div>`;
 }
 function syncEvent() {
-  const e = evDraft, v = id => { const el = $('#' + id, topSheet()); return el ? el.value : null; };
+  const e = evDraft, sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
   e.title = v('ev-title') ?? e.title; e.date = v('ev-date') || e.date; e.repeat = v('ev-repeat') || e.repeat; e.memo = v('ev-memo') ?? e.memo;
   const ed = v('ev-end-date'); if (ed !== null) e.endDate = ed;
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
-  const r = $('#ev-routine', topSheet()); if (r) e.routine = r.checked;
+  const u = v('ev-until'); if (u !== null) e.until = u;
+  const r = $('#ev-routine', sh); if (r) e.routine = r.checked;
 }
 function rerenderEvent() { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = eventForm(); sh.scrollTop = y; }
+function cleanEv(x) { const o = JSON.parse(JSON.stringify(x)); for (const k of Object.keys(o)) if (k[0] === '_') delete o[k]; delete o.sample; return o; }
+function saveOccurrence(orig, occ, next, scope) {
+  if (scope === 'one') {
+    orig.skip = Object.assign({}, orig.skip, { [occ]: true });
+    const one = cleanEv(next); one.id = uid(); one.repeat = 'none'; delete one.days; delete one.until; one.skip = {}; one.done = {};
+    if (orig.done && orig.done[occ]) one.done[one.date] = true;
+    S.events.push(one);
+  } else {
+    const all = cleanEv(next);
+    if (next.date === occ) { const span = all.allDay && all.endDate ? diffDays(all.date, all.endDate) : 0; all.date = orig.date; if (all.allDay) all.endDate = addDays(all.date, span); }
+    all.skip = orig.skip || {}; all.done = orig.done || {};
+    S.events[S.events.findIndex(x => x.id === orig.id)] = all;
+  }
+}
+function shiftEvent(id, d, delta) {
+  const ev = S.events.find(x => x.id === id); if (!ev) return;
+  const next = Object.assign(JSON.parse(JSON.stringify(ev)), { start: hhmm(toMin(ev.start) + delta), end: hhmm(toMin(ev.end) + delta), date: d });
+  const fin = () => { if (save()) { render(); toast(`${hm(next.start)} – ${hm(next.end)} に移動しました`); } };
+  if (ev.repeat && ev.repeat !== 'none') choose(`「${ev.title}」は繰り返しの予定です。どれを動かしますか？`, [['この回だけ', () => { saveOccurrence(ev, d, next, 'one'); fin(); }], ['すべての回', () => { saveOccurrence(ev, d, next, 'all'); fin(); }]]);
+  else { ev.start = next.start; ev.end = next.end; fin(); }
+}
+
+/* ---- tasks (inbox) ---- */
+function taskSheet() {
+  const open = S.tasks.filter(t => !t.done), done = S.tasks.filter(t => t.done);
+  const row = t => `<div class="task${t.done ? ' done' : ''}"><button class="chk${t.done ? ' on' : ''}" data-act="taskDone" data-id="${t.id}" aria-label="完了">${ico('check')}</button><span class="tt">${esc(t.title)}</span>${t.done ? '<span></span>' : `<button class="sched" data-act="taskSched" data-id="${t.id}">予定にする</button>`}<button class="del" data-act="taskDel" data-id="${t.id}" aria-label="削除">${ico('x')}</button></div>`;
+  return `<div class="sh-bar"><span></span><b>やること</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="add-row" style="margin-top:0"><input class="inp" id="task-new" placeholder="やることを追加（日付はあとで決める）" maxlength="60" autocomplete="off" enterkeyhint="done"><button data-act="addTask">追加</button></div>
+  <div class="task-list">${open.map(row).join('') || '<p class="empty">いつかやりたいことを書き出しておきましょう。<br>「予定にする」で、タイムラインに入れられます。</p>'}</div>
+  ${done.length ? `<div class="task-list"><div class="routine-note"><span>完了 ${done.length}件</span><button data-act="taskClear">完了したものを消す</button></div>${done.map(row).join('')}</div>` : ''}`;
+}
+const rerenderTasks = () => { const sh = topSheet(); if (sh) sh.innerHTML = taskSheet(); render(); };
 
 /* ---- entry editor ---- */
 let enDraft = null, enStep = 'feel';
@@ -1006,6 +1278,7 @@ function entryForm() {
   const tags = [...TAGS, ...S.customTags];
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${e.id ? '日記を編集' : '日記を書く'}</b><button class="r" data-act="saveEntry">保存</button></div>
   <div class="row2"><div class="fld"><label for="en-date">日付</label><input class="inp" type="date" id="en-date" value="${e.date}"></div><div class="fld"><label for="en-time">時刻</label><input class="inp" type="time" id="en-time" value="${e.time}"></div></div>
+  ${e.weather ? `<div class="fld"><span class="lb">天気</span><div style="font-size:14px">${wxChip(e.weather)}</div></div>` : ''}
   <div class="fld"><span class="lb">気持ち</span><div class="sel-feels">${e.feelings.map(f => `<button style="--c:${feelInfo(f).color}" data-act="enStep" data-s="feel"><i></i>${esc(f)}</button>`).join('')}<button style="--c:var(--ink-3)" data-act="enStep" data-s="feel">${e.feelings.length ? '変更' : '＋ 気持ちを選ぶ'}</button></div></div>
   <div class="fld"><span class="lb">できごと</span><div class="chips">${tags.map(t => `<button class="chip" data-act="tag" data-t="${esc(t)}" aria-pressed="${e.tags.includes(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="add-row"><input class="inp" id="ct-name" maxlength="8" placeholder="タグを追加" autocomplete="off"><button data-act="addTag">追加</button></div></div>
@@ -1045,29 +1318,46 @@ function monthPicker() {
 }
 
 /* ---- search ---- */
+const sf = { feel: '', tag: '' };
 function openSearch() {
+  sf.feel = sf.tag = '';
+  const fc = {}, tc = {}; for (const e of S.entries) { e.feelings.forEach(f => fc[f] = (fc[f] || 0) + 1); e.tags.forEach(t => tc[t] = (tc[t] || 0) + 1); }
+  const feels = Object.keys(fc).sort((a, b) => fc[b] - fc[a]).slice(0, 16), tags = Object.keys(tc).sort((a, b) => tc[b] - tc[a]).slice(0, 16);
   openSheet(`<div class="sh-bar"><span></span><b>検索</b><button class="r" data-act="close">閉じる</button></div>
-    <div class="fld"><input class="inp" id="q" type="search" placeholder="予定や日記を検索" autocomplete="off"></div><div class="search-res" id="qres"><p class="empty">キーワードを入力してください</p></div>`, 'full');
+    <div class="fld"><input class="inp" id="q" type="search" placeholder="予定や日記を検索" autocomplete="off"></div>
+    ${feels.length ? `<div class="filt"><span class="lb">気持ちで絞り込む</span><div class="chips">${feels.map(f => `<button class="chip" data-act="sFeel" data-f="${esc(f)}" aria-pressed="false"><i style="--c:${feelInfo(f).color}"></i>${esc(f)}</button>`).join('')}</div></div>` : ''}
+    ${tags.length ? `<div class="filt"><span class="lb">できごとで絞り込む</span><div class="chips">${tags.map(t => `<button class="chip" data-act="sTag" data-t="${esc(t)}" aria-pressed="false">#${esc(t)}</button>`).join('')}</div></div>` : ''}
+    <div class="search-res" id="qres"><p class="empty">キーワードを入力するか、気持ち・できごとを選んでください</p></div>`, 'full');
   setTimeout(() => { const q = $('#q'); q && q.focus({ preventScroll: true }); }, 450);
 }
-function runSearch(q) {
-  const box = $('#qres'); if (!box) return; q = q.trim().toLowerCase();
-  if (!q) { box.innerHTML = '<p class="empty">キーワードを入力してください</p>'; return; }
-  const evs = S.events.filter(e => (e.title + ' ' + (e.memo || '')).toLowerCase().includes(q)).sort((a, b) => b.date.localeCompare(a.date));
-  const ens = S.entries.filter(e => (e.text + ' ' + e.tags.join(' ') + ' ' + e.feelings.join(' ')).toLowerCase().includes(q)).sort((a, b) => b.date.localeCompare(a.date));
-  box.innerHTML = (evs.map(e => `<button data-act="goEvent" data-d="${e.date}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(e.date)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`).join('') +
-    ens.map(e => `<button data-act="goEntry" data-id="${e.id}" style="--c:${e.feelings[0] ? feelInfo(e.feelings[0]).color : 'var(--ink-3)'}"><i></i><span>${esc(e.text.slice(0, 60) || e.feelings.join('・'))}<small>日記・${jpDate(e.date)}</small></span></button>`).join('')) || '<p class="empty">見つかりませんでした</p>';
+function runSearch() {
+  const box = $('#qres'); if (!box) return; const q = (($('#q') || {}).value || '').trim().toLowerCase(), filt = sf.feel || sf.tag;
+  if (!q && !filt) { box.innerHTML = '<p class="empty">キーワードを入力するか、気持ち・できごとを選んでください</p>'; return; }
+  const evs = filt ? [] : S.events.filter(e => (e.title + ' ' + (e.memo || '')).toLowerCase().includes(q)).sort((a, b) => b.date.localeCompare(a.date));
+  const ens = S.entries.filter(e => (!sf.feel || e.feelings.includes(sf.feel)) && (!sf.tag || e.tags.includes(sf.tag)) && (!q || (e.text + ' ' + e.tags.join(' ') + ' ' + e.feelings.join(' ')).toLowerCase().includes(q))).sort((a, b) => b.date.localeCompare(a.date));
+  const n = evs.length + ens.length;
+  box.innerHTML = n ? `<p class="res-count">${n}件</p>` + evs.map(e => `<button data-act="goEvent" data-d="${e.date}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(e.date)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`).join('') +
+    ens.map(e => `<button data-act="goEntry" data-id="${e.id}" style="--c:${e.feelings[0] ? feelInfo(e.feelings[0]).color : 'var(--ink-3)'}"><i></i><span>${esc(e.text.slice(0, 60) || e.feelings.join('・'))}<small>${jpDate(e.date)}${e.feelings.length ? '・' + esc(e.feelings.join('・')) : ''}</small></span></button>`).join('') : '<p class="empty">見つかりませんでした</p>';
 }
 
 /* ---- settings ---- */
 const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
-function openSettings() {
+function settingsHTML() {
   const s = S.settings;
-  openSheet(`<div class="sh-bar"><span></span><b>設定</b><button class="r" data-act="close">完了</button></div>
+  return `<div class="sh-bar"><span></span><b>設定</b><button class="r" data-act="close">完了</button></div>
   <div class="set-sec"><h4>あなたについて</h4><div class="fld"><input class="inp" id="set-name" placeholder="ニックネーム（インサイトで使います）" value="${esc(s.name)}" maxlength="20"></div></div>
   <div class="set-sec"><h4>表示</h4><div class="set-list">
     <div class="toggle"><span>テーマ</span><span class="seg">${[['system','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button data-act="theme" data-k="${k}" aria-pressed="${s.theme === k}">${l}</button>`).join('')}</span></div>
+    <div class="toggle"><span>テーマカラー</span><span class="swatches">${ACCENTS.map(([k, l, c]) => `<button class="sw" style="--c:${c};width:28px;height:28px" data-act="accent" data-k="${k}" aria-pressed="${(s.accent || '') === k}" aria-label="${l}">${ico('check')}</button>`).join('')}</span></div>
+    <div class="toggle"><span>週の始まり</span><span class="seg">${[['mon','月曜'],['sun','日曜']].map(([k, l]) => `<button data-act="weekStartSet" data-k="${k}" aria-pressed="${(s.weekStart || 'mon') === k}">${l}</button>`).join('')}</span></div>
     <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label></div></div>
+  <div class="set-sec"><h4>日記</h4><div class="set-list">
+    ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
+  <div class="set-sec"><h4>予定のテンプレート</h4><div class="set-list">
+    ${S.templates.map(t => `<div class="set-row"><span>${esc(t.title)} <small class="num">${t.allDay ? '終日' : hm(t.start) + '–' + hm(t.end)}</small></span><button data-act="delTpl" data-id="${t.id}">削除</button></div>`).join('') || '<p class="note" style="margin:0">予定の編集画面の「テンプレートとして保存」で追加できます。</p>'}</div></div>
+  <div class="set-sec"><h4>カレンダーの取り込み</h4><div class="set-list">
+    <p class="note" style="margin:0">iPhoneやGoogleカレンダーから書き出した .ics ファイルを読み込みます。同じファイルを2回読み込んでも、予定は重複しません。</p>
+    <label class="btn file-btn">${ico('upload')}.ics ファイルを読み込む<input type="file" id="ics-file" accept=".ics,text/calendar"></label></div></div>
   <div class="set-sec"><h4>データ</h4><div class="set-list">
     <p class="note" style="margin:0">データはこの端末のブラウザの中にだけ保存されます。機種変更やブラウザのデータ削除の前に、バックアップを取っておいてください。</p>
     <button class="btn" data-act="exportCopy">バックアップをコピー</button>
@@ -1077,7 +1367,68 @@ function openSettings() {
     <button class="btn ghost" data-act="importText">貼り付けたバックアップから復元</button>
     ${hasSample() ? '<button class="btn ghost" data-act="clearSample">サンプルデータを消す</button>' : ''}
     <button class="btn danger" data-act="resetAll">すべてのデータを削除</button></div></div>
-  <p class="note">ひび手帳 — カレンダー・タイムライン・日記をひとつに。予定 ${S.events.length}件 / 日記 ${S.entries.length}件</p>`, 'full');
+  <p class="note">ひび手帳 — カレンダー・タイムライン・日記をひとつに。予定 ${S.events.length}件 / 日記 ${S.entries.length}件</p>`;
+}
+function openSettings() { openSheet(settingsHTML(), 'full'); }
+const rerenderSettings = () => { const sh = topSheet(); if (!sh) return; const y = sh.scrollTop; sh.innerHTML = settingsHTML(); sh.scrollTop = y; };
+
+/* ---- .ics import ---- */
+const icsText = s => (s || '').replace(/\\n/gi, '\n').replace(/\\([,;\\])/g, '$1').trim();
+function icsDate(v) {
+  const m = String(v || '').match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/); if (!m) return null;
+  if (!m[4]) return { date: `${m[1]}-${m[2]}-${m[3]}`, allDay: true };
+  const d = m[7] ? new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5])) : new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]);
+  return { date: iso(d), time: hhmm(d.getHours() * 60 + d.getMinutes()), allDay: false };
+}
+function parseICS(txt) {
+  const lines = txt.replace(/\r?\n[ \t]/g, '').split(/\r?\n/), out = [];
+  let cur = null, sub = 0;
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') { cur = { EXDATE: [] }; continue; }
+    if (line === 'END:VEVENT') { if (cur) out.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    if (/^BEGIN:/.test(line)) { sub++; continue; } if (/^END:/.test(line)) { sub--; continue; } if (sub) continue;
+    const i = line.indexOf(':'); if (i < 0) continue;
+    const name = line.slice(0, i).split(';')[0].toUpperCase(), val = line.slice(i + 1);
+    if (name === 'EXDATE') cur.EXDATE.push(val); else cur[name] = val;
+  }
+  return out;
+}
+function applyRRule(ev, rule) {
+  const r = {}; rule.split(';').forEach(x => { const [k, v] = x.split('='); r[k] = v; });
+  if (r.INTERVAL && +r.INTERVAL > 1) return;
+  const MAP = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+  if (r.FREQ === 'DAILY') ev.repeat = 'daily';
+  else if (r.FREQ === 'WEEKLY') {
+    const days = (r.BYDAY || '').split(',').filter(Boolean).map(x => MAP[x.slice(-2)]).filter(x => x !== undefined);
+    if (days.length === 5 && [1, 2, 3, 4, 5].every(x => days.includes(x))) ev.repeat = 'weekdays'; else { ev.repeat = 'weekly'; ev.days = days.length ? days : [wd(ev.date)]; }
+  } else if (r.FREQ === 'MONTHLY') ev.repeat = r.BYDAY && /^\+?[1-4]/.test(r.BYDAY) ? 'nth' : 'monthly';
+  else if (r.FREQ === 'YEARLY') ev.repeat = 'yearly';
+  else return;
+  if (r.UNTIL) { const u = icsDate(r.UNTIL); if (u) ev.until = u.date; }
+  else if (r.COUNT) { let n = +r.COUNT, d = ev.date, guard = 0; while (guard++ < 4000) { if (matches(ev, d) && --n <= 0) { ev.until = d; break; } d = addDays(d, 1); } }
+}
+function icsToEvent(v) {
+  if (!v.DTSTART || /CANCELLED/i.test(v.STATUS || '')) return null;
+  const s = icsDate(v.DTSTART); if (!s) return null;
+  const e = v.DTEND ? icsDate(v.DTEND) : null, title = icsText(v.SUMMARY) || '（無題）';
+  const ev = { id: uid(), title, date: s.date, allDay: s.allDay, repeat: 'none', routine: false, memo: [icsText(v.LOCATION), icsText(v.DESCRIPTION)].filter(Boolean).join('\n').slice(0, 500), done: {}, skip: {}, color: COLORS[2], icon: guessIcon(title), icsUid: (v.UID || '') + (v['RECURRENCE-ID'] ? '@' + v['RECURRENCE-ID'] : '') };
+  if (s.allDay) { ev.endDate = e ? addDays(e.date, -1) : s.date; if (ev.endDate < ev.date) ev.endDate = ev.date; ev.start = '09:00'; ev.end = '10:00'; }
+  else { ev.start = s.time; ev.end = e ? (e.date === s.date ? e.time : '23:59') : hhmm(Math.min(1439, toMin(s.time) + 60)); if (toMin(ev.end) <= toMin(ev.start)) ev.end = hhmm(Math.min(1439, toMin(ev.start) + 30)); }
+  if (v.RRULE && !v['RECURRENCE-ID']) applyRRule(ev, v.RRULE);
+  for (const x of v.EXDATE) for (const one of x.split(',')) { const d = icsDate(one); if (d) ev.skip[d.date] = true; }
+  if (v['RECURRENCE-ID']) ev._master = { uid: v.UID, date: (icsDate(v['RECURRENCE-ID']) || {}).date };
+  return ev;
+}
+function importICS(txt) {
+  const have = new Set(S.events.map(e => e.icsUid).filter(Boolean)), add = []; let dup = 0;
+  for (const v of parseICS(txt)) { const ev = icsToEvent(v); if (!ev) continue; if (ev.icsUid && have.has(ev.icsUid)) { dup++; continue; } if (ev.icsUid) have.add(ev.icsUid); add.push(ev); }
+  for (const ev of add) if (ev._master) { const m = add.find(x => x.icsUid === ev._master.uid) || S.events.find(x => x.icsUid === ev._master.uid); if (m && ev._master.date) m.skip = Object.assign({}, m.skip, { [ev._master.date]: true }); delete ev._master; }
+  if (!add.length) { toast(dup ? `${dup}件はすでに取り込み済みでした` : '読み込める予定が見つかりませんでした'); return; }
+  confirmIn(`${add.length}件の予定を取り込みます。${dup ? `（取り込み済みの${dup}件は飛ばします）` : ''}`, '取り込む', () => {
+    S.events.push(...add);
+    if (save()) { while (stack.length) closeSheet(); render(); toast(`${add.length}件の予定を取り込みました`); } else S.events.splice(S.events.length - add.length, add.length);
+  });
 }
 const backupJSON = () => JSON.stringify({ app: 'hibi', version: 1, exportedAt: new Date().toISOString(), data: S });
 function importData(txt) {
@@ -1105,6 +1456,25 @@ const ACT = {
     st.calMonth = m; st.sel = m.slice(0, 7) === T.slice(0, 7) ? T : m; main.scrollTop = 0; closeSheet(); render();
   },
   dayToday: () => { st.day = todayISO(); render(); },
+  tasks: () => openSheet(taskSheet(), 'full'),
+  addTask: () => { const el = $('#task-new', topSheet()), v = (el && el.value || '').trim(); if (!v) return; S.tasks.unshift({ id: uid(), title: v, done: false }); save(); rerenderTasks(); const n = $('#task-new', topSheet()); n && n.focus({ preventScroll: true }); },
+  taskDone: t => { const k = S.tasks.find(x => x.id === t.dataset.id); if (k) { k.done = !k.done; save(); rerenderTasks(); } },
+  taskDel: t => { S.tasks = S.tasks.filter(x => x.id !== t.dataset.id); save(); rerenderTasks(); },
+  taskClear: () => { S.tasks = S.tasks.filter(x => !x.done); save(); rerenderTasks(); },
+  taskSched: t => { const k = S.tasks.find(x => x.id === t.dataset.id); if (!k) return; closeSheet(); setTimeout(() => openEvent(null, st.day, { title: k.title, icon: guessIcon(k.title), _task: k.id, _len: 30 }), 120); },
+  quickMood: t => {
+    const d = t.dataset.d, f = t.dataset.f, e = { id: uid(), date: d, time: d === todayISO() ? nowHM() : '21:00', feelings: [f], tags: [], text: '', photo: null };
+    S.entries.push(e); if (!save()) { S.entries.pop(); return; }
+    render(); toast(`「${f}」を記録しました`, '取り消す', () => { S.entries = S.entries.filter(x => x.id !== e.id); save(); render(); });
+    attachWeather(e);
+  },
+  report: () => { rpOff = 0; openSheet(monthReport(), 'full'); },
+  rpMonth: t => { rpOff = Math.min(0, rpOff + +t.dataset.n); const sh = topSheet(); sh.innerHTML = monthReport(); sh.scrollTop = 0; },
+  sFeel: t => { sf.feel = sf.feel === t.dataset.f ? '' : t.dataset.f; topSheet().querySelectorAll('[data-act="sFeel"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === sf.feel)); runSearch(); },
+  sTag: t => { sf.tag = sf.tag === t.dataset.t ? '' : t.dataset.t; topSheet().querySelectorAll('[data-act="sTag"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === sf.tag)); runSearch(); },
+  accent: t => { S.settings.accent = t.dataset.k; save(); applyTheme(); rerenderSettings(); render(); },
+  weekStartSet: t => { S.settings.weekStart = t.dataset.k; save(); rerenderSettings(); render(); },
+  delTpl: t => { S.templates = S.templates.filter(x => x.id !== t.dataset.id); save(); rerenderSettings(); },
   pickDay: t => { st.day = t.dataset.d; st.sel = st.day; st.calMonth = st.day.slice(0, 8) + '01'; render(); },
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
@@ -1122,22 +1492,42 @@ const ACT = {
   settings: () => openSettings(),
   close: () => closeSheet(),
   clearSample: () => confirmIn('サンプルの予定と日記を削除します。あなたが追加したデータはそのまま残ります。', '削除する', () => {
-    S.events = S.events.filter(e => !e.sample); S.entries = S.entries.filter(e => !e.sample); save(); while (stack.length) closeSheet(); render(); toast('サンプルを削除しました');
+    S.events = S.events.filter(e => !e.sample); S.entries = S.entries.filter(e => !e.sample); S.tasks = S.tasks.filter(e => !e.sample); S.templates = S.templates.filter(e => !e.sample); save(); while (stack.length) closeSheet(); render(); toast('サンプルを削除しました');
   }),
   // event editor
-  evIcon: t => { syncEvent(); evDraft.icon = t.dataset.k; rerenderEvent(); },
+  evIcon: t => { syncEvent(); evDraft.icon = t.dataset.k; evDraft._iconSet = true; rerenderEvent(); },
+  evDay: t => { syncEvent(); const w = +t.dataset.w, a = evDraft.days && evDraft.days.length ? evDraft.days.slice() : [wd(evDraft._seriesDate || evDraft.date)], i = a.indexOf(w); if (i >= 0) { if (a.length > 1) a.splice(i, 1); } else a.push(w); evDraft.days = a; rerenderEvent(); },
+  clrUntil: () => { syncEvent(); evDraft.until = ''; rerenderEvent(); },
+  useTpl: t => { syncEvent(); const k = S.templates.find(x => x.id === t.dataset.id); if (!k) return; Object.assign(evDraft, { title: k.title, start: k.start, end: k.end, allDay: !!k.allDay, color: k.color, icon: k.icon, _iconSet: true }); if (k.allDay) evDraft.endDate = evDraft.date; rerenderEvent(); },
+  saveTpl: () => {
+    syncEvent(); const e = evDraft, title = e.title.trim(); if (!title) { toast('タイトルを入力してから保存してください'); return; }
+    const tpl = { id: uid(), title, start: e.start, end: e.end, allDay: !!e.allDay, color: e.color, icon: e._iconSet ? e.icon : guessIcon(title) };
+    const i = S.templates.findIndex(x => x.title === title); if (i >= 0) { tpl.id = S.templates[i].id; S.templates[i] = tpl; } else S.templates.push(tpl);
+    if (save()) toast(`「${title}」をテンプレートに保存しました`);
+  },
+  skipOcc: () => { const e = evDraft, orig = S.events.find(x => x.id === e.id); if (!orig) return; confirmIn(`${md(e._occ)}の「${orig.title}」だけ休みにします。ほかの回はそのまま残ります。`, '休みにする', () => { orig.skip = Object.assign({}, orig.skip, { [e._occ]: true }); save(); while (stack.length) closeSheet(); render(); toast('この回を休みにしました'); }); },
   evColor: t => { syncEvent(); evDraft.color = t.dataset.c; rerenderEvent(); },
   saveEvent: () => {
     syncEvent(); const e = evDraft;
     e.title = e.title.trim(); if (!e.title) { toast('タイトルを入力してください'); $('#ev-title', topSheet())?.focus(); return; }
     if (e.allDay) { if (!e.endDate || e.endDate < e.date) e.endDate = e.date; }
-    else { e.endDate = ''; if (toMin(e.end) <= toMin(e.start)) { const m = Math.min(1439, toMin(e.start) + 30); e.end = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; } }
-    delete e.sample;
-    if (e.id) { const i = S.events.findIndex(x => x.id === e.id); if (i >= 0) S.events[i] = e; } else { e.id = uid(); S.events.push(e); }
-    if (save()) { closeSheet(); st.sel = st.day = e.date; st.calMonth = e.date.slice(0, 8) + '01'; render(); toast('予定を保存しました'); }
+    else { e.endDate = ''; if (toMin(e.end) <= toMin(e.start)) e.end = hhmm(Math.min(1439, toMin(e.start) + 30)); }
+    if (!e._iconSet && e.icon === 'star') e.icon = guessIcon(e.title);
+    if (e.repeat === 'weekly') { if (!e.days || !e.days.length) e.days = [wd(e._seriesDate || e.date)]; } else delete e.days;
+    if (e.repeat === 'none' || (e.until && e.until < (e._seriesDate || e.date))) delete e.until;
+    const done = () => { if (save()) { while (stack.length) closeSheet(); st.sel = st.day = e.date; st.calMonth = e.date.slice(0, 8) + '01'; render(); toast('予定を保存しました'); } };
+    const orig = e.id && S.events.find(x => x.id === e.id);
+    if (orig && e._occ && orig.repeat !== 'none') {
+      choose('繰り返しの予定です。どれを変更しますか？', [['この回だけ', () => { saveOccurrence(orig, e._occ, e, 'one'); done(); }], ['すべての回', () => { saveOccurrence(orig, e._occ, e, 'all'); done(); }]]);
+      return;
+    }
+    if (e._task) S.tasks = S.tasks.filter(x => x.id !== e._task);
+    const out = cleanEv(e);
+    if (out.id) { const i = S.events.findIndex(x => x.id === out.id); if (i >= 0) S.events[i] = out; } else { out.id = uid(); S.events.push(out); }
+    done();
   },
   delEvent: () => confirmIn(`「${evDraft.title}」を削除します。${evDraft.repeat !== 'none' ? '繰り返しのすべての回が消えます。' : ''}`, '削除する', () => {
-    S.events = S.events.filter(e => e.id !== evDraft.id); save(); closeSheet(); render(); toast('予定を削除しました');
+    S.events = S.events.filter(e => e.id !== evDraft.id); save(); while (stack.length) closeSheet(); render(); toast('予定を削除しました');
   }),
   // entry editor
   feel: t => { const f = t.dataset.f, a = enDraft.feelings, i = a.indexOf(f); if (i >= 0) a.splice(i, 1); else if (a.length >= 3) { toast('気持ちは3つまで選べます'); return; } else a.push(f); rerenderEntry(); },
@@ -1150,10 +1540,11 @@ const ACT = {
     syncEntry(); const e = enDraft;
     if (!e.text.trim() && !e.feelings.length && !e.photo) { toast('気持ちを選ぶか、ひとこと書いてください'); return; }
     const out = { id: e.id || uid(), date: e.date, time: e.time, feelings: e.feelings, tags: e.tags, text: e.text.trim(), photo: e.photo };
+    if (e.weather) out.weather = e.weather;
     const i = S.entries.findIndex(x => x.id === out.id); const prev = i >= 0 ? S.entries[i] : null;
     if (i >= 0) S.entries[i] = out; else S.entries.push(out);
     if (!save()) { if (prev) S.entries[i] = prev; else S.entries.pop(); return; }
-    closeSheet(); render(); toast('日記を保存しました');
+    closeSheet(); render(); toast('日記を保存しました'); attachWeather(out);
   },
   delEntry: () => confirmIn('この日記を削除します。', '削除する', () => { S.entries = S.entries.filter(e => e.id !== enDraft.id); save(); closeSheet(); render(); toast('日記を削除しました'); }),
   // search
@@ -1172,20 +1563,29 @@ const ACT = {
     S = defaults(); save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
   }),
 };
+let noClickUntil = 0;
 document.addEventListener('click', e => {
+  if (Date.now() < noClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
   const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
   const f = ACT[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
 });
 document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; rerenderEvent(); }
+  else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
+  else if (t.id === 'set-weather') {
+    if (!t.checked) { S.settings.weather = false; save(); return; }
+    getPos().then(() => { S.settings.weather = true; save(); toast('今日の日記に天気をつけるようにしました'); })
+      .catch(() => { t.checked = false; toast('位置情報を使えませんでした。iPhoneの「設定 → Safari → 位置情報」を確認してください'); });
+  }
+  else if (t.id === 'ics-file' && t.files && t.files[0]) { const fr = new FileReader(); fr.onload = () => importICS(String(fr.result)); fr.readAsText(t.files[0]); t.value = ''; }
   else if (t.id === 'set-name') { S.settings.name = t.value.trim(); save(); render(); }
   else if (t.id === 'en-photo' && t.files && t.files[0]) { syncEntry(); try { enDraft.photo = await resizeImage(t.files[0]); rerenderEntry(); } catch (err) { toast(err.message); } }
   else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); }
 });
-document.addEventListener('input', e => { if (e.target.id === 'q') runSearch(e.target.value); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && stack.length) closeSheet(); });
+document.addEventListener('input', e => { if (e.target.id === 'q') runSearch(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && stack.length) closeSheet(); if (e.key === 'Enter' && e.target.id === 'task-new' && !e.isComposing) { e.preventDefault(); ACT.addTask(); } });
 
 /* swipe: month / week strips */
 let sx = 0, sy = 0, zone = null;
@@ -1200,6 +1600,36 @@ main.addEventListener('touchend', e => {
   else if (z === 'jweek') { st.jWeek = Math.min(0, st.jWeek + dir); }
   render();
 }, { passive: true });
+
+/* long-press a timeline icon, then drag up/down to move the event (1px = 1 minute, 5-minute steps) */
+let dg = null;
+main.addEventListener('touchstart', e => {
+  const pill = e.target.closest('.pill[data-id]'); if (!pill || e.touches.length > 1) return;
+  const ev = S.events.find(x => x.id === pill.dataset.id); if (!ev || ev.allDay) return;
+  const t = e.touches[0], item = pill.closest('.tl-item');
+  dg = { item, ev, d: pill.dataset.d, x: t.clientX, y: t.clientY, on: false, delta: 0, s: toMin(ev.start), en: toMin(ev.end) };
+  dg.timer = setTimeout(() => { if (dg) { dg.on = true; item.classList.add('dragging'); } }, 320);
+}, { passive: true });
+main.addEventListener('touchmove', e => {
+  if (!dg) return; const t = e.touches[0], dy = t.clientY - dg.y;
+  if (!dg.on) { if (Math.abs(dy) > 8 || Math.abs(t.clientX - dg.x) > 8) { clearTimeout(dg.timer); dg = null; } return; }
+  e.preventDefault();
+  const delta = Math.max(-dg.s, Math.min(1439 - dg.en, Math.round(dy / 5) * 5));
+  dg.delta = delta; dg.item.style.transform = `translateY(${dy}px)`;
+  const a = hhmm(dg.s + delta), b = hhmm(dg.en + delta);
+  dg.item.querySelector('.meta').textContent = `${hm(a)} – ${hm(b)}（${dur(dg.en - dg.s)}）`;
+  dg.item.querySelector('.tm').textContent = hm(a);
+}, { passive: false });
+const endDrag = () => {
+  if (!dg) return; clearTimeout(dg.timer); const g = dg; dg = null;
+  if (!g.on) return;
+  noClickUntil = Date.now() + 450;
+  g.item.classList.remove('dragging'); g.item.style.transform = '';
+  render();
+  if (g.delta) shiftEvent(g.ev.id, g.d, g.delta);
+};
+main.addEventListener('touchend', endDrag);
+main.addEventListener('touchcancel', endDrag);
 
 /* keep "today" fresh when the app comes back to the foreground */
 let lastDay = todayISO();
