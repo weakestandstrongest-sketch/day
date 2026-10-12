@@ -298,7 +298,17 @@ svg{display:block}
 .sh-bar .r{justify-self:end;color:var(--accent);font-weight:700;padding:6px 0}
 .fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .fld>label,.fld>.lb{font-size:12px;color:var(--ink-2);letter-spacing:.04em}
-.inp{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:48px}
+.inp{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:48px;scroll-margin-top:80px;scroll-margin-bottom:24px}
+.inp:focus,.inp:focus-visible{outline:none;border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sh-bar+.fld,.sh-bar+.row2{margin-top:4px}
+.mp-year{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}
+.mp-year b{font-size:22px}
+.mp-year button{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:var(--surface);color:var(--ink-2)}
+.mp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.mp-grid button{height:58px;border-radius:14px;background:var(--surface);font-size:17px;font-weight:600}
+.mp-grid button.now{color:var(--accent)}
+.mp-grid button.cur{background:var(--accent);color:var(--accent-ink)}
+.mp-today{width:100%;margin-top:16px}
 textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .inp.title{font-size:20px;font-weight:700}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -603,7 +613,7 @@ function viewCal() {
     <button class="m-title" data-act="calToday" aria-label="今日に戻る"><span class="mn num">${mo + 1}</span><span class="my">${y}年</span></button>
     <div class="head-icons">
       <button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button>
-      <button class="icon-btn" data-act="calToday" aria-label="今日">${ico('today')}</button>
+      <button class="icon-btn" data-act="calPick" aria-label="月を選ぶ">${ico('today')}</button>
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
     </div>
   </div>
@@ -944,7 +954,7 @@ function openEvent(id, date) {
   evDraft = ev ? JSON.parse(JSON.stringify(ev)) : { id: null, title: '', date: date || todayISO(), endDate: '', allDay: false, start: nextSlot(), end: '', color: COLORS[0], icon: 'star', repeat: 'none', routine: false, memo: '', done: {} };
   if (!evDraft.end) { const s = toMin(evDraft.start) + 60; evDraft.end = `${pad(Math.min(23, Math.floor(s / 60)))}:${pad(s >= 1440 ? 59 : s % 60)}`; }
   openSheet(eventForm(), 'full');
-  if (!ev) setTimeout(() => { const t = $('#ev-title'); t && t.focus(); }, 300);
+  if (!ev) setTimeout(() => { const t = $('#ev-title'); t && t.focus({ preventScroll: true }); }, 450);
 }
 function nextSlot() { const d = new Date(); let m = d.getHours() * 60 + d.getMinutes(); m = Math.min(23 * 60, Math.ceil(m / 30) * 30); return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
 function eventForm() {
@@ -1022,11 +1032,23 @@ function resizeImage(file) {
   });
 }
 
+/* ---- month picker (calendar icon) ---- */
+let mpYear = 2026;
+function monthPicker() {
+  const cur = st.calMonth.slice(0, 7), now = todayISO().slice(0, 7);
+  let g = '';
+  for (let m = 1; m <= 12; m++) { const k = `${mpYear}-${pad(m)}`; g += `<button class="${k === cur ? 'cur' : k === now ? 'now' : ''}" data-act="mpMonth" data-m="${m}">${m}月</button>`; }
+  return `<div class="sh-bar"><span></span><b>月を選ぶ</b><button class="r" data-act="close">閉じる</button></div>
+    <div class="mp-year"><button data-act="mpYear" data-n="-1" aria-label="前の年">${ico('left')}</button><b class="num">${mpYear}年</b><button data-act="mpYear" data-n="1" aria-label="次の年">${ico('right')}</button></div>
+    <div class="mp-grid">${g}</div>
+    <button class="btn mp-today" data-act="calToday">${ico('today')}今日に戻る</button>`;
+}
+
 /* ---- search ---- */
 function openSearch() {
   openSheet(`<div class="sh-bar"><span></span><b>検索</b><button class="r" data-act="close">閉じる</button></div>
     <div class="fld"><input class="inp" id="q" type="search" placeholder="予定や日記を検索" autocomplete="off"></div><div class="search-res" id="qres"><p class="empty">キーワードを入力してください</p></div>`, 'full');
-  setTimeout(() => { const q = $('#q'); q && q.focus(); }, 300);
+  setTimeout(() => { const q = $('#q'); q && q.focus({ preventScroll: true }); }, 450);
 }
 function runSearch(q) {
   const box = $('#qres'); if (!box) return; q = q.trim().toLowerCase();
@@ -1074,7 +1096,14 @@ const ACT = {
   tab: t => { st.tab = t.dataset.tab; saveUI(); main.dataset.tab = ''; render(); },
   fab: () => st.tab === 'journal' || st.tab === 'reflect' ? openEntry(null, todayISO()) : openEvent(null, st.tab === 'day' ? st.day : st.sel),
   selDay: t => { const d = t.dataset.d; st.sel = d; if (d.slice(0, 7) !== st.calMonth.slice(0, 7)) st.calMonth = d.slice(0, 8) + '01'; st.day = d; render(); },
-  calToday: () => { const T = todayISO(); st.sel = T; st.calMonth = T.slice(0, 8) + '01'; render(); },
+  calToday: () => { const T = todayISO(); st.anim = st.calMonth.slice(0, 7) !== T.slice(0, 7) ? { sel: '#monthGrid', dir: T > st.calMonth ? 1 : -1 } : null; st.sel = T; st.calMonth = T.slice(0, 8) + '01'; main.scrollTop = 0; while (stack.length) closeSheet(); render(); },
+  calPick: () => { mpYear = +st.calMonth.slice(0, 4); openSheet(monthPicker()); },
+  mpYear: t => { mpYear += +t.dataset.n; topSheet().innerHTML = monthPicker(); },
+  mpMonth: t => {
+    const m = `${mpYear}-${pad(+t.dataset.m)}-01`, T = todayISO();
+    st.anim = m !== st.calMonth ? { sel: '#monthGrid', dir: m > st.calMonth ? 1 : -1 } : null;
+    st.calMonth = m; st.sel = m.slice(0, 7) === T.slice(0, 7) ? T : m; main.scrollTop = 0; closeSheet(); render();
+  },
   dayToday: () => { st.day = todayISO(); render(); },
   pickDay: t => { st.day = t.dataset.d; st.sel = st.day; st.calMonth = st.day.slice(0, 8) + '01'; render(); },
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
