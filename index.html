@@ -190,7 +190,7 @@ svg{display:block}
 
 /* ---------- Journal ---------- */
 .j-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0 4px}
-.brand{font-size:30px;font-weight:700;letter-spacing:.04em;line-height:1}
+.brand{font-size:32px;font-weight:700;letter-spacing:.01em;line-height:1}
 .brand small{display:block;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--ink-2);margin-top:4px}
 .j-week{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,var(--bg)),var(--bg));border-radius:24px;padding:14px 10px 12px;margin-top:8px}
 .j-week .lbl{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-2);padding:0 6px 8px}
@@ -699,7 +699,7 @@ function viewJournal() {
     <div class="dg-list">${entriesOn(d).map(entryCard).join('')}</div></div>`).join('');
   if (!dates.length) list = `<p class="empty">まだ日記がありません。<br>右下の＋から、今日の気持ちを書いてみましょう。</p>`;
   return `
-  <div class="j-head"><div class="brand">ひび<small>JOURNAL</small></div>
+  <div class="j-head"><div class="brand">diary<small>日記</small></div>
     <div class="head-icons"><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
