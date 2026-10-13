@@ -2717,22 +2717,38 @@ async function radarFrames() {
 function stampLabel(v) { const d = new Date(Date.UTC(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8), +v.slice(8, 10), +v.slice(10, 12))); return `${d.getHours()}:${pad(d.getMinutes())}`; }
 async function drawRadar() {
   const box = $('#wx-radar'), loc = S.settings.wxLoc; if (!box || !loc) return;
-  mapView(box, { lat: loc.lat, lng: loc.lng, z: 8, min: 4, max: 13, attr: '<span class="mv-attr">地理院タイル / 気象庁</span>',
+  const v = { lat: loc.lat, lng: loc.lng, z: 8, min: 4, max: 13, attr: '<span class="mv-attr">地理院タイル / 気象庁</span>',
     fit: v => { v.lat = loc.lat; v.lng = loc.lng; v.z = 8; },
     layer: (z, ox, oy, W, H) => {
-      const rz = Math.max(4, Math.min(10, Math.round(z))), sz = 256 * 2 ** (z - rz), n = 2 ** rz; let ov = '';
+      const rz = radarZoom(z), sz = 256 * 2 ** (z - rz), n = 2 ** rz; let ov = '';
       for (let tx = Math.floor(ox / sz); tx <= Math.floor((ox + W) / sz); tx++) for (let ty = Math.floor(oy / sz); ty <= Math.floor((oy + H) / sz); ty++) if (ty >= 0 && ty < n) ov += `<img data-t="${((tx % n) + n) % n},${ty}" data-z="${rz}" style="left:${(tx * sz - ox).toFixed(1)}px;top:${(ty * sz - oy).toFixed(1)}px;width:${(sz + 0.5).toFixed(1)}px;height:${(sz + 0.5).toFixed(1)}px" alt="">`;
       return baseTiles(ox, oy, W, H, z, true) + `<div class="ov">${ov}</div><span class="wx-me" style="left:${(wmx(loc.lng, z) - ox).toFixed(1)}px;top:${(wmy(loc.lat, z) - oy).toFixed(1)}px"></span>`;
     },
-    done: b => { b.querySelectorAll('.ov img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; })); if (RAD) radarShow(RAD.idx); } });
+    done: () => { if (RAD) radarShow(RAD.idx); } };
+  RADV = v; mapView(box, v);
   const fr = await radarFrames(); if (!document.body.contains(box)) return;
   RAD = Object.assign(fr, { idx: fr.now, timer: null });
   const r = $('#wx-rt'); if (r) { r.max = RAD.frames.length - 1; r.value = RAD.now; }
   radarShow(RAD.now);
 }
+// JMA does not serve the rain tiles at every zoom: if none load at one zoom, use the nearest zoom that works (scaled)
+const RAD_BAD = new Set();
+let RADV = null, radTok = 0;
+function radarZoom(z) { let best = null; for (let k = 4; k <= 10; k++) if (!RAD_BAD.has(k) && (best === null || Math.abs(k - z) < Math.abs(best - z) - 1e-9 || (Math.abs(Math.abs(k - z) - Math.abs(best - z)) < 1e-9 && k < best))) best = k; return best === null ? 8 : best; }
 function radarShow(i) {
   if (!RAD) return; RAD.idx = i; const f = RAD.frames[i]; if (!f) return;
-  document.querySelectorAll('#wx-radar .ov img').forEach(img => { const [tx, ty] = img.dataset.t.split(','); img.style.visibility = ''; img.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${f.b}/none/${f.v}/surf/hrpns/${img.dataset.z}/${tx}/${ty}.png`; });
+  const imgs = [...document.querySelectorAll('#wx-radar .ov img')], tok = ++radTok; let ok = 0, ng = 0;
+  const check = () => {
+    if (tok !== radTok || ok || ng < imgs.length || !imgs.length || i > RAD.now) return;
+    const z = +imgs[0].dataset.z; RAD_BAD.add(z);
+    if (RAD_BAD.size < 7 && RADV && RADV.draw) RADV.draw(); else RAD_BAD.clear();
+  };
+  imgs.forEach(img => {
+    const [tx, ty] = img.dataset.t.split(','); img.style.visibility = '';
+    img.onload = () => { if (tok === radTok) ok++; };
+    img.onerror = () => { img.style.visibility = 'hidden'; if (tok === radTok) { ng++; check(); } };
+    img.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${f.b}/none/${f.v}/surf/hrpns/${img.dataset.z}/${tx}/${ty}.png`;
+  });
   const l = $('#wx-rtl'); if (l) l.textContent = `${stampLabel(f.v)}${i === RAD.now ? ' 現在' : i > RAD.now ? ' 予報' : ''}`;
   const r = $('#wx-rt'); if (r) r.value = i;
 }
