@@ -643,26 +643,38 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .alb-grid span{position:absolute;left:6px;bottom:4px;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .story{position:fixed;inset:0;z-index:30;background:#000;color:#fff;opacity:0;transform:scale(.97);transition:opacity .25s,transform .25s;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
 .story.in{opacity:1;transform:none}
-.st-bg{position:absolute;inset:-10%;width:120%;height:120%;object-fit:cover;filter:blur(36px) brightness(.55)}
-.st-bars{position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;gap:4px;z-index:3}
-.st-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
-.st-bars b{display:block;height:100%;background:#fff}
-.st-top{position:absolute;left:14px;right:8px;top:calc(env(safe-area-inset-top,0px) + 18px);display:flex;align-items:center;justify-content:space-between;z-index:3}
-.st-top b{display:block;font-size:15px}.st-top small{font-size:12px;opacity:.8}
-.st-x{width:40px;height:40px;display:grid;place-items:center;color:#fff}
-.st-card{position:absolute;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 66px);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);border-radius:24px;overflow:hidden;background:#111;animation:stIn .35s ease both}
-@keyframes stIn{from{opacity:.4;transform:scale(1.03)}}
-.st-card>img{width:100%;height:100%;object-fit:cover}
-.st-card::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.72));pointer-events:none}
-.st-foot{position:absolute;left:0;right:0;bottom:0;padding:18px 18px 20px;z-index:2}
-.st-feel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.st-feel span{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:12.5px}
+.st-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:stIn .45s ease both}
+@keyframes stIn{from{opacity:.35;transform:scale(1.04)}}
+.st-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(0,0,0,.42),transparent 26%,transparent 50%,rgba(0,0,0,.62) 82%,rgba(0,0,0,.78))}
+.st-head{position:absolute;left:20px;right:84px;top:calc(env(safe-area-inset-top,0px) + 22px);z-index:3;text-shadow:0 2px 14px rgba(0,0,0,.35)}
+.st-date{display:inline-flex;align-items:center;gap:6px;color:#fff;font-family:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;font-weight:700;font-size:clamp(30px,10vw,42px);letter-spacing:-.02em;line-height:1.1;text-align:left}
+.st-date .ico{width:24px;height:24px;stroke-width:2.4;flex:none}
+.st-sub{display:block;margin-top:6px;font-size:13px;opacity:.9}
+.st-x{position:absolute;right:16px;top:calc(env(safe-area-inset-top,0px) + 20px);z-index:3;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.22)}
+.st-dates{position:absolute;left:16px;top:calc(env(safe-area-inset-top,0px) + 96px);z-index:4;width:min(260px,70vw);max-height:46vh;overflow-y:auto;padding:6px;border-radius:18px;background:rgba(30,30,34,.55);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(255,255,255,.16)}
+.st-dates button{display:flex;align-items:center;gap:10px;width:100%;padding:7px 8px;border-radius:12px;color:#fff;font-size:14px;text-align:left}
+.st-dates button[aria-current="true"]{background:rgba(255,255,255,.18);font-weight:700}
+.st-dates img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none}
+.st-info{position:absolute;left:20px;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 196px);z-index:3;text-shadow:0 1px 10px rgba(0,0,0,.45)}
+.st-feel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.st-feel span{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:12px;text-shadow:none}
 .st-feel i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.st-foot p{margin:0 0 10px;font-size:15px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.st-info p{margin:0 0 8px;font-size:14.5px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .st-meta{display:flex;flex-wrap:wrap;gap:6px}
-.st-meta span,.st-meta button{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:6px 11px;border-radius:99px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-meta span,.st-meta button{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:none}
 .st-meta button.on{background:#fff;color:#111}
-.st-meta .ico{width:14px;height:14px;flex:none}
+.st-meta .ico{width:13px;height:13px;flex:none}
+.st-ctrl{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);z-index:3;display:flex;align-items:center;justify-content:center;gap:clamp(14px,6vw,34px)}
+.st-round{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);border:1px solid rgba(255,255,255,.2)}
+.st-round .ico{width:26px;height:26px}
+.st-dial{position:relative;width:156px;height:156px;touch-action:none}
+.st-dial svg{position:absolute;inset:0;width:100%;height:100%}
+.st-dial line{stroke:#fff;stroke-linecap:round;stroke-width:3.2;opacity:.42;transition:opacity .2s}
+.st-dial line.done{opacity:.75}
+.st-dial line.cur{opacity:1;stroke-width:3.6}
+.st-play{position:absolute;inset:38px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.st-play svg{width:46px;height:46px;position:static}
+.st-play path{fill:#fff;stroke:none}
 /* backups */
 .bkbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:7;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;border-radius:20px;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);animation:bkIn .35s ease both}
 @keyframes bkIn{from{opacity:0;transform:translateY(12px)}}
@@ -1123,6 +1135,7 @@ const IC = {
   yen:'<path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/>',
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  dice:'<rect x="7" y="7" width="14" height="14" rx="3"/><path d="M17 7V5.5A2.5 2.5 0 0 0 14.5 3h-9A2.5 2.5 0 0 0 3 5.5v9A2.5 2.5 0 0 0 5.5 17H7"/><circle cx="11" cy="11" r=".9" fill="currentColor"/><circle cx="17" cy="11" r=".9" fill="currentColor"/><circle cx="14" cy="14" r=".9" fill="currentColor"/><circle cx="11" cy="17" r=".9" fill="currentColor"/><circle cx="17" cy="17" r=".9" fill="currentColor"/>',
   share:'<path d="M12 15V3.5M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
   save:'<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
@@ -2185,56 +2198,100 @@ function albumSheet() {
   <div class="rp-title"><span class="script">Memories</span></div>
   ${Object.entries(by).map(([ym, list]) => `<h3 class="alb-h">${+ym.slice(0, 4)}年${+ym.slice(5)}月 <span class="num">${list.length}枚</span></h3><div class="alb-grid">${list.map((e, i) => `<button data-act="albOpen" data-ym="${ym}" data-i="${i}" aria-label="${jpDate(e.date)}の写真"><img src="${e.photo}" alt="" loading="lazy"><span class="num">${P(e.date).getDate()}</span></button>`).join('')}</div>`).join('') || '<p class="empty">まだ写真がありません</p>'}`;
 }
-const STORY_MS = 5000;
+const STORY_MS = 4000, TICKS = 44;
 let story = null;
+const stDate = d => { const x = P(d); return `${x.getMonth() + 1}月 ${x.getDate()}, ${x.getFullYear()}`; };
+function dialSVG() {
+  const { list, idx } = story, n = list.length, cur = n > 1 ? Math.round(idx / (n - 1) * (TICKS - 1)) : 0;
+  let t = ''; for (let i = 0; i < TICKS; i++) { const a = (i / TICKS) * 360, long = i === cur; t += `<line class="${long ? 'cur' : i < cur ? 'done' : ''}" x1="100" y1="${long ? 8 : 12}" x2="100" y2="${long ? 40 : 30}" transform="rotate(${a.toFixed(2)} 100 100)"/>`; }
+  return `<svg viewBox="0 0 200 200" aria-hidden="true">${t}</svg>`;
+}
 function storyHTML() {
   const { list, idx, title } = story, e = list[idx], diff = diffDays(e.date, todayISO());
   const ago = diff <= 0 ? '今日' : diff < 7 ? `${diff}日前` : diff < 60 ? `${Math.round(diff / 7)}週間前` : diff < 365 ? `${Math.round(diff / 30.4)}か月前` : `${Math.floor(diff / 365)}年前`;
   const pl = e.place ? (spotAt(e.place) || {}).name : '';
-  return `<img class="st-bg" src="${e.photo}" alt="">
-  <div class="st-bars">${list.map((_, i) => `<i><b style="width:${i < idx ? 100 : 0}%"></b></i>`).join('')}</div>
-  <div class="st-top"><div><b>${esc(title)}</b><small class="num">${jpDate(e.date)} ${esc(e.time || '')}・${ago}</small></div><button class="st-x" data-st="close" aria-label="閉じる">${ico('x')}</button></div>
-  <div class="st-card"><img src="${e.photo}" alt="${jpDate(e.date)}の写真">
-    <div class="st-foot">${e.feelings.length ? `<div class="st-feel">${e.feelings.map(f => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)}</span>`).join('')}</div>` : ''}
-      ${e.text ? `<p>${esc(e.text)}</p>` : ''}
-      <div class="st-meta">${pl ? `<span>${ico('pin')}${esc(pl)}</span>` : ''}${e.song ? `<button data-st="song">${ico('music')}${esc(e.song.name)}${e.song.artist ? ' — ' + esc(e.song.artist) : ''}</button>` : ''}<button data-st="open">${ico('journal')}日記を開く</button></div></div></div>`;
+  return `<img class="st-photo" src="${e.photo}" alt="${jpDate(e.date)}の写真"><div class="st-shade"></div>
+  <div class="st-head"><button class="st-date num" data-st="dates" aria-label="日付を選ぶ">${stDate(e.date)}${ico('down')}</button><span class="st-sub">${esc(title)} ・ ${esc(e.time || '')} ・ ${ago}${list.length > 1 ? ` ・ ${idx + 1}/${list.length}` : ''}</span></div>
+  <button class="st-x" data-st="close" aria-label="閉じる">${ico('x')}</button>
+  ${story.dates ? `<div class="st-dates">${list.map((x, i) => `<button data-st="go" data-i="${i}" aria-current="${i === idx}"><img src="${x.photo}" alt="">${stDate(x.date)}</button>`).join('')}</div>` : ''}
+  <div class="st-info">${e.feelings.length ? `<div class="st-feel">${e.feelings.map(f => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)}</span>`).join('')}</div>` : ''}
+    ${e.text ? `<p>${esc(e.text)}</p>` : ''}
+    <div class="st-meta">${pl ? `<span>${ico('pin')}${esc(pl)}</span>` : ''}${e.song ? `<button data-st="song" class="${story.song ? 'on' : ''}">${ico('music')}${esc(e.song.name)}${e.song.artist ? ' — ' + esc(e.song.artist) : ''}</button>` : ''}<button data-st="open">${ico('journal')}日記を開く</button></div></div>
+  <div class="st-ctrl"><button class="st-round" data-st="share" aria-label="写真をシェア">${ico('share')}</button>
+    <div class="st-dial" data-st="dial">${dialSVG()}<button class="st-play" data-st="play" aria-label="${story.playing ? '止める' : '再生'}"><svg viewBox="0 0 24 24">${story.playing ? '<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>' : '<path d="M8 4.8v14.4L19.5 12z"/>'}</svg></button></div>
+    <button class="st-round" data-st="dice" aria-label="ランダムな思い出">${ico('dice')}</button></div>`;
 }
+const stRender = () => { if (story) story.el.innerHTML = storyHTML(); };
 function openStory(list, idx, title) {
   closeStory(true); if (!list.length) return;
   const el = document.createElement('div'); el.className = 'story'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', title); document.body.append(el);
-  story = { list, idx, title, el, elapsed: 0, last: 0, hold: false, song: false, noClick: false, y0: 0, t0: 0 };
-  el.innerHTML = storyHTML();
+  story = { list, idx, title, el, elapsed: 0, last: 0, hold: false, song: false, playing: false, dates: false, quiet: 0, y0: 0, t0: 0, scrub: null };
+  stRender();
   el.addEventListener('click', storyClick);
   el.addEventListener('touchstart', ev => { story.hold = true; story.y0 = ev.touches[0].clientY; story.t0 = Date.now(); }, { passive: true });
-  el.addEventListener('touchend', ev => { const dy = ev.changedTouches[0].clientY - story.y0; story.hold = false; if (Date.now() - story.t0 > 350) story.noClick = true; if (dy > 90) { story.noClick = true; closeStory(); } }, { passive: true });
+  el.addEventListener('touchend', ev => { if (!story) return; const dy = ev.changedTouches[0].clientY - story.y0; story.hold = false; if (story.scrubbed) return; if (Date.now() - story.t0 > 350) story.quiet = Date.now() + 400; if (dy > 90) { story.quiet = Date.now() + 400; closeStory(); } }, { passive: true });
+  // drag around the dial to scrub through the photos
+  el.addEventListener('pointerdown', ev => {
+    const d = ev.target.closest('.st-dial'); if (!d || ev.target.closest('.st-play')) return;
+    const r = d.getBoundingClientRect(); story.scrub = { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; story.scrubbed = false; el.setPointerCapture(ev.pointerId); scrubTo(ev);
+  });
+  el.addEventListener('pointermove', ev => { if (story && story.scrub) scrubTo(ev); });
+  const end = () => { if (story && story.scrub) { story.scrub = null; story.quiet = Date.now() + 350; setTimeout(() => { if (story) story.scrubbed = false; }, 50); } };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   requestAnimationFrame(() => el.classList.add('in'));
   story.raf = requestAnimationFrame(storyLoop);
+}
+function scrubTo(ev) {
+  const { cx, cy } = story.scrub, n = story.list.length; if (n < 2) return;
+  let a = Math.atan2(ev.clientX - cx, cy - ev.clientY) * 180 / Math.PI; if (a < 0) a += 360;
+  const i = Math.min(n - 1, Math.round(a / 360 * TICKS / (TICKS - 1) * (n - 1)));
+  story.scrubbed = true;
+  if (i !== story.idx) { stopPreview(); story.song = false; story.idx = i; story.elapsed = 0; story.dates = false; stRender(); if (navigator.vibrate) navigator.vibrate(4); }
 }
 function storyLoop(ts) {
   if (!story) return;
   const dt = story.last ? ts - story.last : 0; story.last = ts;
-  if (!story.hold && !story.song && document.visibilityState === 'visible') story.elapsed += dt;
-  const b = story.el.querySelector(`.st-bars i:nth-child(${story.idx + 1}) b`); if (b) b.style.width = Math.min(100, story.elapsed / STORY_MS * 100) + '%';
-  if (story.elapsed >= STORY_MS) storyGo(1);
+  if (story.playing && !story.hold && !story.song && !story.scrub && document.visibilityState === 'visible') story.elapsed += dt;
+  if (story.elapsed >= STORY_MS) { if (story.idx >= story.list.length - 1) { story.playing = false; story.elapsed = 0; stRender(); } else storyGo(1); }
   if (story) story.raf = requestAnimationFrame(storyLoop);
 }
 function storyGo(d) {
-  if (!story) return; stopPreview(); story.song = false;
-  const i = story.idx + d; if (i >= story.list.length) { closeStory(); return; }
-  story.idx = Math.max(0, i); story.elapsed = 0; story.el.innerHTML = storyHTML();
+  if (!story) return; stopPreview(); story.song = false; story.dates = false;
+  const i = story.idx + d; if (i >= story.list.length) { if (!story.playing) closeStory(); return; }
+  story.idx = Math.max(0, i); story.elapsed = 0; stRender();
+}
+function dataURLFile(u, name) {
+  const [h, b64] = u.split(','), type = (h.match(/data:([^;]+)/) || [])[1] || 'image/jpeg', bin = atob(b64), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return new File([a], name, { type });
 }
 function storyClick(ev) {
-  if (!story) return; if (story.noClick) { story.noClick = false; return; }
-  const b = ev.target.closest('[data-st]'), e = story.list[story.idx];
-  if (b && b.dataset.st === 'close') { closeStory(); return; }
-  if (b && b.dataset.st === 'open') { closeStory(); while (stack.length) closeSheet(); openEntry(e.id); return; }
-  if (b && b.dataset.st === 'song') {
+  if (!story || Date.now() < (story.quiet || 0)) return;
+  const b = ev.target.closest('[data-st]'), e = story.list[story.idx], k = b && b.dataset.st;
+  if (k === 'close') { closeStory(); return; }
+  if (k === 'dates') { story.dates = !story.dates; stRender(); return; }
+  if (k === 'go') { stopPreview(); story.song = false; story.idx = +b.dataset.i; story.elapsed = 0; story.dates = false; stRender(); return; }
+  if (k === 'play') { story.playing = !story.playing; story.elapsed = 0; if (story.playing && story.idx >= story.list.length - 1 && story.list.length > 1) story.idx = 0; stRender(); return; }
+  if (k === 'dice') {
+    const all = photoEntries(); if (all.length < 2) { toast('写真がもっと増えると、ランダムに思い出を出せます'); return; }
+    let j; do { j = Math.floor(Math.random() * all.length); } while (all[j].id === e.id);
+    stopPreview(); Object.assign(story, { list: all, idx: j, title: 'ランダム', elapsed: 0, song: false, dates: false }); stRender(); return;
+  }
+  if (k === 'share') {
+    const f = dataURLFile(e.photo, `hibi-${e.date}.jpg`);
+    if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f] }).catch(() => {}); else toast('写真を長押しすると保存できます');
+    return;
+  }
+  if (k === 'open') { closeStory(); while (stack.length) closeSheet(); openEntry(e.id); return; }
+  if (k === 'song') {
     const sg = e.song;
     if (story.song) { stopPreview(); story.song = false; b.classList.remove('on'); return; }
     const play = () => { if (!sg.preview) { toast('この曲の試聴は見つかりませんでした'); return; } stopPreview(); const a = sgAudio = new Audio(sg.preview); a.addEventListener('ended', () => { if (story) story.song = false; stopPreview(); }); a.play().then(() => { if (story) { story.song = true; b.classList.add('on'); } }).catch(() => toast('もう一度押すと再生します')); };
     if (sg.preview && !sg.dz) play(); else (sg.dz ? freshPreview(sg) : enrichSong(sg)).then(play);
     return;
   }
+  if (k === 'dial' || ev.target.closest('.st-ctrl, .st-info, .st-head, .st-dates')) return;
+  if (story.dates) { story.dates = false; stRender(); return; }
   storyGo(ev.clientX < innerWidth * 0.3 ? -1 : 1);
 }
 function closeStory(now) {
