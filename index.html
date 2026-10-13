@@ -512,6 +512,88 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .shift.done .yen{color:var(--pay)}
 .shift .yen small{text-align:right;color:var(--pay);font-weight:500}
 /* pay ring: pale arc = projected for the month, solid green = shifts already worked */
+.e-song{display:flex;align-items:center;gap:8px;margin-top:8px;padding:5px 8px 5px 5px;border-radius:10px;background:var(--surface-2);font-size:12px;min-width:0}
+.e-song img,.e-song .ph{width:30px;height:30px;border-radius:6px;object-fit:cover;flex:none;display:grid;place-items:center;background:var(--line)}
+.e-song span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.e-song b{color:var(--ink);font-weight:700}
+.e-song .x{margin-left:auto;flex:none;color:var(--ink-3);padding:4px}
+/* now playing (Zenly-style music card) */
+.np{position:relative;overflow:hidden;border-radius:22px;margin:12px 0 4px;color:#fff;background:#1d1b22;isolation:isolate;box-shadow:0 10px 30px rgba(20,16,30,.18)}
+.np-bg{position:absolute;inset:-30%;width:160%;height:160%;object-fit:cover;filter:blur(34px) saturate(1.5);opacity:.85;z-index:-1;transform:scale(1.1)}
+.np::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(160deg,rgba(0,0,0,.05),rgba(0,0,0,.42))}
+.np-in{display:flex;align-items:center;gap:14px;padding:16px 16px 10px}
+.np-art{width:72px;height:72px;border-radius:14px;object-fit:cover;flex:none;box-shadow:0 8px 22px rgba(0,0,0,.35);display:grid;place-items:center;background:rgba(255,255,255,.15)}
+.np.playing .np-art{animation:npBreath 3.2s ease-in-out infinite}
+@keyframes npBreath{50%{transform:scale(1.04) rotate(-1.5deg)}}
+.np-tx{min-width:0;display:flex;flex-direction:column;gap:2px}
+.np-lbl{font-size:11.5px;letter-spacing:.04em;opacity:.85;display:flex;align-items:center;gap:6px}
+.np-tx b{font-size:17px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.np-tx small{font-size:13px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq{display:inline-flex;align-items:flex-end;gap:2px;height:11px}
+.eq i{width:3px;height:100%;border-radius:2px;background:#fff;animation:eq 1s ease-in-out infinite;transform-origin:bottom}
+.eq i:nth-child(2){animation-delay:-.4s}.eq i:nth-child(3){animation-delay:-.7s}
+@keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.np-bar{height:3px;margin:0 16px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
+.np-bar i{display:block;height:100%;background:#fff;border-radius:2px}
+.np-bar i.run{animation:npRun var(--left) linear forwards}
+@keyframes npRun{to{width:100%}}
+.np-act{display:flex;gap:8px;padding:10px 12px 12px}
+.np-act button,.np-act a{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;height:36px;border-radius:99px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none}
+.np-act .ico{width:15px;height:15px}
+.np.empty{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#2a2633,#1b1a20)}
+.np.empty .np-art{width:44px;height:44px;border-radius:12px}
+.np.empty b{font-size:14px}.np.empty small{display:block;font-size:11.5px;opacity:.7}
+/* moves (week of places) */
+.mv-card{display:flex;align-items:center;gap:14px;width:100%;text-align:left}
+.mv-card>span:nth-child(2){flex:1;min-width:0}
+.mv-card b{display:block;font-size:16px;margin-top:2px}
+.mv-card small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+.mv-mini{width:64px;height:64px;border-radius:16px;flex:none;background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
+.mv-mini svg{width:100%;height:100%}
+.mv-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:6px 0 10px}
+.mv-d{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 7px;border-radius:14px;font-size:11px;color:var(--ink-2)}
+.mv-d b{font-size:15px;color:var(--ink)}
+.mv-d i{width:6px;height:6px;border-radius:50%;background:var(--c);margin-top:3px}
+.mv-d:disabled{opacity:.35}.mv-d:disabled i{background:var(--line)}
+.mv-d[aria-pressed="true"]{background:var(--c);color:#fff}.mv-d[aria-pressed="true"] b{color:#fff}.mv-d[aria-pressed="true"] i{background:#fff}
+.mv-map{position:relative;height:min(52vh,380px);border-radius:22px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow);background-image:radial-gradient(circle,color-mix(in srgb,var(--ink) 12%,transparent) 1px,transparent 1.5px);background-size:14px 14px}
+.mv-map.small{height:200px}
+.mv-map img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none;animation:mvFade .4s ease both}
+@keyframes mvFade{from{opacity:0}}
+.mv-map>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.mv-map .halo{fill:none;stroke:var(--surface);stroke-opacity:.85;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.mv-map .ln{fill:none;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:mvDraw 1.2s ease-out forwards}
+@keyframes mvDraw{to{stroke-dashoffset:0}}
+.mv-map .dot{stroke:#fff;stroke-width:2.5}
+.mv-map .now{fill:var(--c);opacity:.35;transform-box:fill-box;transform-origin:center;animation:mvPulse 2s ease-out infinite}
+@keyframes mvPulse{from{transform:scale(.6);opacity:.5}to{transform:scale(2.6);opacity:0}}
+.mv-pin{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:4px;padding:4px 9px 4px 4px;border-radius:99px;background:var(--surface);color:var(--ink);font-size:11.5px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;pointer-events:none;margin-top:-8px}
+.mv-pin span{width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center}
+.mv-pin .ico{width:13px;height:13px}
+.mv-attr{position:absolute;right:8px;bottom:6px;font-size:9px;color:var(--ink-3);background:color-mix(in srgb,var(--surface) 70%,transparent);padding:1px 5px;border-radius:5px}
+.mv-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:13px;color:var(--ink-2);padding:20px;line-height:1.7}
+.mv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.mv-stats div{background:var(--surface);border-radius:16px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
+.mv-stats b{display:block;font-size:22px}
+.mv-stats span{font-size:11px;color:var(--ink-2)}
+.mv-fav{font-size:13px;color:var(--ink-2);text-align:center;margin:10px 0 0}
+.mv-fav b{color:var(--ink)}
+.mv-rec{width:100%;margin:12px 0 4px}
+.mv-dh{display:flex;align-items:center;gap:8px;margin:18px 2px 6px;font-size:14px}
+.mv-dh>i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.mv-dh .km{margin-left:auto;font-size:12px;color:var(--ink-2)}
+.mv-dh .md{width:9px;height:9px;border-radius:50%}
+.mv-stops{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:4px 12px}
+.mv-stop{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;padding:9px 0;position:relative}
+.mv-stop+.mv-stop{border-top:1px solid var(--line)}
+.mv-stop .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.mv-stop .ic .ico{width:17px;height:17px}
+.mv-stop b{display:block;font-size:14px}
+.mv-stop b.un{color:var(--ink-2);font-weight:500}
+.mv-stop small{display:block;font-size:11.5px;color:var(--ink-2)}
+.mv-stop .t{font-size:12.5px;color:var(--ink-2);text-align:right}
+.mv-stop .fe{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}
+.mv-stop .fe i{width:8px;height:8px;border-radius:50%;background:var(--c2)}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -958,6 +1040,7 @@ const IC = {
   yen:'<path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/>',
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   cloud:'<path d="M7 18h10.5a4 4 0 0 0 .3-8A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
   rain:'<path d="M7 15h10.5a3.5 3.5 0 0 0 .3-7A5.5 5.5 0 0 0 6.6 8 3.6 3.6 0 0 0 7 15zM8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
   snow:'<path d="M7 14h10.5a3.5 3.5 0 0 0 .3-7A5.5 5.5 0 0 0 6.6 7 3.6 3.6 0 0 0 7 14z"/><path d="M8 18v.01M12 18v.01M16 18v.01M10 21v.01M14 21v.01"/>',
@@ -988,7 +1071,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0 }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
@@ -1347,6 +1430,7 @@ function viewJournal() {
     <div class="head-icons"><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
+  ${npCard()}
   ${quickMood(T)}
   ${memories(T)}
   <div class="cards-row">
@@ -1372,7 +1456,7 @@ function wxInfo(c) {
   if (c <= 48) return ['fog', '霧']; if (c <= 67 || (c >= 80 && c <= 82)) return ['rain', '雨']; if (c <= 77 || c === 85 || c === 86) return ['snow', '雪']; return ['bolt', '雷雨'];
 }
 const wxChip = w => { if (!w) return ''; const [i, l] = wxInfo(w.code); return `<span class="wx">${ico(i)}${l} ${w.temp}°</span>`; };
-function getPos() { return new Promise((res, rej) => { if (!navigator.geolocation) return rej(new Error('no geo')); navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { timeout: 10000, maximumAge: 30 * 60 * 1000 }); }); }
+function getPos(maxAge = 30 * 60 * 1000) { return new Promise((res, rej) => { if (!navigator.geolocation) return rej(new Error('no geo')); navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { timeout: 15000, maximumAge: maxAge, enableHighAccuracy: maxAge < 30 * 60 * 1000 }); }); }
 async function fetchWeather() {
   const c = await getPos();
   const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.latitude.toFixed(2)}&longitude=${c.longitude.toFixed(2)}&current=temperature_2m,weather_code&timezone=auto`);
@@ -1386,7 +1470,8 @@ function entryCard(e) {
   return `<button class="entry" data-act="editEntry" data-id="${e.id}"><div style="min-width:0">
     ${e.feelings.length ? `<div class="feels">${e.feelings.map(f => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)}</span>`).join('')}</div>` : ''}
     <p>${esc(e.text) || '<span style="color:var(--ink-3)">（本文なし）</span>'}</p>
-    <div class="foot"><span class="num">${esc(e.time || '')}</span>${wxChip(e.weather)}${e.tags.map(t => `<span class="tg">#${esc(t)}</span>`).join('')}</div></div>
+    ${e.song ? songRow(e.song) : ''}
+    <div class="foot"><span class="num">${esc(e.time || '')}</span>${wxChip(e.weather)}${e.place ? `<span class="wx">${ico('pin')}${esc((spotAt(e.place) || {}).name || '場所')}</span>` : ''}${e.tags.map(t => `<span class="tg">#${esc(t)}</span>`).join('')}</div></div>
     ${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`;
 }
 
@@ -1599,6 +1684,7 @@ function viewReflect() {
     <ul class="ins-lines">${insight(ws).map(l => `<li>${esc(l)}</li>`).join('')}</ul>
     <div class="wk-days">${wk}</div>
   </section>
+  ${movesCard()}
   <section class="card chart">
     <h3><span>感情のリズム <span class="sub">MOODFLOW</span></span><span class="seg"><button data-act="range" data-n="7" aria-pressed="${n === 7}">7日</button><button data-act="range" data-n="30" aria-pressed="${n === 30}">30日</button></span></h3>
     ${moodChart(n)}
@@ -1624,6 +1710,211 @@ function viewReflect() {
   <p class="note" style="text-align:center">インサイトは端末の中だけで、日記と予定から集計しています。データが外に送られることはありません。</p>`;
 }
 
+/* ================= places: a week of where you went (Google Maps Timeline style) ================= */
+const DAYC = ['#E9776F', '#EDA04B', '#CDB03A', '#5BB07A', '#4AA3C8', '#6D7FD9', '#AE7CC8'];
+const SPOT_ICONS = [['家', 'home'], ['大学', 'school'], ['バイト', 'work'], ['カフェ', 'cup'], ['ジム', 'gym'], ['友だちの家', 'people'], ['お店', 'cart'], ['駅', 'train']];
+const isDark = () => S.settings.theme === 'dark' || (S.settings.theme !== 'light' && !!window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+function hav(a, b) { const r = Math.PI / 180, x = Math.sin((b.lat - a.lat) * r / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lng - a.lng) * r / 2) ** 2; return 12742000 * Math.asin(Math.sqrt(x)); }
+function spotAt(p) { let best = null, bd = 220; for (const s of S.spots) { const d = hav(s, p); if (d < bd) { bd = d; best = s; } } return best; }
+const dayPts = d => S.places.filter(p => iso(new Date(p.t)) === d).sort((a, b) => a.t - b.t);
+// consecutive fixes close to each other (or at the same named place) collapse into one stop
+function stopsOf(pts) {
+  const out = [];
+  for (const p of pts) {
+    const last = out[out.length - 1], sp = spotAt(p);
+    if (last && (hav(last, p) < Math.max(150, Math.min(p.acc || 0, 400)) || (sp && sp === last.spot))) { last.to = p.t; last.ts.push(p.t); }
+    else out.push({ lat: p.lat, lng: p.lng, from: p.t, to: p.t, ts: [p.t], spot: sp });
+  }
+  return out;
+}
+const pathLen = stops => stops.reduce((a, s, i) => a + (i ? hav(stops[i - 1], s) : 0), 0);
+const kmText = m => m < 100 ? '0' : (m / 1000).toFixed(m < 10000 ? 1 : 0);
+const hmOf = t => { const d = new Date(t); return `${d.getHours()}:${pad(d.getMinutes())}`; };
+const stayText = ms => { const m = Math.round(ms / 60000); return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60 ? `${m % 60}分` : ''}`; };
+let locBusy = false;
+async function recordPlace(maxAge = 5 * 60000) {
+  if (locBusy) return null; locBusy = true;
+  try { const c = await getPos(maxAge), p = { t: Date.now(), lat: +c.latitude.toFixed(5), lng: +c.longitude.toFixed(5), acc: Math.round(c.accuracy || 0) }; S.places.push(p); save(); return p; }
+  finally { locBusy = false; }
+}
+async function attachPlace(e) {
+  if (!S.settings.locEntry || inFrame || e.date !== todayISO() || e.place) return;
+  try { const p = await recordPlace(); const x = p && S.entries.find(y => y.id === e.id); if (x) { x.place = { lat: p.lat, lng: p.lng }; save(); if (!stack.length) render(); } } catch (err) {}
+}
+function autoPlace() {
+  if (!S.settings.locOpen || inFrame) return;
+  const last = S.places[S.places.length - 1]; if (last && Date.now() - last.t < 15 * 60000) return;
+  recordPlace().then(() => { if (topSheet() && topSheet().dataset.kind === 'moves') rerenderMoves(); }).catch(() => {});
+}
+// little abstract doodle of the week's paths for the Reflection card
+function movesMini(days) {
+  const all = days.flatMap(x => x.stops); if (!all.length) return ico('pin');
+  const la = all.map(p => p.lat), lo = all.map(p => p.lng), k = Math.cos(la[0] * Math.PI / 180);
+  const x0 = Math.min(...lo), y0 = Math.max(...la), span = Math.max((Math.max(...lo) - x0) * k, y0 - Math.min(...la), 1e-4);
+  const X = p => 12 + (p.lng - x0) * k / span * 40 + (40 - (Math.max(...lo) - x0) * k / span * 40) / 2, Y = p => 12 + (y0 - p.lat) / span * 40 + (40 - (y0 - Math.min(...la)) / span * 40) / 2;
+  return `<svg viewBox="0 0 64 64" aria-hidden="true">${days.map(x => x.stops.length ? `<polyline points="${x.stops.map(p => `${X(p).toFixed(1)},${Y(p).toFixed(1)}`).join(' ')}" fill="none" stroke="${DAYC[x.i]}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${x.stops.map(p => `<circle cx="${X(p).toFixed(1)}" cy="${Y(p).toFixed(1)}" r="2" fill="${DAYC[x.i]}"/>`).join('')}` : '').join('')}</svg>`;
+}
+function weekDays(ws) { return [...Array(7)].map((_, i) => { const d = addDays(ws, i), pts = dayPts(d); return { d, i, pts, stops: stopsOf(pts) }; }); }
+function movesCard() {
+  const T = todayISO(), days = weekDays(addDays(T, -6)), stops = days.flatMap(x => x.stops);
+  const km = kmText(days.reduce((a, x) => a + pathLen(x.stops), 0)), n = placeCount(stops);
+  return `<button class="card mv-card" data-act="moves"><span class="mv-mini">${movesMini(days)}</span><span><span class="card-eyebrow">Moves</span><b>この1週間の動き</b><small>${stops.length ? `${km}km 移動・${n}か所` : '場所を記録すると、1週間の動きを地図で見られます'}</small></span>${ico('right')}</button>`;
+}
+function placeCount(stops) { const c = []; for (const s of stops) if (!c.some(x => (s.spot && x.spot === s.spot) || hav(x, s) < 200)) c.push(s); return c.length; }
+let mvWeek = 0, mvDay = null, spDraft = null;
+function movesSheet() {
+  const T = todayISO(), ws = addDays(T, -6 + mvWeek * 7), days = weekDays(ws);
+  const shown = mvDay ? days.filter(x => x.d === mvDay) : days, stops = shown.flatMap(x => x.stops);
+  const fav = {}; for (const x of days) for (const sp of new Set(x.stops.map(s => s.spot).filter(Boolean))) fav[sp.id] = (fav[sp.id] || 0) + 1;
+  const favTop = Object.entries(fav).sort((a, b) => b[1] - a[1])[0], favSpot = favTop && S.spots.find(x => x.id === favTop[0]);
+  const dayBlock = x => {
+    const m = dayMood(x.d), ents = entriesOn(x.d).filter(e => e.place);
+    return `<div class="mv-dh" style="--c:${DAYC[x.i]}"><i></i><b>${md(x.d)}(${WD[wd(x.d)]})</b>${m ? `<span class="md" style="background:${m.color}" title="その日の気分"></span>` : ''}<span class="km num">${kmText(pathLen(x.stops))}km</span></div>
+    <div class="mv-stops">${x.stops.map((s, k) => {
+      const fe = ents.filter(e => hav(e.place, s) < 250).flatMap(e => e.feelings).slice(0, 3);
+      return `<button class="mv-stop" style="--c:${DAYC[x.i]}" data-act="mvStop" data-d="${x.d}" data-k="${k}"><span class="ic">${ico(s.spot ? s.spot.icon : 'pin')}</span><span>${s.spot ? `<b>${esc(s.spot.name)}</b>` : '<b class="un">名前のない場所</b>'}<small>${s.to - s.from >= 10 * 60000 ? `${stayText(s.to - s.from)}くらい` : 'ここを通った'}${fe.length ? `<span class="fe">${fe.map(f => `<i style="--c2:${feelInfo(f).color}"></i>`).join('')}</span>` : ''}</small></span><span class="t num">${hmOf(s.from)}${s.to - s.from >= 10 * 60000 ? `<br>〜${hmOf(s.to)}` : ''}</span></button>`;
+    }).join('')}</div>`;
+  };
+  const list = shown.filter(x => x.stops.length).reverse().map(dayBlock).join('');
+  return `<div class="sh-bar"><span></span><b>この1週間の動き</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="rp-nav"><button data-act="mvWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><div class="rp-title"><span class="script">Moves</span><h2 class="num">${md(ws)} – ${md(addDays(ws, 6))}</h2></div><button data-act="mvWeek" data-n="1" aria-label="次の週" ${mvWeek >= 0 ? 'disabled' : ''}>${ico('right')}</button></div>
+  <div class="mv-days">${days.map(x => `<button class="mv-d" style="--c:${DAYC[x.i]}" data-act="mvDay" data-d="${x.d}" aria-pressed="${mvDay === x.d}" ${x.pts.length ? '' : 'disabled'}><span>${WD[wd(x.d)]}</span><b class="num">${P(x.d).getDate()}</b><i></i></button>`).join('')}</div>
+  <div class="mv-map" id="mv-map"></div>
+  <div class="mv-stats"><div><b class="num">${kmText(shown.reduce((a, x) => a + pathLen(x.stops), 0))}</b><span>km 移動</span></div><div><b class="num">${placeCount(stops)}</b><span>か所</span></div><div><b class="num">${shown.reduce((a, x) => a + x.pts.length, 0)}</b><span>回 記録</span></div></div>
+  ${favSpot && !mvDay ? `<p class="mv-fav">いちばんよく行った場所 <b>${esc(favSpot.name)}</b>（${favTop[1]}日）</p>` : ''}
+  ${inFrame ? '<p class="note" style="text-align:center">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<button class="btn primary mv-rec" data-act="mvRecord">${ico('pin')}いまの場所を記録</button>`}
+  ${list || `<p class="empty">${mvDay ? 'この日の記録はありません' : 'この週の記録はまだありません。<br>「いまの場所を記録」を押すか、設定 → 場所の記録 で<br>自動で記録するようにできます。'}</p>`}
+  <p class="note">場所の記録はこの端末の中だけに保存されます。地図の画像は OpenStreetMap / CARTO から読み込みます。場所をタップすると名前をつけられます。</p>`;
+}
+// smooth line through points (Catmull-Rom -> cubic Bézier)
+function smoothD(pts) {
+  if (pts.length < 3) return 'M' + pts.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i - 1] || pts[i], b = pts[i], c = pts[i + 1], e = pts[i + 2] || c;
+    d += ` C${(b[0] + (c[0] - a[0]) / 6).toFixed(1)} ${(b[1] + (c[1] - a[1]) / 6).toFixed(1)},${(c[0] - (e[0] - b[0]) / 6).toFixed(1)} ${(c[1] - (e[1] - b[1]) / 6).toFixed(1)},${c[0].toFixed(1)} ${c[1].toFixed(1)}`;
+  }
+  return d;
+}
+const wmx = (lng, z) => (lng + 180) / 360 * 256 * 2 ** z;
+const wmy = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256 * 2 ** z; };
+// a static, fitted map: CARTO raster tiles underneath, day-coloured paths and named-place pins on top
+function drawMap(box, groups, opts = {}) {
+  if (!box) return;
+  const W = box.clientWidth, H = box.clientHeight, all = groups.flatMap(g => g.pts);
+  if (!all.length) { box.innerHTML = `<div class="mv-empty">${opts.empty || '記録した場所が、ここに地図で表示されます'}</div>`; return; }
+  let z = opts.zoom || 17;
+  if (!opts.zoom) for (; z > 3; z--) { const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z)); if (Math.max(...xs) - Math.min(...xs) <= W - 90 && Math.max(...ys) - Math.min(...ys) <= H - 110) break; }
+  const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z));
+  const ox = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2, oy = (Math.min(...ys) + Math.max(...ys)) / 2 - H / 2 + 12, n = 2 ** z;
+  const style = isDark() ? 'dark_all' : 'rastertiles/voyager';
+  let tiles = '';
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++) {
+    if (ty < 0 || ty >= n) continue;
+    tiles += `<img src="https://${'abcd'[(tx + ty) & 3]}.basemaps.cartocdn.com/${style}/${z}/${((tx % n) + n) % n}/${ty}@2x.png" style="left:${(tx * 256 - ox).toFixed(1)}px;top:${(ty * 256 - oy).toFixed(1)}px" alt="" draggable="false">`;
+  }
+  const px = p => [wmx(p.lng, z) - ox, wmy(p.lat, z) - oy];
+  let svg = '', pins = '';
+  for (const g of groups) {
+    const q = g.pts.map(px), d = smoothD(q);
+    let len = 0; for (let i = 1; i < q.length; i++) len += Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]);
+    if (q.length > 1) svg += `<path class="halo" d="${d}"/><path class="ln" d="${d}" style="stroke:${g.color};--len:${Math.ceil(len * 1.3) + 10}"/>`;
+    svg += q.map(([x, y]) => `<circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" style="fill:${g.color}"/>`).join('');
+  }
+  if (opts.now) { const [x, y] = px(opts.now.p); svg += `<circle class="now" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" style="--c:${opts.now.color}"/>`; }
+  const seen = new Set();
+  for (const g of groups) for (const s of g.pts) if (s.spot && !seen.has(s.spot.id)) { seen.add(s.spot.id); const [x, y] = px(s); pins += `<span class="mv-pin" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--c:${g.color}"><span>${ico(s.spot.icon)}</span>${esc(s.spot.name)}</span>`; }
+  box.innerHTML = tiles + `<svg aria-hidden="true">${svg}</svg>` + pins + '<span class="mv-attr">© OpenStreetMap © CARTO</span>';
+  box.querySelectorAll('img').forEach(i => i.addEventListener('error', () => i.remove()));
+}
+function drawMoves() {
+  const T = todayISO(), days = weekDays(addDays(T, -6 + mvWeek * 7)), shown = mvDay ? days.filter(x => x.d === mvDay) : days;
+  const last = shown.filter(x => x.stops.length).pop(), now = last && last.d === T ? { p: last.stops[last.stops.length - 1], color: DAYC[last.i] } : null;
+  drawMap($('#mv-map'), shown.filter(x => x.stops.length).map(x => ({ color: DAYC[x.i], pts: x.stops })), { now, empty: 'この週はまだ記録がありません' });
+}
+const rerenderMoves = () => { rerenderKind('moves', movesSheet); drawMoves(); };
+function spotSheet() {
+  const s = spDraft;
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>この場所に名前をつける</b><button class="r" data-act="saveSpot">保存</button></div>
+  <div class="mv-map small" id="sp-map"></div>
+  <p class="note" style="text-align:center;margin:8px 0 4px">${md(s.d)}(${WD[wd(s.d)]}) ${hmOf(s.from)}${s.to - s.from >= 60000 ? `〜${hmOf(s.to)}` : ''} にいた場所</p>
+  <div class="fld"><label for="sp-name">名前</label><input class="inp title" id="sp-name" value="${esc(s.name)}" placeholder="例：家、大学、セブンイレブン" maxlength="20" autocomplete="off"></div>
+  <div class="fld"><span class="lb">候補</span><div class="chips">${SPOT_ICONS.map(([n, i]) => `<button class="chip" data-act="spPreset" data-n="${n}" data-i="${i}" aria-pressed="${s.icon === i && s.name === n}">${n}</button>`).join('')}</div></div>
+  <div class="sheet-actions"><button class="btn primary" data-act="saveSpot">保存する</button>${s.id ? '<button class="btn ghost" data-act="unSpot">この名前を外す</button>' : ''}<button class="btn danger" data-act="delStop">この時間の記録を削除</button></div>`;
+}
+
+/* ================= Spotify: what you're listening to (Zenly style) ================= */
+const SPK = 'hibi.spotify';
+let SP = (() => { try { return JSON.parse(localStorage.getItem(SPK) || '{}'); } catch (e) { return {}; } })();
+const spSave = () => { try { localStorage.setItem(SPK, JSON.stringify(SP)); } catch (e) {} };
+const spRedirect = () => location.origin + location.pathname;
+const spOn = () => !inFrame && !!SP.refresh;
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function spLogin() {
+  const id = (SP.clientId || '').trim(); if (!id) { toast('Client ID を貼り付けてください'); return; }
+  const v = b64url(crypto.getRandomValues(new Uint8Array(48))), state = b64url(crypto.getRandomValues(new Uint8Array(12)));
+  const ch = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
+  SP.verifier = v; SP.state = state; spSave();
+  location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({ response_type: 'code', client_id: id, scope: 'user-read-currently-playing user-read-recently-played user-read-playback-state', code_challenge_method: 'S256', code_challenge: ch, redirect_uri: spRedirect(), state });
+}
+async function spToken(body) {
+  const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(Object.assign({ client_id: SP.clientId }, body)) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { if (j.error === 'invalid_grant' && body.grant_type === 'refresh_token') { delete SP.refresh; spSave(); } throw new Error(j.error_description || j.error || 'token'); }
+  SP.token = j.access_token; SP.exp = Date.now() + (j.expires_in - 60) * 1000; if (j.refresh_token) SP.refresh = j.refresh_token; spSave();
+}
+async function spCallback() {
+  const q = new URLSearchParams(location.search); if (!q.has('code') && !q.has('error')) return;
+  history.replaceState(null, '', spRedirect());
+  if (!SP.state || q.get('state') !== SP.state) return;
+  if (q.has('error')) { toast('Spotifyとの連携をキャンセルしました'); return; }
+  try { await spToken({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: spRedirect(), code_verifier: SP.verifier }); delete SP.verifier; delete SP.state; spSave(); toast('Spotifyと連携しました'); st.tab = 'journal'; saveUI(); render(); spPoll(); }
+  catch (e) { toast('Spotifyと連携できませんでした（' + e.message + '）'); }
+}
+async function spApi(path) {
+  if (!SP.token || Date.now() > SP.exp) await spToken({ grant_type: 'refresh_token', refresh_token: SP.refresh });
+  const r = await fetch('https://api.spotify.com/v1' + path, { headers: { Authorization: 'Bearer ' + SP.token } });
+  if (r.status === 204) return null;
+  if (r.status === 401) { SP.exp = 0; throw new Error('auth'); }
+  if (!r.ok) throw new Error(r.status === 403 ? 'forbidden' : 'http ' + r.status);
+  return r.json();
+}
+const spTrack = it => it.type === 'episode'
+  ? { name: it.name, artist: it.show ? it.show.name : '', art: ((it.images || [])[0] || {}).url || '', url: (it.external_urls || {}).spotify || '', dur: it.duration_ms }
+  : { name: it.name, artist: (it.artists || []).map(a => a.name).join(', '), art: (((it.album || {}).images || [])[0] || {}).url || '', url: (it.external_urls || {}).spotify || '', dur: it.duration_ms };
+async function spFetch() {
+  const c = await spApi('/me/player/currently-playing?additional_types=track,episode');
+  if (c && c.item) return Object.assign(spTrack(c.item), { state: c.is_playing ? 'playing' : 'paused', prog: c.progress_ms || 0 });
+  const r = await spApi('/me/player/recently-played?limit=1'), it = r && r.items && r.items[0];
+  return it ? Object.assign(spTrack(it.track), { state: 'recent', played: Date.parse(it.played_at) }) : { state: 'none' };
+}
+let spNow = null, spBusy = false;
+async function spPoll() {
+  if (!spOn() || spBusy || document.visibilityState !== 'visible') return; spBusy = true;
+  try { spNow = Object.assign(await spFetch(), { at: Date.now() }); }
+  catch (e) { spNow = Object.assign(spNow && spNow.name ? spNow : { state: 'error', why: e.message }, { at: Date.now() }); }
+  finally { spBusy = false; }
+  const el = $('#np'); if (el) el.outerHTML = npCard();
+}
+setInterval(() => { if (st.tab === 'journal' && !stack.length) spPoll(); }, 20000);
+const agoText = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'たった今' : m < 60 ? `${m}分前` : m < 1440 ? `${Math.floor(m / 60)}時間前` : `${Math.floor(m / 1440)}日前`; };
+const songOf = n => ({ name: n.name, artist: n.artist, art: n.art, url: n.url });
+function songRow(sg, edit) {
+  return `<div class="e-song">${sg.art ? `<img src="${esc(sg.art)}" alt="">` : `<span class="ph">${ico('music')}</span>`}<span><b>${esc(sg.name)}</b> — ${esc(sg.artist)}</span>${edit ? `<button class="x" data-act="rmSong" aria-label="曲を外す">${ico('x')}</button>` : ''}</div>`;
+}
+function npCard() {
+  if (!spOn()) return '';
+  const n = spNow;
+  if (!n || !n.name) return `<div class="np empty" id="np"><span class="np-art">${ico('music')}</span><span><b>${!n ? '読み込み中…' : n.state === 'none' ? '最近聴いた曲はまだありません' : n.why === 'forbidden' ? 'Spotifyのアプリ設定で、このアカウントの利用が許可されていません' : 'Spotifyにつながりませんでした'}</b><small>Spotify</small></span></div>`;
+  const lbl = n.state === 'playing' ? 'いま聴いてる' : n.state === 'paused' ? '一時停止中' : `さっきまで聴いてた・${agoText(n.played)}`;
+  const el = n.state === 'playing' ? Date.now() - n.at : 0, pct = n.dur ? Math.min(100, (n.prog + el) / n.dur * 100) : 0, left = n.state === 'playing' && n.dur ? Math.max(0, n.dur - n.prog - el) : 0;
+  return `<div class="np ${n.state}" id="np">${n.art ? `<img class="np-bg" src="${esc(n.art)}" alt="">` : ''}
+    <div class="np-in">${n.art ? `<img class="np-art" src="${esc(n.art)}" alt="">` : `<span class="np-art">${ico('music')}</span>`}
+      <div class="np-tx"><span class="np-lbl">${n.state === 'playing' ? '<span class="eq"><i></i><i></i><i></i></span>' : ''}${lbl}</span><b>${esc(n.name)}</b><small>${esc(n.artist)}</small></div></div>
+    ${n.state !== 'recent' && n.dur ? `<div class="np-bar"><i class="${left ? 'run' : ''}" style="width:${pct.toFixed(1)}%;--left:${left}ms"></i></div>` : ''}
+    <div class="np-act"><button data-act="songEntry">${ico('pen')}この曲で日記を書く</button>${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener">${ico('music')}Spotifyで開く</a>` : ''}</div></div>`;
+}
+
 /* ================= rendering ================= */
 const VIEWS = { cal: viewCal, day: viewDay, journal: viewJournal, reflect: viewReflect };
 const TABDEF = [['cal', 'カレンダー', 'cal'], ['day', 'タイムライン', 'list'], ['journal', '日記', 'journal'], ['reflect', 'ふりかえり', 'wave']];
@@ -1641,6 +1932,7 @@ function render() {
   fab.setAttribute('aria-label', jr ? '日記を書く' : '予定を追加');
   $('#topTitle').textContent = topTitle();
   onScroll();
+  if (st.tab === 'journal' && spOn() && (!spNow || Date.now() - spNow.at > 15000)) spPoll();
   if (st.anim) { const el = $(st.anim.sel); if (el) { el.classList.remove('slide-n', 'slide-p'); void el.offsetWidth; el.classList.add(st.anim.dir > 0 ? 'slide-n' : 'slide-p'); } st.anim = null; }
 }
 function topTitle() {
@@ -2089,6 +2381,7 @@ function entryForm() {
   <div class="fld"><span class="lb">できごと</span><div class="chips">${tags.map(t => `<button class="chip" data-act="tag" data-t="${esc(t)}" aria-pressed="${e.tags.includes(t)}">${esc(t)}</button>`).join('')}</div>
     <div class="add-row"><input class="inp" id="ct-name" maxlength="8" placeholder="タグを追加" autocomplete="off"><button data-act="addTag">追加</button></div></div>
   <div class="fld"><div class="prompt-q"><b>Q.</b>${esc(e._prompt)}</div><textarea class="inp" id="en-text" rows="7" placeholder="今日あったこと、感じたことを自由に">${esc(e.text)}</textarea></div>
+  ${e.song || spOn() ? `<div class="fld"><span class="lb">音楽</span>${e.song ? songRow(e.song, true) : `<button class="btn ghost" data-act="enSong" style="width:100%">${ico('music')}いま聴いてる曲を添える</button>`}</div>` : ''}
   <div class="fld"><span class="lb">写真</span><div class="photo-box">${e.photo ? `<img src="${e.photo}" alt="添付した写真">` : ''}
     <label class="btn file-btn">${ico('camera')}${e.photo ? '変更' : '写真を追加'}<input type="file" id="en-photo" accept="image/*"></label>
     ${e.photo ? `<button class="btn ghost" data-act="rmPhoto">外す</button>` : ''}</div></div>
@@ -2178,6 +2471,17 @@ function settingsHTML() {
     <label class="toggle"><span>カレンダーに給料の見込みを表示</span><input type="checkbox" id="set-pay" ${s.showPay !== false ? 'checked' : ''}></label></div></div>
   <div class="set-sec"><h4>日記</h4><div class="set-list">
     ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
+  <div class="set-sec"><h4>場所の記録</h4><div class="set-list">
+    ${inFrame ? '<p class="note" style="margin:0">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>日記を書いたときに場所も記録<small>今日の日記を保存したとき、いる場所をいっしょに残します</small></span><input type="checkbox" id="set-loc-entry" ${s.locEntry ? 'checked' : ''}></label>
+    <label class="toggle"><span>アプリを開いたときに記録<small>開くたびに（15分に1回まで）いまの場所を残して、1週間の動きを地図にします</small></span><input type="checkbox" id="set-loc-open" ${s.locOpen ? 'checked' : ''}></label>`}
+    <button class="toggle" data-act="moves" style="width:100%;text-align:left"><span>この1週間の動きを見る<small>記録 ${S.places.length}件・名前をつけた場所 ${S.spots.length}か所</small></span>${ico('right')}</button>
+    <p class="note" style="margin:0">iPhoneのブラウザは、アプリを閉じている間の場所は記録できません。開いたときと日記を書いたときの場所をつないで表示します。</p>
+    ${S.places.length ? '<button class="btn ghost" data-act="clearPlaces">場所の記録をすべて削除</button>' : ''}</div></div>
+  <div class="set-sec"><h4>音楽（Spotify）</h4><div class="set-list">
+    ${inFrame ? '<p class="note" style="margin:0">Spotifyとの連携は、GitHub Pages で開いたときに使えます。</p>' : spOn() ? `<div class="toggle"><span>Spotifyと連携中<small>日記の画面に、いま聴いている曲（止めているときは直前に聴いた曲）を表示します</small></span></div><button class="btn ghost" data-act="spLogout">連携を解除</button>` : `<p class="note" style="margin:0;line-height:1.8">いま聴いている曲を日記の画面に表示します。はじめに1回だけ準備が必要です。<br>① <b>developer.spotify.com/dashboard</b> にSpotifyのアカウントでログインして「Create app」<br>② 「Redirect URIs」に下のURLを登録し、「Web API」にチェックして保存<br>③ できたアプリの「Client ID」を下に貼り付けて「連携する」</p>
+    <div class="fld" style="margin:0"><label for="sp-redir">Redirect URI</label><div class="add-row"><input class="inp" id="sp-redir" readonly value="${esc(spRedirect())}"><button data-act="spCopy">コピー</button></div></div>
+    <div class="fld" style="margin:0"><label for="sp-id">Client ID</label><input class="inp" id="sp-id" value="${esc(SP.clientId || '')}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32文字の英数字"></div>
+    <button class="btn primary" data-act="spLogin">${ico('music')}Spotifyと連携する</button>`}</div></div>
   <div class="set-sec"><h4>予定のテンプレート</h4><div class="set-list">
     ${S.templates.map(t => `<div class="set-row"><span>${esc(t.title)} <small class="num">${t.allDay ? '終日' : hm(t.start) + '–' + hm(t.end)}</small></span><button data-act="delTpl" data-id="${t.id}">削除</button></div>`).join('') || '<p class="note" style="margin:0">予定の編集画面の「テンプレートとして保存」で追加できます。</p>'}</div></div>
   <div class="set-sec"><h4>カレンダーの取り込み</h4><div class="set-list">
@@ -2356,6 +2660,33 @@ const ACT = {
     const go = () => { ps.pop(); S.school.classes.forEach(c => { c.slots = c.slots.filter(x => x.p !== p); }); save(); rerenderKind('school', schoolSheet); render(); };
     if (used.length) confirmIn(`${p + 1}限を消すと、「${used.map(c => c.name).join('」「')}」の${p + 1}限のコマも外れます。`, '消す', go); else go(); },
   pay: () => { payYM = st.calMonth.slice(0, 7); const sh = openSheet(paySheet(), 'full'); sh.dataset.kind = 'pay'; },
+  moves: () => { mvWeek = 0; mvDay = null; const sh = openSheet(movesSheet(), 'full'); sh.dataset.kind = 'moves'; requestAnimationFrame(() => setTimeout(drawMoves, 60)); },
+  mvWeek: t => { mvWeek = Math.min(0, mvWeek + +t.dataset.n); mvDay = null; rerenderMoves(); },
+  mvDay: t => { mvDay = mvDay === t.dataset.d ? null : t.dataset.d; rerenderMoves(); },
+  mvRecord: t => { t.disabled = true; recordPlace(0).then(() => { toast('いまの場所を記録しました'); mvWeek = 0; rerenderMoves(); }).catch(() => { t.disabled = false; toast('位置情報を使えませんでした。iPhoneの「設定 → Safari → 位置情報」を確認してください'); }); },
+  mvStop: t => {
+    const s = stopsOf(dayPts(t.dataset.d))[+t.dataset.k]; if (!s) return;
+    spDraft = { d: t.dataset.d, from: s.from, to: s.to, ts: s.ts, lat: s.lat, lng: s.lng, id: s.spot ? s.spot.id : null, name: s.spot ? s.spot.name : '', icon: s.spot ? s.spot.icon : 'pin' };
+    const sh = openSheet(spotSheet(), 'full'); sh.dataset.kind = 'spot';
+    setTimeout(() => drawMap($('#sp-map'), [{ color: 'var(--accent)', pts: [s] }], { zoom: 16, now: { p: s, color: 'var(--accent)' } }), 80);
+  },
+  spPreset: t => { spDraft.name = t.dataset.n; spDraft.icon = t.dataset.i; const i = $('#sp-name', topSheet()); if (i) i.value = t.dataset.n; topSheet().querySelectorAll('[data-act="spPreset"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  saveSpot: () => {
+    const name = ($('#sp-name', topSheet()).value || '').trim().slice(0, 20); if (!name) { toast('名前を入れてください'); return; }
+    const preset = SPOT_ICONS.find(x => x[0] === name), icon = preset ? preset[1] : spDraft.icon !== 'pin' && spDraft.name === name ? spDraft.icon : guessIcon(name) === 'star' ? 'pin' : guessIcon(name);
+    const ex = spDraft.id && S.spots.find(x => x.id === spDraft.id);
+    if (ex) Object.assign(ex, { name, icon }); else S.spots.push({ id: uid(), name, icon, lat: spDraft.lat, lng: spDraft.lng });
+    save(); closeSheet(); rerenderMoves(); toast(`「${name}」として覚えました`);
+  },
+  unSpot: () => { S.spots = S.spots.filter(x => x.id !== spDraft.id); save(); closeSheet(); rerenderMoves(); },
+  delStop: () => confirmIn(`${md(spDraft.d)} ${hmOf(spDraft.from)}${spDraft.to > spDraft.from ? `〜${hmOf(spDraft.to)}` : ''} の場所の記録を削除します。`, '削除する', () => { const ts = new Set(spDraft.ts); S.places = S.places.filter(p => !ts.has(p.t)); save(); closeSheet(); rerenderMoves(); }),
+  clearPlaces: () => confirmIn(`場所の記録 ${S.places.length}件をすべて削除します。名前をつけた場所は残ります。`, 'すべて削除', () => { S.places = []; save(); rerenderSettings(); toast('場所の記録を削除しました'); }),
+  spCopy: () => { const v = spRedirect(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('URLをコピーしました'), () => { const i = $('#sp-redir'); if (i) { i.focus(); i.select(); } }); },
+  spLogin: () => { const i = $('#sp-id'); if (i) { SP.clientId = i.value.trim(); spSave(); } spLogin().catch(() => toast('連携を始められませんでした')); },
+  spLogout: () => confirmIn('Spotifyとの連携を解除します。日記に添えた曲はそのまま残ります。', '解除する', () => { SP = { clientId: SP.clientId }; spSave(); spNow = null; rerenderSettings(); render(); }),
+  songEntry: () => { if (!spNow || !spNow.name) return; const sg = songOf(spNow); openEntry(null, todayISO()); enDraft.song = sg; },
+  enSong: t => { syncEntry(); t.disabled = true; spFetch().then(n => { if (n.name) { enDraft.song = songOf(n); rerenderEntry(); } else { t.disabled = false; toast('最近聴いた曲が見つかりませんでした'); } }).catch(() => { t.disabled = false; toast('Spotifyにつながりませんでした'); }); },
+  rmSong: () => { syncEntry(); delete enDraft.song; rerenderEntry(); },
   payGoal: () => { openSheet(payGoalSheet(), 'small'); setTimeout(() => { const i = $('#pg-v'); if (i) i.focus(); }, 300); },
   savePayGoal: () => { S.settings.payGoal = Math.max(0, Math.round(+$('#pg-v').value || 0)); save(); closeSheet(); rerenderKind('pay', paySheet); render(); },
   payToday: () => { payYM = todayISO().slice(0, 7); rerenderKind('pay', paySheet); topSheet().scrollTop = 0; },
@@ -2482,10 +2813,12 @@ const ACT = {
     if (!e.text.trim() && !e.feelings.length && !e.photo) { toast('気持ちを選ぶか、ひとこと書いてください'); return; }
     const out = { id: e.id || uid(), date: e.date, time: e.time, feelings: e.feelings, tags: e.tags, text: e.text.trim(), photo: e.photo };
     if (e.weather) out.weather = e.weather;
+    if (e.place) out.place = e.place;
+    if (e.song) out.song = e.song;
     const i = S.entries.findIndex(x => x.id === out.id); const prev = i >= 0 ? S.entries[i] : null;
     if (i >= 0) S.entries[i] = out; else S.entries.push(out);
     if (!save()) { if (prev) S.entries[i] = prev; else S.entries.pop(); return; }
-    closeSheet(); render(); toast('日記を保存しました'); attachWeather(out);
+    closeSheet(); render(); toast('日記を保存しました'); attachWeather(out); attachPlace(out);
   },
   delEntry: () => confirmIn('この日記を削除します。', '削除する', () => { S.entries = S.entries.filter(e => e.id !== enDraft.id); save(); closeSheet(); render(); toast('日記を削除しました'); }),
   // search
@@ -2527,6 +2860,13 @@ document.addEventListener('change', async e => {
   else if (t.id === 'sc-sat') { S.school.sat = t.checked; save(); render(); }
   else if (t.id === 'sc-hol') { S.school.holidayOff = t.checked; save(); render(); }
   else if (t.dataset && t.dataset.per !== undefined && t.value) { S.school.periods[+t.dataset.per][+t.dataset.k] = t.value; save(); render(); }
+  else if (t.id === 'set-loc-entry' || t.id === 'set-loc-open') {
+    const k = t.id === 'set-loc-entry' ? 'locEntry' : 'locOpen';
+    if (!t.checked) { S.settings[k] = false; save(); return; }
+    recordPlace(60000).then(() => { S.settings[k] = true; save(); toast('いまの場所を記録しました'); rerenderSettings(); })
+      .catch(() => { t.checked = false; toast('位置情報を使えませんでした。iPhoneの「設定 → Safari → 位置情報」を確認してください'); });
+  }
+  else if (t.id === 'sp-id') { SP.clientId = t.value.trim(); spSave(); }
   else if (t.id === 'set-weather') {
     if (!t.checked) { S.settings.weather = false; save(); return; }
     getPos().then(() => { S.settings.weather = true; save(); toast('今日の日記に天気をつけるようにしました'); })
@@ -2643,13 +2983,14 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   tick();
   const T = todayISO(); if (T !== lastDay) { if (st.sel === lastDay) st.sel = T; if (st.day === lastDay) { st.day = T; } st.calMonth = st.sel.slice(0, 8) + '01'; lastDay = T; }
-  render();
+  render(); autoPlace();
 });
 
 /* ================= boot ================= */
 load();
 const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01';
 applyTheme(); render(); ensureTick();
+spCallback(); autoPlace();
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
