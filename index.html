@@ -1907,6 +1907,7 @@ let songSrc = 0;
 const errWord = e => e && (e.name === 'AbortError' || e.message === 'timeout') ? '時間切れ' : e && e.message === 'jsonp' ? '読み込めず' : e && /^http/.test(e.message) ? e.message : '接続できず';
 async function searchSongs(q) {
   // the first service that answers decides, even with no hits; others are only tried when it can't be reached
+  if (inFrame) { const err = new Error('frame'); err.detail = 'この画面（アーティファクト版）からは外部につなげません。GitHub Pages 版で開いてください'; throw err; }
   const errs = [];
   for (let k = 0; k < SONG_SOURCES.length; k++) {
     const i = (songSrc + k) % SONG_SOURCES.length, [name, run] = SONG_SOURCES[i];
