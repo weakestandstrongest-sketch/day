@@ -102,7 +102,11 @@ svg{display:block}
 .m-title{display:flex;align-items:baseline;gap:8px}
 .m-title .mn{font-size:56px;font-weight:500;line-height:1;letter-spacing:-.02em}
 .m-title .my{font-size:15px;color:var(--ink-2)}
-.head-icons{display:flex;gap:2px;padding-bottom:4px}
+.head-icons{display:flex;align-items:center;gap:2px;padding-bottom:4px}
+.cap-btn{position:relative;display:inline-flex;align-items:center;gap:5px;height:36px;padding:0 13px 0 11px;margin:0 4px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--line);font-size:13px;font-weight:700;white-space:nowrap}
+.cap-btn .ico{width:18px;height:18px}
+.cap-btn .badge{top:-7px;right:-7px}
+@media (max-width:359px){.cap-btn{padding:0 9px}.cap-btn span:not(.badge){display:none}}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--ink-2);padding:6px 0 2px}
 .dow span.sat{color:var(--sat)} .dow span.sun{color:var(--sun)}
 .month{touch-action:pan-y}
@@ -977,7 +981,7 @@ function miniEntry(e) {
 
 /* ================= Timeline view (Structured) ================= */
 function viewDay() {
-  const d = st.day, T = todayISO(), F = P(d), ws = weekStart(d), nTask = S.tasks.filter(t => !t.done).length;
+  const d = st.day, T = todayISO(), F = P(d), ws = weekStart(d), nTask = S.tasks.filter(t => !t.done).length, nHw = S.school.tasks.filter(x => !x.done && diffDays(T, x.due) <= 7).length;
   let strip = '';
   for (let i = 0; i < 7; i++) {
     const x = addDays(ws, i), occ = onDay(x).slice(0, 4);
@@ -1010,7 +1014,7 @@ function viewDay() {
   const moodCard = es.map(miniEntry).join('');
   return `
   <div class="tl-head"><button class="tl-title" data-act="dayToday" aria-label="今日に戻る"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1></button>
-    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="学校（時間割）">${ico('school')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="cap-btn" data-act="openSchool" aria-label="時間割・課題を開く">${ico('school')}<span>時間割</span>${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
