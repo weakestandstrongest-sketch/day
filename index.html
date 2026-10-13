@@ -97,11 +97,11 @@ svg{display:block}
 .script{font-family:var(--f-script);color:var(--accent);font-size:30px;line-height:1;font-weight:400}
 
 /* ---------- Calendar (month) ---------- */
-.cal-head{display:flex;align-items:flex-end;justify-content:space-between;padding:14px 0 6px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .m-title{display:flex;align-items:baseline;gap:8px}
 .m-title .mn{font-size:56px;font-weight:500;line-height:1;letter-spacing:-.02em}
 .m-title .my{font-size:15px;color:var(--ink-2)}
-.head-icons{display:flex;align-items:center;gap:2px;padding-bottom:4px}
+.head-icons{display:flex;align-items:center;gap:2px}
 .tl-head h1{white-space:nowrap}
 @media (max-width:359px){.tl-head .icon-btn{width:32px}.tl-head h1{font-size:22px}}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--ink-2);padding:6px 0 2px}
@@ -143,7 +143,7 @@ svg{display:block}
 .mini-entry .lbl{font-size:12px;color:var(--ink);font-weight:700}
 
 /* ---------- Timeline (day) ---------- */
-.tl-head{display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px}
+.tl-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .tl-head h1{margin:0;font-size:30px;font-weight:700;letter-spacing:.01em}
 .tl-head h1 .yr{color:var(--accent)}
 .weekstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;touch-action:pan-y;padding-bottom:10px}
@@ -190,7 +190,7 @@ svg{display:block}
 .empty{color:var(--ink-2);font-size:14px;text-align:center;padding:28px 12px}
 
 /* ---------- Journal ---------- */
-.j-head{display:flex;align-items:center;justify-content:space-between;padding:14px 0 4px}
+.j-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .ttl{display:flex;align-items:baseline;gap:12px}
 .ttl h1{margin:0;font-size:26px;font-weight:700}
 .brand{font-size:32px;font-weight:700;letter-spacing:.01em;line-height:1}
@@ -227,7 +227,7 @@ svg{display:block}
 .more-btn{display:block;margin:16px auto 0;color:var(--accent);font-weight:700;font-size:14px;padding:8px 16px}
 
 /* ---------- Reflection ---------- */
-.r-head{padding:18px 0 6px;display:flex;align-items:baseline;gap:12px}
+.r-head{display:flex;align-items:center;height:76px}
 .r-head h1{margin:0;font-size:26px;font-weight:700}
 .card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin-top:12px}
 .card h3{margin:0 0 10px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -678,12 +678,12 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .choice .btn .ico{width:20px;height:20px}
 /* focus timer — full screen, standby-clock style */
 .sheet.fs{max-width:none;max-height:none;height:100%;border-radius:0;padding:0;background:#0b0b10;overflow:hidden}
-.tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:#0b0b10}
+.tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:var(--tbg,#0b0b10);--dfont:var(--f-body);--dw:700}
 .tm-art{position:absolute;inset:-25%;filter:blur(46px) saturate(150%);pointer-events:none}
 .tm-art i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate}
-.tm-art i:nth-child(1){background:var(--c);left:2%;top:4%}
-.tm-art i:nth-child(2){background:color-mix(in srgb,var(--c) 45%,#ff6a3d);right:0;top:32%;animation-duration:23s;animation-delay:-6s}
-.tm-art i:nth-child(3){background:color-mix(in srgb,var(--c) 35%,#4b5bff);left:18%;bottom:0;animation-duration:27s;animation-delay:-12s}
+.tm-art i:nth-child(1){background:var(--t1);left:2%;top:4%}
+.tm-art i:nth-child(2){background:var(--t2);right:0;top:32%;animation-duration:23s;animation-delay:-6s}
+.tm-art i:nth-child(3){background:var(--t3);left:18%;bottom:0;animation-duration:27s;animation-delay:-12s}
 @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(12%,-10%) scale(1.18)}100%{transform:translate(-10%,12%) scale(.92)}}
 .face-ring .tm-art,.face-cards .tm-art{opacity:.75}
 .tm-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0;touch-action:none}
@@ -714,6 +714,83 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .tm-c.main .cb{width:78px;height:78px;background:#fff;color:#16161a;border-color:#fff}
 .tm-c.main .cb .ico{width:30px;height:30px;stroke-width:2.6}
 @media (orientation:landscape) and (max-height:520px){.tm-center{gap:8px;padding:0 128px}.tm-big{font-size:min(24vw,44vh)}.tm-cards b{font-size:min(17vw,36vh);min-width:min(26vw,40vh)}.face-ring .ring{width:min(40vw,56vh);height:min(40vw,56vh)}.tm-name{font-size:15px}.tm-ctrls{position:absolute;right:calc(22px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column;align-items:center;gap:12px;padding:0}.tm-c{font-size:10.5px;gap:4px}.tm-c .cb{width:50px;height:50px}.tm-c.main .cb{width:64px;height:64px}}
+/* timer designs */
+.tm-fs.still .tm-art i,.tm-fs.still .tm-wave{animation:none}
+.tm-fs.dg-grotesk{--dfont:"Helvetica Neue","Arial Black",Arial,system-ui,sans-serif;--dw:800}
+.tm-fs.dg-thin{--dw:300}
+.tm-big,.tm-cards b,.tm-roll b,.tm-roll span,.tm-pill,.face-ring .ring .ctr b{font-family:var(--dfont);font-weight:var(--dw)}
+.face-glass .tm-big{font-size:clamp(56px,min(19vw,26vh),180px);padding:.06em .3em;border-radius:.3em;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.face-flip .tm-art{inset:0;filter:none;background:linear-gradient(90deg,var(--t1) 0 12.5%,var(--t2) 12.5% 25%,var(--t3) 25% 37.5%,var(--t2) 37.5% 50%,var(--t1) 50% 62.5%,var(--t3) 62.5% 75%,var(--t2) 75% 87.5%,var(--t1) 87.5%)}
+.face-flip .tm-art i{opacity:.55;filter:blur(40px)}
+.face-flip .tm-cards b{position:relative;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.face-flip .tm-cards b::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(0,0,0,.28)}
+.face-roll .tm-art{filter:blur(50px) grayscale(.85) contrast(1.1)}
+.tm-roll{display:flex;align-items:center;gap:.18em;font-size:clamp(70px,min(23vw,20vh),190px);line-height:.95}
+.tm-roll b{font-size:1em}
+.tm-roll .col{display:flex;flex-direction:column;align-items:center}
+.tm-roll .col span{font-size:1em;opacity:.32}
+.tm-roll .col.tick{animation:rollin .35s ease-out}
+@keyframes rollin{from{transform:translateY(-.3em)}to{transform:none}}
+.face-wave{color:#33333a;background:#ECE9E4}
+.face-wave .tm-art{inset:0;filter:blur(10px) saturate(120%)}
+.face-wave .tm-art i{display:none}
+.tm-wave{position:absolute;left:-10%;top:18%;width:120%;height:60%;animation:wv 14s ease-in-out infinite alternate}
+@keyframes wv{from{transform:translateX(-4%) skewY(-2deg)}to{transform:translateX(4%) skewY(2deg)}}
+.face-wave .tm-big{font-size:clamp(48px,min(14vw,12vh),110px);color:#8b8b90;align-self:flex-end;margin-right:4%}
+.face-wave .tm-btn,.face-wave .tm-c .cb{color:#222;background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12)}
+.face-wave .tm-c,.face-wave .tm-name{color:#222}
+.face-wave .tm-name i{background:rgba(0,0,0,.08)}
+.face-wave .tm-c.main .cb{background:#222;color:#fff;border-color:#222}
+.face-wave .tm-bar{background:rgba(0,0,0,.1)}
+.face-wave .tm-bar i{background:#555}
+.face-analog{background:linear-gradient(135deg,#d9dce1,#7e838c 55%,#3c3f46)}
+.face-analog .tm-art{left:35%;opacity:.85}
+.tm-dial{width:min(64vw,40vh);aspect-ratio:1;border-radius:50%;background:rgba(40,42,50,.35);border:1px solid rgba(255,255,255,.45);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 18px 40px rgba(0,0,0,.25)}
+.tm-dial svg{width:100%;height:100%;stroke:#fff;stroke-width:4;stroke-linecap:round;fill:#fff}
+.tm-dial .hand{stroke-width:7;transition:transform 1s linear}
+.tm-pill{font-size:clamp(20px,6vw,30px);padding:.2em .8em;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.face-dots .tm-art{inset:0;filter:none;-webkit-mask-image:radial-gradient(circle,#000 42%,transparent 46%);mask-image:radial-gradient(circle,#000 42%,transparent 46%);-webkit-mask-size:9px 9px;mask-size:9px 9px}
+.face-dots .tm-art i{filter:blur(30px)}
+.face-dots .tm-name span,.face-dots #tm-sub,.face-dots #tm-now{padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.face-dots .tm-big{font-size:clamp(56px,min(18vw,24vh),170px);padding:.08em .3em;border-radius:.25em;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+/* timer design picker */
+.tf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tf{display:flex;flex-direction:column;gap:5px;align-items:stretch;font-size:12px;color:var(--ink-2)}
+.tf[aria-pressed="true"]{color:var(--ink);font-weight:700}
+.tf-art{position:relative;display:grid;place-items:center;aspect-ratio:16/10;border-radius:14px;overflow:hidden;color:#fff;background:radial-gradient(circle at 20% 25%,var(--t1),transparent 60%),radial-gradient(circle at 80% 50%,var(--t2),transparent 60%),radial-gradient(circle at 40% 95%,var(--t3),transparent 60%),var(--tbg)}
+.tf[aria-pressed="true"] .tf-art{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
+.tf-art b{position:relative;font-size:19px;font-weight:700;display:flex;gap:4px;align-items:center}
+.tf-art i{position:absolute}
+.tf-glass .tf-art b{padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45)}
+.tf-cards .tf-art u,.tf-flip .tf-art u{text-decoration:none;padding:2px 6px;border-radius:7px;background:rgba(0,0,0,.3)}
+.tf-flip .tf-art{background:linear-gradient(90deg,var(--t1) 0 25%,var(--t2) 25% 50%,var(--t3) 50% 75%,var(--t1) 75%)}
+.tf-flip .tf-art u{background:rgba(255,255,255,.25);box-shadow:inset 0 -1px 0 rgba(0,0,0,.2)}
+.tf-roll .tf-art{filter:grayscale(.85)}
+.tf-roll .tf-art b{flex-direction:column;gap:0;line-height:1}
+.tf-roll .tf-art em{font-style:normal;font-size:13px;opacity:.35}
+.tf-wave .tf-art{background:#ECE9E4;color:#8b8b90}
+.tf-wave .tf-art i{inset:30% -10% 30% -10%;border-radius:50%;background:linear-gradient(90deg,var(--t3),var(--t1),var(--t2));filter:blur(4px);transform:rotate(-8deg)}
+.tf-wave .tf-art b{align-self:end;justify-self:end;margin:0 8px 4px 0;font-size:13px}
+.tf-ring .tf-art i{width:48px;height:48px;border-radius:50%;border:4px solid rgba(255,255,255,.85)}
+.tf-ring .tf-art b{font-size:11px}
+.tf-analog .tf-art{background:radial-gradient(circle at 85% 40%,var(--t1),transparent 45%),linear-gradient(135deg,#d9dce1,#7e838c 55%,#3c3f46)}
+.tf-analog .tf-art i{width:46px;height:46px;border-radius:50%;background:rgba(40,42,50,.4);border:1px solid rgba(255,255,255,.6)}
+.tf-analog .tf-art b{display:none}
+.tf-dots .tf-art{background:radial-gradient(circle,rgba(255,255,255,.0) 0,transparent 0),var(--tbg)}
+.tf-dots .tf-art i{inset:0;background:radial-gradient(circle at 30% 30%,var(--t1),transparent 60%),radial-gradient(circle at 75% 70%,var(--t2),transparent 60%);-webkit-mask-image:radial-gradient(circle,#000 40%,transparent 46%);mask-image:radial-gradient(circle,#000 40%,transparent 46%);-webkit-mask-size:5px 5px;mask-size:5px 5px}
+.pal-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 4px;scrollbar-width:none}
+.pal-row::-webkit-scrollbar{display:none}
+.pal{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:58px;font-size:11px;color:var(--ink-2)}
+.pal i{width:42px;height:42px;border-radius:50%;background:conic-gradient(var(--t1) 0 33%,var(--t2) 33% 66%,var(--t3) 66%)}
+.pal[aria-pressed="true"]{color:var(--ink);font-weight:700}
+.pal[aria-pressed="true"] i{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
+.pal:last-child i{background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
+.cust{display:flex;gap:10px}
+.cust label{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)}
+.cust input{width:100%;height:44px;border:0;border-radius:12px;padding:0;background:none}
+.cust input::-webkit-color-swatch-wrapper{padding:0}
+.cust input::-webkit-color-swatch{border:0;border-radius:12px}
+button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 /* あとで list */
 .sw-wrap{position:relative;border-radius:18px;overflow:hidden;background:var(--surface);transition:height .26s ease,opacity .2s ease}
 .sw-del{position:absolute;inset:0;display:flex;justify-content:flex-end;background:var(--sun);color:#fff}
@@ -1465,7 +1542,7 @@ function viewReflect() {
   for (let i = 0; i < (sunStart() ? wd(mfirst) : (wd(mfirst) + 6) % 7); i++) mc += '<span></span>';
   for (let d = mfirst; d <= mlast; d = addDays(d, 1)) { const m = dayMood(d); mc += `<span class="c"><i class="${m ? 'on' : ''}" style="${m ? `background:${m.color};` : ''}border-radius:${blob(d)}"></i><span class="num">${P(d).getDate()}</span></span>`; }
   return `
-  <div class="r-head"><h1>ふりかえり</h1><span class="script">Reflection</span></div>
+  <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div></div>
   <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
   <section class="card">
     <div class="ins-nav"><button data-act="iWeek" data-n="-1" aria-label="前の週">${ico('left')}</button>
@@ -1771,20 +1848,32 @@ function jobForm() {
 let timerInt = null, wakeLock = null;
 const tElapsed = () => { const t = S.timer; return t ? t.accum + (t.paused ? 0 : Date.now() - t.startedAt) : 0; };
 const mmss = ms => { const s0 = Math.floor(Math.max(0, ms) / 1000), h = Math.floor(s0 / 3600), m = Math.floor(s0 % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s0 % 60); };
-const FACES = [['aurora', 'オーロラ'], ['cards', 'カード'], ['ring', 'リング']];
+const FACES = [['aurora', 'オーロラ'], ['glass', 'ガラス'], ['cards', 'カード'], ['flip', 'フリップ'], ['roll', 'ロール'], ['wave', 'ウェーブ'], ['ring', 'リング'], ['analog', 'アナログ'], ['dots', 'ドット']];
+const PALETTES = [['event', '予定の色'], ['sunset', 'サンセット', '#ff7a45', '#ff3d7f', '#7b3cff', '#1a0b14'], ['ocean', 'オーシャン', '#2bd4ff', '#2f6bff', '#00b3a4', '#06121c'], ['forest', 'フォレスト', '#9ad95b', '#2f9e6a', '#e6c84a', '#0b140d'], ['candy', 'キャンディ', '#ff5fd2', '#4fd1ff', '#ff8a3d', '#1a0e22'], ['night', 'ナイト', '#3b3bff', '#8f3bff', '#14206a', '#05050f'], ['mono', 'モノクロ', '#f2f2f2', '#8a8a8a', '#3a3a3a', '#050505'], ['custom', 'カスタム']];
+const DIGITS = [['round', '丸ゴシック'], ['grotesk', 'ゴシック太字'], ['thin', '細字']];
+const tset = () => Object.assign({ face: S.settings.timerFace || 'aurora', palette: 'event', custom: ['#ff7a45', '#7b3cff', '#2bd4ff'], motion: true, mode: 'left', digits: 'round' }, S.settings.timer || {});
+function tVars(o, color) {
+  const pal = PALETTES.find(x => x[0] === o.palette) || PALETTES[0];
+  const [a, b, c, bg] = o.palette === 'custom' ? [...o.custom, '#0b0b10'] : o.palette === 'event' ? [color, `color-mix(in srgb,${color} 45%,#ff6a3d)`, `color-mix(in srgb,${color} 35%,#4b5bff)`, '#0b0b10'] : pal.slice(2);
+  return `--t1:${a};--t2:${b};--t3:${c};--tbg:${bg}`;
+}
 function timerHTML() {
-  const t = S.timer, face = S.settings.timerFace || 'aurora', C = 2 * Math.PI * 100;
-  const big = face === 'ring' ? `<div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><div class="ctr"><b id="tm-time" class="num"></b></div></div>`
-    : face === 'cards' ? '<div class="tm-cards" id="tm-cards"><b id="tm-a" class="num"></b><b id="tm-b" class="num"></b></div>'
-    : '<b id="tm-time" class="tm-big num"></b>';
-  return `<div class="tm-fs face-${face}" style="--c:${t.color}">
-    <div class="tm-art" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="tm-top"><button class="tm-btn" data-act="close" aria-label="閉じる（計測は続きます）">${ico('down')}</button><span id="tm-now" class="num"></span><button class="tm-btn" data-act="tmFace" aria-label="表示を切り替える">${ico('palette')}</button></div>
+  const t = S.timer, o = tset(), f = o.face, C = 2 * Math.PI * 100;
+  const split = '<div class="tm-cards" id="tm-cards"><b id="tm-a" class="num"></b><b id="tm-b" class="num"></b></div>';
+  const big = {
+    ring: `<div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><div class="ctr"><b id="tm-time" class="num"></b></div></div>`,
+    analog: `<div class="tm-dial"><svg viewBox="0 0 220 220" aria-hidden="true">${[...Array(12)].map((_, i) => `<line x1="110" y1="${i % 3 ? 20 : 16}" x2="110" y2="${i % 3 ? 30 : 36}" transform="rotate(${i * 30} 110 110)"/>`).join('')}<line id="tm-hand" class="hand" x1="110" y1="110" x2="110" y2="40"/><circle cx="110" cy="110" r="6"/></svg></div><b id="tm-time" class="tm-pill num"></b>`,
+    cards: split, flip: split,
+    roll: '<div class="tm-roll"><b id="tm-a" class="num"></b><div class="col"><span id="tm-bp" class="num"></span><b id="tm-b" class="num"></b><span id="tm-bn" class="num"></span></div></div>',
+  }[f] || '<b id="tm-time" class="tm-big num"></b>';
+  return `<div class="tm-fs face-${f} dg-${o.digits}${o.motion ? '' : ' still'}" style="${tVars(o, t.color)}">
+    <div class="tm-art" aria-hidden="true"><i></i><i></i><i></i>${f === 'wave' ? '<svg class="tm-wave" viewBox="0 0 400 200" preserveAspectRatio="none"><defs><linearGradient id="twg" x1="0" x2="1"><stop offset="0" stop-color="var(--t3)"/><stop offset=".5" stop-color="var(--t1)"/><stop offset="1" stop-color="var(--t2)"/></linearGradient></defs><path d="M-40 120 C 40 40, 120 40, 200 110 S 360 180, 440 90 L 440 150 C 360 230, 280 200, 200 160 S 40 100, -40 170 Z" fill="url(#twg)"/></svg>' : ''}</div>
+    <div class="tm-top"><button class="tm-btn" data-act="close" aria-label="閉じる（計測は続きます）">${ico('down')}</button><span id="tm-now" class="num"></span><button class="tm-btn" data-act="tmSet" aria-label="デザインと色を変える">${ico('palette')}</button></div>
     <div class="tm-center">
       <div class="tm-name"><i>${ico(t.icon)}</i><span>${esc(t.title)}</span></div>
       ${big}
       <small id="tm-sub" class="num"></small>
-      ${face !== 'ring' ? '<div class="tm-bar"><i id="tm-bar"></i></div>' : ''}
+      ${['ring', 'analog'].includes(f) ? '' : '<div class="tm-bar"><i id="tm-bar"></i></div>'}
     </div>
     <div class="tm-ctrls">
       <button class="tm-c" data-act="tmCancel"><span class="cb">${ico('x')}</span>やめる</button>
@@ -1793,28 +1882,49 @@ function timerHTML() {
     </div>
   </div>`;
 }
+function tmSetHTML() {
+  const o = tset(), color = S.timer ? S.timer.color : evDraft && evDraft.color || COLORS[0];
+  const chip = (k, l, on, act) => `<button class="chip" data-act="${act}" data-k="${k}" aria-pressed="${on}">${l}</button>`;
+  return `<div class="sh-bar"><span></span><b>タイマーの見た目</b><button class="r" data-act="close">完了</button></div>
+  <div class="fld"><span class="lb">デザイン</span><div class="tf-grid">${FACES.map(([k, l]) => `<button class="tf tf-${k}" style="${tVars(o, color)}" data-act="tmSetFace" data-k="${k}" aria-pressed="${o.face === k}"><span class="tf-art"><i></i><b class="num">${k === 'roll' ? '<em>26</em>25<em>24</em>' : k === 'cards' || k === 'flip' ? '<u>25</u><u>00</u>' : '25:00'}</b></span><small>${l}</small></button>`).join('')}</div></div>
+  <div class="fld"><span class="lb">カラー</span><div class="pal-row">${PALETTES.map(([k, l]) => `<button class="pal" data-act="tmSetPal" data-k="${k}" aria-pressed="${o.palette === k}"><i style="${tVars(Object.assign({}, o, { palette: k }), color)}"></i><small>${l}</small></button>`).join('')}</div></div>
+  ${o.palette === 'custom' ? `<div class="fld"><span class="lb">カスタムの色（3色）</span><div class="cust">${o.custom.map((c, i) => `<label><input type="color" id="tmc-${i}" value="${c}" aria-label="色${i + 1}"><span class="num">${c}</span></label>`).join('')}</div></div>` : ''}
+  <div class="fld"><span class="lb">数字の書体</span><div class="chips">${DIGITS.map(([k, l]) => chip(k, l, o.digits === k, 'tmSetDigits')).join('')}</div></div>
+  <div class="fld"><span class="lb">大きく表示する時間</span><div class="chips">${chip('left', 'のこり時間', o.mode === 'left', 'tmSetMode')}${chip('elapsed', '経過時間', o.mode === 'elapsed', 'tmSetMode')}</div></div>
+  <label class="toggle"><span>背景を動かす<small>オフにすると止まった背景になります</small></span><input type="checkbox" id="tm-motion" ${o.motion ? 'checked' : ''}></label>`;
+}
+function tmApply(change) {
+  S.settings.timer = Object.assign(tset(), change); delete S.settings.timerFace; save();
+  const sh = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'tmset'); if (sh) { const y = sh.scrollTop; sh.innerHTML = tmSetHTML(); sh.scrollTop = y; }
+  const ts = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) { ts.innerHTML = timerHTML(); tick(); }
+}
 function tick() {
   const t = S.timer, chip = $('#timerChip');
   if (!t) { chip.hidden = true; clearInterval(timerInt); timerInt = null; return; }
-  const el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = left < 0, txt = (over ? '+' : '') + mmss(Math.abs(left));
-  chip.hidden = stack.some(o => o.firstElementChild.dataset.kind === 'timer');
+  const o = tset(), el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = left < 0;
+  const shown = o.mode === 'elapsed' ? el : Math.abs(left), sign = o.mode === 'elapsed' || !over ? '' : '+', txt = sign + mmss(shown);
+  chip.hidden = stack.some(x => x.firstElementChild.dataset.kind === 'timer');
   chip.style.setProperty('--c', t.color);
-  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : txt}</span>`;
+  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : (over && o.mode !== 'elapsed' ? '+' : '') + mmss(Math.abs(left))}</span>`;
   const sub = $('#tm-sub'); if (!sub) return;
   const n = new Date();
   $('#tm-now').textContent = `${n.getMonth() + 1}月${n.getDate()}日(${WD[n.getDay()]}) ${n.getHours()}:${pad(n.getMinutes())}`;
-  sub.textContent = `${t.paused ? '一時停止中・' : ''}経過 ${mmss(el)}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
+  sub.textContent = `${t.paused ? '一時停止中・' : ''}${o.mode === 'elapsed' ? `のこり ${over ? '0:00' : mmss(left)}` : `経過 ${mmss(el)}`}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
   sub.classList.toggle('over', over);
   const time = $('#tm-time'); if (time) time.textContent = txt;
   const a = $('#tm-a');
   if (a) {
-    const s0 = Math.floor(Math.abs(left) / 1000), hrs = s0 >= 3600;
-    a.textContent = (over ? '+' : '') + (hrs ? Math.floor(s0 / 3600) : pad(Math.floor(s0 / 60)));
-    $('#tm-b').textContent = hrs ? pad(Math.floor(s0 % 3600 / 60)) : pad(s0 % 60);
-    $('#tm-cards').classList.toggle('over', over);
+    const s0 = Math.floor(shown / 1000), hrs = s0 >= 3600, bv = hrs ? Math.floor(s0 % 3600 / 60) : s0 % 60, dir = o.mode === 'elapsed' || over ? 1 : -1;
+    a.textContent = sign + (hrs ? Math.floor(s0 / 3600) : pad(Math.floor(s0 / 60)));
+    const b = $('#tm-b'), nb = pad(bv);
+    if (b.textContent !== nb) { b.textContent = nb; const col = b.parentElement; if (col.classList.contains('col')) { col.classList.remove('tick'); void col.offsetWidth; col.classList.add('tick'); } }
+    const bp = $('#tm-bp'); if (bp) { bp.textContent = pad((bv - dir + 60) % 60); $('#tm-bn').textContent = pad((bv + dir + 60) % 60); }
+    const cards = $('#tm-cards'); if (cards) cards.classList.toggle('over', over && o.mode !== 'elapsed');
   }
-  const bar = $('#tm-bar'); if (bar) bar.style.width = Math.min(100, el / plan * 100).toFixed(1) + '%';
-  const ring = $('#tm-ring'); if (ring) ring.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - Math.min(1, el / plan))).toFixed(1);
+  const frac = Math.min(1, el / plan);
+  const bar = $('#tm-bar'); if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
+  const ring = $('#tm-ring'); if (ring) ring.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - frac)).toFixed(1);
+  const hand = $('#tm-hand'); if (hand) hand.setAttribute('transform', `rotate(${(frac * 360).toFixed(1)} 110 110)`);
   if (!t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
 }
 function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
@@ -2005,6 +2115,7 @@ function settingsHTML() {
     <div class="toggle"><span>テーマカラー</span><span class="swatches">${ACCENTS.map(([k, l, c]) => `<button class="sw" style="--c:${c};width:28px;height:28px" data-act="accent" data-k="${k}" aria-pressed="${(s.accent || '') === k}" aria-label="${l}">${ico('check')}</button>`).join('')}</span></div>
     <div class="toggle"><span>週の始まり</span><span class="seg">${[['mon','月曜'],['sun','日曜']].map(([k, l]) => `<button data-act="weekStartSet" data-k="${k}" aria-pressed="${(s.weekStart || 'mon') === k}">${l}</button>`).join('')}</span></div>
     <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label>
+    <button class="toggle" data-act="tmSet" style="width:100%;text-align:left"><span>集中タイマーの見た目<small>デザイン・色・数字の書体</small></span>${ico('right')}</button>
     <label class="toggle"><span>カレンダーに給料の見込みを表示</span><input type="checkbox" id="set-pay" ${s.showPay !== false ? 'checked' : ''}></label></div></div>
   <div class="set-sec"><h4>日記</h4><div class="set-list">
     ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
@@ -2209,7 +2320,11 @@ const ACT = {
     else go();
   },
   openTimer: () => { if (S.timer) openTimer(); },
-  tmFace: () => { const i = FACES.findIndex(f => f[0] === (S.settings.timerFace || 'aurora')), nx = FACES[(i + 1) % FACES.length]; S.settings.timerFace = nx[0]; save(); rerenderKind('timer', timerHTML); tick(); toast(`表示：${nx[1]}`); },
+  tmSet: () => { const sh = openSheet(tmSetHTML(), 'pick'); sh.dataset.kind = 'tmset'; },
+  tmSetFace: t => tmApply({ face: t.dataset.k }),
+  tmSetPal: t => tmApply({ palette: t.dataset.k }),
+  tmSetDigits: t => tmApply({ digits: t.dataset.k }),
+  tmSetMode: t => tmApply({ mode: t.dataset.k }),
   tmPause: () => { const t = S.timer; if (!t) return; if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
   tmFinish: () => {
     const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
@@ -2342,6 +2457,8 @@ document.addEventListener('change', async e => {
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
   else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); rerenderTk(); }
   else if (['ev-start', 'ev-end', 'ev-date', 'ev-end-date', 'ev-until'].includes(t.id)) { syncEvent(); rerenderEvent(); }
+  else if (t.id === 'tm-motion') tmApply({ motion: t.checked });
+  else if (/^tmc-\d$/.test(t.id)) { const c = tset().custom.slice(); c[+t.id.slice(4)] = t.value; tmApply({ custom: c, palette: 'custom' }); }
   else if (t.id === 'set-pay') { S.settings.showPay = t.checked; save(); render(); }
   else if (t.id === 'pay-limit') { S.settings.payLimit = Math.max(0, Math.round(+t.value || 0)); save(); rerenderKind('pay', paySheet); }
   else if (t.id === 'sc-start' || t.id === 'sc-end') { S.school[t.id === 'sc-start' ? 'termStart' : 'termEnd'] = t.value; save(); render(); }
@@ -2360,6 +2477,7 @@ document.addEventListener('change', async e => {
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'q') runSearch();
+  else if (/^tmc-\d$/.test(e.target.id)) { const c = tset().custom.slice(); c[+e.target.id.slice(4)] = e.target.value; S.settings.timer = Object.assign(tset(), { custom: c, palette: 'custom' }); const ts = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) ts.firstElementChild.setAttribute('style', tVars(tset(), S.timer.color)); }
   else if (e.target.id === 'tk-title' && tkDraft) {
     tkDraft.title = e.target.value; const sh = topSheet();
     if (!tkDraft._iconSet) { tkDraft.icon = guessIcon(tkDraft.title); const sq = $('.tk-icon .sq', sh); if (sq) sq.innerHTML = ico(tkDraft.icon); }
