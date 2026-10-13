@@ -887,6 +887,38 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .td-jump .ico{width:18px;height:18px;color:var(--accent);flex:none}
 .td-jump b{flex:1}
 .td-jump em{font-style:normal;font-size:12px;font-weight:700;color:var(--sun)}
+/* transit (のりかえ) */
+.sheet.nk{display:flex;flex-direction:column;padding-bottom:0}
+.sheet.nk .sh-bar{flex:none}
+.nk-frame{flex:1;width:calc(100% + 32px);margin:0 -16px;border:0;background:var(--bg);min-height:0}
+.nk-empty{padding:24px 6px;text-align:center;font-size:14px;line-height:1.8;color:var(--ink-2)}
+.rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
+.rt-sum .od{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;flex-wrap:wrap}
+.rt-sum .od .ico{width:18px;height:18px;color:var(--ink-3)}
+.rt-sum .tm{font-size:32px;font-weight:700;letter-spacing:-.01em;margin:6px 0 2px}
+.rt-sum .mt{font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 12px}
+.rt-tags{display:flex;gap:6px;margin-top:8px}
+.rt-tags span{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;color:#fff;background:var(--c)}
+.rt-steps{list-style:none;margin:0;padding:6px 16px;background:var(--surface);border-radius:22px;box-shadow:var(--shadow)}
+.rt-steps li{display:grid;grid-template-columns:48px 18px minmax(0,1fr);gap:10px;align-items:stretch}
+.rt-steps .t{font-size:12.5px;text-align:right;color:var(--ink-2);display:flex;flex-direction:column;justify-content:center;line-height:1.35}
+.rt-steps .t b{font-size:14.5px;color:var(--ink)}
+.rt-steps .mk{position:relative;display:flex;justify-content:center}
+.rt-steps .st .mk::after{content:"";align-self:center;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--ink);z-index:1}
+.rt-steps .st.first .mk::after,.rt-steps .st.last .mk::after{border-color:var(--accent);background:var(--accent)}
+.rt-steps .st .nm{font-size:16px;font-weight:700;padding:12px 0;align-self:center}
+.rt-steps .ac .mk::before{content:"";width:6px;border-radius:3px;background:var(--c,var(--accent))}
+.rt-steps .ac.walk .mk::before{width:0;border-left:4px dotted var(--ink-3);background:none}
+.rt-steps .ac .bd{padding:6px 0 10px;font-size:13px;color:var(--ink-2)}
+.rt-steps .ac .ln{font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+.rt-steps .ac .ln::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c,var(--accent));flex:none}
+.rt-steps .ac.walk .ln::before{display:none}
+.rt-steps details{margin-top:4px}
+.rt-steps summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:12.5px}
+.rt-steps details li{display:flex;gap:10px;font-size:12.5px;padding:2px 0}
+.rt-acts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.tl-route{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:11.5px;font-weight:700;color:var(--accent)}
+.tl-route .ico{width:13px;height:13px}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -1379,7 +1411,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
@@ -1704,7 +1736,7 @@ function viewDay() {
     tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}" style="--c:${ev.color}">
       <span class="tm num">${hm(ev.start)}</span>
       <button class="pill" style="height:${H}px" ${act} aria-label="${esc(ev.title)}を開く">${ico(ev.icon)}</button>
-      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}</div></button>
+      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}${ev.route ? `<span class="tl-route">${ico('train')}ルート</span>` : ''}</div></button>
       ${ev.cls ? '<span></span>' : `<button class="chk${done ? ' on' : ''}" data-act="toggleDone" data-id="${ev.id}" data-d="${d}" aria-pressed="${done}" aria-label="完了">${ico('check')}</button>`}</div>`;
     prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
@@ -1712,7 +1744,7 @@ function viewDay() {
   const moodCard = es.map(miniEntry).join('');
   return `
   <div class="tl-head"><button class="tl-title" data-act="dayToday" aria-label="今日に戻る"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1></button>
-    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
@@ -2328,6 +2360,46 @@ function songField(e) {
     <div id="sg-res" class="sg-res"></div>
     <button class="btn sg-add" data-act="manualSong">${ico('music')}この曲を添える</button>
     ${rec.length ? `<span class="sg-lb">最近添えた曲</span><div class="sg-recent">${rec.map((x, i) => `<button data-act="pickRecent" data-i="${i}">${artHTML(x, 'art')}<span>${esc(x.name)}</span></button>`).join('')}</div>` : ''}`;
+}
+
+/* ================= transit: search in のりかえ, add the route to the timeline ================= */
+const nkBase = () => { const u = (S.settings.norikae || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://').replace(/\/+$/, ''); return /^https?:\/\/[^\s/]+/.test(u) ? u : ''; };
+function nkSheet(q) {
+  const head = '<div class="sh-bar"><span></span><b>乗換案内</b><button class="r" data-act="close">閉じる</button></div>', base = nkBase();
+  if (!base) return head + '<p class="nk-empty">設定 → 乗換案内 に、のりかえのURLを入れてください。</p>';
+  const T = todayISO(), d = q && q.date || st.day, accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const p = new URLSearchParams({ embed: 'hibi', parent: location.origin, theme: isDark() ? 'dark' : 'light', date: d, time: q && q.time || (d === T ? nowHM() : '09:00') });
+  if (/^#[0-9a-f]{6}$/i.test(accent)) p.set('accent', accent);
+  if (q && q.to) { p.set('from', q.from || ''); p.set('to', q.to); if (q.via) p.set('via', q.via); p.set('type', 'dep'); p.set('go', '1'); }
+  return head + `<iframe class="nk-frame" src="${esc(base)}/?${esc(p.toString())}" title="のりかえ" allow="geolocation"></iframe>`;
+}
+function openNorikae(q) { const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; }
+window.addEventListener('message', e => {
+  const base = nkBase(); if (!base || !e.data || e.data.type !== 'hibi:addRoute') return;
+  try { if (e.origin !== new URL(base).origin) return; } catch (err) { return; }
+  const r = e.data.route; if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || !/^\d{1,2}:\d{2}$/.test(r.dep || '') || !/^\d{1,2}:\d{2}$/.test(r.arr || '')) { toast('この経路は予定にできませんでした'); return; }
+  const clean = x => String(x == null ? '' : x).slice(0, 120);
+  const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
+    steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: /^#[0-9a-f]{3,8}$|^rgb/i.test(x.color || '') ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
+  const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: [route.duration, route.transfers != null ? `乗換${route.transfers}回` : '', route.fare != null ? `${route.fareNote === '目安' ? '約' : ''}${route.fare.toLocaleString()}円` : ''].filter(Boolean).join('・'), done: {}, route };
+  S.events.push(ev); save();
+  while (stack.length) closeSheet();
+  st.day = ev.date; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render();
+  toast(`${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`);
+});
+function routeSheet(ev, d) {
+  const r = ev.route, sts = r.steps.filter(x => x.k === 's');
+  const TAGC = { 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' };
+  const steps = r.steps.map((x, i) => x.k === 's'
+    ? `<li class="st${x === sts[0] ? ' first' : x === sts[sts.length - 1] ? ' last' : ''}"><span class="t num">${x.arr ? `<span>${esc(x.arr)}着</span>` : ''}${x.dep ? `<b>${esc(x.dep)}発</b>` : ''}</span><span class="mk"></span><span class="nm">${esc(x.name)}</span></li>`
+    : `<li class="ac${x.walk ? ' walk' : ''}" style="${x.color ? `--c:${x.color}` : ''}"><span class="t"></span><span class="mk"></span><div class="bd"><div class="ln">${esc(x.line)}${x.dest ? ` <span style="font-weight:500;color:var(--ink-2)">${esc(x.dest)}</span>` : ''}</div>${[x.platform, x.stops].filter(Boolean).map(esc).join(' ・ ')}${x.stopList && x.stopList.length ? `<details><summary>途中の駅を見る</summary><ul style="list-style:none;padding:0;margin:4px 0 0">${x.stopList.map(y => `<li><span class="num" style="width:40px">${esc(y.time)}</span><span>${esc(y.name)}</span></li>`).join('')}</ul></details>` : ''}</div></li>`).join('');
+  return `<div class="sh-bar"><span></span><b>経路</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="rt-sum"><div class="od">${esc(r.from)}${ico('right')}${esc(r.to)}</div><div class="tm num">${hm(ev.start)} → ${hm(ev.end)}</div>
+    <div class="mt num"><span>${jpDate(d || ev.date)}</span>${r.duration ? `<span>${esc(r.duration)}</span>` : ''}${r.transfers != null ? `<span>乗換 ${r.transfers}回</span>` : ''}${r.fare != null ? `<span>${r.fareNote === '目安' ? '約' : ''}${r.fare.toLocaleString()}円</span>` : ''}${r.via ? `<span>${esc(r.via)} 経由</span>` : ''}</div>
+    ${r.tags.length ? `<div class="rt-tags">${r.tags.map(t => `<span style="--c:${TAGC[t] || '#8B8FA8'}">${esc(t)}</span>`).join('')}</div>` : ''}</div>
+  <ol class="rt-steps">${steps}</ol>
+  <div class="rt-acts"><button class="btn primary" data-act="nkAgain" data-id="${ev.id}" data-d="${d || ev.date}">${ico('train')}のりかえで調べ直す</button><button class="btn" data-act="editEvent" data-id="${ev.id}" data-d="${d || ev.date}" data-edit="1">${ico('pen')}予定を編集</button></div>
+  <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。</p>`;
 }
 
 /* ================= to-do: things with a deadline, school assignments included ================= */
@@ -3543,6 +3615,9 @@ function settingsHTML() {
   <div class="set-sec"><h4>カレンダーの取り込み</h4><div class="set-list">
     <p class="note" style="margin:0">iPhoneやGoogleカレンダーから書き出した .ics ファイルを読み込みます。同じファイルを2回読み込んでも、予定は重複しません。</p>
     <label class="btn file-btn">${ico('upload')}.ics ファイルを読み込む<input type="file" id="ics-file" accept=".ics,text/calendar"></label></div></div>
+  <div class="set-sec"><h4>乗換案内（のりかえ）</h4><div class="set-list">
+    <p class="note" style="margin:0">タイムライン右上の電車のボタンから、のりかえで経路を調べて、そのまま予定に入れられます。</p>
+    <div class="fld" style="margin:0"><label for="set-norikae">のりかえのURL</label><input class="inp" id="set-norikae" type="url" value="${esc(s.norikae || '')}" placeholder="https://norikae.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
     ${inFrame ? '' : `<div class="toggle"><span>保存のお知らせ<small>決めた時刻をすぎたら、iPhoneの「ファイル」に保存するよう知らせます</small></span></div>
@@ -3873,7 +3948,9 @@ const ACT = {
   pickDay: t => { st.day = t.dataset.d; st.sel = st.day; st.calMonth = st.day.slice(0, 8) + '01'; render(); },
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
-  editEvent: t => openEvent(t.dataset.id, t.dataset.d),
+  editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
+  norikae: () => openNorikae(null),
+  nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
   editEntry: t => openEntry(t.dataset.id),
@@ -3987,6 +4064,7 @@ document.addEventListener('change', async e => {
     if (!t.checked) { S.settings.lock = Object.assign({}, LK(), { cred: null }); save(); return; }
     faceRegister().then(id => { S.settings.lock = Object.assign({}, LK(), { cred: id }); save(); toast('Face IDで開けるようにしました'); }).catch(() => { t.checked = false; toast('Face IDを設定できませんでした'); });
   }
+  else if (t.id === 'set-norikae') { S.settings.norikae = t.value.trim(); save(); }
   else if (t.id === 'wx-rt') { radarStop(); radarShow(+t.value); }
   else if (t.id === 'bk-time' && t.value) { S.settings.bkTime = t.value; save(); checkBackup(); }
   else if (t.id === 'set-loc-entry' || t.id === 'set-loc-open') {
