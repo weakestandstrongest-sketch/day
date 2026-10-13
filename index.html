@@ -333,10 +333,10 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .iconpick button[aria-pressed="true"]{background:var(--c);color:#fff;border-color:transparent}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-height:48px}
 .toggle span small{display:block;font-size:11.5px;color:var(--ink-2)}
-.toggle input{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;flex:none;transition:background .2s;margin:0}
-.toggle input::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
-.toggle input:checked{background:var(--accent)}
-.toggle input:checked::after{transform:translateX(20px)}
+.toggle input[type=checkbox]{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;flex:none;transition:background .2s;margin:0}
+.toggle input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.toggle input[type=checkbox]:checked{background:var(--accent)}
+.toggle input[type=checkbox]:checked::after{transform:translateX(20px)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:13.5px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -582,6 +582,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .mv-d[aria-pressed="true"]{background:var(--c);color:#fff}.mv-d[aria-pressed="true"] b{color:#fff}.mv-d[aria-pressed="true"] i{background:#fff}
 .mv-map{position:relative;height:min(52vh,380px);border-radius:22px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow);background-image:radial-gradient(circle,color-mix(in srgb,var(--ink) 12%,transparent) 1px,transparent 1.5px);background-size:14px 14px}
 .mv-map.small{height:200px}
+.mv-map img.bt.dk{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.82) saturate(.55)}
 .mv-map img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none;animation:mvFade .4s ease both}
 @keyframes mvFade{from{opacity:0}}
 .mv-map>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -2053,7 +2054,7 @@ function movesSheet() {
   ${favSpot && !mvDay ? `<p class="mv-fav">いちばんよく行った場所 <b>${esc(favSpot.name)}</b>（${favTop[1]}日）</p>` : ''}
   ${inFrame ? '<p class="note" style="text-align:center">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<button class="btn primary mv-rec" data-act="mvRecord">${ico('pin')}いまの場所を記録</button>`}
   ${list || `<p class="empty">${mvDay ? 'この日の記録はありません' : 'この週の記録はまだありません。<br>「いまの場所を記録」を押すか、設定 → 場所の記録 で<br>自動で記録するようにできます。'}</p>`}
-  <p class="note">場所の記録はこの端末の中だけに保存されます。地図の画像は OpenStreetMap / CARTO から読み込みます。場所をタップすると名前をつけられます。</p>`;
+  <p class="note">場所の記録はこの端末の中だけに保存されます。地図は国土地理院の地図（地理院タイル）を使っています。場所をタップすると名前をつけられます。</p>`;
 }
 // smooth line through points (Catmull-Rom -> cubic Bézier)
 function smoothD(pts) {
@@ -2067,7 +2068,18 @@ function smoothD(pts) {
 }
 const wmx = (lng, z) => (lng + 180) / 360 * 256 * 2 ** z;
 const wmy = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256 * 2 ** z; };
-// a static, fitted map: CARTO raster tiles underneath, day-coloured paths and named-place pins on top
+// base map: GSI (国土地理院) pale tiles, one zoom deeper at half size so they stay sharp; OpenStreetMap if a tile is missing
+function baseTiles(ox, oy, W, H, z, dark) {
+  const zz = Math.min(18, z + 1), k = 2 ** (zz - z), sz = 256 / k, n = 2 ** zz, X = ox * k, Y = oy * k; let h = '';
+  for (let tx = Math.floor(X / 256); tx <= Math.floor((X + W * k) / 256); tx++) for (let ty = Math.floor(Y / 256); ty <= Math.floor((Y + H * k) / 256); ty++) {
+    if (ty < 0 || ty >= n) continue; const wx = ((tx % n) + n) % n;
+    h += `<img class="bt${dark ? ' dk' : ''}" src="https://cyberjapandata.gsi.go.jp/xyz/pale/${zz}/${wx}/${ty}.png" data-osm="https://tile.openstreetmap.org/${zz}/${wx}/${ty}.png" style="left:${(tx * sz - ox).toFixed(1)}px;top:${(ty * sz - oy).toFixed(1)}px;width:${sz + 0.5}px;height:${sz + 0.5}px" alt="" draggable="false">`;
+  }
+  return h;
+}
+const tileFallback = box => box.querySelectorAll('img.bt').forEach(i => i.addEventListener('error', () => { if (i.dataset.osm) { i.src = i.dataset.osm; i.dataset.osm = ''; } else i.style.visibility = 'hidden'; }));
+const MAP_ATTR = '<span class="mv-attr">地理院タイル / © OpenStreetMap</span>';
+// a static, fitted map: GSI tiles underneath, day-coloured paths and named-place pins on top
 function drawMap(box, groups, opts = {}) {
   if (!box) return;
   const W = box.clientWidth, H = box.clientHeight, all = groups.flatMap(g => g.pts);
@@ -2076,12 +2088,7 @@ function drawMap(box, groups, opts = {}) {
   if (!opts.zoom) for (; z > 3; z--) { const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z)); if (Math.max(...xs) - Math.min(...xs) <= W - 90 && Math.max(...ys) - Math.min(...ys) <= H - 110) break; }
   const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z));
   const ox = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2, oy = (Math.min(...ys) + Math.max(...ys)) / 2 - H / 2 + 12, n = 2 ** z;
-  const style = isDark() ? 'dark_all' : 'rastertiles/voyager';
-  let tiles = '';
-  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++) {
-    if (ty < 0 || ty >= n) continue;
-    tiles += `<img src="https://${'abcd'[(tx + ty) & 3]}.basemaps.cartocdn.com/${style}/${z}/${((tx % n) + n) % n}/${ty}@2x.png" style="left:${(tx * 256 - ox).toFixed(1)}px;top:${(ty * 256 - oy).toFixed(1)}px" alt="" draggable="false">`;
-  }
+  const tiles = baseTiles(ox, oy, W, H, z, isDark());
   const px = p => [wmx(p.lng, z) - ox, wmy(p.lat, z) - oy];
   let svg = '', pins = '';
   for (const g of groups) {
@@ -2093,8 +2100,8 @@ function drawMap(box, groups, opts = {}) {
   if (opts.now) { const [x, y] = px(opts.now.p); svg += `<circle class="now" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" style="--c:${opts.now.color}"/>`; }
   const seen = new Set();
   for (const g of groups) for (const s of g.pts) if (s.spot && !seen.has(s.spot.id)) { seen.add(s.spot.id); const [x, y] = px(s); pins += `<span class="mv-pin" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--c:${g.color}"><span>${ico(s.spot.icon)}</span>${esc(s.spot.name)}</span>`; }
-  box.innerHTML = tiles + `<svg aria-hidden="true">${svg}</svg>` + pins + '<span class="mv-attr">© OpenStreetMap © CARTO</span>';
-  box.querySelectorAll('img').forEach(i => i.addEventListener('error', () => i.remove()));
+  box.innerHTML = tiles + `<svg aria-hidden="true">${svg}</svg>` + pins + MAP_ATTR;
+  tileFallback(box);
 }
 function drawMoves() {
   const T = todayISO(), days = weekDays(addDays(T, -6 + mvWeek * 7)), shown = mvDay ? days.filter(x => x.d === mvDay) : days;
@@ -2467,7 +2474,7 @@ function wxSheet() {
     <div class="wx-rbar"><button data-act="radarPlay" aria-label="再生">${ico('play')}</button><input type="range" id="wx-rt" min="0" max="0" value="0" aria-label="時刻"><b class="num" id="wx-rtl">--:--</b></div>
     <div class="wx-leg">${[['#F2F2FF', '1'], ['#A0D2FF', '5'], ['#218CFF', '10'], ['#0041FF', '20'], ['#FAF500', '30'], ['#FF9900', '50'], ['#FF2800', '80'], ['#B40068', 'mm/h']].map(([c2, l]) => `<span style="--c:${c2}">${l}</span>`).join('')}</div></section>
   <section class="card"><h3>2週間の予報</h3>${wxDaily(j)}</section>
-  <p class="note">予報：Open-Meteo（気象庁などの数値予報モデル）／雨雲：気象庁 高解像度降水ナウキャスト／地名：BigDataCloud。注意報・警報は気象庁の発表を確認してください。</p>`;
+  <p class="note">予報：Open-Meteo（気象庁などの数値予報モデル）／雨雲：気象庁 高解像度降水ナウキャスト／地図：地理院タイル／地名：BigDataCloud。注意報・警報は気象庁の発表を確認してください。</p>`;
 }
 // ---- rain radar: JMA nowcast tiles over a dark base map
 let RAD = null;
@@ -2490,9 +2497,9 @@ async function drawRadar() {
   const W = box.clientWidth, H = box.clientHeight, z = 8, n = 2 ** z, cx = wmx(loc.lng, z), cy = wmy(loc.lat, z), ox = cx - W / 2, oy = cy - H / 2;
   const tiles = []; for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++) if (ty >= 0 && ty < n) tiles.push([tx, ty]);
   const pos = (tx, ty) => `left:${(tx * 256 - ox).toFixed(1)}px;top:${(ty * 256 - oy).toFixed(1)}px`;
-  box.innerHTML = tiles.map(([tx, ty]) => `<img src="https://${'abcd'[(tx + ty) & 3]}.basemaps.cartocdn.com/dark_all/${z}/${((tx % n) + n) % n}/${ty}@2x.png" style="${pos(tx, ty)}" alt="">`).join('')
-    + `<div class="ov">${tiles.map(([tx, ty]) => `<img data-t="${tx},${ty}" style="${pos(tx, ty)}" alt="">`).join('')}</div><span class="wx-me" style="left:${W / 2}px;top:${H / 2}px"></span><span class="mv-attr">© OpenStreetMap © CARTO / 気象庁</span>`;
-  box.querySelectorAll('img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; }));
+  box.innerHTML = baseTiles(ox, oy, W, H, z, true)
+    + `<div class="ov">${tiles.map(([tx, ty]) => `<img data-t="${tx},${ty}" style="${pos(tx, ty)}" alt="">`).join('')}</div><span class="wx-me" style="left:${W / 2}px;top:${H / 2}px"></span><span class="mv-attr">地理院タイル / 気象庁</span>`;
+  tileFallback(box); box.querySelectorAll('.ov img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; }));
   RAD = Object.assign(await radarFrames(), { z, n, idx: 0, timer: null });
   const r = $('#wx-rt'); if (r) { r.max = RAD.frames.length - 1; r.value = RAD.now; }
   radarShow(RAD.now);
