@@ -382,7 +382,6 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .qb i{width:38px;height:34px;background:var(--c);display:grid;place-items:center}
 .qb.more i{background:transparent;border:1.5px dashed var(--ink-3);color:var(--ink-3)}
 .qb.more .ico{width:16px;height:16px}
-.tl-sheet .quick{box-shadow:none;background:var(--surface-2);border:1px solid var(--line);margin:0 0 14px}
 /* on this day */
 .memory{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow);margin-top:10px}
 .memory .script{font-size:22px}
@@ -803,7 +802,7 @@ function viewDay() {
     prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
   if (!nowShown && timed.length) tl += `<div class="tl-now num">${nowHM()}</div>`;
-  const moodCard = es.length ? es.map(miniEntry).join('') : d <= T ? quickMood(d) : '';
+  const moodCard = es.map(miniEntry).join('');
   return `
   <div class="tl-head"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1>
     <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="dayToday" aria-label="今日">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
