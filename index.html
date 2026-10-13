@@ -372,16 +372,15 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
   transition:transform .35s cubic-bezier(.3,1.35,.5,1),opacity .25s;z-index:40;max-width:calc(100% - 32px);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 /* quick mood check-in */
-.quick{background:var(--surface);border-radius:20px;padding:12px 0 10px 14px;box-shadow:var(--shadow);margin-top:12px}
-.quick-h{display:flex;align-items:baseline;gap:8px;padding-right:14px}
+.quick{background:var(--surface);border-radius:20px;padding:12px 14px 12px;box-shadow:var(--shadow);margin-top:12px}
+.quick-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .quick-h b{font-size:14.5px}
-.quick-h small{font-size:11.5px;color:var(--ink-2)}
-.quick-row{display:flex;gap:4px;overflow-x:auto;padding:10px 10px 2px 0;scrollbar-width:none}
-.quick-row::-webkit-scrollbar{display:none}
-.qb{flex:none;width:60px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)}
-.qb i{width:38px;height:34px;background:var(--c);display:grid;place-items:center}
-.qb.more i{background:transparent;border:1.5px dashed var(--ink-3);color:var(--ink-3)}
-.qb.more .ico{width:16px;height:16px}
+.quick-h small{display:block;font-size:11.5px;color:var(--ink-2);font-weight:400}
+.quick-h button{display:inline-flex;align-items:center;gap:4px;flex:none;font-size:12.5px;font-weight:700;color:var(--accent);padding:6px 0 6px 8px}
+.quick-h button .ico{width:15px;height:15px}
+.quick-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 4px;padding-top:12px}
+.qb{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;color:var(--ink-2);min-width:0}
+.qb i{width:40px;height:36px;background:var(--c)}
 /* on this day */
 .memory{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow);margin-top:10px}
 .memory .script{font-size:22px}
@@ -849,9 +848,9 @@ function viewJournal() {
   ${dates.length > st.jLimit ? `<button class="more-btn" data-act="jMore">もっと見る</button>` : ''}`;
 }
 function quickMood(d) {
-  return `<div class="quick"><div class="quick-h"><b>${d === todayISO() ? 'いまの気分は？' : 'この日の気分は？'}</b><small>タップするだけで記録できます</small></div>
-  <div class="quick-row">${QUICK.map(f => `<button class="qb" data-act="quickMood" data-f="${f}" data-d="${d}"><i style="--c:${feelInfo(f).color};border-radius:${blob(f)}"></i>${f}</button>`).join('')}
-  <button class="qb more" data-act="newEntry" data-d="${d}"><i style="border-radius:${blob('more')}">${ico('pen')}</i>詳しく書く</button></div></div>`;
+  return `<div class="quick"><div class="quick-h"><b>${d === todayISO() ? 'いまの気分は？' : 'この日の気分は？'}<small>タップするだけで記録できます</small></b>
+    <button data-act="newEntry" data-d="${d}">${ico('pen')}詳しく書く</button></div>
+  <div class="quick-row">${QUICK.map(f => `<button class="qb" data-act="quickMood" data-f="${f}" data-d="${d}"><i style="--c:${feelInfo(f).color};border-radius:${blob(f)}"></i>${f}</button>`).join('')}</div></div>`;
 }
 function memories(T) {
   const k = T.slice(5); if (k === '02-29') return '';
