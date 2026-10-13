@@ -1654,6 +1654,7 @@ function viewCal() {
     <div class="head-icons">
       <button class="icon-btn wx-btn" data-act="weather" aria-label="天気">${wxBtnInner()}</button>
       <button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button>
+      <button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button>
       <button class="icon-btn" data-act="calPick" aria-label="月を選ぶ">${ico('today')}</button>
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
     </div>
@@ -2384,7 +2385,8 @@ window.addEventListener('message', e => {
   const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: [route.duration, route.transfers != null ? `乗換${route.transfers}回` : '', route.fare != null ? `${route.fareNote === '目安' ? '約' : ''}${route.fare.toLocaleString()}円` : ''].filter(Boolean).join('・'), done: {}, route };
   S.events.push(ev); save();
   while (stack.length) closeSheet();
-  st.day = ev.date; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render();
+  st.day = ev.date; if (st.tab === 'cal') { st.sel = ev.date; st.calMonth = ev.date.slice(0, 8) + '01'; } else st.tab = 'day';
+  saveUI(); main.dataset.tab = ''; render();
   toast(`${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`);
 });
 function routeSheet(ev, d) {
@@ -3949,7 +3951,7 @@ const ACT = {
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
-  norikae: () => openNorikae(null),
+  norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
   nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
