@@ -593,7 +593,7 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 @keyframes pulse{50%{opacity:.35}}
 .tl-item.running .pill{box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 35%,transparent)}
 /* Structured-style task editor */
-.sheet.tk{padding-top:0}
+.sheet.tk{padding-top:0;padding-bottom:0}
 .tk-head{position:relative;margin:0 -16px;padding:16px 20px 26px;background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1)),var(--c);color:#fff;touch-action:none}
 .tk-grab{width:38px;height:5px;border-radius:3px;background:rgba(255,255,255,.55);margin:-6px auto 10px}
 .tk-x{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff}
@@ -649,9 +649,71 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .tk-card textarea{display:block;width:100%;border:0;background:transparent;resize:none;min-height:120px;padding:12px 0 0;font-size:16px;line-height:1.6;color:var(--ink)}
 .tk-card textarea:focus,.tk-card textarea:focus-visible{outline:none}
 .tk-del{color:var(--sun);font-size:14px;font-weight:700;padding:8px;align-self:center}
-.tk-foot{position:sticky;bottom:0;padding:18px 0 4px;margin-top:14px;background:linear-gradient(transparent,var(--bg) 35%)}
+.tk-foot{position:sticky;bottom:0;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));margin-top:14px;background:linear-gradient(transparent,var(--bg) 30%)}
 .tk-go{width:100%;min-height:58px;border-radius:999px;background:var(--c);color:#fff;font-size:17px;font-weight:700;box-shadow:none}
 .tk-go:disabled{opacity:.45}
+/* event editor (Structured style) */
+.tk-more{position:absolute;right:20px;top:25px}
+.tk-more .ico{width:24px;height:24px;stroke-width:2.6}
+.tk-icon .sq.cap{width:74px;height:124px;border-radius:37px}
+.tk-rep{display:inline-flex;margin-top:8px;opacity:.85}
+.tk-rep .ico{width:18px;height:18px}
+.ev-list{background:var(--surface);border-radius:22px;overflow:hidden}
+.ev-li{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:58px;padding:12px 18px;text-align:left;font-size:16.5px}
+.ev-list>*+.ev-li::before{content:"";position:absolute;left:56px;right:0;top:0;border-top:1px solid var(--line)}
+.ev-li>.ico:first-child{width:24px;height:24px;color:var(--c);flex:none}
+.ev-li>span{flex:1;min-width:0}
+.ev-li>span small{display:block;font-size:12px;color:var(--ink-2)}
+.ev-li em{font-style:normal;color:var(--ink-2);font-size:14.5px;white-space:nowrap}
+.ev-li>.ico:last-child{width:18px;height:18px;color:var(--ink-3);flex:none}
+.ev-x{padding:2px 18px 14px 56px}
+.ev-x .fld{margin-bottom:10px}
+.sw-in{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;flex:none;transition:background .2s;margin:0}
+.sw-in::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.sw-in:checked{background:var(--c)}
+.sw-in:checked::after{transform:translateX(20px)}
+.ev-x .toggle{background:transparent;border:0;padding:4px 0;min-height:40px}
+.ev-del{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:999px;background:var(--surface);color:var(--sun);font-weight:700;font-size:16px}
+.ev-del .ico{width:20px;height:20px}
+.choice .btn .ico{width:20px;height:20px}
+/* focus timer — full screen, standby-clock style */
+.sheet.fs{max-width:none;max-height:none;height:100%;border-radius:0;padding:0;background:#0b0b10;overflow:hidden}
+.tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:#0b0b10}
+.tm-art{position:absolute;inset:-25%;filter:blur(46px) saturate(150%);pointer-events:none}
+.tm-art i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate}
+.tm-art i:nth-child(1){background:var(--c);left:2%;top:4%}
+.tm-art i:nth-child(2){background:color-mix(in srgb,var(--c) 45%,#ff6a3d);right:0;top:32%;animation-duration:23s;animation-delay:-6s}
+.tm-art i:nth-child(3){background:color-mix(in srgb,var(--c) 35%,#4b5bff);left:18%;bottom:0;animation-duration:27s;animation-delay:-12s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(12%,-10%) scale(1.18)}100%{transform:translate(-10%,12%) scale(.92)}}
+.face-ring .tm-art,.face-cards .tm-art{opacity:.75}
+.tm-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0;touch-action:none}
+.tm-top span{font-size:14px;font-weight:600;opacity:.9}
+.tm-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.tm-btn .ico{width:22px;height:22px}
+.tm-center{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 20px;text-align:center;min-height:0}
+.tm-name{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;max-width:100%}
+.tm-name i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.22);flex:none}
+.tm-name .ico{width:18px;height:18px}
+.tm-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-big{font-size:clamp(72px,min(25vw,34vh),240px);font-weight:700;line-height:.95;letter-spacing:-.02em;text-shadow:0 2px 24px rgba(0,0,0,.18)}
+.tm-cards{display:flex;gap:12px}
+.tm-cards b{display:grid;place-items:center;min-width:min(38vw,32vh);padding:4px 12px;font-size:clamp(64px,min(21vw,28vh),200px);font-weight:700;line-height:1.1;border-radius:30px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.tm-cards.over b{color:#ffd8cf}
+.face-ring .ring{width:min(72vw,46vh);height:min(72vw,46vh)}
+.face-ring .ring .bgc{stroke:rgba(255,255,255,.22)}
+.face-ring .ring .fgc{stroke:#fff}
+.face-ring .ring .ctr b{font-size:clamp(44px,min(15vw,10vh),90px);color:#fff}
+#tm-sub{font-size:13.5px;opacity:.92}
+#tm-sub.over{color:#ffd8cf;font-weight:700;opacity:1}
+.tm-bar{width:min(320px,72%);height:6px;border-radius:3px;background:rgba(255,255,255,.24);overflow:hidden}
+.tm-bar i{display:block;height:100%;width:0;background:#fff;border-radius:3px;transition:width 1s linear}
+.tm-ctrls{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:30px;padding:0 20px calc(26px + env(safe-area-inset-bottom,0px))}
+.tm-c{display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-size:12px;font-weight:600}
+.tm-c .cb{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.tm-c .cb .ico{width:24px;height:24px;stroke-width:2.2}
+.tm-c.main .cb{width:78px;height:78px;background:#fff;color:#16161a;border-color:#fff}
+.tm-c.main .cb .ico{width:30px;height:30px;stroke-width:2.6}
+@media (orientation:landscape) and (max-height:520px){.tm-center{gap:8px;padding:0 128px}.tm-big{font-size:min(24vw,44vh)}.tm-cards b{font-size:min(17vw,36vh);min-width:min(26vw,40vh)}.face-ring .ring{width:min(40vw,56vh);height:min(40vw,56vh)}.tm-name{font-size:15px}.tm-ctrls{position:absolute;right:calc(22px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column;align-items:center;gap:12px;padding:0}.tm-c{font-size:10.5px;gap:4px}.tm-c .cb{width:50px;height:50px}.tm-c.main .cb{width:64px;height:64px}}
 /* あとで list */
 .sw-wrap{position:relative;border-radius:18px;overflow:hidden;background:var(--surface);transition:height .26s ease,opacity .2s ease}
 .sw-del{position:absolute;inset:0;display:flex;justify-content:flex-end;background:var(--sun);color:#fff}
@@ -772,6 +834,10 @@ const IC = {
   palette:'<path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.8-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.1"/><circle cx="10" cy="7.5" r="1.1"/><circle cx="14.5" cy="7.5" r="1.1"/>',
   timer:'<circle cx="12" cy="13" r="8"/><path d="M12 13 9 9.5M9 2h6"/>',
   down:'<path d="m6 9 6 6 6-6"/>',
+  more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  pause:'<path d="M8.5 5v14M15.5 5v14"/>',
   trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   yen:'<path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/>',
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
@@ -1492,7 +1558,7 @@ function closeSheet() {
 /* drag a sheet down by its header to dismiss it */
 let drag = null;
 document.addEventListener('touchstart', e => {
-  const bar = e.target.closest('.sh-bar, .tk-head'); if (!bar || e.target.closest('button,input')) return;
+  const bar = e.target.closest('.sh-bar, .tk-head, .tm-top'); if (!bar || e.target.closest('button,input')) return;
   const sh = bar.closest('.sheet'); drag = { sh, y: e.touches[0].clientY, dy: 0, t: Date.now() }; sh.style.transition = 'none';
 }, { passive: true });
 document.addEventListener('touchmove', e => {
@@ -1524,33 +1590,53 @@ function openEvent(id, date, preset) {
     if (ev.allDay && ev.endDate) evDraft.endDate = addDays(date, diffDays(ev.date, ev.endDate));
   }
   if (ev) evDraft._iconSet = true;
-  openSheet(eventForm(), 'full');
+  const sh = openSheet(eventForm(), 'full tk'); sh.dataset.kind = 'event';
   if (!ev && !evDraft.title) setTimeout(() => { const t = $('#ev-title'); t && t.focus({ preventScroll: true }); }, 450);
 }
 function nextSlot() { const d = new Date(); let m = d.getHours() * 60 + d.getMinutes(); m = Math.min(23 * 60, Math.ceil(m / 30) * 30); return hhmm(m); }
 function eventForm() {
-  const e = evDraft, base = e._seriesDate || e.date, days = e.days && e.days.length ? e.days : [wd(base)];
-  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${e.id ? '予定を編集' : '新しい予定'}</b><button class="r" data-act="saveEvent">保存</button></div>
-  ${!e.id && S.templates.length ? `<div class="fld"><span class="lb">テンプレートから</span><div class="tpl-row">${S.templates.map(t => `<button class="tpl" style="--c:${t.color}" data-act="useTpl" data-id="${t.id}">${ico(t.icon)}${esc(t.title)}<small class="num">${t.allDay ? '終日' : hm(t.start)}</small></button>`).join('')}</div></div>` : ''}
-  <div class="fld"><input class="inp title" id="ev-title" placeholder="予定のタイトル" value="${esc(e.title)}" maxlength="60" autocomplete="off"></div>
-  ${e.id && !e.allDay ? `<button class="btn timer-start" data-act="startTimer">${ico('play')}${S.timer && S.timer.id === e.id ? '集中タイマーを開く' : '集中タイマーを始める'}</button>` : ''}
-  <div class="fld"><span class="lb">アイコン</span><div class="iconpick" style="--c:${e.color}">${EV_ICONS.map(k => `<button data-act="evIcon" data-k="${k}" aria-pressed="${e.icon === k}" aria-label="${k}">${ico(k)}</button>`).join('')}</div></div>
-  <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(c => `<button class="sw" style="--c:${c}" data-act="evColor" data-c="${c}" aria-pressed="${e.color === c}" aria-label="色 ${c}">${ico('check')}</button>`).join('')}</div></div>
-  <div class="fld"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label></div>
-  <div class="row2"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div>
-    ${e.allDay ? `<div class="fld"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>` : '<div></div>'}</div>
-  ${e.allDay ? '' : `<div class="row2"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><p class="note" id="ev-on" style="margin:-6px 0 14px" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}
-  <div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-  ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
-  ${e.repeat !== 'none' ? `<div class="fld"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}
-  <div class="fld"><label class="toggle"><span>ルーティン<small>タイムラインにだけ表示し、月のカレンダーには出しません</small></span><input type="checkbox" id="ev-routine" ${e.routine ? 'checked' : ''}></label></div>
-  <div class="fld"><label class="toggle"><span>カウントダウンに表示<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" id="ev-cd" ${e.countdown ? 'checked' : ''}></label></div>
-  <div class="fld"><label for="ev-memo">メモ</label><textarea class="inp" id="ev-memo" rows="3" style="min-height:80px">${esc(e.memo)}</textarea></div>
-  ${e._occ ? `<p class="note">繰り返しの予定です。保存するときに「この回だけ」か「すべての回」かを選べます。</p>` : ''}
-  <div class="sheet-actions"><button class="btn primary" data-act="saveEvent">保存する</button>
-    <button class="btn ghost" data-act="saveTpl">${ico('star')}テンプレートとして保存</button>
-    ${e._occ ? `<button class="btn danger" data-act="skipOcc">${md(e._occ)}の回だけ休みにする</button>` : ''}
-    ${e.id ? `<button class="btn danger" data-act="delEvent">${e._occ ? '繰り返しをすべて削除' : 'この予定を削除'}</button>` : ''}</div>`;
+  const e = evDraft, base = e._seriesDate || e.date, days = e.days && e.days.length ? e.days : [wd(base)], T = todayISO();
+  const live = e.id && S.events.find(x => x.id === e.id), occ = e._occ || e.date, done = live && !e.allDay && isDone(live, occ);
+  const rel = { [T]: '今日', [addDays(T, 1)]: '明日', [addDays(T, -1)]: '昨日' }[e.date] || '';
+  const timeLbl = e.allDay ? `終日${e.endDate && e.endDate !== e.date ? `（〜${md(e.endDate)}）` : ''}` : `${hm(e.start)} – ${endLabel(e)}`;
+  const rep = e.repeat && e.repeat !== 'none', repLbl = rep ? repeatOptions(base).find(x => x[0] === e.repeat)[1] + (e.until ? `（${md(e.until)}まで）` : '') : '繰り返さない';
+  const chev = k => ico(e['_x' + k] ? 'down' : 'right');
+  return `<div class="tk-head" style="--c:${e.color}"><div class="tk-grab"></div>
+    <button class="tk-x" data-act="close" aria-label="閉じる">${ico('x')}</button>
+    <button class="tk-x tk-more" data-act="evMore" aria-label="その他の操作">${ico('more')}</button>
+    <div class="tk-main"><button class="tk-icon" data-act="evPick" aria-label="色とアイコンを変える"><span class="sq cap">${ico(e.icon)}</span><span class="pal">${ico('palette')}</span></button>
+      <div class="tk-tt"><small class="num">${timeLbl}</small><input id="ev-title" value="${esc(e.title)}" placeholder="予定のタイトル" maxlength="60" autocomplete="off" aria-label="タイトル">${rep ? `<span class="tk-rep" aria-label="繰り返し">${ico('repeat')}</span>` : ''}</div>
+      ${live && !e.allDay ? `<button class="tk-done${done ? ' on' : ''}" data-act="evDoneT" aria-label="完了にする">${ico('check')}</button>` : '<span></span>'}</div></div>
+  <div class="tk-body" style="--c:${e.color}">
+    ${!e.id && S.templates.length ? `<div class="tpl-row">${S.templates.map(t => `<button class="tpl" style="--c:${t.color}" data-act="useTpl" data-id="${t.id}">${ico(t.icon)}${esc(t.title)}<small class="num">${t.allDay ? '終日' : hm(t.start)}</small></button>`).join('')}</div>` : ''}
+    <div class="ev-list">
+      <button class="ev-li" data-act="evX" data-k="date">${ico('cal')}<span class="num">${jpDate(e.date)}</span><em>${rel}</em>${chev('date')}</button>
+      ${e._xdate ? `<div class="ev-x"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div></div>` : ''}
+      <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num">${timeLbl}</span><em class="num">${e.allDay ? '' : dur(evLen(e))}</em>${chev('time')}</button>
+      ${e._xtime ? `<div class="ev-x"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label>
+        ${e.allDay ? `<div class="fld" style="margin-top:10px"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>`
+        : `<div class="row2" style="margin-top:10px"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><p class="note" id="ev-on" style="margin:-4px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}</div>` : ''}
+      <button class="ev-li" data-act="evX" data-k="rep">${ico('repeat')}<span>${repLbl}</span>${chev('rep')}</button>
+      ${e._xrep ? `<div class="ev-x"><div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
+        ${rep ? `<div class="fld" style="margin:0"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}</div>` : ''}
+      <label class="ev-li">${ico('list')}<span>ルーティン<small>タイムラインにだけ表示します</small></span><input type="checkbox" class="sw-in" id="ev-routine" ${e.routine ? 'checked' : ''}></label>
+      <label class="ev-li">${ico('star')}<span>カウントダウン<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" class="sw-in" id="ev-cd" ${e.countdown ? 'checked' : ''}></label>
+      ${live && !e.allDay ? `<button class="ev-li" data-act="startTimer">${ico('play')}<span>集中タイマー</span><em>${S.timer && S.timer.id === e.id ? '計測中' : 'はじめる'}</em>${ico('right')}</button>` : ''}
+    </div>
+    <div class="tk-card"><textarea id="ev-memo" rows="4" placeholder="メモ、リンク、電話番号など…" aria-label="メモ">${esc(e.memo)}</textarea></div>
+    ${e._occ ? '<p class="note" style="margin:0 6px">繰り返しの予定です。保存するときに「この回だけ」か「すべての回」かを選べます。</p>' : ''}
+    ${e.id ? `<button class="ev-del" data-act="delEvent">${ico('trash')}${e._occ ? '繰り返しをすべて削除' : '削除'}</button>` : ''}
+  </div>
+  <div class="tk-foot" style="--c:${e.color}"><button class="btn tk-go" data-act="saveEvent">${e.id ? '保存する' : '予定を作成'}</button></div>`;
+}
+function evMoreSheet() {
+  const e = evDraft;
+  return `<div class="choice"><div class="col" style="padding-top:16px">
+    <button class="btn" data-act="saveTpl">${ico('star')}テンプレートとして保存</button>
+    ${e._occ ? `<button class="btn" data-act="skipOcc">${md(e._occ)}の回だけ休みにする</button>` : ''}
+    ${e.id ? `<button class="btn danger" data-act="delEvent">${ico('trash')}${e._occ ? '繰り返しをすべて削除' : 'この予定を削除'}</button>` : ''}
+    <button class="btn ghost" data-act="close">閉じる</button></div></div>`;
 }
 function syncEvent() {
   const e = evDraft, sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
@@ -1685,34 +1771,55 @@ function jobForm() {
 let timerInt = null, wakeLock = null;
 const tElapsed = () => { const t = S.timer; return t ? t.accum + (t.paused ? 0 : Date.now() - t.startedAt) : 0; };
 const mmss = ms => { const s0 = Math.floor(Math.max(0, ms) / 1000), h = Math.floor(s0 / 3600), m = Math.floor(s0 % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s0 % 60); };
-const tSub = el => { const left = S.timer.planned * 60000 - el; return left >= 0 ? `予定 ${dur(S.timer.planned)}・のこり ${mmss(left)}` : `予定より ${mmss(-left)} オーバー`; };
+const FACES = [['aurora', 'オーロラ'], ['cards', 'カード'], ['ring', 'リング']];
 function timerHTML() {
-  const t = S.timer, el = tElapsed(), C = 2 * Math.PI * 100, frac = Math.min(1, el / (t.planned * 60000));
-  return `<div class="sh-bar"><button class="l" data-act="close">閉じる</button><b>集中タイマー</b><span></span></div>
-  <div class="timer" style="--c:${t.color}"><div class="tm-title"><i>${ico(t.icon)}</i><span>${esc(t.title)}</span></div>
-    <div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="14"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - frac)).toFixed(1)}"/></svg>
-      <div class="ctr"><b id="tm-time" class="num">${mmss(el)}</b><small id="tm-sub" class="${el > t.planned * 60000 ? 'over' : ''}">${t.paused ? '一時停止中・' : ''}${tSub(el)}</small></div></div>
-    <div class="row2"><button class="btn" data-act="tmPause">${t.paused ? ico('play') + '再開' : '一時停止'}</button><button class="btn primary" data-act="tmFinish">終了して記録</button></div>
-    <button class="btn ghost" style="width:100%" data-act="tmCancel">記録せずにやめる</button>
-    <p class="note" style="text-align:center;margin:0">この画面を閉じても、時間は計り続けます。</p></div>`;
+  const t = S.timer, face = S.settings.timerFace || 'aurora', C = 2 * Math.PI * 100;
+  const big = face === 'ring' ? `<div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><div class="ctr"><b id="tm-time" class="num"></b></div></div>`
+    : face === 'cards' ? '<div class="tm-cards" id="tm-cards"><b id="tm-a" class="num"></b><b id="tm-b" class="num"></b></div>'
+    : '<b id="tm-time" class="tm-big num"></b>';
+  return `<div class="tm-fs face-${face}" style="--c:${t.color}">
+    <div class="tm-art" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="tm-top"><button class="tm-btn" data-act="close" aria-label="閉じる（計測は続きます）">${ico('down')}</button><span id="tm-now" class="num"></span><button class="tm-btn" data-act="tmFace" aria-label="表示を切り替える">${ico('palette')}</button></div>
+    <div class="tm-center">
+      <div class="tm-name"><i>${ico(t.icon)}</i><span>${esc(t.title)}</span></div>
+      ${big}
+      <small id="tm-sub" class="num"></small>
+      ${face !== 'ring' ? '<div class="tm-bar"><i id="tm-bar"></i></div>' : ''}
+    </div>
+    <div class="tm-ctrls">
+      <button class="tm-c" data-act="tmCancel"><span class="cb">${ico('x')}</span>やめる</button>
+      <button class="tm-c main" data-act="tmPause"><span class="cb">${ico(t.paused ? 'play' : 'pause')}</span>${t.paused ? '再開' : '一時停止'}</button>
+      <button class="tm-c" data-act="tmFinish"><span class="cb">${ico('check')}</span>記録する</button>
+    </div>
+  </div>`;
 }
 function tick() {
   const t = S.timer, chip = $('#timerChip');
   if (!t) { chip.hidden = true; clearInterval(timerInt); timerInt = null; return; }
-  const el = tElapsed();
+  const el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = left < 0, txt = (over ? '+' : '') + mmss(Math.abs(left));
   chip.hidden = stack.some(o => o.firstElementChild.dataset.kind === 'timer');
   chip.style.setProperty('--c', t.color);
-  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : mmss(el)}</span>`;
-  const time = $('#tm-time');
-  if (time) {
-    time.textContent = mmss(el); const sub = $('#tm-sub'); sub.textContent = (t.paused ? '一時停止中・' : '') + tSub(el); sub.classList.toggle('over', el > t.planned * 60000);
-    $('#tm-ring').style.strokeDashoffset = (2 * Math.PI * 100 * (1 - Math.min(1, el / (t.planned * 60000)))).toFixed(1);
+  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : txt}</span>`;
+  const sub = $('#tm-sub'); if (!sub) return;
+  const n = new Date();
+  $('#tm-now').textContent = `${n.getMonth() + 1}月${n.getDate()}日(${WD[n.getDay()]}) ${n.getHours()}:${pad(n.getMinutes())}`;
+  sub.textContent = `${t.paused ? '一時停止中・' : ''}経過 ${mmss(el)}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
+  sub.classList.toggle('over', over);
+  const time = $('#tm-time'); if (time) time.textContent = txt;
+  const a = $('#tm-a');
+  if (a) {
+    const s0 = Math.floor(Math.abs(left) / 1000), hrs = s0 >= 3600;
+    a.textContent = (over ? '+' : '') + (hrs ? Math.floor(s0 / 3600) : pad(Math.floor(s0 / 60)));
+    $('#tm-b').textContent = hrs ? pad(Math.floor(s0 % 3600 / 60)) : pad(s0 % 60);
+    $('#tm-cards').classList.toggle('over', over);
   }
-  if (!t.notified && !t.paused && el >= t.planned * 60000) { t.notified = true; save(); toast('予定の時間になりました'); }
+  const bar = $('#tm-bar'); if (bar) bar.style.width = Math.min(100, el / plan * 100).toFixed(1) + '%';
+  const ring = $('#tm-ring'); if (ring) ring.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - Math.min(1, el / plan))).toFixed(1);
+  if (!t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
 }
 function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
 function openTimer() {
-  const sh = openSheet(timerHTML(), 'full'); sh.dataset.kind = 'timer'; ensureTick();
+  const sh = openSheet(timerHTML(), 'fs'); sh.dataset.kind = 'timer'; ensureTick();
   try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {}
 }
 const releaseWake = () => { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; };
@@ -1776,8 +1883,9 @@ function syncTk() {
   const d = v('tk-date'); if (d) t.date = d; const s0 = v('tk-start'); if (s0) t.start = s0;
 }
 function rerenderTk() { const sh = topSheet(); if (!sh || sh.dataset.kind !== 'task') return; const y = sh.scrollTop; sh.innerHTML = tkHTML(); sh.scrollTop = y; }
+let pickMode = 'task';
 function pickHTML() {
-  const t = tkDraft;
+  const t = pickMode === 'ev' ? evDraft : tkDraft;
   return `<div class="sh-bar"><span></span><b>カラーとアイコン</b><button class="r" data-act="close">完了</button></div>
   <div class="pk-colors">${COLORS.map(c => `<button class="sw" style="--c:${c}" data-act="tkColor" data-c="${c}" aria-pressed="${t.color === c}" aria-label="色">${ico('check')}</button>`).join('')}</div>
   ${ICON_GROUPS.map(([g, list]) => `<div class="pk-g"><span class="lb">${g}</span><div class="pk-grid">${list.map(k => `<button class="pk-i" style="--c:${t.color}" data-act="tkIcon" data-k="${k}" aria-pressed="${t.icon === k}" aria-label="${k}">${ico(k)}</button>`).join('')}</div></div>`).join('')}`;
@@ -2013,9 +2121,13 @@ const ACT = {
   tkSched: t => openTask(t.dataset.id, { date: true }),
   tkSugg: t => { const x = TASK_SUGG[+t.dataset.i]; Object.assign(tkDraft, { title: x[0], icon: x[1], dur: x[2], color: x[3], _iconSet: true }); tkStep = 'detail'; rerenderTk(); topSheet().scrollTop = 0; },
   tkNext: () => { syncTk(); if (!tkDraft.title.trim()) return; tkStep = 'detail'; rerenderTk(); topSheet().scrollTop = 0; },
-  tkPick: () => { syncTk(); tkHost = topSheet(); openSheet(pickHTML(), 'pick'); },
-  tkColor: t => { tkDraft.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = tkHTML(); tkHost.scrollTop = y; } },
-  tkIcon: t => { tkDraft.icon = t.dataset.k; tkDraft._iconSet = true; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = tkHTML(); tkHost.scrollTop = y; } },
+  tkPick: () => { syncTk(); pickMode = 'task'; tkHost = topSheet(); openSheet(pickHTML(), 'pick'); },
+  evPick: () => { syncEvent(); pickMode = 'ev'; tkHost = topSheet(); openSheet(pickHTML(), 'pick'); },
+  evMore: () => { syncEvent(); openSheet(evMoreSheet(), 'small'); },
+  evX: t => { syncEvent(); const k = '_x' + t.dataset.k; evDraft[k] = !evDraft[k]; rerenderEvent(); },
+  evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); rerenderEvent(); },
+  tkColor: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
+  tkIcon: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.icon = t.dataset.k; d._iconSet = true; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
   tkDoneT: () => { syncTk(); tkDraft.done = !tkDraft.done; rerenderTk(); },
   tkDurT: () => { syncTk(); tkDraft._showDur = !tkDraft._showDur; rerenderTk(); },
   tkDur: t => { syncTk(); tkDraft.dur = +t.dataset.m; tkDraft._showDur = false; rerenderTk(); },
@@ -2097,6 +2209,7 @@ const ACT = {
     else go();
   },
   openTimer: () => { if (S.timer) openTimer(); },
+  tmFace: () => { const i = FACES.findIndex(f => f[0] === (S.settings.timerFace || 'aurora')), nx = FACES[(i + 1) % FACES.length]; S.settings.timerFace = nx[0]; save(); rerenderKind('timer', timerHTML); tick(); toast(`表示：${nx[1]}`); },
   tmPause: () => { const t = S.timer; if (!t) return; if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
   tmFinish: () => {
     const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
@@ -2154,7 +2267,7 @@ const ACT = {
     syncEvent(); const e = evDraft, title = e.title.trim(); if (!title) { toast('タイトルを入力してから保存してください'); return; }
     const tpl = { id: uid(), title, start: e.start, end: e.end, allDay: !!e.allDay, color: e.color, icon: e._iconSet ? e.icon : guessIcon(title) };
     const i = S.templates.findIndex(x => x.title === title); if (i >= 0) { tpl.id = S.templates[i].id; S.templates[i] = tpl; } else S.templates.push(tpl);
-    if (save()) toast(`「${title}」をテンプレートに保存しました`);
+    if (save()) { if (topSheet() && !topSheet().dataset.kind) closeSheet(); toast(`「${title}」をテンプレートに保存しました`); }
   },
   skipOcc: () => { const e = evDraft, orig = S.events.find(x => x.id === e.id); if (!orig) return; confirmIn(`${md(e._occ)}の「${orig.title}」だけ休みにします。ほかの回はそのまま残ります。`, '休みにする', () => { orig.skip = Object.assign({}, orig.skip, { [e._occ]: true }); save(); while (stack.length) closeSheet(); render(); toast('この回を休みにしました'); }); },
   evColor: t => { syncEvent(); evDraft.color = t.dataset.c; rerenderEvent(); },
@@ -2228,7 +2341,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
   else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); rerenderTk(); }
-  else if (t.id === 'ev-start' || t.id === 'ev-end') { syncEvent(); const n = $('#ev-on', topSheet()); if (n) n.hidden = !overnight(evDraft); }
+  else if (['ev-start', 'ev-end', 'ev-date', 'ev-end-date', 'ev-until'].includes(t.id)) { syncEvent(); rerenderEvent(); }
   else if (t.id === 'set-pay') { S.settings.showPay = t.checked; save(); render(); }
   else if (t.id === 'pay-limit') { S.settings.payLimit = Math.max(0, Math.round(+t.value || 0)); save(); rerenderKind('pay', paySheet); }
   else if (t.id === 'sc-start' || t.id === 'sc-end') { S.school[t.id === 'sc-start' ? 'termStart' : 'termEnd'] = t.value; save(); render(); }
