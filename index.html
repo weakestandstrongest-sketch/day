@@ -919,6 +919,40 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .rt-acts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .tl-route{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:11.5px;font-weight:700;color:var(--accent)}
 .tl-route .ico{width:13px;height:13px}
+/* leave-time hint */
+.tl-leave{display:flex;align-items:center;gap:8px;width:calc(100% - 64px);margin:2px 0 6px 64px;padding:8px 12px;border-radius:14px;background:color-mix(in srgb,#4F8ED6 12%,var(--surface));color:var(--ink);font-size:12.5px;text-align:left}
+.tl-leave .ico{width:17px;height:17px;color:#4F8ED6;flex:none}
+.tl-leave b{font-size:14px}
+.tl-leave small{color:var(--ink-2)}
+.tl-leave.past{opacity:.55}
+.tl-leave.err{background:var(--surface-2);color:var(--ink-2)}
+.ev-leave{margin-top:10px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,#4F8ED6 12%,var(--surface));font-size:13px;line-height:1.6}
+.ev-leave b{font-size:15px}
+.td-plan{display:inline-flex;align-items:center;gap:3px;color:#4F8ED6;font-weight:700}
+.td-plan .ico{width:12px;height:12px}
+.td-hint{font-size:11.5px;color:var(--ink-3);text-align:center;margin:0 0 10px}
+/* today */
+.td-hello{margin:6px 2px 14px}
+.td-hello .script{font-size:30px}
+.td-hello h2{margin:2px 0 0;font-size:26px}
+.td-hello small{display:block;color:var(--ink-2);font-size:13px;margin-top:2px}
+.tw{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:22px;color:#fff;background:linear-gradient(150deg,var(--wa),var(--wb));margin-bottom:12px;width:100%;text-align:left}
+.tw>.ico{width:42px;height:42px;stroke-width:1.5;flex:none}
+.tw b{font-size:34px;font-weight:300;line-height:1}
+.tw span{font-size:13px;line-height:1.5}
+.tw span small{display:block;opacity:.85}
+.tnext{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px;border-left:6px solid var(--c)}
+.tnext small{font-size:12px;color:var(--ink-2);font-weight:700}
+.tnext b{display:block;font-size:19px;margin:2px 0}
+.tnext .in{font-size:13px;color:var(--accent);font-weight:700}
+.tlist{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:4px 16px;margin-bottom:12px}
+.tlist h3{font-size:13px;color:var(--ink-2);margin:10px 0 4px}
+.trow{display:grid;grid-template-columns:52px 10px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;font-size:14.5px;width:100%;text-align:left}
+.trow+.trow{border-top:1px solid var(--line)}
+.trow .t{font-size:13px;color:var(--ink-2);text-align:right}
+.trow i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.trow.done span:last-child{color:var(--ink-3);text-decoration:line-through}
+.trow.now span:last-child{font-weight:700}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -1411,7 +1445,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
@@ -1731,6 +1765,7 @@ function viewDay() {
     const ev = o.ev, s = toMin(ev.start), len = evLen(ev), e = s + len;
     if (prevEnd !== null && s - prevEnd >= 30) tl += `<div class="tl-gap">空き時間 ${dur(s - prevEnd)}</div>`;
     if (!nowShown && now < s) { tl += `<div class="tl-now num">${nowHM()}</div>`; nowShown = true; }
+    if (ev.dest && !ev.cls && !ev.route) tl += leaveRow(ev, d);
     const H = Math.round(Math.min(170, 58 + len * 0.55)), done = isDone(ev, d);
     const act = ev.cls ? `data-act="openClass" data-id="${ev.cls}"` : `data-act="editEvent" data-id="${ev.id}" data-d="${d}"`;
     const run = S.timer && S.timer.id === ev.id && S.timer.d === d, act2 = ev.actual && ev.actual[d] ? `・実績 ${dur(ev.actual[d])}` : '';
@@ -2371,7 +2406,7 @@ function nkSheet(q) {
   const T = todayISO(), d = q && q.date || st.day, accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
   const p = new URLSearchParams({ embed: 'hibi', parent: location.origin, theme: isDark() ? 'dark' : 'light', date: d, time: q && q.time || (d === T ? nowHM() : '09:00') });
   if (/^#[0-9a-f]{6}$/i.test(accent)) p.set('accent', accent);
-  if (q && q.to) { p.set('from', q.from || ''); p.set('to', q.to); if (q.via) p.set('via', q.via); p.set('type', 'dep'); p.set('go', '1'); }
+  if (q && q.to) { p.set('from', q.from || ''); p.set('to', q.to); if (q.via) p.set('via', q.via); p.set('type', q.type || 'dep'); p.set('go', '1'); }
   return head + `<iframe class="nk-frame" src="${esc(base)}/?${esc(p.toString())}" title="のりかえ" allow="geolocation"></iframe>`;
 }
 function openNorikae(q) { const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; }
@@ -2404,6 +2439,138 @@ function routeSheet(ev, d) {
   <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。</p>`;
 }
 
+/* ================= leave time: when to set off for a plan with a destination station ================= */
+const LV_KEY = 'hibi.leave';
+let LV = (() => { try { return JSON.parse(localStorage.getItem(LV_KEY) || '{}'); } catch (e) { return {}; } })();
+const lvBusy = new Set();
+const lvFrom = ev => (ev.from || S.settings.homeStation || '').trim();
+const lvKey = (ev, d) => [ev.id, d, ev.start, lvFrom(ev), (ev.dest || '').trim(), +S.settings.leaveMargin || 0].join('|');
+const lvArrBy = ev => hhmm(Math.max(0, toMin(ev.start) - (+S.settings.leaveMargin || 0)));
+function lvSave() { const T = todayISO(); for (const k of Object.keys(LV)) if (k.split('|')[1] < addDays(T, -1)) delete LV[k]; try { localStorage.setItem(LV_KEY, JSON.stringify(LV)); } catch (e) {} }
+function leaveGet(ev, d, cb) {
+  const from = lvFrom(ev), to = (ev.dest || '').trim(), base = nkBase();
+  if (!from || !to || ev.allDay || !base || inFrame) return { err: !from ? 'from' : !base ? 'base' : 'none' };
+  const k = lvKey(ev, d), c = LV[k];
+  if (c && Date.now() - c.at < (d === todayISO() ? 30 : 360) * 60000) return c;
+  if (!lvBusy.has(k)) {
+    lvBusy.add(k);
+    fetchJSON(`${base}/api/search?` + new URLSearchParams({ from, to, date: d, time: lvArrBy(ev), type: 'arr' }), 15000)
+      .then(j => { const r = (j.routes || [])[0]; LV[k] = r ? { at: Date.now(), dep: r.summary.dep, arr: r.summary.arr, fare: r.summary.fare, transfers: r.summary.transfers, line: ((r.steps || []).find(x => x.kind === 'access' && !x.walk) || {}).line || '' } : { at: Date.now(), err: 'notfound', msg: j.error || '' }; })
+      .catch(() => { LV[k] = { at: Date.now() - 25 * 60000, err: 'net' }; })
+      .finally(() => { lvBusy.delete(k); lvSave(); if (cb) cb(); });
+  }
+  return c || { loading: true };
+}
+const lvLeave = r => hhmm(((toMin(r.dep) - (+S.settings.leaveWalk || 0)) % 1440 + 1440) % 1440);
+function leaveRow(ev, d) {
+  const r = leaveGet(ev, d, () => { if (st.tab === 'day' && st.day === d && !stack.length) render(); });
+  const a = `data-act="leaveOpen" data-id="${ev.id}" data-d="${d}"`;
+  if (r.loading) return `<button class="tl-leave" ${a}>${ico('train')}<span>${esc(ev.dest)}までの電車を調べています…</span></button>`;
+  if (r.err) return r.err === 'from' ? `<button class="tl-leave err" data-act="settings">${ico('train')}<span>設定で「家の最寄り駅」を入れると、出発時刻が出ます</span></button>` : r.err === 'base' ? '' : `<button class="tl-leave err" ${a}>${ico('train')}<span>${r.err === 'net' ? '電車を調べられませんでした（通信を確認）' : `${esc(lvFrom(ev))} → ${esc(ev.dest)} の電車が見つかりませんでした`}</span></button>`;
+  const leave = lvLeave(r), past = d === todayISO() && toMin(nowHM()) > toMin(leave) && toMin(nowHM()) < toMin(ev.start);
+  return `<button class="tl-leave${past ? ' past' : ''}" ${a}>${ico('train')}<span><b class="num">${leave}</b>に${S.settings.leaveWalk ? '家を' : ''}出れば間に合います<br><small class="num">${esc(lvFrom(ev))} ${esc(r.dep)}発 → ${esc(ev.dest)} ${esc(r.arr)}着${r.line ? `・${esc(r.line)}` : ''}</small></span></button>`;
+}
+function leaveInfoHTML(e, d) {
+  if (!e.id || !e.dest || e.allDay) return '';
+  const live = S.events.find(x => x.id === e.id); if (!live || live.dest !== e.dest) return '<p class="note" style="margin:8px 0 0">保存すると、出発時刻を調べます。</p>';
+  const r = leaveGet(live, d, () => { const sh = topSheet(); if (sh && evDraft && evDraft.id === live.id && $('#ev-dest', sh)) rerenderEvent(); });
+  if (r.loading) return '<div class="ev-leave">電車を調べています…</div>';
+  if (r.err) return r.err === 'base' ? '' : `<div class="ev-leave">${r.err === 'from' ? '出発駅か、設定の「家の最寄り駅」を入れてください' : '電車が見つかりませんでした。駅名を確認してください'}</div>`;
+  return `<div class="ev-leave"><b class="num">${lvLeave(r)}</b>に出れば、${esc(r.arr)}に${esc(e.dest)}に着きます<br><span class="num" style="color:var(--ink-2)">${esc(lvFrom(live))} ${esc(r.dep)}発${r.transfers != null ? `・乗換${r.transfers}回` : ''}${r.fare != null ? `・${r.fare.toLocaleString()}円` : ''}</span></div>`;
+}
+
+/* ================= to-do → timeline: block out time to work on it ================= */
+let tpDraft = null;
+function plannedChip(x) {
+  const T = todayISO(), ev = S.events.filter(e => e.todo && e.todo.id === x.id && e.date >= T).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))[0];
+  return ev ? `<span class="td-plan num">${ico('clock')}${ev.date === T ? '今日' : md(ev.date)} ${hm(ev.start)}〜</span>` : '';
+}
+function planSheet() {
+  const d = tpDraft, T = todayISO();
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>作業する時間を決める</b><button class="r" data-act="todoPlanSave">入れる</button></div>
+  <p style="font-size:17px;font-weight:700;margin:6px 4px 14px">${esc(d.title)}${d.due ? `<small style="display:block;font-size:12.5px;font-weight:500;color:var(--ink-2)" class="num">締め切り ${md(d.due)}(${WD[wd(d.due)]})${d.time ? ' ' + hm(d.time) : ''}</small>` : ''}</p>
+  <div class="fld"><span class="lb">日にち</span><div class="chips">${[[T, '今日'], [addDays(T, 1), '明日'], [addDays(T, 2), 'あさって']].map(([v, l]) => `<button class="chip" data-act="tpDay" data-d="${v}" aria-pressed="${d.date === v}">${l}</button>`).join('')}</div>
+    <input class="inp" type="date" id="tp-date" value="${d.date}" style="margin-top:8px"></div>
+  <div class="fld"><label for="tp-start">はじめる時刻</label><input class="inp" type="time" id="tp-start" value="${d.start}"></div>
+  <div class="fld"><span class="lb">どのくらい</span><div class="chips">${[30, 60, 90, 120, 180].map(m => `<button class="chip num" data-act="tpDur" data-m="${m}" aria-pressed="${d.dur === m}">${dur(m)}</button>`).join('')}</div></div>
+  <div class="sheet-actions"><button class="btn primary" data-act="todoPlanSave">${ico('clock')}タイムラインに入れる</button></div>`;
+}
+function openPlan(k, id) {
+  const x = todoItems().find(y => y.k === k && y.id === id); if (!x) return;
+  const T = todayISO();
+  tpDraft = { k, id, title: x.title, due: x.due, time: x.time, color: x.color, date: x.due && x.due < T ? T : (x.due && x.due <= addDays(T, 1) ? T : T), start: nextSlot(), dur: 60 };
+  const sh = openSheet(planSheet(), 'full'); sh.dataset.kind = 'tdplan';
+}
+const syncPlan = () => { const sh = topSheet(), a = $('#tp-date', sh), b = $('#tp-start', sh); if (a && a.value) tpDraft.date = a.value; if (b && b.value) tpDraft.start = b.value; };
+// long-press a to-do row to plan it
+(() => {
+  let t = null, row = null, x0 = 0, y0 = 0;
+  const clear = () => { clearTimeout(t); t = null; row = null; };
+  document.addEventListener('touchstart', e => {
+    const r = e.target.closest('.td-row:not(.done)'); if (!r || e.touches.length > 1) return; const b = r.querySelector('.td-main'); if (!b) return;
+    row = r; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    t = setTimeout(() => { if (!row) return; noClickUntil = Date.now() + 600; if (navigator.vibrate) navigator.vibrate(12); openPlan(b.dataset.k, b.dataset.id); clear(); }, 520);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => { if (row && Math.hypot(e.touches[0].clientX - x0, e.touches[0].clientY - y0) > 8) clear(); }, { passive: true });
+  document.addEventListener('touchend', clear); document.addEventListener('touchcancel', clear);
+  document.addEventListener('contextmenu', e => { const b = e.target.closest('.td-row:not(.done) .td-main'); if (b) { e.preventDefault(); openPlan(b.dataset.k, b.dataset.id); } });
+})();
+
+/* ================= export to the iPhone Calendar (.ics) ================= */
+function icsBuild() {
+  const T = todayISO(), a = addDays(T, -30), z = addDays(T, 200), now = new Date();
+  const esc2 = x => String(x || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
+  const dd = d => d.replace(/-/g, ''), tt = t => t.replace(':', '') + '00';
+  const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}00Z`;
+  const fold = l => { const out = []; let cur = ''; for (const ch of l) { if (new TextEncoder().encode(cur + ch).length > 73) { out.push(cur); cur = ' ' + ch; } else cur += ch; } out.push(cur); return out.join('\r\n'); };
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//hibi-techo//JP', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:ひび手帳', 'X-WR-TIMEZONE:Asia/Tokyo',
+    'BEGIN:VTIMEZONE', 'TZID:Asia/Tokyo', 'BEGIN:STANDARD', 'DTSTART:19700101T000000', 'TZOFFSETFROM:+0900', 'TZOFFSETTO:+0900', 'TZNAME:JST', 'END:STANDARD', 'END:VTIMEZONE'];
+  const alarm = +S.settings.icsAlarm || 0;
+  const vev = (uid, d, ev, desc, loc, allDayEnd) => {
+    L.push('BEGIN:VEVENT', `UID:${uid}@hibi-techo`, `DTSTAMP:${stamp}`, `SUMMARY:${esc2(ev.title)}`);
+    if (ev.allDay) { L.push(`DTSTART;VALUE=DATE:${dd(d)}`, `DTEND;VALUE=DATE:${dd(addDays(allDayEnd || d, 1))}`); }
+    else { const end = toMin(ev.end) > toMin(ev.start) ? d : addDays(d, 1); L.push(`DTSTART;TZID=Asia/Tokyo:${dd(d)}T${tt(ev.start)}`, `DTEND;TZID=Asia/Tokyo:${dd(end)}T${tt(ev.end)}`); }
+    if (desc) L.push(`DESCRIPTION:${esc2(desc)}`); if (loc) L.push(`LOCATION:${esc2(loc)}`);
+    if (alarm && !ev.allDay) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc2(ev.title)}`, `TRIGGER:-PT${alarm}M`, 'END:VALARM');
+    if (ev.allDay && ev.alarm9) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc2(ev.title)}`, 'TRIGGER:PT9H', 'END:VALARM');
+    L.push('END:VEVENT');
+  };
+  let n = 0;
+  for (const o of occurrences(a, z)) {
+    const ev = o.ev; if (ev.routine || ev.cls) continue;
+    const r = ev.route, desc = [ev.memo, r ? r.steps.filter(x => x.k === 'a' && !x.walk).map(x => `${x.line}${x.platform ? `（${x.platform}）` : ''}`).join(' → ') : '', (ev.items || []).length ? `持ち物：${ev.items.join('、')}` : ''].filter(Boolean).join('\n');
+    vev(`${ev.id}-${o.date}`, o.date, ev, desc, ev.dest || (r ? `${r.from} → ${r.to}` : ''), ev.allDay ? o.end : null); n++;
+  }
+  for (const o of S.settings.icsClass === false ? [] : classOcc(a, z)) { vev(`${o.ev.id}-${o.date}`, o.date, o.ev, '大学の授業', (clsById(o.ev.cls) || {}).room || '', null); n++; }
+  if (S.settings.icsTodo !== false) for (const x of todoItems()) if (!x.done && x.due && x.due >= a) { vev(`todo-${x.id}`, x.due, { title: `〆 ${x.title}${x.time ? `（${hm(x.time)}まで）` : ''}`, allDay: true, alarm9: true }, x.note, '', null); n++; }
+  L.push('END:VCALENDAR');
+  return { text: L.map(fold).join('\r\n') + '\r\n', n };
+}
+
+/* ================= today: a one-screen summary when the app opens ================= */
+function todaySheet() {
+  const T = todayISO(), now = toMin(nowHM()), h = new Date().getHours(), name = S.settings.name;
+  const hello = h < 4 ? 'こんばんは' : h < 11 ? 'おはよう' : h < 18 ? 'こんにちは' : 'こんばんは';
+  const occ = onDay(T).filter(o => !o.ev.routine || o.ev.cls), timed = occ.filter(o => !o.ev.allDay).sort((a, b) => a.ev.start.localeCompare(b.ev.start)), all = occ.filter(o => o.ev.allDay);
+  const next = timed.find(o => toMin(o.ev.start) > now) || null;
+  const c = WX && WX.j && WX.j.current, D = WX && WX.j && WX.j.daily, di = D ? Math.max(0, D.time.indexOf(T)) : 0;
+  let wx = '';
+  if (c && S.settings.wxLoc) { const [ga, gb] = wxGrad(c.weather_code, c.is_day); wx = `<button class="tw" style="--wa:${ga};--wb:${gb}" data-act="weather">${ico(wxIcon(c.weather_code, c.is_day))}<b class="num">${Math.round(c.temperature_2m)}°</b><span>${wxLabel(c.weather_code)}<small class="num">最高 ${Math.round(D.temperature_2m_max[di])}° / 最低 ${Math.round(D.temperature_2m_min[di])}°・降水 ${D.precipitation_probability_max[di] ?? '-'}%</small></span></button>`; }
+  let nx = '';
+  if (next) { const ev = next.ev, mins = toMin(ev.start) - now, r = ev.dest && !ev.cls ? leaveGet(ev, T, () => rerenderKind('today', todaySheet)) : null;
+    nx = `<div class="tnext" style="--c:${ev.color}"><small>つぎの予定</small><b>${esc(ev.title)}</b><span class="num">${hm(ev.start)}〜${endLabel(ev)}</span> <span class="in num">あと${mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60 ? `${mins % 60}分` : ''}` : `${mins}分`}</span>${r && r.dep ? `<div style="margin-top:6px;font-size:13px">${ico('train')} <b class="num" style="display:inline;font-size:15px">${lvLeave(r)}</b>に出れば間に合います（${esc(r.dep)}発）</div>` : ''}</div>`; }
+  const rows = timed.map(o => { const e2 = toMin(o.ev.start) + evLen(o.ev), dn = isDone(o.ev, T); return `<div class="trow${dn ? ' done' : ''}${toMin(o.ev.start) <= now && now < e2 ? ' now' : ''}" style="--c:${o.ev.color}"><span class="t num">${hm(o.ev.start)}</span><i></i><span>${esc(o.ev.title)}</span></div>`; }).join('');
+  const tds = todoItems().filter(x => !x.done && x.due && x.due <= addDays(T, 1)).sort((a, b) => a.due.localeCompare(b.due));
+  return `<div class="sh-bar"><span></span><b>今日</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="td-hello"><span class="script">Today</span><h2>${hello}${name ? `、${esc(name)}` : ''}</h2><small class="num">${jpDate(T)}${holName(T) ? `・${esc(holName(T))}` : ''}</small></div>
+  ${wx}${nx}
+  ${all.length ? `<div class="tlist"><h3>終日</h3>${all.map(o => `<div class="trow" style="--c:${o.ev.color}"><span class="t">終日</span><i></i><span>${esc(o.ev.title)}</span></div>`).join('')}</div>` : ''}
+  <div class="tlist"><h3>今日の予定 ${timed.length}件</h3>${rows || '<p class="empty" style="padding:6px 0 10px">今日は時間の決まった予定はありません</p>'}</div>
+  ${tds.length ? `<div class="td-g" style="margin-bottom:12px"><p class="td-gl">今日・明日までのやること<span class="num">${tds.length}</span></p>${tds.map(x => { const [l, cl] = dueLabel(x.due); return `<div class="td-row" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="完了にする">${ico('check')}</button><span class="td-main"><b>${esc(x.title)}</b></span><span class="td-due ${cl}">${l}</span></div>`; }).join('')}</div>` : ''}
+  ${packCard(T)}
+  <div class="sheet-actions"><button class="btn primary" data-act="close">ひび手帳をひらく</button></div>`;
+}
+
 /* ================= to-do: things with a deadline, school assignments included ================= */
 const TODO_C = '#E07F78';
 let tdShowDone = false, tdDraft = null;
@@ -2427,8 +2594,9 @@ function todoSection() {
   const groups = []; for (const x of open) { const [k, l] = grp(x); let g = groups.find(y => y.k === k); if (!g) groups.push(g = { k, l, list: [] }); g.list.push(x); }
   const prog = x => { if (!x.start || !x.due || x.done || x.start > T) return ''; const tot = diffDays(x.start, x.due) + 1, el = Math.min(tot, diffDays(x.start, T) + 1); return `<i class="td-prog" aria-label="期間の${Math.round(el / tot * 100)}%が過ぎました"><b style="width:${(el / tot * 100).toFixed(1)}%"></b></i>`; };
   const row = x => { const [lbl, cls] = x.due ? dueLabel(x.due) : ['', ''];
-    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.start && x.start > T && !x.done ? `<span class="td-wait num">${md(x.start)}から</span>` : ''}${x.due || x.start ? `<span class="num">${x.start ? `${md(x.start)}〜` : ''}${x.due ? `${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}` : ''}</span>` : ''}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small>${prog(x)}</button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
+    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.start && x.start > T && !x.done ? `<span class="td-wait num">${md(x.start)}から</span>` : ''}${x.due || x.start ? `<span class="num">${x.start ? `${md(x.start)}〜` : ''}${x.due ? `${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}` : ''}</span>` : ''}${plannedChip(x)}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small>${prog(x)}</button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
   return `<section class="todo" id="todo"><div class="td-head"><h2>やること<span class="script">To Do</span></h2><button class="td-add" data-act="todoNew">${ico('plus')}追加</button></div>
+    ${open.length ? '<p class="td-hint">長押しすると、作業する時間を決めてタイムラインに入れられます</p>' : ''}
     ${groups.map(g => `<div class="td-g g-${g.k}"><p class="td-gl">${g.l}<span class="num">${g.list.length}</span></p>${g.list.map(row).join('')}</div>`).join('') || '<div class="td-g"><p class="empty" style="padding:14px 4px">やることはありません。<br>課題の提出や申し込みの締め切りを入れておきましょう。</p></div>'}
     ${done.length ? `<button class="td-done-t" data-act="todoShowDone">${ico(tdShowDone ? 'down' : 'right')}完了 ${done.length}件</button>${tdShowDone ? `<div class="td-g">${done.slice(0, 40).map(row).join('')}<button class="td-clear" data-act="todoClear">完了したものを消す</button></div>` : ''}` : ''}</section>`;
 }
@@ -2442,7 +2610,7 @@ function todoForm() {
     <div class="row2" style="margin-top:10px"><div class="fld" style="margin:0"><label for="td-due">日付</label><input class="inp" type="date" id="td-due" value="${d.due}"></div><div class="fld" style="margin:0"><label for="td-time">時刻（任意）</label><input class="inp" type="time" id="td-time" value="${d.time}"></div></div></div>
   ${cls.length ? `<div class="fld"><label for="td-cls">授業の課題にする</label><select class="inp" id="td-cls"><option value="">しない</option>${cls.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : ''}
   <div class="fld"><label for="td-note">メモ</label><textarea class="inp" id="td-note" rows="3" placeholder="提出方法、URL、ページ数など">${esc(d.note)}</textarea></div>
-  <div class="sheet-actions"><button class="btn primary" data-act="todoSave">保存する</button>${d.id ? '<button class="btn danger" data-act="todoDel">削除</button>' : ''}</div>`;
+  <div class="sheet-actions"><button class="btn primary" data-act="todoSave">保存する</button>${d.id ? `<button class="btn" data-act="todoPlan" data-k="${d.k}" data-id="${d.id}">${ico('clock')}作業する時間を決める</button><button class="btn danger" data-act="todoDel">削除</button>` : ''}</div>`;
 }
 function syncTd() {
   const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
@@ -3077,6 +3245,7 @@ function render() {
   fab.setAttribute('aria-label', jr ? '日記を書く' : '予定を追加');
   $('#topTitle').textContent = topTitle();
   onScroll();
+  if (topSheet() && topSheet().dataset.kind === 'today') rerenderKind('today', todaySheet);
   if (st.anim) { const el = $(st.anim.sel); if (el) { el.classList.remove('slide-n', 'slide-p'); void el.offsetWidth; el.classList.add(st.anim.dir > 0 ? 'slide-n' : 'slide-p'); } st.anim = null; }
 }
 function topTitle() {
@@ -3185,6 +3354,9 @@ function eventForm() {
         ${rep ? `<div class="fld" style="margin:0"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}</div>` : ''}
       <label class="ev-li">${ico('list')}<span>ルーティン<small>タイムラインにだけ表示します</small></span><input type="checkbox" class="sw-in" id="ev-routine" ${e.routine ? 'checked' : ''}></label>
       <label class="ev-li">${ico('star')}<span>カウントダウン<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" class="sw-in" id="ev-cd" ${e.countdown ? 'checked' : ''}></label>
+      <button class="ev-li" data-act="evX" data-k="go">${ico('train')}<span>行き先の駅${e.dest ? `<small>${esc(e.from || S.settings.homeStation || '出発駅')} → ${esc(e.dest)}</small>` : '<small>入れると「何時に出ればいいか」を出します</small>'}</span>${chev('go')}</button>
+      ${e._xgo ? `<div class="ev-x"><div class="row2"><div class="fld" style="margin:0"><label for="ev-from">出発駅</label><input class="inp" id="ev-from" value="${esc(e.from || '')}" placeholder="${esc(S.settings.homeStation || '例：名鉄岐阜')}" maxlength="40" autocomplete="off"></div><div class="fld" style="margin:0"><label for="ev-dest">行き先の駅</label><input class="inp" id="ev-dest" value="${esc(e.dest || '')}" placeholder="例：栄" maxlength="40" autocomplete="off"></div></div>
+        ${!S.settings.homeStation && !e.from ? '<p class="note" style="margin:8px 0 0">出発駅を空にすると、設定 → 出発時刻のお知らせ の「家の最寄り駅」を使います。</p>' : ''}${leaveInfoHTML(e, occ)}</div>` : ''}
       <button class="ev-li" data-act="evX" data-k="items">${ico('bag')}<span>持ち物</span><em class="num">${(e.items || []).length ? `${packedOf(e, occ).length}/${e.items.length}` : ''}</em>${chev('items')}</button>
       ${e._xitems ? `<div class="ev-x">${packListHTML(e, occ)}<div class="add-row" style="margin-top:6px"><input class="inp" id="ev-item" placeholder="持ち物を追加（例：学生証）" maxlength="30" autocomplete="off" enterkeyhint="done"><button data-act="evItemAdd">追加</button></div>${packSugg(e)}</div>` : ''}
       ${live && !e.allDay ? `<button class="ev-li" data-act="startTimer">${ico('play')}<span>集中タイマー</span><em>${S.timer && S.timer.id === e.id ? '計測中' : 'はじめる'}</em>${ico('right')}</button>` : ''}
@@ -3210,6 +3382,7 @@ function syncEvent() {
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
   const u = v('ev-until'); if (u !== null) e.until = u;
   const r = $('#ev-routine', sh); if (r) e.routine = r.checked;
+  const ef = v('ev-from'), et = v('ev-dest'); if (ef !== null) e.from = ef.trim(); if (et !== null) e.dest = et.trim();
   const cd = $('#ev-cd', sh); if (cd) e.countdown = cd.checked;
 }
 function rerenderEvent() { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = eventForm(); sh.scrollTop = y; }
@@ -3633,6 +3806,19 @@ function settingsHTML() {
   <div class="set-sec"><h4>カレンダーの取り込み</h4><div class="set-list">
     <p class="note" style="margin:0">iPhoneやGoogleカレンダーから書き出した .ics ファイルを読み込みます。同じファイルを2回読み込んでも、予定は重複しません。</p>
     <label class="btn file-btn">${ico('upload')}.ics ファイルを読み込む<input type="file" id="ics-file" accept=".ics,text/calendar"></label></div></div>
+  <div class="set-sec"><h4>今日の画面</h4><div class="set-list">
+    <label class="toggle"><span>開いたときに「今日」を表示<small>今日の予定・天気・やることをまとめて最初に出します</small></span><input type="checkbox" id="set-today" ${s.todayView !== false ? 'checked' : ''}></label>
+    <button class="btn" data-act="todayOpen">${ico('sun')}今日の画面を見る</button></div></div>
+  <div class="set-sec"><h4>出発時刻のお知らせ</h4><div class="set-list">
+    <p class="note" style="margin:0">予定に「行き先の駅」を入れると、のりかえで間に合う電車を調べて、タイムラインに「何時に家を出ればいいか」を出します。</p>
+    <div class="fld" style="margin:0"><label for="set-home">家の最寄り駅</label><input class="inp" id="set-home" value="${esc(s.homeStation || '')}" placeholder="例：名鉄岐阜" maxlength="40" autocomplete="off"></div>
+    <div class="row2"><div class="fld" style="margin:0"><label for="set-walk">家から駅まで（分）</label><input class="inp" id="set-walk" type="number" inputmode="numeric" min="0" max="120" value="${+s.leaveWalk || 0}"></div><div class="fld" style="margin:0"><label for="set-margin">着いておく余裕（分）</label><input class="inp" id="set-margin" type="number" inputmode="numeric" min="0" max="120" value="${+s.leaveMargin || 0}"></div></div></div></div>
+  <div class="set-sec"><h4>iPhoneのカレンダーに書き出す</h4><div class="set-list">
+    <p class="note" style="margin:0">予定をiPhoneの「カレンダー」に取り込めるファイルにします。取り込むと、iPhoneの通知で予定の前に知らせてくれます。予定を変えたときは、もう一度書き出してください。</p>
+    <label class="toggle"><span>予定の前に通知</span><select class="inp" id="set-icsalarm" style="width:auto">${[[0, 'なし'], [5, '5分前'], [10, '10分前'], [15, '15分前'], [30, '30分前'], [60, '1時間前']].map(([k, l]) => `<option value="${k}" ${(+s.icsAlarm || 0) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <label class="toggle"><span>やること・課題の締め切りも入れる</span><input type="checkbox" id="set-icstodo" ${s.icsTodo !== false ? 'checked' : ''}></label>
+    <label class="toggle"><span>大学の授業も入れる</span><input type="checkbox" id="set-icsclass" ${s.icsClass !== false ? 'checked' : ''}></label>
+    ${inFrame ? '<p class="note" style="margin:0">書き出しは GitHub Pages 版で使えます。</p>' : `<button class="btn primary" data-act="icsExport">${ico('cal')}カレンダーに書き出す</button>`}</div></div>
   <div class="set-sec"><h4>乗換案内（のりかえ）</h4><div class="set-list">
     <p class="note" style="margin:0">タイムライン右上の電車のボタンから、のりかえで経路を調べて、そのまま予定に入れられます。</p>
     <div class="fld" style="margin:0"><label for="set-norikae">のりかえのURL</label><input class="inp" id="set-norikae" type="url" value="${esc(s.norikae || '')}" placeholder="https://norikae.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
@@ -3858,6 +4044,23 @@ const ACT = {
     enrichSong(sg).then(x => { if (x.preview) { const b = $('[data-act="sgPlay"]', topSheet()); if (b) togglePreview(b, x.preview); } else { toast(x.noPreview ? 'この曲の試聴は見つかりませんでした' : '試聴をさがせませんでした。通信を確認してください'); const b = $('[data-act="sgPlay"]', topSheet()); if (b) b.innerHTML = `${ico('play')}試聴`; } });
   },
   rmSong: () => { stopPreview(); syncEntry(); delete enDraft.song; rerenderEntry(); },
+  leaveOpen: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; openNorikae({ from: lvFrom(ev), to: ev.dest, date: t.dataset.d, time: lvArrBy(ev), type: 'arr' }); },
+  todoPlan: t => { closeSheet(); openPlan(t.dataset.k, t.dataset.id); },
+  tpDay: t => { const i = $('#tp-date', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="tpDay"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  tpDur: t => { syncPlan(); tpDraft.dur = +t.dataset.m; topSheet().querySelectorAll('[data-act="tpDur"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  todoPlanSave: () => {
+    syncPlan(); const d = tpDraft; if (!d.date || !d.start) { toast('日にちと時刻を選んでください'); return; }
+    const ev = { id: uid(), title: d.title, date: d.date, endDate: '', allDay: false, start: d.start, end: hhmm(Math.min(1439, toMin(d.start) + d.dur)), color: d.color, icon: guessIcon(d.title) === 'star' ? 'pen' : guessIcon(d.title), repeat: 'none', routine: false, memo: d.due ? `締め切り ${md(d.due)}${d.time ? ' ' + hm(d.time) : ''}` : '', done: {}, todo: { k: d.k, id: d.id } };
+    S.events.push(ev); save(); closeSheet(); render(); toast(`${md(ev.date)} ${hm(ev.start)}〜 にタイムラインに入れました`, '見る', () => { st.day = ev.date; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); });
+  },
+  icsExport: () => {
+    const { text, n } = icsBuild(); if (!n) { toast('書き出す予定がありません'); return; }
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' })), a = document.createElement('a');
+    a.href = url; if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) a.download = 'hibi-techo.ics';
+    document.body.append(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 60000);
+    toast(`${n}件を書き出しました。「すべてを追加」でカレンダーに入ります`);
+  },
+  todayOpen: () => { while (stack.length) closeSheet(); openToday(); },
   todoNew: () => openTodo('t', null),
   todoEdit: t => openTodo(t.dataset.k, t.dataset.id),
   todoJump: () => { const el = $('#todo'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
@@ -4082,6 +4285,11 @@ document.addEventListener('change', async e => {
     if (!t.checked) { S.settings.lock = Object.assign({}, LK(), { cred: null }); save(); return; }
     faceRegister().then(id => { S.settings.lock = Object.assign({}, LK(), { cred: id }); save(); toast('Face IDで開けるようにしました'); }).catch(() => { t.checked = false; toast('Face IDを設定できませんでした'); });
   }
+  else if (t.id === 'set-today') { S.settings.todayView = t.checked; save(); }
+  else if (t.id === 'set-home') { S.settings.homeStation = t.value.trim(); save(); render(); }
+  else if (t.id === 'set-walk' || t.id === 'set-margin') { S.settings[t.id === 'set-walk' ? 'leaveWalk' : 'leaveMargin'] = Math.max(0, Math.min(120, Math.round(+t.value || 0))); save(); render(); }
+  else if (t.id === 'set-icsalarm') { S.settings.icsAlarm = +t.value; save(); }
+  else if (t.id === 'set-icstodo' || t.id === 'set-icsclass') { S.settings[t.id === 'set-icstodo' ? 'icsTodo' : 'icsClass'] = t.checked; save(); }
   else if (t.id === 'set-norikae') { S.settings.norikae = t.value.trim(); save(); }
   else if (t.id === 'wx-rt') { radarStop(); radarShow(+t.value); }
   else if (t.id === 'bk-time' && t.value) { S.settings.bkTime = t.value; save(); checkBackup(); }
@@ -4220,6 +4428,8 @@ const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01'
 applyTheme(); if (lockOn()) showLock('unlock'); render(); ensureTick();
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
+function openToday() { const sh = openSheet(todaySheet(), 'full'); sh.dataset.kind = 'today'; }
+if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday')) openToday();
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
