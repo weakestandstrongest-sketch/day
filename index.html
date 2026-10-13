@@ -585,7 +585,15 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .mv-map img.bt.dk{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.82) saturate(.55)}
 .mv-map img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none;animation:mvFade .4s ease both}
 @keyframes mvFade{from{opacity:0}}
-.mv-map>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.mv-map.live{touch-action:none;cursor:grab}
+.mv-layer{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+.mv-layer>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.mv-map.still .ln{animation:none;stroke-dashoffset:0}
+.mv-map.still img{animation:none}
+.mv-zoom{position:absolute;right:10px;top:10px;z-index:2;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 4px 14px rgba(0,0,0,.16)}
+.mv-zoom button{width:38px;height:38px;display:grid;place-items:center;font-size:22px;font-weight:500;color:var(--ink);line-height:1}
+.mv-zoom button+button{border-top:1px solid var(--line)}
+.mv-zoom .ico{width:18px;height:18px}
 .mv-map .halo{fill:none;stroke:var(--surface);stroke-opacity:.85;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
 .mv-map .ln{fill:none;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:mvDraw 1.2s ease-out forwards}
 @keyframes mvDraw{to{stroke-dashoffset:0}}
@@ -866,6 +874,9 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .td-main small>span:not(.td-cls){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .td-cls{display:inline-flex;align-items:center;gap:4px;color:var(--c);font-weight:700}
 .td-cls::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.td-prog{display:block;height:4px;border-radius:2px;background:var(--surface-2);margin-top:6px;overflow:hidden;max-width:220px}
+.td-prog b{display:block;height:100%;border-radius:2px;background:var(--c)}
+.td-wait{color:var(--sat);font-weight:700}
 .td-due{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
 .td-due.soon{background:color-mix(in srgb,#EDA04B 18%,var(--surface));color:#C9781F}
 .td-due.over{background:color-mix(in srgb,var(--sun) 15%,var(--surface));color:var(--sun)}
@@ -1323,6 +1334,7 @@ const IC = {
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   umbrella:'<path d="M3 12a9 9 0 0 1 18 0zM12 12v7a2 2 0 0 0 4 0M12 3v-1"/>',
+  target:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
   lock:'<rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14.5v2.5"/>',
   face:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.7 1.3 4.3 1.3 6 0"/>',
   back:'<path d="M9 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-6-6z"/><path d="m13 10 4 4M17 10l-4 4"/>',
@@ -2094,7 +2106,7 @@ function movesSheet() {
   ${favSpot && !mvDay ? `<p class="mv-fav">いちばんよく行った場所 <b>${esc(favSpot.name)}</b>（${favTop[1]}日）</p>` : ''}
   ${inFrame ? '<p class="note" style="text-align:center">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<button class="btn primary mv-rec" data-act="mvRecord">${ico('pin')}いまの場所を記録</button>`}
   ${list || `<p class="empty">${mvDay ? 'この日の記録はありません' : 'この週の記録はまだありません。<br>「いまの場所を記録」を押すか、設定 → 場所の記録 で<br>自動で記録するようにできます。'}</p>`}
-  <p class="note">場所の記録はこの端末の中だけに保存されます。地図は国土地理院の地図（地理院タイル）を使っています。場所をタップすると名前をつけられます。</p>`;
+  <p class="note">場所の記録はこの端末の中だけに保存されます。地図は指で動かしたり、2本指・ダブルタップ・＋－ボタンで拡大縮小できます（地図：地理院タイル）。場所をタップすると名前をつけられます。</p>`;
 }
 // smooth line through points (Catmull-Rom -> cubic Bézier)
 function smoothD(pts) {
@@ -2110,38 +2122,82 @@ const wmx = (lng, z) => (lng + 180) / 360 * 256 * 2 ** z;
 const wmy = (lat, z) => { const s = Math.sin(lat * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256 * 2 ** z; };
 // base map: GSI (国土地理院) pale tiles, one zoom deeper at half size so they stay sharp; OpenStreetMap if a tile is missing
 function baseTiles(ox, oy, W, H, z, dark) {
-  const zz = Math.min(18, z + 1), k = 2 ** (zz - z), sz = 256 / k, n = 2 ** zz, X = ox * k, Y = oy * k; let h = '';
-  for (let tx = Math.floor(X / 256); tx <= Math.floor((X + W * k) / 256); tx++) for (let ty = Math.floor(Y / 256); ty <= Math.floor((Y + H * k) / 256); ty++) {
+  const zz = Math.max(2, Math.min(18, Math.round(z + 1))), sz = 256 * 2 ** (z - zz), n = 2 ** zz; let h = '';
+  for (let tx = Math.floor(ox / sz); tx <= Math.floor((ox + W) / sz); tx++) for (let ty = Math.floor(oy / sz); ty <= Math.floor((oy + H) / sz); ty++) {
     if (ty < 0 || ty >= n) continue; const wx = ((tx % n) + n) % n;
-    h += `<img class="bt${dark ? ' dk' : ''}" src="https://cyberjapandata.gsi.go.jp/xyz/pale/${zz}/${wx}/${ty}.png" data-osm="https://tile.openstreetmap.org/${zz}/${wx}/${ty}.png" style="left:${(tx * sz - ox).toFixed(1)}px;top:${(ty * sz - oy).toFixed(1)}px;width:${sz + 0.5}px;height:${sz + 0.5}px" alt="" draggable="false">`;
+    h += `<img class="bt${dark ? ' dk' : ''}" src="https://cyberjapandata.gsi.go.jp/xyz/pale/${zz}/${wx}/${ty}.png" data-osm="https://tile.openstreetmap.org/${zz}/${wx}/${ty}.png" style="left:${(tx * sz - ox).toFixed(1)}px;top:${(ty * sz - oy).toFixed(1)}px;width:${(sz + 0.5).toFixed(1)}px;height:${(sz + 0.5).toFixed(1)}px" alt="" draggable="false">`;
   }
   return h;
 }
 const tileFallback = box => box.querySelectorAll('img.bt').forEach(i => i.addEventListener('error', () => { if (i.dataset.osm) { i.src = i.dataset.osm; i.dataset.osm = ''; } else i.style.visibility = 'hidden'; }));
 const MAP_ATTR = '<span class="mv-attr">地理院タイル / © OpenStreetMap</span>';
-// a static, fitted map: GSI tiles underneath, day-coloured paths and named-place pins on top
+// ---- interactive map: drag to move, pinch / double-tap / buttons to zoom
+const unmx = (x, z) => x / (256 * 2 ** z) * 360 - 180;
+const unmy = (y, z) => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / (256 * 2 ** z)))) * 180 / Math.PI;
+function mapView(box, v) {
+  const clampZ = z => Math.max(v.min || 3, Math.min(v.max || 19, z));
+  v.draw = () => {
+    const W = box.clientWidth, H = box.clientHeight, ox = wmx(v.lng, v.z) - W / 2, oy = wmy(v.lat, v.z) - H / 2;
+    box.innerHTML = `<div class="mv-layer">${v.layer(v.z, ox, oy, W, H)}</div><div class="mv-zoom"><button data-mz="1" aria-label="拡大">＋</button><button data-mz="-1" aria-label="縮小">－</button>${v.fit ? `<button data-mz="fit" aria-label="はじめの表示に戻す">${ico('target')}</button>` : ''}</div>${v.attr || ''}`;
+    tileFallback(box); if (v.done) v.done(box);
+  };
+  // apply a gesture (scale s about box point o, then translate t) to the view and redraw
+  const commit = (s, o, t) => {
+    const W = box.clientWidth, H = box.clientHeight, ox = wmx(v.lng, v.z) - W / 2, oy = wmy(v.lat, v.z) - H / 2;
+    const px = o[0] + (W / 2 - t[0] - o[0]) / s, py = o[1] + (H / 2 - t[1] - o[1]) / s, nz = clampZ(v.z + Math.log2(s)), k = 2 ** (nz - v.z);
+    v.lng = unmx((ox + px) * k, nz); v.lat = Math.max(-84, Math.min(84, unmy((oy + py) * k, nz))); v.z = nz; box.classList.add('still'); v.draw();
+  };
+  const P = new Map(); let g = null, lastTap = 0;
+  const rel = e => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const begin = () => { const L = [...P.values()]; g = L.length > 1 ? { two: true, d0: Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) || 1, m0: [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2], s: 1, t: [0, 0], moved: true } : { two: false, p0: L[0], s: 1, t: [0, 0], moved: false }; };
+  const finish = () => { if (g && (g.moved || g.s !== 1)) commit(g.s, g.two ? g.m0 : [0, 0], g.t); g = null; };
+  box.addEventListener('pointerdown', e => {
+    if (e.target.closest('.mv-zoom')) return;
+    box.setPointerCapture(e.pointerId); finish(); P.set(e.pointerId, rel(e)); begin();
+  });
+  box.addEventListener('pointermove', e => {
+    if (!P.has(e.pointerId) || !g) return; P.set(e.pointerId, rel(e)); const L = [...P.values()], layer = box.querySelector('.mv-layer'); if (!layer) return;
+    if (g.two && L.length > 1) { const m = [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2]; g.s = Math.max(0.15, Math.min(8, Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) / g.d0)); g.t = [m[0] - g.m0[0], m[1] - g.m0[1]]; layer.style.transformOrigin = `${g.m0[0]}px ${g.m0[1]}px`; }
+    else if (!g.two) { g.t = [L[0][0] - g.p0[0], L[0][1] - g.p0[1]]; if (Math.hypot(...g.t) > 4) g.moved = true; layer.style.transformOrigin = '0 0'; }
+    layer.style.transform = `translate(${g.t[0]}px,${g.t[1]}px) scale(${g.s})`;
+  });
+  const up = e => {
+    if (!P.has(e.pointerId)) return; const was = g, p = P.get(e.pointerId); P.delete(e.pointerId);
+    if (was && !was.two && !was.moved && P.size === 0) { g = null; const now = Date.now(); if (now - lastTap < 320) { lastTap = 0; commit(2, p, [0, 0]); } else lastTap = now; return; }
+    finish(); if (P.size) begin();
+  };
+  box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+  box.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  box.addEventListener('touchmove', e => { e.stopPropagation(); if (e.cancelable) e.preventDefault(); }, { passive: false });
+  box.addEventListener('click', e => { const b = e.target.closest('[data-mz]'); if (!b) return; e.stopPropagation(); box.classList.add('still'); if (b.dataset.mz === 'fit') v.fit(v); else v.z = clampZ(Math.round(v.z) + +b.dataset.mz); v.draw(); });
+  box.classList.add('live'); box.classList.remove('still'); v.draw();
+}
+// a fitted map you can move and zoom: GSI tiles underneath, day-coloured paths and named-place pins on top
 function drawMap(box, groups, opts = {}) {
   if (!box) return;
   const W = box.clientWidth, H = box.clientHeight, all = groups.flatMap(g => g.pts);
-  if (!all.length) { box.innerHTML = `<div class="mv-empty">${opts.empty || '記録した場所が、ここに地図で表示されます'}</div>`; return; }
-  let z = opts.zoom || 17;
-  if (!opts.zoom) for (; z > 3; z--) { const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z)); if (Math.max(...xs) - Math.min(...xs) <= W - 90 && Math.max(...ys) - Math.min(...ys) <= H - 110) break; }
-  const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z));
-  const ox = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2, oy = (Math.min(...ys) + Math.max(...ys)) / 2 - H / 2 + 12, n = 2 ** z;
-  const tiles = baseTiles(ox, oy, W, H, z, isDark());
-  const px = p => [wmx(p.lng, z) - ox, wmy(p.lat, z) - oy];
-  let svg = '', pins = '';
-  for (const g of groups) {
-    const q = g.pts.map(px), d = smoothD(q);
-    let len = 0; for (let i = 1; i < q.length; i++) len += Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]);
-    if (q.length > 1) svg += `<path class="halo" d="${d}"/><path class="ln" d="${d}" style="stroke:${g.color};--len:${Math.ceil(len * 1.3) + 10}"/>`;
-    svg += q.map(([x, y]) => `<circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" style="fill:${g.color}"/>`).join('');
-  }
-  if (opts.now) { const [x, y] = px(opts.now.p); svg += `<circle class="now" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" style="--c:${opts.now.color}"/>`; }
-  const seen = new Set();
-  for (const g of groups) for (const s of g.pts) if (s.spot && !seen.has(s.spot.id)) { seen.add(s.spot.id); const [x, y] = px(s); pins += `<span class="mv-pin" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--c:${g.color}"><span>${ico(s.spot.icon)}</span>${esc(s.spot.name)}</span>`; }
-  box.innerHTML = tiles + `<svg aria-hidden="true">${svg}</svg>` + pins + MAP_ATTR;
-  tileFallback(box);
+  if (!all.length) { box.classList.remove('live'); box.innerHTML = `<div class="mv-empty">${opts.empty || '記録した場所が、ここに地図で表示されます'}</div>`; return; }
+  const fit = v => {
+    let z = opts.zoom || 17;
+    if (!opts.zoom) for (; z > 3; z--) { const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z)); if (Math.max(...xs) - Math.min(...xs) <= W - 90 && Math.max(...ys) - Math.min(...ys) <= H - 110) break; }
+    const xs = all.map(p => wmx(p.lng, z)), ys = all.map(p => wmy(p.lat, z));
+    v.z = z; v.lng = unmx((Math.min(...xs) + Math.max(...xs)) / 2, z); v.lat = unmy((Math.min(...ys) + Math.max(...ys)) / 2 - 12, z);
+  };
+  const v = { min: 3, max: 19, attr: MAP_ATTR, fit, layer: (z, ox, oy, W2, H2) => {
+    const px = p => [wmx(p.lng, z) - ox, wmy(p.lat, z) - oy];
+    let svg = '', pins = '';
+    for (const g of groups) {
+      const q = g.pts.map(px), d = smoothD(q);
+      let len = 0; for (let i = 1; i < q.length; i++) len += Math.hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]);
+      if (q.length > 1) svg += `<path class="halo" d="${d}"/><path class="ln" d="${d}" style="stroke:${g.color};--len:${Math.ceil(len * 1.3) + 10}"/>`;
+      svg += q.map(([x, y]) => `<circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" style="fill:${g.color}"/>`).join('');
+    }
+    if (opts.now) { const [x, y] = px(opts.now.p); svg += `<circle class="now" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" style="--c:${opts.now.color}"/>`; }
+    const seen = new Set();
+    for (const g of groups) for (const s2 of g.pts) if (s2.spot && !seen.has(s2.spot.id)) { seen.add(s2.spot.id); const [x, y] = px(s2); pins += `<span class="mv-pin" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--c:${g.color}"><span>${ico(s2.spot.icon)}</span>${esc(s2.spot.name)}</span>`; }
+    return baseTiles(ox, oy, W2, H2, z, isDark()) + `<svg aria-hidden="true">${svg}</svg>` + pins;
+  } };
+  fit(v); mapView(box, v);
 }
 function drawMoves() {
   const T = todayISO(), days = weekDays(addDays(T, -6 + mvWeek * 7)), shown = mvDay ? days.filter(x => x.d === mvDay) : days;
@@ -2279,8 +2335,8 @@ const TODO_C = '#E07F78';
 let tdShowDone = false, tdDraft = null;
 function todoItems() {
   const out = [];
-  for (const x of S.todos) out.push({ k: 't', id: x.id, title: x.title, due: x.due || '', time: x.time || '', done: !!x.done, doneAt: x.doneAt || 0, color: TODO_C, sub: '', note: x.note || '' });
-  for (const h of S.school.tasks) { const c = clsById(h.classId); out.push({ k: 'h', id: h.id, title: h.title, due: h.due || '', time: h.time || '', done: !!h.done, doneAt: h.doneAt || 0, color: c ? c.color : COLORS[4], sub: c ? c.name : '課題', note: h.note || '' }); }
+  for (const x of S.todos) out.push({ k: 't', id: x.id, title: x.title, start: x.start || '', due: x.due || '', time: x.time || '', done: !!x.done, doneAt: x.doneAt || 0, color: TODO_C, sub: '', note: x.note || '' });
+  for (const h of S.school.tasks) { const c = clsById(h.classId); out.push({ k: 'h', id: h.id, title: h.title, start: h.start || '', due: h.due || '', time: h.time || '', done: !!h.done, doneAt: h.doneAt || 0, color: c ? c.color : COLORS[4], sub: c ? c.name : '課題', note: h.note || '' }); }
   return out;
 }
 const todoOpen = () => todoItems().filter(x => !x.done);
@@ -2295,8 +2351,9 @@ function todoSection() {
   const done = all.filter(x => x.done).sort((a, b) => b.doneAt - a.doneAt);
   const grp = x => !x.due ? ['none', '期限なし'] : x.due < T ? ['over', '期限切れ'] : x.due === T ? ['today', '今日まで'] : x.due === addDays(T, 1) ? ['tom', '明日まで'] : diffDays(T, x.due) <= 7 ? ['week', '1週間以内'] : ['later', 'それ以降'];
   const groups = []; for (const x of open) { const [k, l] = grp(x); let g = groups.find(y => y.k === k); if (!g) groups.push(g = { k, l, list: [] }); g.list.push(x); }
+  const prog = x => { if (!x.start || !x.due || x.done || x.start > T) return ''; const tot = diffDays(x.start, x.due) + 1, el = Math.min(tot, diffDays(x.start, T) + 1); return `<i class="td-prog" aria-label="期間の${Math.round(el / tot * 100)}%が過ぎました"><b style="width:${(el / tot * 100).toFixed(1)}%"></b></i>`; };
   const row = x => { const [lbl, cls] = x.due ? dueLabel(x.due) : ['', ''];
-    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.due ? `<span class="num">${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}</span>` : ''}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small></button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
+    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.start && x.start > T && !x.done ? `<span class="td-wait num">${md(x.start)}から</span>` : ''}${x.due || x.start ? `<span class="num">${x.start ? `${md(x.start)}〜` : ''}${x.due ? `${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}` : ''}</span>` : ''}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small>${prog(x)}</button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
   return `<section class="todo" id="todo"><div class="td-head"><h2>やること<span class="script">To Do</span></h2><button class="td-add" data-act="todoNew">${ico('plus')}追加</button></div>
     ${groups.map(g => `<div class="td-g g-${g.k}"><p class="td-gl">${g.l}<span class="num">${g.list.length}</span></p>${g.list.map(row).join('')}</div>`).join('') || '<div class="td-g"><p class="empty" style="padding:14px 4px">やることはありません。<br>課題の提出や申し込みの締め切りを入れておきましょう。</p></div>'}
     ${done.length ? `<button class="td-done-t" data-act="todoShowDone">${ico(tdShowDone ? 'down' : 'right')}完了 ${done.length}件</button>${tdShowDone ? `<div class="td-g">${done.slice(0, 40).map(row).join('')}<button class="td-clear" data-act="todoClear">完了したものを消す</button></div>` : ''}` : ''}</section>`;
@@ -2306,7 +2363,8 @@ function todoForm() {
   const quick = [['', 'なし'], [T, '今日'], [addDays(T, 1), '明日'], [addDays(T, 3), '3日後'], [addDays(T, 7), '1週間後']];
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${d.id ? 'やることを編集' : 'やることを追加'}</b><button class="r" data-act="todoSave">保存</button></div>
   <div class="fld"><input class="inp title" id="td-title" value="${esc(d.title)}" placeholder="例：英語のレポートを提出" maxlength="60" autocomplete="off" enterkeyhint="done" aria-label="やること"></div>
-  <div class="fld"><span class="lb">締め切り</span><div class="chips">${quick.map(([v, l]) => `<button class="chip" data-act="todoDue" data-d="${v}" aria-pressed="${d.due === v}">${l}</button>`).join('')}</div>
+  <div class="fld"><label for="td-start">いつから（任意）</label><div class="until-row"><input class="inp" type="date" id="td-start" value="${d.start}">${d.start ? '<button data-act="todoStartClr">クリア</button>' : ''}</div><p class="note" style="margin:6px 0 0">課題が出た日や、取りかかる日。締め切りまでの期間がバーで出ます。</p></div>
+  <div class="fld"><span class="lb">いつまで（締め切り）</span><div class="chips">${quick.map(([v, l]) => `<button class="chip" data-act="todoDue" data-d="${v}" aria-pressed="${d.due === v}">${l}</button>`).join('')}</div>
     <div class="row2" style="margin-top:10px"><div class="fld" style="margin:0"><label for="td-due">日付</label><input class="inp" type="date" id="td-due" value="${d.due}"></div><div class="fld" style="margin:0"><label for="td-time">時刻（任意）</label><input class="inp" type="time" id="td-time" value="${d.time}"></div></div></div>
   ${cls.length ? `<div class="fld"><label for="td-cls">授業の課題にする</label><select class="inp" id="td-cls"><option value="">しない</option>${cls.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : ''}
   <div class="fld"><label for="td-note">メモ</label><textarea class="inp" id="td-note" rows="3" placeholder="提出方法、URL、ページ数など">${esc(d.note)}</textarea></div>
@@ -2314,13 +2372,13 @@ function todoForm() {
 }
 function syncTd() {
   const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
-  tdDraft.title = v('td-title') ?? tdDraft.title; tdDraft.due = v('td-due') ?? tdDraft.due; tdDraft.time = v('td-time') ?? tdDraft.time; tdDraft.note = v('td-note') ?? tdDraft.note;
+  tdDraft.title = v('td-title') ?? tdDraft.title; tdDraft.due = v('td-due') ?? tdDraft.due; tdDraft.start = v('td-start') ?? tdDraft.start; tdDraft.time = v('td-time') ?? tdDraft.time; tdDraft.note = v('td-note') ?? tdDraft.note;
   const c = v('td-cls'); if (c !== null) tdDraft.classId = c;
 }
 function openTodo(k, id) {
   const x = id && (k === 'h' ? S.school.tasks : S.todos).find(y => y.id === id);
-  tdDraft = x ? { k, id, title: x.title, due: x.due || '', time: x.time || '', note: x.note || '', classId: k === 'h' ? x.classId || '' : '', done: !!x.done, doneAt: x.doneAt || 0 }
-    : { k: 't', id: null, title: '', due: '', time: '', note: '', classId: '', done: false };
+  tdDraft = x ? { k, id, title: x.title, start: x.start || '', due: x.due || '', time: x.time || '', note: x.note || '', classId: k === 'h' ? x.classId || '' : '', done: !!x.done, doneAt: x.doneAt || 0 }
+    : { k: 't', id: null, title: '', start: '', due: '', time: '', note: '', classId: '', done: false };
   const sh = openSheet(todoForm(), 'full'); sh.dataset.kind = 'todo';
   if (!x) setTimeout(() => { const el = $('#td-title'); el && el.focus({ preventScroll: true }); }, 450);
 }
@@ -2585,19 +2643,22 @@ async function radarFrames() {
 function stampLabel(v) { const d = new Date(Date.UTC(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8), +v.slice(8, 10), +v.slice(10, 12))); return `${d.getHours()}:${pad(d.getMinutes())}`; }
 async function drawRadar() {
   const box = $('#wx-radar'), loc = S.settings.wxLoc; if (!box || !loc) return;
-  const W = box.clientWidth, H = box.clientHeight, z = 8, n = 2 ** z, cx = wmx(loc.lng, z), cy = wmy(loc.lat, z), ox = cx - W / 2, oy = cy - H / 2;
-  const tiles = []; for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++) if (ty >= 0 && ty < n) tiles.push([tx, ty]);
-  const pos = (tx, ty) => `left:${(tx * 256 - ox).toFixed(1)}px;top:${(ty * 256 - oy).toFixed(1)}px`;
-  box.innerHTML = baseTiles(ox, oy, W, H, z, true)
-    + `<div class="ov">${tiles.map(([tx, ty]) => `<img data-t="${tx},${ty}" style="${pos(tx, ty)}" alt="">`).join('')}</div><span class="wx-me" style="left:${W / 2}px;top:${H / 2}px"></span><span class="mv-attr">地理院タイル / 気象庁</span>`;
-  tileFallback(box); box.querySelectorAll('.ov img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; }));
-  RAD = Object.assign(await radarFrames(), { z, n, idx: 0, timer: null });
+  mapView(box, { lat: loc.lat, lng: loc.lng, z: 8, min: 4, max: 13, attr: '<span class="mv-attr">地理院タイル / 気象庁</span>',
+    fit: v => { v.lat = loc.lat; v.lng = loc.lng; v.z = 8; },
+    layer: (z, ox, oy, W, H) => {
+      const rz = Math.max(4, Math.min(10, Math.round(z))), sz = 256 * 2 ** (z - rz), n = 2 ** rz; let ov = '';
+      for (let tx = Math.floor(ox / sz); tx <= Math.floor((ox + W) / sz); tx++) for (let ty = Math.floor(oy / sz); ty <= Math.floor((oy + H) / sz); ty++) if (ty >= 0 && ty < n) ov += `<img data-t="${((tx % n) + n) % n},${ty}" data-z="${rz}" style="left:${(tx * sz - ox).toFixed(1)}px;top:${(ty * sz - oy).toFixed(1)}px;width:${(sz + 0.5).toFixed(1)}px;height:${(sz + 0.5).toFixed(1)}px" alt="">`;
+      return baseTiles(ox, oy, W, H, z, true) + `<div class="ov">${ov}</div><span class="wx-me" style="left:${(wmx(loc.lng, z) - ox).toFixed(1)}px;top:${(wmy(loc.lat, z) - oy).toFixed(1)}px"></span>`;
+    },
+    done: b => { b.querySelectorAll('.ov img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; })); if (RAD) radarShow(RAD.idx); } });
+  const fr = await radarFrames(); if (!document.body.contains(box)) return;
+  RAD = Object.assign(fr, { idx: fr.now, timer: null });
   const r = $('#wx-rt'); if (r) { r.max = RAD.frames.length - 1; r.value = RAD.now; }
   radarShow(RAD.now);
 }
 function radarShow(i) {
   if (!RAD) return; RAD.idx = i; const f = RAD.frames[i]; if (!f) return;
-  document.querySelectorAll('#wx-radar .ov img').forEach(img => { const [tx, ty] = img.dataset.t.split(',').map(Number); img.style.visibility = ''; img.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${f.b}/none/${f.v}/surf/hrpns/${RAD.z}/${((tx % RAD.n) + RAD.n) % RAD.n}/${ty}.png`; });
+  document.querySelectorAll('#wx-radar .ov img').forEach(img => { const [tx, ty] = img.dataset.t.split(','); img.style.visibility = ''; img.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${f.b}/none/${f.v}/surf/hrpns/${img.dataset.z}/${tx}/${ty}.png`; });
   const l = $('#wx-rtl'); if (l) l.textContent = `${stampLabel(f.v)}${i === RAD.now ? ' 現在' : i > RAD.now ? ' 予報' : ''}`;
   const r = $('#wx-rt'); if (r) r.value = i;
 }
@@ -3708,6 +3769,7 @@ const ACT = {
   todoEdit: t => openTodo(t.dataset.k, t.dataset.id),
   todoJump: () => { const el = $('#todo'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   todoShowDone: () => { tdShowDone = !tdShowDone; render(); },
+  todoStartClr: () => { syncTd(); tdDraft.start = ''; const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = todoForm(); sh.scrollTop = y; },
   todoDue: t => { const i = $('#td-due', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="todoDue"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
   todoDone: t => {
     const list = t.dataset.k === 'h' ? S.school.tasks : S.todos, x = list.find(y => y.id === t.dataset.id); if (!x) return;
@@ -3717,7 +3779,8 @@ const ACT = {
   todoSave: () => {
     syncTd(); const d = tdDraft, title = d.title.trim(); if (!title) { toast('やることを入力してください'); return; }
     if (d.classId && !d.due) { toast('課題にするときは、締め切りの日を選んでください'); return; }
-    const toH = !!d.classId, id = d.id || uid(), base = { id, title, due: d.due, time: d.time, note: d.note.trim(), done: d.done, doneAt: d.doneAt || 0 };
+    if (d.start && d.due && d.start > d.due) { toast('「いつから」は締め切りより前の日にしてください'); return; }
+    const toH = !!d.classId, id = d.id || uid(), base = { id, title, start: d.start, due: d.due, time: d.time, note: d.note.trim(), done: d.done, doneAt: d.doneAt || 0 };
     if (d.id) { if (d.k === 'h') S.school.tasks = S.school.tasks.filter(y => y.id !== d.id); else S.todos = S.todos.filter(y => y.id !== d.id); }
     if (toH) S.school.tasks.push(Object.assign(base, { classId: d.classId })); else S.todos.push(base);
     save(); closeSheet(); rerenderKind('school', schoolSheet); render(); toast(d.id ? '保存しました' : 'やることを追加しました');
