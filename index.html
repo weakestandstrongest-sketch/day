@@ -843,6 +843,39 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .lk-foot{margin-top:22px;font-size:13.5px;color:var(--accent);font-weight:700}
 .lk-warn{text-align:center;font-size:14px;line-height:1.7;margin:18px 0 14px}
 .lk-in>.btn{width:100%;margin-bottom:8px}
+/* to-do */
+.todo{margin:26px 0 8px;scroll-margin-top:70px}
+.td-head{display:flex;align-items:baseline;gap:10px;margin:0 2px 10px}
+.td-head h2{margin:0;font-size:22px;display:flex;align-items:baseline;gap:10px}
+.td-head .script{font-size:26px}
+.td-add{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-size:13.5px;font-weight:700;align-self:center}
+.td-add .ico{width:16px;height:16px}
+.td-g{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:2px 14px;margin-bottom:10px}
+.td-gl{display:flex;align-items:center;gap:6px;margin:10px 0 2px;font-size:12px;font-weight:700;color:var(--ink-2)}
+.td-gl span{font-weight:500;color:var(--ink-3)}
+.td-g.g-over .td-gl{color:var(--sun)}.td-g.g-today .td-gl{color:var(--accent)}
+.td-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0}
+.td-row+.td-row{border-top:1px solid var(--line)}
+.td-chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--c);display:grid;place-items:center;color:#fff}
+.td-chk .ico{width:15px;height:15px;stroke-width:3;opacity:0}
+.td-row.done .td-chk{background:var(--c)}.td-row.done .td-chk .ico{opacity:1}
+.td-row.done b{color:var(--ink-3);text-decoration:line-through}
+.td-main{text-align:left;min-width:0}
+.td-main b{display:block;font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-main small{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:12px;color:var(--ink-2);margin-top:2px}
+.td-main small>span:not(.td-cls){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.td-cls{display:inline-flex;align-items:center;gap:4px;color:var(--c);font-weight:700}
+.td-cls::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.td-due{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.td-due.soon{background:color-mix(in srgb,#EDA04B 18%,var(--surface));color:#C9781F}
+.td-due.over{background:color-mix(in srgb,var(--sun) 15%,var(--surface));color:var(--sun)}
+.td-done-t{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--ink-2);padding:6px 4px;margin-bottom:6px}
+.td-done-t .ico{width:16px;height:16px}
+.td-clear{display:block;margin:6px auto 10px;font-size:12.5px;color:var(--ink-2);text-decoration:underline}
+.td-jump{display:flex;align-items:center;gap:8px;width:100%;margin:10px 0 0;padding:10px 14px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-size:13.5px;text-align:left}
+.td-jump .ico{width:18px;height:18px;color:var(--accent);flex:none}
+.td-jump b{flex:1}
+.td-jump em{font-style:normal;font-size:12px;font-weight:700;color:var(--sun)}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -1334,7 +1367,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
@@ -1547,6 +1580,7 @@ function viewCal() {
   const items = occurrences(gs, ge).filter(o => !o.ev.routine).map(o => ({ title: o.ev.title, s: o.date, e: o.end, c: o.ev.color, all: !!o.ev.allDay, t: o.ev.start || '' }));
   for (let d = gs; d <= ge; d = addDays(d, 1)) { const h = holName(d); if (h) items.push({ title: h, s: d, e: d, c: HOLC, all: true, t: '', hol: true }); }
   for (const h of S.school.tasks) if (!h.done && h.due >= gs && h.due <= ge) { const c = clsById(h.classId); items.push({ title: '〆 ' + h.title, s: h.due, e: h.due, c: c ? c.color : COLORS[4], all: true, t: '' }); }
+  for (const x of S.todos) if (!x.done && x.due && x.due >= gs && x.due <= ge) items.push({ title: '〆 ' + x.title, s: x.due, e: x.due, c: TODO_C, all: true, t: '' });
   const MAXL = 3; let weeks = '';
   for (let ws = gs; ws <= ge; ws = addDays(ws, 7)) {
     const we = addDays(ws, 6);
@@ -1583,9 +1617,11 @@ function viewCal() {
   ${cdRow()}
   <div class="dow">${dowHead('')}</div>
   <div class="month" id="monthGrid" data-swipe="month">${weeks}</div>
+  ${todoJump()}
   ${payCard()}
   ${sampleBar()}
-  ${dayDetail(st.sel)}`;
+  ${dayDetail(st.sel)}
+  ${todoSection()}`;
 }
 // pale arc = month's projected pay, solid arc = pay for shifts already finished; scaled to the monthly goal when one is set
 function ringFrac(x) {
@@ -1614,8 +1650,9 @@ function dayDetail(d) {
   let html = `<section class="detail">${h ? `<div class="hol-label">${esc(h)}</div>` : ''}<h2>${jpDate(d)}</h2>`;
   if (h) html += `<div class="ev-card" style="--c:${HOLC}"><span class="t">終日</span><span class="stripe"></span><span class="ti">${esc(h)}<small>日本の祝日</small></span></div>`;
   html += hws.map(x => { const c = clsById(x.classId); return `<button class="ev-card" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="t">締切<small>${dueLabel(x.due)[0]}</small></span><span class="stripe"></span><span class="ti">${esc(x.title)}${c ? `<small>${esc(c.name)}</small>` : ''}</span></button>`; }).join('');
+  html += S.todos.filter(x => !x.done && x.due === d).map(x => `<button class="ev-card" style="--c:${TODO_C}" data-act="todoEdit" data-k="t" data-id="${x.id}"><span class="t">締切${x.time ? `<small class="num">${hm(x.time)}</small>` : ''}</span><span class="stripe"></span><span class="ti">${esc(x.title)}<small>やること</small></span></button>`).join('');
   html += main.map(o => evCard(o, d)).join('');
-  if (!h && !main.length && !hws.length) html += `<p class="empty" style="padding:10px">予定はありません</p>`;
+  if (!h && !main.length && !hws.length && !S.todos.some(x => !x.done && x.due === d)) html += `<p class="empty" style="padding:10px">予定はありません</p>`;
   html += packCard(d);
   if (rt || nc) html += `<div class="routine-note"><span>${[nc && `授業 ${nc}件`, rt && `ルーティン ${rt}件`].filter(Boolean).join('・')}</span><button data-act="openDay" data-d="${d}">タイムラインで見る</button></div>`;
   for (const e of es) html += miniEntry(e);
@@ -1642,6 +1679,7 @@ function viewDay() {
   let ad = '';
   if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
   ad += S.school.tasks.filter(x => !x.done && x.due === d).map(x => { const c = clsById(x.classId); return `<button class="ad-item" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="circ">${ico('pen')}</span><span>〆 ${esc(x.title)}</span></button>`; }).join('');
+  ad += S.todos.filter(x => !x.done && x.due === d).map(x => `<button class="ad-item" style="--c:${TODO_C}" data-act="todoEdit" data-k="t" data-id="${x.id}"><span class="circ">${ico('check')}</span><span>〆 ${esc(x.title)}</span></button>`).join('');
   ad += all.map(o => `<button class="ad-item" style="--c:${o.ev.color}" data-act="editEvent" data-id="${o.ev.id}" data-d="${o.date}"><span class="circ">${ico(o.ev.icon)}</span><span>${esc(o.ev.title)}</span></button>`).join('');
   let tl = '', prevEnd = null, nowShown = d !== T; const now = toMin(nowHM());
   for (const o of timed) {
@@ -1666,11 +1704,13 @@ function viewDay() {
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
+    ${todoJump()}
     ${d === T && new Date().getHours() >= 17 ? packCard(addDays(T, 1)) : ''}${packCard(d)}
     ${moodCard}
     ${ad ? `<div class="allday-row">${ad}</div>` : ''}
     ${timed.length ? `<div class="timeline">${tl}</div><p class="tl-hint">アイコンを長押しして上下に動かすと、時間を変えられます</p>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
     ${sampleBar()}
+    ${todoSection()}
   </div>`;
 }
 
@@ -2232,6 +2272,57 @@ function songField(e) {
     <div id="sg-res" class="sg-res"></div>
     <button class="btn sg-add" data-act="manualSong">${ico('music')}この曲を添える</button>
     ${rec.length ? `<span class="sg-lb">最近添えた曲</span><div class="sg-recent">${rec.map((x, i) => `<button data-act="pickRecent" data-i="${i}">${artHTML(x, 'art')}<span>${esc(x.name)}</span></button>`).join('')}</div>` : ''}`;
+}
+
+/* ================= to-do: things with a deadline, school assignments included ================= */
+const TODO_C = '#E07F78';
+let tdShowDone = false, tdDraft = null;
+function todoItems() {
+  const out = [];
+  for (const x of S.todos) out.push({ k: 't', id: x.id, title: x.title, due: x.due || '', time: x.time || '', done: !!x.done, doneAt: x.doneAt || 0, color: TODO_C, sub: '', note: x.note || '' });
+  for (const h of S.school.tasks) { const c = clsById(h.classId); out.push({ k: 'h', id: h.id, title: h.title, due: h.due || '', time: h.time || '', done: !!h.done, doneAt: h.doneAt || 0, color: c ? c.color : COLORS[4], sub: c ? c.name : '課題', note: h.note || '' }); }
+  return out;
+}
+const todoOpen = () => todoItems().filter(x => !x.done);
+function todoJump() {
+  const T = todayISO(), o = todoOpen(); if (!o.length) return '';
+  const urgent = o.filter(x => x.due && x.due <= T).length, next = o.filter(x => x.due).sort((a, b) => a.due.localeCompare(b.due))[0];
+  return `<button class="td-jump" data-act="todoJump">${ico('check')}<b>やること ${o.length}件</b>${urgent ? `<em>今日まで・期限切れ ${urgent}</em>` : next ? `<span class="td-due ${dueLabel(next.due)[1]}">${dueLabel(next.due)[0]}</span>` : ''}${ico('down')}</button>`;
+}
+function todoSection() {
+  const T = todayISO(), all = todoItems();
+  const open = all.filter(x => !x.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || (a.time || '99').localeCompare(b.time || '99'));
+  const done = all.filter(x => x.done).sort((a, b) => b.doneAt - a.doneAt);
+  const grp = x => !x.due ? ['none', '期限なし'] : x.due < T ? ['over', '期限切れ'] : x.due === T ? ['today', '今日まで'] : x.due === addDays(T, 1) ? ['tom', '明日まで'] : diffDays(T, x.due) <= 7 ? ['week', '1週間以内'] : ['later', 'それ以降'];
+  const groups = []; for (const x of open) { const [k, l] = grp(x); let g = groups.find(y => y.k === k); if (!g) groups.push(g = { k, l, list: [] }); g.list.push(x); }
+  const row = x => { const [lbl, cls] = x.due ? dueLabel(x.due) : ['', ''];
+    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.due ? `<span class="num">${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}</span>` : ''}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small></button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
+  return `<section class="todo" id="todo"><div class="td-head"><h2>やること<span class="script">To Do</span></h2><button class="td-add" data-act="todoNew">${ico('plus')}追加</button></div>
+    ${groups.map(g => `<div class="td-g g-${g.k}"><p class="td-gl">${g.l}<span class="num">${g.list.length}</span></p>${g.list.map(row).join('')}</div>`).join('') || '<div class="td-g"><p class="empty" style="padding:14px 4px">やることはありません。<br>課題の提出や申し込みの締め切りを入れておきましょう。</p></div>'}
+    ${done.length ? `<button class="td-done-t" data-act="todoShowDone">${ico(tdShowDone ? 'down' : 'right')}完了 ${done.length}件</button>${tdShowDone ? `<div class="td-g">${done.slice(0, 40).map(row).join('')}<button class="td-clear" data-act="todoClear">完了したものを消す</button></div>` : ''}` : ''}</section>`;
+}
+function todoForm() {
+  const d = tdDraft, T = todayISO(), cls = S.school.classes;
+  const quick = [['', 'なし'], [T, '今日'], [addDays(T, 1), '明日'], [addDays(T, 3), '3日後'], [addDays(T, 7), '1週間後']];
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${d.id ? 'やることを編集' : 'やることを追加'}</b><button class="r" data-act="todoSave">保存</button></div>
+  <div class="fld"><input class="inp title" id="td-title" value="${esc(d.title)}" placeholder="例：英語のレポートを提出" maxlength="60" autocomplete="off" enterkeyhint="done" aria-label="やること"></div>
+  <div class="fld"><span class="lb">締め切り</span><div class="chips">${quick.map(([v, l]) => `<button class="chip" data-act="todoDue" data-d="${v}" aria-pressed="${d.due === v}">${l}</button>`).join('')}</div>
+    <div class="row2" style="margin-top:10px"><div class="fld" style="margin:0"><label for="td-due">日付</label><input class="inp" type="date" id="td-due" value="${d.due}"></div><div class="fld" style="margin:0"><label for="td-time">時刻（任意）</label><input class="inp" type="time" id="td-time" value="${d.time}"></div></div></div>
+  ${cls.length ? `<div class="fld"><label for="td-cls">授業の課題にする</label><select class="inp" id="td-cls"><option value="">しない</option>${cls.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : ''}
+  <div class="fld"><label for="td-note">メモ</label><textarea class="inp" id="td-note" rows="3" placeholder="提出方法、URL、ページ数など">${esc(d.note)}</textarea></div>
+  <div class="sheet-actions"><button class="btn primary" data-act="todoSave">保存する</button>${d.id ? '<button class="btn danger" data-act="todoDel">削除</button>' : ''}</div>`;
+}
+function syncTd() {
+  const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
+  tdDraft.title = v('td-title') ?? tdDraft.title; tdDraft.due = v('td-due') ?? tdDraft.due; tdDraft.time = v('td-time') ?? tdDraft.time; tdDraft.note = v('td-note') ?? tdDraft.note;
+  const c = v('td-cls'); if (c !== null) tdDraft.classId = c;
+}
+function openTodo(k, id) {
+  const x = id && (k === 'h' ? S.school.tasks : S.todos).find(y => y.id === id);
+  tdDraft = x ? { k, id, title: x.title, due: x.due || '', time: x.time || '', note: x.note || '', classId: k === 'h' ? x.classId || '' : '', done: !!x.done, doneAt: x.doneAt || 0 }
+    : { k: 't', id: null, title: '', due: '', time: '', note: '', classId: '', done: false };
+  const sh = openSheet(todoForm(), 'full'); sh.dataset.kind = 'todo';
+  if (!x) setTimeout(() => { const el = $('#td-title'); el && el.focus({ preventScroll: true }); }, 450);
 }
 
 /* ================= app lock: passcode and Face ID (keeps the diary private from people nearby) ================= */
@@ -3570,7 +3661,7 @@ const ACT = {
     if (!title) { toast('課題の名前を入力してください'); return; } if (!due) { toast('締め切りの日を選んでください'); return; }
     S.school.tasks.push({ id: uid(), title, classId: $('#hw-class', sh).value, due, done: false }); save(); rerenderKind('school', schoolSheet); render(); toast('課題を追加しました');
   },
-  hwDone: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) { x.done = !x.done; save(); rerenderKind('school', schoolSheet); render(); } },
+  hwDone: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) { x.done = !x.done; x.doneAt = x.done ? Date.now() : 0; save(); rerenderKind('school', schoolSheet); render(); } },
   hwDel: t => { S.school.tasks = S.school.tasks.filter(h => h.id !== t.dataset.id); save(); rerenderKind('school', schoolSheet); render(); },
   hwClear: () => { S.school.tasks = S.school.tasks.filter(h => !h.done); save(); rerenderKind('school', schoolSheet); render(); },
   perAdd: () => { const ps = S.school.periods, last = ps[ps.length - 1], st0 = toMin(last[1]) + 10; ps.push([hhmm(Math.min(1380, st0)), hhmm(Math.min(1439, st0 + 90))]); save(); rerenderKind('school', schoolSheet); render(); },
@@ -3613,6 +3704,26 @@ const ACT = {
     enrichSong(sg).then(x => { if (x.preview) { const b = $('[data-act="sgPlay"]', topSheet()); if (b) togglePreview(b, x.preview); } else { toast(x.noPreview ? 'この曲の試聴は見つかりませんでした' : '試聴をさがせませんでした。通信を確認してください'); const b = $('[data-act="sgPlay"]', topSheet()); if (b) b.innerHTML = `${ico('play')}試聴`; } });
   },
   rmSong: () => { stopPreview(); syncEntry(); delete enDraft.song; rerenderEntry(); },
+  todoNew: () => openTodo('t', null),
+  todoEdit: t => openTodo(t.dataset.k, t.dataset.id),
+  todoJump: () => { const el = $('#todo'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  todoShowDone: () => { tdShowDone = !tdShowDone; render(); },
+  todoDue: t => { const i = $('#td-due', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="todoDue"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  todoDone: t => {
+    const list = t.dataset.k === 'h' ? S.school.tasks : S.todos, x = list.find(y => y.id === t.dataset.id); if (!x) return;
+    x.done = !x.done; x.doneAt = x.done ? Date.now() : 0; save(); render();
+    if (x.done) toast(`「${x.title}」を完了しました`, '取り消す', () => { x.done = false; x.doneAt = 0; save(); render(); });
+  },
+  todoSave: () => {
+    syncTd(); const d = tdDraft, title = d.title.trim(); if (!title) { toast('やることを入力してください'); return; }
+    if (d.classId && !d.due) { toast('課題にするときは、締め切りの日を選んでください'); return; }
+    const toH = !!d.classId, id = d.id || uid(), base = { id, title, due: d.due, time: d.time, note: d.note.trim(), done: d.done, doneAt: d.doneAt || 0 };
+    if (d.id) { if (d.k === 'h') S.school.tasks = S.school.tasks.filter(y => y.id !== d.id); else S.todos = S.todos.filter(y => y.id !== d.id); }
+    if (toH) S.school.tasks.push(Object.assign(base, { classId: d.classId })); else S.todos.push(base);
+    save(); closeSheet(); rerenderKind('school', schoolSheet); render(); toast(d.id ? '保存しました' : 'やることを追加しました');
+  },
+  todoDel: () => confirmIn(`「${tdDraft.title}」を削除します。`, '削除する', () => { if (tdDraft.k === 'h') S.school.tasks = S.school.tasks.filter(y => y.id !== tdDraft.id); else S.todos = S.todos.filter(y => y.id !== tdDraft.id); save(); closeSheet(); render(); toast('削除しました'); }),
+  todoClear: () => confirmIn('完了したやること（課題をふくむ）を一覧から消します。', '消す', () => { S.todos = S.todos.filter(y => !y.done); S.school.tasks = S.school.tasks.filter(y => !y.done); save(); render(); }),
   lockSetup: () => showLock('setup', rerenderSettings),
   lockChange: () => showLock('verify', () => setTimeout(() => showLock('setup', rerenderSettings), 50)),
   lockOff: () => showLock('verify', () => { S.settings.lock = { on: false }; save(); rerenderSettings(); toast('ロックをやめました'); }),
@@ -3847,6 +3958,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && stack.length) closeSheet();
   if (e.key !== 'Enter' || e.isComposing) return;
   if (e.target.id === 'ev-item') { e.preventDefault(); ACT.evItemAdd(); return; }
+  if (e.target.id === 'td-title') { e.preventDefault(); e.target.blur(); return; }
   if (e.target.id === 'tk-sub') { e.preventDefault(); const v = e.target.value.trim(); if (!v) return; syncTk(); tkDraft.subtasks.push({ t: v, done: false }); rerenderTk(); const n = $('#tk-sub', topSheet()); n && n.focus({ preventScroll: true }); }
   else if (e.target.id === 'tk-title' && tkStep === 'title') { e.preventDefault(); ACT.tkNext(); }
 });
