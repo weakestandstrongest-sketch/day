@@ -226,8 +226,8 @@ svg{display:block}
 .more-btn{display:block;margin:16px auto 0;color:var(--accent);font-weight:700;font-size:14px;padding:8px 16px}
 
 /* ---------- Reflection ---------- */
-.r-head{padding:16px 0 6px}
-.r-head h1{margin:2px 0 0;font-size:26px;font-weight:700}
+.r-head{padding:18px 0 6px;display:flex;align-items:baseline;gap:12px}
+.r-head h1{margin:0;font-size:26px;font-weight:700}
 .card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin-top:12px}
 .card h3{margin:0 0 10px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .card h3 .sub{font-size:11px;color:var(--ink-2);font-weight:500;letter-spacing:.06em}
@@ -311,6 +311,15 @@ svg{display:block}
 .mp-grid button.now{color:var(--accent)}
 .mp-grid button.cur{background:var(--accent);color:var(--accent-ink)}
 .mp-today{width:100%;margin-top:16px}
+.dp-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 2px;text-align:center}
+.dp-grid .h{font-size:12px;color:var(--ink-2);padding-bottom:4px}
+.dp-grid .h.sat{color:var(--sat)} .dp-grid .h.sun{color:var(--sun)}
+.dp-d{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0;font-size:16px;font-weight:500}
+.dp-d span{width:38px;height:38px;line-height:38px;border-radius:50%}
+.dp-d.sun{color:var(--sun)} .dp-d.sat{color:var(--sat)}
+.dp-d.today span{color:var(--accent);font-weight:700}
+.dp-d.sel span{background:var(--accent);color:var(--accent-ink)}
+.dp-d i{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
 textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .inp.title{font-size:20px;font-weight:700}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -643,6 +652,10 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .tk-go{width:100%;min-height:58px;border-radius:999px;background:var(--c);color:#fff;font-size:17px;font-weight:700;box-shadow:none}
 .tk-go:disabled{opacity:.45}
 /* あとで list */
+.sw-wrap{position:relative;border-radius:18px;overflow:hidden}
+.sw-del{position:absolute;top:0;right:0;bottom:0;width:96px;padding-left:8px;background:var(--sun);color:#fff;font-weight:700;font-size:14.5px}
+.sw-wrap .ib-row{position:relative;z-index:1;transition:transform .28s cubic-bezier(.2,.9,.25,1)}
+.sw-wrap:not(.open):not(.drag) .sw-del{visibility:hidden}
 .ib-add{width:100%;margin-bottom:2px}
 .ib-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px;align-items:center;background:var(--surface);border-radius:18px;padding:8px 8px 8px 8px}
 .ib-main{display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;align-items:center;text-align:left;min-width:0}
@@ -1106,7 +1119,7 @@ function viewDay() {
   const moodCard = es.map(miniEntry).join('');
   return `
   <div class="tl-head"><button class="tl-title" data-act="dayToday" aria-label="今日に戻る"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1></button>
-    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="dayToday" aria-label="今日">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
@@ -1382,7 +1395,7 @@ function viewReflect() {
   for (let i = 0; i < (sunStart() ? wd(mfirst) : (wd(mfirst) + 6) % 7); i++) mc += '<span></span>';
   for (let d = mfirst; d <= mlast; d = addDays(d, 1)) { const m = dayMood(d); mc += `<span class="c"><i class="${m ? 'on' : ''}" style="${m ? `background:${m.color};` : ''}border-radius:${blob(d)}"></i><span class="num">${P(d).getDate()}</span></span>`; }
   return `
-  <div class="r-head"><span class="script">Reflection</span><h1>ふりかえり</h1></div>
+  <div class="r-head"><h1>ふりかえり</h1><span class="script">Reflection</span></div>
   <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
   <section class="card">
     <div class="ins-nav"><button data-act="iWeek" data-n="-1" aria-label="前の週">${ico('left')}</button>
@@ -1706,11 +1719,13 @@ const DURS = [5, 10, 15, 30, 45, 60, 90, 120, 180];
 let tkDraft = null, tkStep = 'title', tkHost = null;
 function taskSheet() {
   const open = S.tasks.filter(t => !t.done), done = S.tasks.filter(t => t.done);
-  const row = t => `<div class="ib-row${t.done ? ' done' : ''}" style="--c:${t.color || COLORS[0]}"><button class="ib-main" data-act="tkEdit" data-id="${t.id}"><span class="ib-ic">${ico(t.icon || guessIcon(t.title))}</span><span class="ib-tt"><small class="num">${dur(t.dur || 30)}${t.subtasks && t.subtasks.length ? `・サブタスク ${t.subtasks.filter(x => x.done).length}/${t.subtasks.length}` : ''}</small>${esc(t.title)}</span></button>${t.done ? '<span></span>' : `<button class="ib-cal" data-act="tkSched" data-id="${t.id}" aria-label="日付を決める">${ico('today')}</button>`}<button class="chk${t.done ? ' on' : ''}" data-act="taskDone" data-id="${t.id}" aria-label="完了">${ico('check')}</button></div>`;
+  const row0 = t => `<div class="ib-row${t.done ? ' done' : ''}" style="--c:${t.color || COLORS[0]}"><button class="ib-main" data-act="tkEdit" data-id="${t.id}"><span class="ib-ic">${ico(t.icon || guessIcon(t.title))}</span><span class="ib-tt"><small class="num">${dur(t.dur || 30)}${t.subtasks && t.subtasks.length ? `・サブタスク ${t.subtasks.filter(x => x.done).length}/${t.subtasks.length}` : ''}</small>${esc(t.title)}</span></button>${t.done ? '<span></span>' : `<button class="ib-cal" data-act="tkSched" data-id="${t.id}" aria-label="日付を決める">${ico('today')}</button>`}<button class="chk${t.done ? ' on' : ''}" data-act="taskDone" data-id="${t.id}" aria-label="完了">${ico('check')}</button></div>`;
+  const row = t => `<div class="sw-wrap"><button class="sw-del" data-act="taskDel" data-id="${t.id}" tabindex="-1">削除</button>${row0(t)}</div>`;
   return `<div class="sh-bar"><span></span><b>あとで</b><button class="r" data-act="close">閉じる</button></div>
   <button class="btn primary ib-add" data-act="tkNew">${ico('plus')}あとでやることを追加</button>
   <div class="task-list">${open.map(row).join('') || '<p class="empty">いつかやりたいことを書き出しておきましょう。<br>日付を決めると、タイムラインに入ります。</p>'}</div>
-  ${done.length ? `<div class="task-list"><div class="routine-note"><span>完了 ${done.length}件</span><button data-act="taskClear">完了したものを消す</button></div>${done.map(row).join('')}</div>` : ''}`;
+  ${done.length ? `<div class="task-list"><div class="routine-note"><span>完了 ${done.length}件</span><button data-act="taskClear">完了したものを消す</button></div>${done.map(row).join('')}</div>` : ''}
+  ${S.tasks.length ? '<p class="note" style="text-align:center">左にスライドすると削除できます</p>' : ''}`;
 }
 const rerenderTasks = () => { rerenderKind('inbox', taskSheet); render(); };
 function openTask(id, opts) {
@@ -1764,6 +1779,86 @@ function pickHTML() {
   ${ICON_GROUPS.map(([g, list]) => `<div class="pk-g"><span class="lb">${g}</span><div class="pk-grid">${list.map(k => `<button class="pk-i" style="--c:${t.color}" data-act="tkIcon" data-k="${k}" aria-pressed="${t.icon === k}" aria-label="${k}">${ico(k)}</button>`).join('')}</div></div>`).join('')}`;
 }
 
+/* ---- entry editor ---- */
+let enDraft = null, enStep = 'feel';
+function openEntry(id, date, prompt) {
+  const en = id ? S.entries.find(e => e.id === id) : null;
+  enDraft = en ? JSON.parse(JSON.stringify(en)) : { id: null, date: date || todayISO(), time: nowHM(), feelings: [], tags: [], text: '', photo: null };
+  enDraft._prompt = prompt || PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+  enStep = en ? 'write' : 'feel';
+  openSheet(entryForm(), 'full');
+}
+function entryForm() {
+  const e = enDraft;
+  if (enStep === 'feel') {
+    const custom = S.customFeelings.map(c => [c.name, c.color, 0]);
+    const group = (label, list) => `<div class="feel-group"><span class="gl">${label}</span><div class="feel-grid">${list.map(([n, c]) => `<button class="fb" style="--c:${c}" data-act="feel" data-f="${esc(n)}" aria-pressed="${e.feelings.includes(n)}"><i style="border-radius:${blob(n)}"></i>${esc(n)}</button>`).join('')}</div></div>`;
+    return `<div class="sh-bar"><button class="l" data-act="close">閉じる</button><b>${esc(md(e.date))} の気持ち</b><button class="r" data-act="enStep" data-s="write">次へ</button></div>
+    <div class="feel-head"><span class="script">Feeling</span><h2>どんな気持ち？</h2><small>3つまで選べます（${e.feelings.length}/3）</small></div>
+    ${FEEL_GROUPS.map(([l, a, b]) => group(l, FEEL.slice(a, b))).join('')}
+    ${custom.length ? group('Personal', custom) : ''}
+    <div class="add-row"><input class="inp" id="cf-name" maxlength="4" placeholder="4文字まで自由入力" autocomplete="off"><button data-act="addFeel">追加</button></div>
+    <div class="next-btn"><button class="btn primary" data-act="enStep" data-s="write">次へ ${ico('right')}</button></div>`;
+  }
+  const tags = [...TAGS, ...S.customTags];
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${e.id ? '日記を編集' : '日記を書く'}</b><button class="r" data-act="saveEntry">保存</button></div>
+  <div class="row2"><div class="fld"><label for="en-date">日付</label><input class="inp" type="date" id="en-date" value="${e.date}"></div><div class="fld"><label for="en-time">時刻</label><input class="inp" type="time" id="en-time" value="${e.time}"></div></div>
+  ${e.weather ? `<div class="fld"><span class="lb">天気</span><div style="font-size:14px">${wxChip(e.weather)}</div></div>` : ''}
+  <div class="fld"><span class="lb">気持ち</span><div class="sel-feels">${e.feelings.map(f => `<button style="--c:${feelInfo(f).color}" data-act="enStep" data-s="feel"><i></i>${esc(f)}</button>`).join('')}<button style="--c:var(--ink-3)" data-act="enStep" data-s="feel">${e.feelings.length ? '変更' : '＋ 気持ちを選ぶ'}</button></div></div>
+  <div class="fld"><span class="lb">できごと</span><div class="chips">${tags.map(t => `<button class="chip" data-act="tag" data-t="${esc(t)}" aria-pressed="${e.tags.includes(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="add-row"><input class="inp" id="ct-name" maxlength="8" placeholder="タグを追加" autocomplete="off"><button data-act="addTag">追加</button></div></div>
+  <div class="fld"><div class="prompt-q"><b>Q.</b>${esc(e._prompt)}</div><textarea class="inp" id="en-text" rows="7" placeholder="今日あったこと、感じたことを自由に">${esc(e.text)}</textarea></div>
+  <div class="fld"><span class="lb">写真</span><div class="photo-box">${e.photo ? `<img src="${e.photo}" alt="添付した写真">` : ''}
+    <label class="btn file-btn">${ico('camera')}${e.photo ? '変更' : '写真を追加'}<input type="file" id="en-photo" accept="image/*"></label>
+    ${e.photo ? `<button class="btn ghost" data-act="rmPhoto">外す</button>` : ''}</div></div>
+  <div class="sheet-actions"><button class="btn primary" data-act="saveEntry">保存する</button>${e.id ? `<button class="btn danger" data-act="delEntry">この日記を削除</button>` : ''}</div>`;
+}
+function syncEntry() {
+  const sh = topSheet(); if (!sh) return;
+  const g = id => { const el = $('#' + id, sh); return el ? el.value : null; };
+  const t = g('en-text'); if (t !== null) enDraft.text = t;
+  const d = g('en-date'); if (d) enDraft.date = d;
+  const tm = g('en-time'); if (tm) enDraft.time = tm;
+}
+function rerenderEntry(keepScroll = true) { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = entryForm(); sh.scrollTop = keepScroll ? y : 0; }
+function resizeImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { const max = 720, k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.7)); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('画像を読み込めませんでした')); };
+    img.src = url;
+  });
+}
+
+/* ---- month picker (calendar icon) ---- */
+let mpYear = 2026;
+function monthPicker() {
+  const cur = st.calMonth.slice(0, 7), now = todayISO().slice(0, 7);
+  let g = '';
+  for (let m = 1; m <= 12; m++) { const k = `${mpYear}-${pad(m)}`; g += `<button class="${k === cur ? 'cur' : k === now ? 'now' : ''}" data-act="mpMonth" data-m="${m}">${m}月</button>`; }
+  return `<div class="sh-bar"><span></span><b>月を選ぶ</b><button class="r" data-act="close">閉じる</button></div>
+    <div class="mp-year"><button data-act="mpYear" data-n="-1" aria-label="前の年">${ico('left')}</button><b class="num">${mpYear}年</b><button data-act="mpYear" data-n="1" aria-label="次の年">${ico('right')}</button></div>
+    <div class="mp-grid">${g}</div>
+    <button class="btn mp-today" data-act="calToday">${ico('today')}今日に戻る</button>`;
+}
+
+/* ---- day picker (timeline calendar icon) ---- */
+let dpMonth = null;
+function dayPicker() {
+  const F = P(dpMonth), y = F.getFullYear(), m = F.getMonth(), last = iso(new Date(y, m + 1, 0)), T = todayISO();
+  let g = dowHead('h');
+  for (let i = 0, n = sunStart() ? wd(dpMonth) : (wd(dpMonth) + 6) % 7; i < n; i++) g += '<span></span>';
+  const busy = new Set(occurrences(dpMonth, last).filter(o => !o.ev.routine).map(o => o.date));
+  for (let d = dpMonth; d <= last; d = addDays(d, 1)) {
+    const w = wd(d), cls = ['dp-d', d === T && 'today', d === st.day && 'sel', (w === 0 || holName(d)) && 'sun', w === 6 && 'sat'].filter(Boolean).join(' ');
+    g += `<button class="${cls}" data-act="dpDay" data-d="${d}" aria-label="${jpDate(d)}"><span class="num">${P(d).getDate()}</span>${busy.has(d) ? '<i></i>' : '<i style="opacity:0"></i>'}</button>`;
+  }
+  return `<div class="sh-bar"><span></span><b>日付を選ぶ</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="mp-year"><button data-act="dpMonth" data-n="-1" aria-label="前の月">${ico('left')}</button><b class="num">${y}年${m + 1}月</b><button data-act="dpMonth" data-n="1" aria-label="次の月">${ico('right')}</button></div>
+  <div class="dp-grid">${g}</div>
+  <button class="btn mp-today" data-act="dpToday">${ico('today')}今日に戻る</button>`;
+}
+
 /* ---- search ---- */
 const sf = { feel: '', tag: '' };
 function openSearch() {
@@ -1797,10 +1892,7 @@ function settingsHTML() {
     <div class="toggle"><span>テーマ</span><span class="seg">${[['system','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button data-act="theme" data-k="${k}" aria-pressed="${s.theme === k}">${l}</button>`).join('')}</span></div>
     <div class="toggle"><span>テーマカラー</span><span class="swatches">${ACCENTS.map(([k, l, c]) => `<button class="sw" style="--c:${c};width:28px;height:28px" data-act="accent" data-k="${k}" aria-pressed="${(s.accent || '') === k}" aria-label="${l}">${ico('check')}</button>`).join('')}</span></div>
     <div class="toggle"><span>週の始まり</span><span class="seg">${[['mon','月曜'],['sun','日曜']].map(([k, l]) => `<button data-act="weekStartSet" data-k="${k}" aria-pressed="${(s.weekStart || 'mon') === k}">${l}</button>`).join('')}</span></div>
-    <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label></div></div>
-  <div class="set-sec"><h4>バイト・大学</h4><div class="set-list">
-    <button class="btn" data-act="pay">${ico('yen')}バイト・給料</button>
-    <button class="btn" data-act="openSchool">${ico('school')}大学（時間割・課題）</button>
+    <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label>
     <label class="toggle"><span>カレンダーに給料の見込みを表示</span><input type="checkbox" id="set-pay" ${s.showPay !== false ? 'checked' : ''}></label></div></div>
   <div class="set-sec"><h4>日記</h4><div class="set-list">
     ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
@@ -1906,6 +1998,10 @@ const ACT = {
     st.anim = m !== st.calMonth ? { sel: '#monthGrid', dir: m > st.calMonth ? 1 : -1 } : null;
     st.calMonth = m; st.sel = m.slice(0, 7) === T.slice(0, 7) ? T : m; main.scrollTop = 0; closeSheet(); render();
   },
+  dayPick: () => { dpMonth = st.day.slice(0, 8) + '01'; const sh = openSheet(dayPicker()); sh.dataset.kind = 'dp'; },
+  dpMonth: t => { const F = P(dpMonth); F.setMonth(F.getMonth() + +t.dataset.n); dpMonth = iso(F); rerenderKind('dp', dayPicker); },
+  dpDay: t => { const d = t.dataset.d; if (weekStart(d) !== weekStart(st.day)) st.anim = { sel: '#weekStrip', dir: d > st.day ? 1 : -1 }; st.day = d; closeSheet(); render(); },
+  dpToday: () => { const T = todayISO(); if (weekStart(T) !== weekStart(st.day)) st.anim = { sel: '#weekStrip', dir: T > st.day ? 1 : -1 }; st.day = T; closeSheet(); main.scrollTop = 0; render(); },
   dayToday: () => { st.day = todayISO(); render(); },
   tasks: () => { const sh = openSheet(taskSheet(), 'full'); sh.dataset.kind = 'inbox'; },
   tkNew: () => openTask(null),
@@ -2004,6 +2100,11 @@ const ACT = {
     S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); toast(`${dur(min)}の集中を記録しました`);
   },
   tmCancel: () => confirmIn('タイマーを止めて、記録せずに終わります。', 'やめる', () => { S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); }),
+  taskDel: t => {
+    const i = S.tasks.findIndex(x => x.id === t.dataset.id); if (i < 0) return;
+    const [k] = S.tasks.splice(i, 1); save(); rerenderTasks();
+    toast(`「${k.title}」を削除しました`, '取り消す', () => { S.tasks.splice(i, 0, k); save(); rerenderTasks(); });
+  },
   taskDone: t => { const k = S.tasks.find(x => x.id === t.dataset.id); if (k) { k.done = !k.done; save(); rerenderTasks(); } },
   taskClear: () => { S.tasks = S.tasks.filter(x => !x.done); save(); rerenderTasks(); },
   quickMood: t => {
@@ -2110,6 +2211,8 @@ const ACT = {
 let noClickUntil = 0;
 document.addEventListener('click', e => {
   if (Date.now() < noClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
+  const ow = e.target.closest('.sw-wrap.open');
+  if (ow && !e.target.closest('.sw-del')) { ow.classList.remove('open'); ow.querySelector('.ib-row').style.transform = ''; e.preventDefault(); return; }
   const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
   const f = ACT[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
 });
@@ -2195,6 +2298,31 @@ const endDrag = () => {
 };
 main.addEventListener('touchend', endDrag);
 main.addEventListener('touchcancel', endDrag);
+
+/* あとで: swipe a row left to reveal 削除 (iOS style) */
+let sw = null;
+const closeSwipes = keep => document.querySelectorAll('.sw-wrap.open').forEach(w => { if (w !== keep) { w.classList.remove('open'); w.querySelector('.ib-row').style.transform = ''; } });
+document.addEventListener('touchstart', e => {
+  const row = e.target.closest('.sw-wrap .ib-row'); if (!row || e.touches.length > 1) return;
+  const wrap = row.parentElement; closeSwipes(wrap);
+  sw = { wrap, row, x: e.touches[0].clientX, y: e.touches[0].clientY, base: wrap.classList.contains('open') ? -96 : 0, dx: 0, on: false };
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!sw) return; const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+  if (!sw.on) {
+    if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) { sw.on = true; sw.row.style.transition = 'none'; sw.wrap.classList.add('drag'); }
+    else { if (Math.abs(dy) > 8) sw = null; return; }
+  }
+  e.preventDefault(); sw.dx = dx;
+  sw.row.style.transform = `translateX(${Math.max(-150, Math.min(0, sw.base + dx))}px)`;
+}, { passive: false });
+const swEnd = () => {
+  if (!sw) return; const g = sw; sw = null; if (!g.on) return;
+  noClickUntil = Date.now() + 350; g.row.style.transition = '';
+  if (!(g.base + g.dx < -48)) setTimeout(() => g.wrap.classList.remove('drag'), 300); else g.wrap.classList.remove('drag');
+  const open = g.base + g.dx < -48; g.wrap.classList.toggle('open', open); g.row.style.transform = open ? 'translateX(-96px)' : '';
+};
+document.addEventListener('touchend', swEnd); document.addEventListener('touchcancel', swEnd);
 
 /* keep "today" fresh when the app comes back to the foreground */
 let lastDay = todayISO();

@@ -1,5 +1,5 @@
 // Offline cache: app shell is cache-first and refreshed in the background; Google Fonts are cached as they load.
-const CACHE = 'hibi-v12';
+const CACHE = 'hibi-v13';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
