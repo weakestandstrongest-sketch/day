@@ -780,17 +780,17 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .tk-chip.on{background:color-mix(in srgb,var(--c) 28%,var(--surface))}
 .tk-chip.ghost{background:transparent;color:var(--ink-2);padding:12px 8px}
 .tk-card{background:var(--surface);border-radius:22px;padding:4px 16px 10px}
-.sub{display:grid;grid-template-columns:26px minmax(0,1fr) 28px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
-.sub .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--ink-3);display:grid;place-items:center;color:#fff}
-.sub .box .ico{width:14px;height:14px;stroke-width:3;opacity:0}
-.sub.on .box{background:var(--c);border-color:var(--c)}
-.sub.on .box .ico{opacity:1}
-.sub.on>span{color:var(--ink-3);text-decoration:line-through}
-.sub .rm{color:var(--ink-3);display:grid;place-items:center;width:28px;height:28px}
-.sub .rm .ico{width:16px;height:16px}
-.sub.add{grid-template-columns:26px minmax(0,1fr)}
-.sub input{border:0;background:transparent;font-size:16px;padding:2px 0;color:var(--ink);min-width:0}
-.sub input:focus,.sub input:focus-visible{outline:none}
+.stk{display:grid;grid-template-columns:26px minmax(0,1fr) 28px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+.stk .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--ink-3);display:grid;place-items:center;color:#fff}
+.stk .box .ico{width:14px;height:14px;stroke-width:3;opacity:0}
+.stk.on .box{background:var(--c);border-color:var(--c)}
+.stk.on .box .ico{opacity:1}
+.stk.on>span{color:var(--ink-3);text-decoration:line-through}
+.stk .rm{color:var(--ink-3);display:grid;place-items:center;width:28px;height:28px}
+.stk .rm .ico{width:16px;height:16px}
+.stk.add{grid-template-columns:26px minmax(0,1fr)}
+.stk input{border:0;background:transparent;font-size:16px;padding:2px 0;color:var(--ink);min-width:0}
+.stk input:focus,.stk input:focus-visible{outline:none}
 .tk-card textarea{display:block;width:100%;border:0;background:transparent;resize:none;min-height:120px;padding:12px 0 0;font-size:16px;line-height:1.6;color:var(--ink)}
 .tk-card textarea:focus,.tk-card textarea:focus-visible{outline:none}
 .tk-del{color:var(--sun);font-size:14px;font-weight:700;padding:8px;align-self:center}
@@ -1876,22 +1876,48 @@ function recentSongs() {
 }
 // songs typed in by hand have no artwork: give each a stable gradient instead
 const phStyle = sg => { let h = 0; for (const c of sg.name + sg.artist) h = (h * 31 + c.charCodeAt(0)) % 360; return `background:linear-gradient(135deg,hsl(${h} 55% 38%),hsl(${(h + 70) % 360} 70% 66%))`; };
-const artHTML = (sg, cls) => sg.art ? `<img class="${cls}" src="${esc(sg.art)}" alt="">` : `<span class="${cls}" style="${phStyle(sg)}">${ico('music')}</span>`;
+const artHTML = (sg, cls) => sg.art ? `<img class="${cls}" src="${esc(sg.art)}" alt="" style="${phStyle(sg)}">` : `<span class="${cls}" style="${phStyle(sg)}">${ico('music')}</span>`;
 const spotifyURL = sg => 'https://open.spotify.com/search/' + encodeURIComponent(`${sg.name} ${sg.artist}`.trim());
 const songMini = sg => `<div class="e-song">${sg.art ? `<img class="bg" src="${esc(sg.art)}" alt="">` : `<span class="bg" style="${phStyle(sg)}"></span>`}${artHTML(sg, 'art')}<span><b>${esc(sg.name)}</b><small>${esc(sg.artist)}</small></span>${ico('music')}</div>`;
-function jsonp(url) {
+function jsonp(url, ms = 7000) {
   return new Promise((res, rej) => {
     const cb = '__hibiSong' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), sc = document.createElement('script');
     const done = () => { delete window[cb]; sc.remove(); };
     window[cb] = d => { done(); res(d); }; sc.onerror = () => { done(); rej(new Error('jsonp')); };
     sc.src = url + '&callback=' + cb; document.head.append(sc);
-    setTimeout(() => { if (window[cb]) { done(); rej(new Error('timeout')); } }, 8000);
+    setTimeout(() => { if (window[cb]) { done(); rej(new Error('timeout')); } }, ms);
   });
 }
+async function fetchJSON(url, ms = 5000) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+  try { const r = await fetch(url, { signal: c.signal }); if (!r.ok) throw new Error('http ' + r.status); return await r.json(); } finally { clearTimeout(t); }
+}
+const fromApple = j => (j.results || []).filter(x => x.trackName).map(x => ({ name: x.trackName, artist: x.artistName || '', album: x.collectionName || '', art: (x.artworkUrl100 || '').replace(/\/\d+x\d+bb\./, '/600x600bb.'), preview: x.previewUrl || '', apple: x.trackViewUrl || '' }));
+const appleURL = q => `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=JP&lang=ja_jp&media=music&entity=song&limit=10&t=${Date.now()}`;
+// Deezer preview links expire, so the track id is kept to fetch a fresh one when needed
+const fromDeezer = j => { if (j.error) throw new Error('deezer'); return (j.data || []).filter(x => x.title).map(x => ({ name: x.title, artist: (x.artist || {}).name || '', album: (x.album || {}).title || '', art: (x.album || {}).cover_xl || (x.album || {}).cover_big || '', preview: x.preview || '', dz: x.id })); };
+const fromMB = j => (j.recordings || []).map(x => { const rel = (x.releases || [])[0]; return { name: x.title, artist: (x['artist-credit'] || []).map(a => a.name + (a.joinphrase || '')).join(''), album: rel ? rel.title : '', art: rel ? `https://coverartarchive.org/release/${rel.id}/front-250` : '', preview: '' }; });
+const SONG_SOURCES = [
+  ['Apple', q => fetchJSON(appleURL(q)).then(fromApple)],
+  ['Apple(JSONP)', q => jsonp(appleURL(q)).then(fromApple)],
+  ['Deezer', q => jsonp(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=10&output=jsonp`).then(fromDeezer)],
+  ['MusicBrainz', q => fetchJSON(`https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(q)}&fmt=json&limit=8`, 6000).then(fromMB)],
+];
+let songSrc = 0;
+const errWord = e => e && (e.name === 'AbortError' || e.message === 'timeout') ? '時間切れ' : e && e.message === 'jsonp' ? '読み込めず' : e && /^http/.test(e.message) ? e.message : '接続できず';
 async function searchSongs(q) {
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&country=JP&lang=ja_jp&media=music&entity=song&limit=10`;
-  let j; try { const r = await fetch(url); if (!r.ok) throw new Error('http'); j = await r.json(); } catch (e) { j = await jsonp(url); }
-  return (j.results || []).filter(x => x.trackName).map(x => ({ name: x.trackName, artist: x.artistName || '', album: x.collectionName || '', art: (x.artworkUrl100 || '').replace(/\/\d+x\d+bb\./, '/600x600bb.'), preview: x.previewUrl || '', apple: x.trackViewUrl || '' }));
+  // the first service that answers decides, even with no hits; others are only tried when it can't be reached
+  const errs = [];
+  for (let k = 0; k < SONG_SOURCES.length; k++) {
+    const i = (songSrc + k) % SONG_SOURCES.length, [name, run] = SONG_SOURCES[i];
+    try { const r = await run(q); songSrc = i; return r; }
+    catch (e) { errs.push(`${name}: ${errWord(e)}`); }
+  }
+  const err = new Error('all'); err.detail = errs.join('／'); throw err;
+}
+function freshPreview(sg) {
+  if (!sg || !sg.dz) return Promise.resolve(sg);
+  return jsonp(`https://api.deezer.com/track/${sg.dz}?output=jsonp`).then(x => { if (x && x.preview) sg.preview = x.preview; return sg; }).catch(() => sg);
 }
 let sgResults = [], sgSeq = 0, sgTimer = null;
 // suggestions follow whatever is typed in 曲名 / アーティスト
@@ -1906,7 +1932,7 @@ function songQuery() {
     try {
       const r = (await searchSongs(q)).slice(0, 6); if (my !== sgSeq) return; sgResults = r;
       html = r.length ? '<span class="sg-hint">候補（タップで選ぶ）</span>' + r.map((x, i) => `<button class="sg-row" data-act="pickSong" data-i="${i}">${artHTML(x, 'art')}<span><b>${esc(x.name)}</b><small>${esc(x.artist)}${x.album ? ' ・ ' + esc(x.album) : ''}</small></span><i>${ico('plus')}</i></button>`).join('') : '<p class="sg-msg">候補が見つかりませんでした。このまま「この曲を添える」でも添えられます</p>';
-    } catch (e) { if (my !== sgSeq) return; html = '<p class="sg-msg">曲の検索につながりませんでした。このまま「この曲を添える」でも添えられます</p>'; }
+    } catch (e) { if (my !== sgSeq) return; html = `<p class="sg-msg">曲の検索につながりませんでした。このまま「この曲を添える」でも添えられます${e.detail ? `<br><small style="color:var(--ink-3)">${esc(e.detail)}</small>` : ''}</p>`; }
     const b = $('#sg-res'); if (b) b.innerHTML = html;
   }, 400);
 }
@@ -1932,10 +1958,11 @@ function stopPreview() {
   if (sgAudio) { sgAudio.pause(); sgAudio = null; }
   document.querySelectorAll('[data-act="sgPlay"]').forEach(b => { b.classList.remove('on'); b.innerHTML = `${ico('play')}試聴`; });
 }
-function togglePreview(btn, url) {
+function togglePreview(btn, url, onFail) {
   if (sgAudio && !sgAudio.paused) { stopPreview(); return; }
   stopPreview(); const a = sgAudio = new Audio(url);
   a.addEventListener('ended', stopPreview);
+  a.addEventListener('error', () => { if (sgAudio === a) stopPreview(); if (onFail) onFail(); else toast('試聴を再生できませんでした'); });
   a.play().then(() => { btn.classList.add('on'); btn.innerHTML = `${ico('pause')}停止`; }).catch(err => { if (sgAudio === a) sgAudio = null; toast(err && err.name === 'NotAllowedError' ? 'もう一度「試聴」を押すと再生します' : '試聴を再生できませんでした'); });
 }
 function songField(e) {
@@ -2369,8 +2396,8 @@ function tkHTML() {
     <div class="tk-chips"><button class="tk-chip${t.date ? ' on' : ''}" data-act="tkDateT">${ico('today')}<span class="num">${t.date ? `${md(t.date)}(${WD[wd(t.date)]}) ${hm(t.start)}〜` : '日付'}</span></button>${t.date ? `<button class="tk-chip ghost" data-act="tkDateClr">あとでに戻す</button>` : ''}</div>
     ${t._showDate ? `<div class="row2"><div class="fld" style="margin:0"><label for="tk-date">日付</label><input class="inp" type="date" id="tk-date" value="${t.date}"></div><div class="fld" style="margin:0"><label for="tk-start">開始</label><input class="inp" type="time" id="tk-start" value="${t.start}"></div></div>` : ''}
     <div class="tk-card">
-      ${t.subtasks.map((x, i) => `<div class="sub${x.done ? ' on' : ''}"><button class="box" data-act="tkSubT" data-i="${i}" aria-label="完了">${ico('check')}</button><span>${esc(x.t)}</span><button class="rm" data-act="tkSubDel" data-i="${i}" aria-label="削除">${ico('x')}</button></div>`).join('')}
-      <div class="sub add"><span class="box"></span><input id="tk-sub" placeholder="サブタスクを追加" maxlength="60" autocomplete="off" enterkeyhint="done" aria-label="サブタスクを追加"></div>
+      ${t.subtasks.map((x, i) => `<div class="stk${x.done ? ' on' : ''}"><button class="box" data-act="tkSubT" data-i="${i}" aria-label="完了">${ico('check')}</button><span>${esc(x.t)}</span><button class="rm" data-act="tkSubDel" data-i="${i}" aria-label="削除">${ico('x')}</button></div>`).join('')}
+      <div class="stk add"><span class="box"></span><input id="tk-sub" placeholder="サブタスクを追加" maxlength="60" autocomplete="off" enterkeyhint="done" aria-label="サブタスクを追加"></div>
       <textarea id="tk-notes" rows="4" placeholder="メモ、リンク、電話番号など…" aria-label="メモ">${esc(t.notes)}</textarea>
     </div>
     ${t.id ? '<button class="tk-del" data-act="tkDel">このタスクを削除</button>' : ''}
@@ -2399,6 +2426,7 @@ function openEntry(id, date, prompt) {
   enDraft._prompt = prompt || PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
   enStep = en ? 'write' : 'feel'; sgResults = [];
   if (enDraft.song && !enDraft.song.preview) enrichSong(enDraft.song);
+  else if (enDraft.song && enDraft.song.dz) freshPreview(enDraft.song);
   openSheet(entryForm(), 'full');
 }
 function entryForm() {
@@ -2726,7 +2754,7 @@ const ACT = {
   },
   sgPlay: t => {
     const sg = enDraft && enDraft.song; if (!sg) return;
-    if (sg.preview) { togglePreview(t, sg.preview); return; }
+    if (sg.preview) { togglePreview(t, sg.preview, sg.dz ? () => freshPreview(sg).then(() => toast('もう一度「試聴」を押してください')) : null); return; }
     t.innerHTML = `${ico('play')}さがしています…`;
     enrichSong(sg).then(x => { if (x.preview) { const b = $('[data-act="sgPlay"]', topSheet()); if (b) togglePreview(b, x.preview); } else { toast(x.noPreview ? 'この曲の試聴は見つかりませんでした' : '試聴をさがせませんでした。通信を確認してください'); const b = $('[data-act="sgPlay"]', topSheet()); if (b) b.innerHTML = `${ico('play')}試聴`; } });
   },
