@@ -381,7 +381,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 #toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translate(-50%,-16px) scale(.96);color:var(--ink);
   background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border:1px solid var(--glass-edge);
   box-shadow:var(--glass-shadow);padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;
-  transition:transform .35s cubic-bezier(.3,1.35,.5,1),opacity .25s;z-index:40;width:max-content;max-width:calc(100% - 32px);text-align:center}
+  transition:transform .35s cubic-bezier(.3,1.35,.5,1),opacity .25s;z-index:90;width:max-content;max-width:calc(100% - 32px);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 /* quick mood check-in */
 .quick{background:var(--surface);border-radius:20px;padding:12px 14px 12px;box-shadow:var(--shadow);margin-top:12px}
@@ -689,6 +689,159 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .snap-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;padding:6px 0}
 .snap-row small{color:var(--ink-2);font-size:12px}
 .snap-row button{color:var(--accent);font-weight:700;font-size:13px}
+/* weather */
+.ico.big{width:52px;height:52px;stroke-width:1.5}
+.wx-btn{width:auto;min-width:42px;padding:0 6px;gap:3px;display:flex;align-items:center}
+.wx-btn .num{font-size:15px;font-weight:700}
+.wx-btn .ico{width:24px;height:24px}
+.wx-now{border-radius:24px;padding:16px 18px;color:#fff;background:linear-gradient(160deg,var(--wa),var(--wb));box-shadow:0 12px 30px rgba(20,30,60,.18);position:relative;overflow:hidden}
+.wx-loc{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700}
+.wx-loc .ico{width:16px;height:16px}
+.wx-loc button{margin-left:auto;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.2);color:#fff}
+.wx-main{display:flex;align-items:center;gap:12px;margin:10px 0 6px}
+.wx-main>.ico{width:58px;height:58px;stroke-width:1.5;flex:none}
+.wx-main b{font-size:60px;font-weight:300;line-height:1;letter-spacing:-.03em}
+.wx-main b small{font-size:22px;font-weight:400;margin-left:2px}
+.wx-main .lbl{font-size:15px;font-weight:700;line-height:1.4}
+.wx-main .lbl small{display:block;font-size:12px;font-weight:500;opacity:.88}
+.wx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.wx-grid div{background:rgba(255,255,255,.16);border-radius:14px;padding:8px 6px;text-align:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.wx-grid .ico{width:18px;height:18px;opacity:.9}
+.wx-grid b{display:block;font-size:15px;margin-top:2px}
+.wx-grid small{display:block;font-size:10.5px;opacity:.85}
+.wx-upd{display:block;text-align:right;font-size:11px;opacity:.8;margin-top:8px}
+.wx-hs{overflow-x:auto;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none}
+.wx-hs::-webkit-scrollbar{display:none}
+.wx-h{display:grid;grid-auto-flow:column;grid-template-rows:auto auto 96px auto auto;position:relative}
+.wx-h>div{width:54px;text-align:center;font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.wx-h .t{font-size:13px;font-weight:700;color:var(--ink);padding-bottom:4px;height:34px}
+.wx-h .t small{font-size:10px;color:var(--accent);font-weight:700;line-height:1}
+.wx-h .i .ico{width:26px;height:26px;color:var(--ink)}
+.wx-h .p{height:44px;gap:2px}.wx-h .p b{font-size:12.5px;color:var(--ink)}
+.wx-h .p i{display:block;width:34px;border-radius:3px;background:#3D7BE0;min-height:0}
+.wx-h .p.wet b{color:#3D7BE0}
+.wx-h .w{height:44px;gap:2px}.wx-h .w svg{width:18px;height:18px;color:#3BA8C6}
+.wx-h svg.tl{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.wx-h svg.tl polyline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.wx-h svg.tl circle{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.wx-h svg.tl text{font-size:12.5px;font-weight:700;fill:var(--ink);text-anchor:middle}
+.wx-radar{height:300px}
+.wx-radar .ov{position:absolute;inset:0;pointer-events:none;background:none;display:block;opacity:1;z-index:auto}
+.wx-radar .ov img{opacity:.78;animation:none}
+.wx-me{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#2F80ED;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,128,237,.25)}
+.wx-rbar{display:flex;align-items:center;gap:10px;margin-top:10px}
+.wx-rbar button{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.wx-rbar button .ico{width:18px;height:18px}
+.wx-rbar input{flex:1;accent-color:var(--accent)}
+.wx-rbar b{font-size:14px;min-width:84px;text-align:right}
+.wx-leg{display:flex;gap:2px;margin-top:8px;font-size:9.5px;color:var(--ink-2)}
+.wx-leg span{flex:1;text-align:center;padding-top:6px;border-top:5px solid var(--c)}
+.wx-d{display:grid;grid-template-columns:62px 30px 40px 30px minmax(0,1fr) 30px;align-items:center;gap:6px;padding:9px 0;font-size:13.5px}
+.wx-d+.wx-d{border-top:1px solid var(--line)}
+.wx-d .ico{width:24px;height:24px}
+.wx-d .pp{color:#3D7BE0;font-size:12px;font-weight:700;text-align:right}
+.wx-d .lo{color:var(--ink-2);text-align:right}.wx-d .hi{font-weight:700}
+.wx-d .rg{height:6px;border-radius:3px;background:var(--surface-2);position:relative}
+.wx-d .rg i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#5AB0F0,#F2B84B,#F08A5D)}
+.wx-d.sun .dn{color:var(--sun)}.wx-d.sat .dn{color:var(--sat)}
+.wxm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wxm div{background:var(--surface-2);border-radius:14px;padding:10px 6px;text-align:center}
+.wxm .ico{width:26px;height:26px}
+.wxm b{display:block;font-size:13px;margin-top:2px}
+.wxm small{display:block;font-size:11px;color:var(--ink-2)}
+.wxm .bar{height:6px;border-radius:3px;background:var(--line);margin:6px 8px 4px;overflow:hidden}
+.wxm .bar i{display:block;height:100%;border-radius:3px}
+.wxm .f{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;margin-top:2px}
+.wxm .f i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+/* wrapped */
+.wr-card{padding:0;overflow:hidden}
+.wr-go{display:block;width:100%;text-align:left;padding:18px 18px 16px;color:#fff;background:linear-gradient(125deg,#FF5F8F,#8A5CFF 55%,#2FC4C8);position:relative;overflow:hidden}
+.wr-go::after{content:"";position:absolute;right:-30px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.18)}
+.wr-go small{font-size:11px;letter-spacing:.16em;font-weight:700;opacity:.9}
+.wr-go b{display:block;font-size:26px;margin:4px 0 2px}
+.wr-go span{font-size:12.5px;opacity:.92}
+.wr-years{display:flex;gap:6px;padding:10px 14px 12px;flex-wrap:wrap}
+.wr-years button{font-size:12.5px;padding:5px 12px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.wrap{position:fixed;inset:0;z-index:30;color:#fff;opacity:0;transform:scale(.97);transition:opacity .25s,transform .25s,background .5s;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
+.wrap.in{opacity:1;transform:none}
+.wr-bars{position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;gap:4px;z-index:3}
+.wr-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
+.wr-bars b{display:block;height:100%;background:#fff}
+.wr-x{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 18px);z-index:3;width:42px;height:42px;display:grid;place-items:center;color:#fff}
+.wr-slide{position:absolute;inset:calc(env(safe-area-inset-top,0px) + 70px) 26px calc(env(safe-area-inset-bottom,0px) + 40px);display:flex;flex-direction:column;justify-content:center}
+.wr-slide>*{animation:wrUp .6s cubic-bezier(.2,.8,.2,1) both}
+.wr-slide>*:nth-child(2){animation-delay:.12s}.wr-slide>*:nth-child(3){animation-delay:.26s}.wr-slide>*:nth-child(4){animation-delay:.4s}.wr-slide>*:nth-child(5){animation-delay:.54s}
+@keyframes wrUp{from{opacity:0;transform:translateY(24px)}}
+.wr-k{font-size:14px;font-weight:700;letter-spacing:.14em;opacity:.85;margin:0 0 6px}
+.wr-h{font-size:28px;font-weight:700;line-height:1.35;margin:0 0 14px}
+.wr-big{font-size:clamp(76px,26vw,120px);font-weight:700;line-height:1;letter-spacing:-.03em;margin:4px 0 10px}
+.wr-big small{font-size:28px;margin-left:4px;letter-spacing:0}
+.wr-p{font-size:16px;line-height:1.7;margin:4px 0;opacity:.95}
+.wr-p b{font-size:20px}
+.wr-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.wr-row{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:700}
+.wr-row .n{width:22px;font-size:18px;opacity:.75}
+.wr-row .art{width:52px;height:52px;border-radius:10px;object-fit:cover;flex:none;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.wr-row .art .ico{width:22px;height:22px;color:#fff}
+.wr-row>span:not(.n):not(.art){min-width:0;flex:1}.wr-row .n{flex:none}.wr-row small{display:block;font-size:12.5px;font-weight:500;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wr-row em{font-style:normal;font-size:13px;opacity:.85}
+.wr-bar{height:12px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:4px}.wr-bar i{display:block;height:100%;border-radius:6px}
+.wr-pix{display:grid;grid-template-columns:22px repeat(31,1fr);gap:2px;font-size:9px;align-items:center;margin-top:6px}
+.wr-pix i{aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,.13)}
+.wr-pix i.f{background:transparent}
+.wr-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.wr-ph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.wr-ph img:nth-child(odd){transform:rotate(-2deg)}.wr-ph img:nth-child(even){transform:rotate(2deg)}
+.wr-blob{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:.04em;margin-right:8px;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
+.wr-btns{display:flex;gap:10px;margin-top:22px}
+.wr-btns button{flex:1;height:48px;border-radius:99px;font-weight:700;font-size:15px;background:#fff;color:#2a2340}
+.wr-btns button+button{background:rgba(255,255,255,.18);color:#fff}
+/* packing list */
+.pk-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:15px}
+.pk-row+.pk-row{border-top:1px solid var(--line)}
+.pk-row span{flex:1;min-width:0}
+.pk-row.on span{color:var(--ink-3);text-decoration:line-through}
+.pk-chk{width:24px;height:24px;border-radius:7px;border:2px solid var(--ink-3);display:grid;place-items:center;color:#fff;flex:none}
+.pk-chk .ico{width:15px;height:15px;stroke-width:3;opacity:0}
+.pk-row.on .pk-chk{background:var(--c,var(--accent));border-color:var(--c,var(--accent))}.pk-row.on .pk-chk .ico{opacity:1}
+.pk-rm{color:var(--ink-3);width:28px;height:28px;display:grid;place-items:center}.pk-rm .ico{width:15px;height:15px}
+.pk-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pk-sug button{font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
+.pk-badge{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:11.5px;color:var(--ink-2)}
+.pk-badge .ico{width:13px;height:13px}
+.pk-badge.ok{color:#2FA36B}
+.pk-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:12px 14px;margin:0 0 12px}
+.pk-card h3{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:15px}
+.pk-card h3 .ico{width:18px;height:18px;color:var(--accent)}
+.pk-card h3 .sub{margin-left:auto;font-size:12px;color:var(--ink-2);font-weight:500}
+.pk-ev+.pk-ev{margin-top:10px}
+.pk-ev b{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2)}
+.pk-ev b::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.pk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pk-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 12px 6px 8px;border-radius:99px;font-size:13.5px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink)}
+.pk-chip .ico{width:15px;height:15px;stroke-width:3;color:var(--ink-3)}
+.pk-chip.on{background:color-mix(in srgb,var(--c) 18%,var(--surface));border-color:transparent;color:var(--ink-2);text-decoration:line-through}
+.pk-chip.on .ico{color:var(--c)}
+/* app lock */
+.lock{position:fixed;inset:0;z-index:80;background:radial-gradient(120% 70% at 50% 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)),var(--bg) 70%);display:flex;align-items:center;justify-content:center;color:var(--ink);user-select:none;-webkit-user-select:none}
+.lk-in{display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.lk-ic{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 35%,transparent)}
+.lk-ic .ico{width:28px;height:28px}
+.lk-t{font-size:19px;margin-top:14px}
+.lk-s{font-size:13px;color:var(--ink-2);margin-top:4px;min-height:18px;text-align:center}
+.lk-dots{display:flex;gap:16px;margin:22px 0 26px}
+.lk-dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink-2)}
+.lk-dots i.on{background:var(--ink);border-color:var(--ink)}
+.lk-dots.err{animation:lkShake .4s}
+@keyframes lkShake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.lk-pad{display:grid;grid-template-columns:repeat(3,76px);gap:16px 22px}
+.lk-pad button{width:76px;height:76px;border-radius:50%;font-size:30px;font-weight:500;background:var(--surface);box-shadow:var(--shadow);color:var(--ink);display:grid;place-items:center}
+.lk-pad button:active{background:var(--surface-2)}
+.lk-pad .ghost{background:transparent;box-shadow:none;font-size:14px;font-weight:700}
+.lk-pad .ghost .ico{width:30px;height:30px}
+.lk-foot{margin-top:22px;font-size:13.5px;color:var(--accent);font-weight:700}
+.lk-warn{text-align:center;font-size:14px;line-height:1.7;margin:18px 0 14px}
+.lk-in>.btn{width:100%;margin-bottom:8px}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -1135,6 +1288,16 @@ const IC = {
   yen:'<path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/>',
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  umbrella:'<path d="M3 12a9 9 0 0 1 18 0zM12 12v7a2 2 0 0 0 4 0M12 3v-1"/>',
+  lock:'<rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14.5v2.5"/>',
+  face:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.7 1.3 4.3 1.3 6 0"/>',
+  back:'<path d="M9 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-6-6z"/><path d="m13 10 4 4M17 10l-4 4"/>',
+  partly:'<path d="M8.5 3v1.3M3.3 8.2H2M4.8 4.6l.9.9M12.2 4.6l-.9.9M5.2 11.4A3.7 3.7 0 0 1 11.9 6.7"/><path d="M9.5 20h8a3.5 3.5 0 0 0 .3-7 5.5 5.5 0 0 0-10.4 1.3A3 3 0 0 0 9.5 20z"/>',
+  drop:'<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/>',
+  wind:'<path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
+  gauge:'<path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 18 4-6"/>',
+  sunrise:'<path d="M3 19h18M7 15a5 5 0 0 1 10 0M12 3v5M9.5 5.5 12 3l2.5 2.5"/>',
+  sunset:'<path d="M3 19h18M7 15a5 5 0 0 1 10 0M12 3v5M9.5 5.5 12 8l2.5-2.5"/>',
   dice:'<rect x="7" y="7" width="14" height="14" rx="3"/><path d="M17 7V5.5A2.5 2.5 0 0 0 14.5 3h-9A2.5 2.5 0 0 0 3 5.5v9A2.5 2.5 0 0 0 5.5 17H7"/><circle cx="11" cy="11" r=".9" fill="currentColor"/><circle cx="17" cy="11" r=".9" fill="currentColor"/><circle cx="14" cy="14" r=".9" fill="currentColor"/><circle cx="11" cy="17" r=".9" fill="currentColor"/><circle cx="17" cy="17" r=".9" fill="currentColor"/>',
   share:'<path d="M12 15V3.5M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
@@ -1410,6 +1573,7 @@ function viewCal() {
   <div class="cal-head">
     <button class="m-title" data-act="calToday" aria-label="今日に戻る"><span class="mn num">${mo + 1}</span><span class="my">${y}年</span></button>
     <div class="head-icons">
+      <button class="icon-btn wx-btn" data-act="weather" aria-label="天気">${wxBtnInner()}</button>
       <button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button>
       <button class="icon-btn" data-act="calPick" aria-label="月を選ぶ">${ico('today')}</button>
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
@@ -1451,6 +1615,7 @@ function dayDetail(d) {
   html += hws.map(x => { const c = clsById(x.classId); return `<button class="ev-card" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="t">締切<small>${dueLabel(x.due)[0]}</small></span><span class="stripe"></span><span class="ti">${esc(x.title)}${c ? `<small>${esc(c.name)}</small>` : ''}</span></button>`; }).join('');
   html += main.map(o => evCard(o, d)).join('');
   if (!h && !main.length && !hws.length) html += `<p class="empty" style="padding:10px">予定はありません</p>`;
+  html += packCard(d);
   if (rt || nc) html += `<div class="routine-note"><span>${[nc && `授業 ${nc}件`, rt && `ルーティン ${rt}件`].filter(Boolean).join('・')}</span><button data-act="openDay" data-d="${d}">タイムラインで見る</button></div>`;
   for (const e of es) html += miniEntry(e);
   html += `<div class="detail-actions"><button class="btn" data-act="newEvent" data-d="${d}">${ico('plus')}新しい予定</button><button class="btn" data-act="newEntry" data-d="${d}">${ico('pen')}日記を書く</button></div></section>`;
@@ -1488,7 +1653,7 @@ function viewDay() {
     tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}" style="--c:${ev.color}">
       <span class="tm num">${hm(ev.start)}</span>
       <button class="pill" style="height:${H}px" ${act} aria-label="${esc(ev.title)}を開く">${ico(ev.icon)}</button>
-      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}</div></button>
+      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}</div></button>
       ${ev.cls ? '<span></span>' : `<button class="chk${done ? ' on' : ''}" data-act="toggleDone" data-id="${ev.id}" data-d="${d}" aria-pressed="${done}" aria-label="完了">${ico('check')}</button>`}</div>`;
     prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
@@ -1500,6 +1665,7 @@ function viewDay() {
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
+    ${d === T && new Date().getHours() >= 17 ? packCard(addDays(T, 1)) : ''}${packCard(d)}
     ${moodCard}
     ${ad ? `<div class="allday-row">${ad}</div>` : ''}
     ${timed.length ? `<div class="timeline">${tl}</div><p class="tl-hint">アイコンを長押しして上下に動かすと、時間を変えられます</p>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
@@ -1777,6 +1943,7 @@ function viewReflect() {
   return `
   <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div></div>
   ${memoriesCard()}
+  ${wrappedCard()}
   <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
   <section class="card">
     <div class="ins-nav"><button data-act="iWeek" data-n="-1" aria-label="前の週">${ico('left')}</button>
@@ -1800,6 +1967,7 @@ function viewReflect() {
     ${rank.length ? `<div class="rank">${rank.map(([f, v]) => `<div style="--c:${feelInfo(f).color}"><span>${esc(f)}</span><span class="trk"><i style="width:${v / maxR * 100}%"></i></span><span class="c num">${v}</span></div>`).join('')}</div>` : '<p class="empty" style="padding:8px">この期間の記録はまだありません</p>'}
   </section>
   ${eventMoodCard()}
+  ${wxMoodCard()}
   <section class="card"><h3>よく書いたこと <span class="sub">${n}日間</span></h3>${donut(rs)}</section>
   <section class="card"><h3>よく使う言葉 <span class="sub">${n}日間</span></h3>
     ${wl.length ? `<div class="words">${wl.map(([w, c]) => `<span style="font-size:${(12 + (c / wmax) * 10).toFixed(1)}px;font-weight:${c === wmax ? 700 : 500}">${esc(w)}</span>`).join('')}</div>` : '<p class="empty" style="padding:8px">日記を書くと、よく使う言葉がここに並びます</p>'}
@@ -2057,6 +2225,316 @@ function songField(e) {
     <div id="sg-res" class="sg-res"></div>
     <button class="btn sg-add" data-act="manualSong">${ico('music')}この曲を添える</button>
     ${rec.length ? `<span class="sg-lb">最近添えた曲</span><div class="sg-recent">${rec.map((x, i) => `<button data-act="pickRecent" data-i="${i}">${artHTML(x, 'art')}<span>${esc(x.name)}</span></button>`).join('')}</div>` : ''}`;
+}
+
+/* ================= app lock: passcode and Face ID (keeps the diary private from people nearby) ================= */
+const LK = () => S.settings.lock || { on: false };
+const toB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const fromB64u = x => Uint8Array.from(atob(x.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((x.length + 3) % 4)), c => c.charCodeAt(0));
+async function pinHash(code, salt) { return toB64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`hibi:${salt}:${code}`))); }
+const faceOK = () => !inFrame && !!window.PublicKeyCredential && location.protocol === 'https:';
+async function faceRegister() {
+  const c = await navigator.credentials.create({ publicKey: { rp: { name: 'ひび手帳', id: location.hostname }, user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'ひび手帳', displayName: 'ひび手帳のロック' }, challenge: crypto.getRandomValues(new Uint8Array(32)), pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' }, timeout: 60000, attestation: 'none' } });
+  return toB64u(c.rawId);
+}
+const faceVerify = id => navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), rpId: location.hostname, allowCredentials: [{ type: 'public-key', id: fromB64u(id), transports: ['internal'] }], userVerification: 'required', timeout: 60000 } });
+function lockSettingsHTML() {
+  const l = LK();
+  if (!l.on) return `<p class="note" style="margin:0">アプリを開くときに4けたのパスコード${faceOK() ? 'やFace ID' : ''}を求めます。iPhoneを人に見せるときも、日記を見られずにすみます。</p><button class="btn" data-act="lockSetup">${ico('lock')}パスコードを設定する</button>`;
+  return `${faceOK() ? `<label class="toggle"><span>Face IDでも開けるようにする<small>iPhoneの「パスワード」アプリに「ひび手帳」の鍵が保存されます</small></span><input type="checkbox" id="set-faceid" ${l.cred ? 'checked' : ''}></label>` : ''}
+    <div class="toggle"><span>ロックするまで<small>アプリを離れてから</small></span></div>
+    <div class="seg mc-seg" style="margin:0">${[[0, 'すぐ'], [60, '1分'], [300, '5分'], [900, '15分']].map(([k, t]) => `<button data-act="lockDelay" data-k="${k}" aria-pressed="${(l.delay || 0) === k}">${t}</button>`).join('')}</div>
+    <button class="btn" data-act="lockChange">パスコードを変更</button><button class="btn ghost" data-act="lockOff">ロックをやめる</button>
+    <p class="note" style="margin:0">データそのものを暗号化するものではなく、人に見られないための鍵です。パスコードを忘れると、データをすべて消さないと開けなくなるので、バックアップをとっておいてください。</p>`;
+}
+let LKS = null, lockHiddenAt = 0;
+function showLock(mode, done) {
+  if (LKS && LKS.mode === 'unlock' && mode === 'unlock') return;
+  let el = $('#lock'); if (!el) { el = document.createElement('div'); el.id = 'lock'; el.className = 'lock'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'ロック'); document.body.append(el); el.addEventListener('click', lockClick); }
+  LKS = { mode, done, code: '', first: '', view: 'pad' }; lockRender();
+  if (mode === 'unlock' && LK().cred && document.visibilityState === 'visible') setTimeout(() => lockFace(true), 350);
+}
+function lockRender() {
+  const el = $('#lock'); if (!el || !LKS) return;
+  const t = { unlock: ['ひび手帳', 'パスコードを入力'], setup: [LKS.first ? 'もう一度入力' : '新しいパスコード', LKS.first ? '確認のため、同じ4けたを入力してください' : '4けたの数字を決めてください'], verify: ['いまのパスコード', '確認のため入力してください'] }[LKS.mode];
+  if (LKS.view === 'forgot') { el.innerHTML = `<div class="lk-in"><div class="lk-ic">${ico('lock')}</div><b class="lk-t">パスコードを忘れたとき</b><p class="lk-warn">この端末のひび手帳のデータを<b>すべて消す</b>と、ロックを解除できます。元に戻せません。バックアップファイルがあれば、あとで「設定 → データ」から復元できます。</p><button class="btn danger" data-lk="erase">すべて消してロックを解除</button><button class="btn" data-lk="back">戻る</button></div>`; return; }
+  const fc = LKS.mode === 'unlock' && LK().cred && faceOK();
+  el.innerHTML = `<div class="lk-in"><div class="lk-ic">${ico('lock')}</div><b class="lk-t">${t[0]}</b><small class="lk-s" id="lk-s">${t[1]}</small>
+    <div class="lk-dots" id="lk-dots">${[0, 1, 2, 3].map(i => `<i class="${i < LKS.code.length ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="lk-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="num" data-lk="${n}">${n}</button>`).join('')}${fc ? `<button class="ghost" data-lk="face" aria-label="Face IDで開く">${ico('face')}</button>` : '<span></span>'}<button class="num" data-lk="0">0</button><button class="ghost" data-lk="del" aria-label="1文字消す">${ico('back')}</button></div>
+    <button class="lk-foot" data-lk="${LKS.mode === 'unlock' ? 'forgot' : 'cancel'}">${LKS.mode === 'unlock' ? 'パスコードを忘れたとき' : 'キャンセル'}</button></div>`;
+}
+function hideLock() { const el = $('#lock'); if (el) el.remove(); LKS = null; }
+function lockFail(msg) { LKS.code = ''; lockRender(); const d = $('#lk-dots'), s2 = $('#lk-s'); if (d) d.classList.add('err'); if (s2) s2.textContent = msg; if (navigator.vibrate) navigator.vibrate(80); }
+async function lockFace(auto) {
+  try { await faceVerify(LK().cred); const cb = LKS && LKS.done; hideLock(); if (cb) cb(); }
+  catch (e) { if (!auto) toast('Face IDで開けませんでした。パスコードを入力してください'); }
+}
+async function lockEnter() {
+  const l = LK(), c = LKS.code;
+  if (LKS.mode === 'setup') {
+    if (!LKS.first) { LKS.first = c; LKS.code = ''; lockRender(); return; }
+    if (LKS.first !== c) { LKS.first = ''; lockFail('一致しませんでした。もう一度最初から入力してください'); return; }
+    const salt = toB64u(crypto.getRandomValues(new Uint8Array(12)));
+    S.settings.lock = Object.assign({ delay: 0, cred: null }, l, { on: true, salt, hash: await pinHash(c, salt) }); save();
+    const cb = LKS.done; hideLock(); toast('パスコードを設定しました'); if (cb) cb(); return;
+  }
+  if (await pinHash(c, l.salt) === l.hash) { const cb = LKS.done; hideLock(); if (cb) cb(); }
+  else lockFail('パスコードがちがいます');
+}
+function lockClick(ev) {
+  const b = ev.target.closest('[data-lk]'); if (!b || !LKS) return; const k = b.dataset.lk;
+  if (/^\d$/.test(k)) { if (LKS.code.length >= 4) return; LKS.code += k; lockRender(); if (LKS.code.length === 4) setTimeout(lockEnter, 120); return; }
+  if (k === 'del') { LKS.code = LKS.code.slice(0, -1); lockRender(); return; }
+  if (k === 'face') { lockFace(false); return; }
+  if (k === 'cancel') { hideLock(); return; }
+  if (k === 'forgot') { LKS.view = 'forgot'; lockRender(); return; }
+  if (k === 'back') { LKS.view = 'pad'; lockRender(); return; }
+  if (k === 'erase') { try { localStorage.removeItem(KEY); localStorage.removeItem(WX_KEY); localStorage.removeItem(UIKEY); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {} location.reload(); }
+}
+const lockOn = () => LK().on && LK().hash;
+document.addEventListener('visibilitychange', () => {
+  if (!lockOn()) return;
+  if (document.visibilityState === 'hidden') { lockHiddenAt = Date.now(); if (!(LK().delay > 0)) showLock('unlock'); }
+  else if (lockHiddenAt && Date.now() - lockHiddenAt >= (LK().delay || 0) * 1000) showLock('unlock');
+});
+
+/* ================= packing lists: what to bring for each plan ================= */
+const packedOf = (ev, d) => ((ev.packed || {})[d] || []).filter(t => (ev.items || []).includes(t));
+function packListHTML(e, d) {
+  const on = packedOf(e, d);
+  return (e.items || []).length ? `<div style="--c:${e.color}">${e.items.map((t, i) => `<div class="pk-row${on.includes(t) ? ' on' : ''}"><button class="pk-chk" data-act="evPack" data-i="${i}" aria-label="${esc(t)}を準備した">${ico('check')}</button><span>${esc(t)}</span><button class="pk-rm" data-act="evItemRm" data-i="${i}" aria-label="${esc(t)}を外す">${ico('x')}</button></div>`).join('')}</div>` : '<p class="note" style="margin:0">予定に持っていく物を登録すると、前の日の夜にタイムラインで確認できます。</p>';
+}
+function packSugg(e) {
+  const cnt = {}; for (const x of S.events) for (const t of x.items || []) cnt[t] = (cnt[t] || 0) + 1;
+  const list = Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(x => x[0]).filter(t => !(e.items || []).includes(t)).slice(0, 8);
+  return list.length ? `<div class="pk-sug">${list.map(t => `<button data-act="evItemSug" data-t="${esc(t)}">＋ ${esc(t)}</button>`).join('')}</div>` : '';
+}
+function packBadge(ev, d) { const n = (ev.items || []).length; if (!n) return ''; const k = packedOf(ev, d).length; return `<span class="pk-badge num${k === n ? ' ok' : ''}">${ico('bag')}${k}/${n}</span>`; }
+function packCard(d) {
+  const list = onDay(d).filter(o => !o.ev.cls && (o.ev.items || []).length); if (!list.length) return '';
+  const T = todayISO(), lbl = d === T ? '今日' : d === addDays(T, 1) ? '明日' : `${md(d)}(${WD[wd(d)]})`;
+  const tot = list.reduce((a, o) => a + o.ev.items.length, 0), done = list.reduce((a, o) => a + packedOf(o.ev, d).length, 0);
+  return `<section class="pk-card"><h3>${ico('bag')}${lbl}の持ち物<span class="sub num">${done === tot ? '準備OK！' : `${done}/${tot}`}</span></h3>${list.map(o => { const on = packedOf(o.ev, d); return `<div class="pk-ev" style="--c:${o.ev.color}"><b>${esc(o.ev.title)}${o.ev.allDay ? '' : ` <span class="num">${hm(o.ev.start)}</span>`}</b><div class="pk-chips">${o.ev.items.map((t, i) => `<button class="pk-chip${on.includes(t) ? ' on' : ''}" data-act="packT" data-id="${o.ev.id}" data-d="${d}" data-i="${i}">${ico('check')}${esc(t)}</button>`).join('')}</div></div>`; }).join('')}</section>`;
+}
+function togglePacked(ev, d, t) { ev.packed = ev.packed || {}; const a = (ev.packed[d] || []).filter(x => x !== t); if (a.length === (ev.packed[d] || []).length) a.push(t); if (a.length) ev.packed[d] = a; else delete ev.packed[d]; }
+
+/* ================= Wrapped: the year as stories (Spotify Wrapped style) ================= */
+const WR_MS = 6500;
+let WR = null;
+function wrapSlides(y) {
+  const T = todayISO(), a = `${y}-01-01`, z = `${y}-12-31` < T ? `${y}-12-31` : T, es = rangeEntries(a, z);
+  if (!es.length) return [];
+  const slides = [], days = [...new Set(es.map(e => e.date))].sort();
+  let best = 1, run = 1; for (let i = 1; i < days.length; i++) { run = diffDays(days[i - 1], days[i]) === 1 ? run + 1 : 1; best = Math.max(best, run); }
+  slides.push({ bg: 'linear-gradient(150deg,#FF5F8F,#8A5CFF 55%,#2FC4C8)', html: `<p class="wr-k">ひび WRAPPED</p><div class="wr-big num">${y}</div><p class="wr-h">${y === +T.slice(0, 4) && T.slice(5) < '12-01' ? '今年のここまでを' : 'あなたの1年を'}<br>ふりかえろう</p><p class="wr-p" style="opacity:.75">タップで次へ →</p>` });
+  slides.push({ bg: 'linear-gradient(160deg,#16A34A,#0E7490)', html: `<p class="wr-k">DIARY</p><p class="wr-h">今年書いた日記は</p><div class="wr-big num">${es.length}<small>件</small></div><p class="wr-p"><b class="num">${days.length}</b>日、気持ちを残しました</p><p class="wr-p">いちばん長い連続記録は <b class="num">${best}</b>日</p>` });
+  const fc = {}; for (const e of es) for (const f of e.feelings) fc[f] = (fc[f] || 0) + 1;
+  const ft = Object.entries(fc).sort((p, q) => q[1] - p[1]).slice(0, 5);
+  if (ft.length) slides.push({ bg: `linear-gradient(160deg,${feelInfo(ft[0][0]).color},#3B2F63)`, html: `<p class="wr-k">FEELINGS</p><p class="wr-h">いちばん多かった気持ちは</p><div class="wr-big" style="font-size:clamp(54px,17vw,84px)"><span class="wr-blob" style="background:${feelInfo(ft[0][0]).color}"></span>${esc(ft[0][0])}</div>
+    <div class="wr-list">${ft.map(([f, n]) => `<div><div class="wr-row" style="font-size:14px"><span>${esc(f)}</span><em class="num">${n}回</em></div><div class="wr-bar"><i style="width:${n / ft[0][1] * 100}%;background:${feelInfo(f).color}"></i></div></div>`).join('')}</div>` });
+  let pix = '', mScore = [];
+  for (let m = 0; m < 12; m++) {
+    pix += `<span class="num">${m + 1}</span>`; let sc = 0, n = 0; const nd = new Date(y, m + 1, 0).getDate();
+    for (let d = 1; d <= 31; d++) { const ds = `${y}-${pad(m + 1)}-${pad(d)}`, md_ = d <= nd && ds <= T ? dayMood(ds) : null; if (md_) { sc += md_.score; n++; } pix += `<i class="${d > nd || ds > T ? 'f' : ''}" style="${md_ ? `background:${md_.color}` : ''}"></i>`; }
+    mScore.push(n >= 3 ? sc / n : null);
+  }
+  const bm = mScore.reduce((b, v, i) => v != null && (b < 0 || v > mScore[b]) ? i : b, -1);
+  slides.push({ bg: 'linear-gradient(170deg,#1F2347,#0F1226)', html: `<p class="wr-k">YEAR IN PIXELS</p><p class="wr-h">気分の1年</p><div class="wr-pix">${pix}</div>${bm >= 0 ? `<p class="wr-p" style="margin-top:14px">いちばん気分がよかったのは <b class="num">${bm + 1}月</b></p>` : ''}` });
+  const sc = {}; for (const e of es) if (e.song) { const k = songKey(e.song); (sc[k] = sc[k] || { n: 0, sg: e.song }).n++; }
+  const st_ = Object.values(sc).sort((p, q) => q.n - p.n);
+  if (st_.length) slides.push({ bg: 'linear-gradient(160deg,#7C3AED,#DB2777)', html: `<p class="wr-k">MUSIC</p><p class="wr-h">今年の日記に添えた曲</p><div class="wr-list">${st_.slice(0, 5).map((x, i) => `<div class="wr-row"><span class="n num">${i + 1}</span>${artHTML(x.sg, 'art')}<span>${esc(x.sg.name)}<small>${esc(x.sg.artist)}</small></span><em class="num">${x.n}回</em></div>`).join('')}</div><p class="wr-p" style="margin-top:14px">ぜんぶで <b class="num">${st_.length}</b>曲</p>` });
+  let km = 0; const stops = [], sd = {};
+  for (let d = a; d <= z; d = addDays(d, 1)) { const s2 = stopsOf(dayPts(d)); if (!s2.length) continue; km += pathLen(s2); stops.push(...s2); for (const sp of new Set(s2.map(x => x.spot).filter(Boolean))) sd[sp.id] = (sd[sp.id] || 0) + 1; }
+  if (stops.length) { const top = Object.entries(sd).sort((p, q) => q[1] - p[1]).slice(0, 3).map(([id, n]) => [S.spots.find(x => x.id === id), n]).filter(x => x[0]);
+    slides.push({ bg: 'linear-gradient(160deg,#2563EB,#0EA5E9)', html: `<p class="wr-k">MOVES</p><p class="wr-h">今年動いた距離</p><div class="wr-big num">${kmText(km)}<small>km</small></div><p class="wr-p"><b class="num">${placeCount(stops)}</b>か所に行きました</p>${top.length ? `<div class="wr-list" style="margin-top:12px">${top.map(([sp, n], i) => `<div class="wr-row"><span class="n num">${i + 1}</span><span>${esc(sp.name)}</span><em class="num">${n}日</em></div>`).join('')}</div>` : ''}` }); }
+  let wm = 0, wn = 0; const now = Date.now();
+  for (const o of occurrences(a, z)) { const j = jobFor(o.ev); if (!j) continue; if (P(o.date).getTime() + (toMin(o.ev.start) + evLen(o.ev)) * 60000 > now) continue; wm += shiftPay(j, o.ev).W; wn++; }
+  if (wn) slides.push({ bg: 'linear-gradient(160deg,#F59E0B,#EA580C)', html: `<p class="wr-k">WORK</p><p class="wr-h">バイトでがんばった時間</p><div class="wr-big num">${Math.round(wm / 60)}<small>時間</small></div><p class="wr-p"><b class="num">${wn}</b>回のシフト、おつかれさまでした</p>` });
+  const ph = es.filter(e => e.photo).sort((p, q) => ((dayMood(q.date) || {}).score || 0) - ((dayMood(p.date) || {}).score || 0)).slice(0, 9);
+  if (ph.length) slides.push({ bg: 'linear-gradient(160deg,#EC4899,#F97316)', html: `<p class="wr-k">MEMORIES</p><p class="wr-h">今年の思い出</p><div class="wr-ph">${ph.map(e => `<img src="${e.photo}" alt="">`).join('')}</div>` });
+  slides.push({ bg: 'linear-gradient(150deg,#2FC4C8,#8A5CFF 50%,#FF5F8F)', end: true, html: `<p class="wr-k">SEE YOU</p><div class="wr-h" style="font-size:34px">${y}年、<br>おつかれさま。</div><p class="wr-p">${y + 1}年も、ひびを残していこう。</p><div class="wr-btns"><button data-wr="again">もう一度見る</button><button data-wr="close">閉じる</button></div>` });
+  return slides;
+}
+function wrappedCard() {
+  const T = todayISO(), cy = +T.slice(0, 4), ys = [...new Set(S.entries.map(e => +e.date.slice(0, 4)))].filter(y => y <= cy).sort((p, q) => q - p);
+  if (!ys.length) return '';
+  const main = +T.slice(5, 7) === 1 && ys.includes(cy - 1) ? cy - 1 : ys[0], others = ys.filter(y => y !== main);
+  return `<section class="card wr-card"><button class="wr-go" data-act="wrapped" data-y="${main}"><small>ひび WRAPPED</small><b class="num">${main}年のまとめ</b><span>${main === cy && T.slice(5) < '12-01' ? '今年のここまでを、ストーリーでふりかえる' : 'あなたの1年を、ストーリーでふりかえる'}</span></button>${others.length ? `<div class="wr-years">${others.map(y => `<button data-act="wrapped" data-y="${y}">${y}年</button>`).join('')}</div>` : ''}</section>`;
+}
+function wrRender() {
+  const sl = WR.slides[WR.idx]; WR.el.style.background = sl.bg;
+  WR.el.innerHTML = `<div class="wr-bars">${WR.slides.map((_, i) => `<i><b style="width:${i < WR.idx ? 100 : 0}%"></b></i>`).join('')}</div><button class="wr-x" data-wr="close" aria-label="閉じる">${ico('x')}</button><div class="wr-slide">${sl.html}</div>`;
+}
+function openWrapped(y) {
+  closeWrapped(true); const slides = wrapSlides(y); if (!slides.length) { toast('この年の日記がまだありません'); return; }
+  const el = document.createElement('div'); el.className = 'wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', `${y}年のまとめ`); document.body.append(el);
+  WR = { el, slides, idx: 0, elapsed: 0, last: 0, hold: false, quiet: 0, y0: 0, t0: 0 }; wrRender();
+  el.addEventListener('click', ev => {
+    if (!WR || Date.now() < WR.quiet) return; const b = ev.target.closest('[data-wr]');
+    if (b && b.dataset.wr === 'close') { closeWrapped(); return; }
+    if (b && b.dataset.wr === 'again') { WR.idx = 0; WR.elapsed = 0; wrRender(); return; }
+    wrGo(ev.clientX < innerWidth * 0.3 ? -1 : 1);
+  });
+  el.addEventListener('touchstart', ev => { WR.hold = true; WR.y0 = ev.touches[0].clientY; WR.t0 = Date.now(); }, { passive: true });
+  el.addEventListener('touchend', ev => { if (!WR) return; WR.hold = false; if (Date.now() - WR.t0 > 350) WR.quiet = Date.now() + 400; if (ev.changedTouches[0].clientY - WR.y0 > 90) { WR.quiet = Date.now() + 400; closeWrapped(); } }, { passive: true });
+  requestAnimationFrame(() => el.classList.add('in'));
+  WR.raf = requestAnimationFrame(wrLoop);
+}
+function wrLoop(ts) {
+  if (!WR) return; const dt = WR.last ? ts - WR.last : 0; WR.last = ts;
+  if (!WR.hold && !WR.slides[WR.idx].end && document.visibilityState === 'visible') WR.elapsed += dt;
+  const b = WR.el.querySelector(`.wr-bars i:nth-child(${WR.idx + 1}) b`); if (b) b.style.width = (WR.slides[WR.idx].end ? 100 : Math.min(100, WR.elapsed / WR_MS * 100)) + '%';
+  if (WR.elapsed >= WR_MS) wrGo(1);
+  if (WR) WR.raf = requestAnimationFrame(wrLoop);
+}
+function wrGo(d) { if (!WR) return; const i = WR.idx + d; if (i >= WR.slides.length) { closeWrapped(); return; } WR.idx = Math.max(0, i); WR.elapsed = 0; wrRender(); }
+function closeWrapped(now) { if (!WR) return; const el = WR.el; cancelAnimationFrame(WR.raf); WR = null; if (now) el.remove(); else { el.classList.remove('in'); setTimeout(() => el.remove(), 260); } }
+
+/* ================= weather: forecast, rain radar and how weather goes with mood ================= */
+const WX_KEY = 'hibi.wx';
+let WX = (() => { try { return JSON.parse(localStorage.getItem(WX_KEY) || 'null'); } catch (e) { return null; } })(), wxBusy = null, wxErr = '';
+const DIR16 = ['北', '北北東', '北東', '東北東', '東', '東南東', '南東', '南南東', '南', '南南西', '南西', '西南西', '西', '西北西', '北西', '北北西'];
+function wxIcon(c, day = 1) { if (c <= 1) return day ? 'sun' : 'moon'; if (c === 2) return day ? 'partly' : 'cloud'; return wxInfo(c)[0]; }
+const wxLabel = c => c === 1 ? '晴れ' : wxInfo(c)[1];
+const wxGrad = (c, day) => !day ? ['#2B3A67', '#141B33'] : c <= 1 ? ['#4FA3E8', '#2C6FC9'] : c === 2 ? ['#6E9FD6', '#4A73A8'] : c <= 48 ? ['#8796AC', '#5D6B80'] : c >= 95 ? ['#5B5470', '#2F2B40'] : ['#6F8199', '#47566C'];
+const windArrow = d => `<svg viewBox="0 0 24 24" style="transform:rotate(${(d + 180) % 360}deg)"><path d="M12 3 18 19 12 15 6 19z" fill="currentColor"/></svg>`;
+async function wxLocate() {
+  const c = await getPos(5 * 60000), loc = { lat: +c.latitude.toFixed(3), lng: +c.longitude.toFixed(3), name: '' };
+  try { const r = await fetchJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${loc.lat}&longitude=${loc.lng}&localityLanguage=ja`, 6000); loc.name = [r.city || r.principalSubdivision, r.locality && r.locality !== r.city ? r.locality : ''].filter(Boolean).join(' '); } catch (e) {}
+  S.settings.wxLoc = Object.assign({ at: Date.now() }, loc); save(true); return S.settings.wxLoc;
+}
+function wxFetch(force) {
+  const loc = S.settings.wxLoc; if (!loc) return Promise.reject(new Error('noloc'));
+  if (!force && WX && WX.loc && WX.loc.lat === loc.lat && WX.loc.lng === loc.lng && Date.now() - WX.at < 15 * 60000) return Promise.resolve(WX);
+  if (wxBusy) return wxBusy;
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&timezone=auto&wind_speed_unit=ms&forecast_days=14`
+    + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,pressure_msl,is_day'
+    + '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,is_day'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max';
+  wxBusy = fetchJSON(u, 12000).then(j => { if (!j.current) throw new Error('data'); WX = { at: Date.now(), loc, j }; try { localStorage.setItem(WX_KEY, JSON.stringify(WX)); } catch (e) {} wxErr = ''; return WX; })
+    .catch(e => { wxErr = errWord(e); throw e; }).finally(() => { wxBusy = null; });
+  return wxBusy;
+}
+function wxBtnInner() { const c = WX && WX.j && WX.j.current; return c ? `${ico(wxIcon(c.weather_code, c.is_day))}<span class="num">${Math.round(c.temperature_2m)}°</span>` : ico('partly'); }
+const updWxBtn = () => document.querySelectorAll('.wx-btn').forEach(b => { b.innerHTML = wxBtnInner(); });
+function wxRefresh() { if (!S.settings.wxLoc || inFrame || document.visibilityState !== 'visible') return; wxFetch().then(() => { updWxBtn(); if (topSheet() && topSheet().dataset.kind === 'wx') rerenderWx(); wxBackfill(); }).catch(() => {}); }
+setInterval(wxRefresh, 15 * 60000);
+function wxHourly(j) {
+  const H = j.hourly, now = new Date(), key = `${iso(now)}T${pad(now.getHours())}:00`; let k = H.time.indexOf(key); if (k < 0) k = 0;
+  const idx = [...Array(25).keys()].map(i => k + i).filter(i => i < H.time.length), temps = idx.map(i => H.temperature_2m[i]);
+  const lo = Math.min(...temps), hi = Math.max(...temps), W = 54, y = t => 22 + (hi === lo ? 30 : (hi - t) / (hi - lo) * 54);
+  const pts = idx.map((i, n) => [n * W + W / 2, y(H.temperature_2m[i])]);
+  const maxP = Math.max(4, ...idx.map(i => H.precipitation[i] || 0));
+  let cols = '';
+  idx.forEach((i, n) => {
+    const t = H.time[i], h = +t.slice(11, 13), pr = H.precipitation[i] || 0, pp = H.precipitation_probability[i];
+    cols += `<div class="t num" style="grid-row:1">${n === 0 ? '今' : h}${h === 0 && n ? `<small>${+t.slice(8, 10)}日</small>` : ''}</div>
+      <div class="i" style="grid-row:2">${ico(wxIcon(H.weather_code[i], H.is_day[i]))}</div><div style="grid-row:3"></div>
+      <div class="p${pr >= 0.5 ? ' wet' : ''}" style="grid-row:4"><i style="height:${Math.round(Math.min(1, pr / maxP) * 16)}px"></i><b class="num">${pr >= 0.05 ? pr.toFixed(pr < 10 ? 1 : 0) : 0}</b><span class="num">${pp == null ? '' : pp + '%'}</span></div>
+      <div class="w" style="grid-row:5">${windArrow(H.wind_direction_10m[i])}<span class="num">${Math.round(H.wind_speed_10m[i])}</span></div>`;
+  });
+  return `<div class="wx-h">${cols}<svg class="tl" width="${idx.length * W}" height="200" style="top:${34 + 34}px"><polyline points="${pts.map(p => p.join(',')).join(' ')}"/>${pts.map((p, n) => `<circle cx="${p[0]}" cy="${p[1]}" r="3"/><text x="${p[0]}" y="${p[1] - 9}">${Math.round(temps[n])}°</text>`).join('')}</svg></div>`;
+}
+function wxDaily(j) {
+  const D = j.daily, lo = Math.min(...D.temperature_2m_min), hi = Math.max(...D.temperature_2m_max), span = hi - lo || 1, T = todayISO();
+  return D.time.map((d, i) => { const a = (D.temperature_2m_min[i] - lo) / span * 100, b = (D.temperature_2m_max[i] - lo) / span * 100, w = wd(d);
+    return `<div class="wx-d${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}"><span class="dn num">${d === T ? '今日' : `${P(d).getDate()}(${WD[w]})`}</span>${ico(wxIcon(D.weather_code[i]))}<span class="pp num">${D.precipitation_probability_max[i] ?? '-'}%</span><span class="lo num">${Math.round(D.temperature_2m_min[i])}°</span><span class="rg"><i style="left:${a.toFixed(1)}%;width:${Math.max(4, b - a).toFixed(1)}%"></i></span><span class="hi num">${Math.round(D.temperature_2m_max[i])}°</span></div>`; }).join('');
+}
+function wxSheet() {
+  const head = '<div class="sh-bar"><span></span><b>天気</b><button class="r" data-act="close">閉じる</button></div>';
+  if (inFrame) return head + '<p class="empty">天気は GitHub Pages 版で開いたときに使えます。</p>';
+  const loc = S.settings.wxLoc;
+  if (!loc) return head + `<div class="card" style="text-align:center;padding:24px 18px"><div style="color:var(--accent);display:grid;place-items:center">${ico('partly', 'big')}</div><p style="font-size:15px;line-height:1.7;margin:10px 0 16px">いる場所の天気・気温・湿度・風・雨雲レーダーと、2週間の予報を見られます。</p><button class="btn primary" style="width:100%" data-act="wxLocate">${ico('pin')}現在地の天気を見る</button><p class="note">位置は天気の取得にだけ使い、このiPhoneの中に保存します。</p></div>`;
+  if (!WX || !WX.j || WX.loc.lat !== loc.lat || WX.loc.lng !== loc.lng) return head + `<p class="empty">${wxErr ? `天気を取得できませんでした（${esc(wxErr)}）<br><button class="btn" style="margin-top:12px" data-act="wxReload">もう一度</button>` : '天気を読み込んでいます…'}</p>`;
+  const j = WX.j, c = j.current, D = j.daily, [ga, gb] = wxGrad(c.weather_code, c.is_day), d0 = D.time.indexOf(todayISO()) < 0 ? 0 : D.time.indexOf(todayISO());
+  const t = x => (x || '').slice(11, 16), dir = DIR16[Math.round(c.wind_direction_10m / 22.5) % 16];
+  return head + `<div class="wx-now" style="--wa:${ga};--wb:${gb}">
+    <div class="wx-loc">${ico('pin')}${esc(loc.name || '現在地')}<button data-act="wxLocate">現在地を更新</button></div>
+    <div class="wx-main">${ico(wxIcon(c.weather_code, c.is_day))}<b class="num">${c.temperature_2m.toFixed(1)}<small>°C</small></b><span class="lbl">${wxLabel(c.weather_code)}<small class="num">体感 ${Math.round(c.apparent_temperature)}°<br>最高 ${Math.round(D.temperature_2m_max[d0])}° / 最低 ${Math.round(D.temperature_2m_min[d0])}°</small></span></div>
+    <div class="wx-grid">
+      <div>${ico('rain')}<b class="num">${(c.precipitation || 0).toFixed(1)}</b><small>降水 mm</small></div>
+      <div>${ico('drop')}<b class="num">${c.relative_humidity_2m}%</b><small>湿度</small></div>
+      <div>${ico('wind')}<b class="num">${c.wind_speed_10m.toFixed(1)}</b><small>${dir} m/s</small></div>
+      <div>${ico('gauge')}<b class="num">${Math.round(c.pressure_msl)}</b><small>気圧 hPa</small></div>
+      <div>${ico('umbrella')}<b class="num">${D.precipitation_probability_max[d0] ?? '-'}%</b><small>今日の降水確率</small></div>
+      <div>${ico('sunrise')}<b class="num">${t(D.sunrise[d0])}</b><small>日の出</small></div>
+      <div>${ico('sunset')}<b class="num">${t(D.sunset[d0])}</b><small>日の入り</small></div>
+      <div>${ico('sun')}<b class="num">${D.uv_index_max[d0] == null ? '-' : Math.round(D.uv_index_max[d0])}</b><small>UV指数</small></div>
+    </div><span class="wx-upd num">${hmOf(WX.at)} 更新</span></div>
+  <section class="card" style="margin-top:12px"><h3>1時間ごと <span class="sub">気温・降水(mm/確率)・風(m/s)</span></h3><div class="wx-hs">${wxHourly(j)}</div></section>
+  <section class="card"><h3>雨雲レーダー <span class="sub">気象庁ナウキャスト</span></h3><div class="mv-map wx-radar" id="wx-radar"></div>
+    <div class="wx-rbar"><button data-act="radarPlay" aria-label="再生">${ico('play')}</button><input type="range" id="wx-rt" min="0" max="0" value="0" aria-label="時刻"><b class="num" id="wx-rtl">--:--</b></div>
+    <div class="wx-leg">${[['#F2F2FF', '1'], ['#A0D2FF', '5'], ['#218CFF', '10'], ['#0041FF', '20'], ['#FAF500', '30'], ['#FF9900', '50'], ['#FF2800', '80'], ['#B40068', 'mm/h']].map(([c2, l]) => `<span style="--c:${c2}">${l}</span>`).join('')}</div></section>
+  <section class="card"><h3>2週間の予報</h3>${wxDaily(j)}</section>
+  <p class="note">予報：Open-Meteo（気象庁などの数値予報モデル）／雨雲：気象庁 高解像度降水ナウキャスト／地名：BigDataCloud。注意報・警報は気象庁の発表を確認してください。</p>`;
+}
+// ---- rain radar: JMA nowcast tiles over a dark base map
+let RAD = null;
+const utcStamp = t => { const d = new Date(t); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00`; };
+async function radarFrames() {
+  const get = n => fetchJSON(`https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_${n}.json`, 6000).then(a => a.filter(x => (x.elements || []).includes('hrpns')));
+  try {
+    const [past, fut] = await Promise.all([get('N1'), get('N2').catch(() => [])]);
+    const p = past.sort((a, b) => a.validtime.localeCompare(b.validtime)).slice(-13), f = fut.sort((a, b) => a.validtime.localeCompare(b.validtime)).filter(x => x.validtime > (p[p.length - 1] || {}).validtime).slice(0, 12);
+    if (p.length) return { frames: [...p, ...f].map(x => ({ b: x.basetime, v: x.validtime })), now: p.length - 1 };
+  } catch (e) {}
+  const base = Math.floor((Date.now() - 6 * 60000) / 300000) * 300000, frames = [];
+  for (let k = 12; k >= 0; k--) { const t = base - k * 300000; frames.push({ b: utcStamp(t), v: utcStamp(t) }); }
+  for (let k = 1; k <= 12; k++) frames.push({ b: utcStamp(base), v: utcStamp(base + k * 300000) });
+  return { frames, now: 12 };
+}
+function stampLabel(v) { const d = new Date(Date.UTC(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8), +v.slice(8, 10), +v.slice(10, 12))); return `${d.getHours()}:${pad(d.getMinutes())}`; }
+async function drawRadar() {
+  const box = $('#wx-radar'), loc = S.settings.wxLoc; if (!box || !loc) return;
+  const W = box.clientWidth, H = box.clientHeight, z = 8, n = 2 ** z, cx = wmx(loc.lng, z), cy = wmy(loc.lat, z), ox = cx - W / 2, oy = cy - H / 2;
+  const tiles = []; for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++) if (ty >= 0 && ty < n) tiles.push([tx, ty]);
+  const pos = (tx, ty) => `left:${(tx * 256 - ox).toFixed(1)}px;top:${(ty * 256 - oy).toFixed(1)}px`;
+  box.innerHTML = tiles.map(([tx, ty]) => `<img src="https://${'abcd'[(tx + ty) & 3]}.basemaps.cartocdn.com/dark_all/${z}/${((tx % n) + n) % n}/${ty}@2x.png" style="${pos(tx, ty)}" alt="">`).join('')
+    + `<div class="ov">${tiles.map(([tx, ty]) => `<img data-t="${tx},${ty}" style="${pos(tx, ty)}" alt="">`).join('')}</div><span class="wx-me" style="left:${W / 2}px;top:${H / 2}px"></span><span class="mv-attr">© OpenStreetMap © CARTO / 気象庁</span>`;
+  box.querySelectorAll('img').forEach(i => i.addEventListener('error', () => { i.style.visibility = 'hidden'; }));
+  RAD = Object.assign(await radarFrames(), { z, n, idx: 0, timer: null });
+  const r = $('#wx-rt'); if (r) { r.max = RAD.frames.length - 1; r.value = RAD.now; }
+  radarShow(RAD.now);
+}
+function radarShow(i) {
+  if (!RAD) return; RAD.idx = i; const f = RAD.frames[i]; if (!f) return;
+  document.querySelectorAll('#wx-radar .ov img').forEach(img => { const [tx, ty] = img.dataset.t.split(',').map(Number); img.style.visibility = ''; img.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${f.b}/none/${f.v}/surf/hrpns/${RAD.z}/${((tx % RAD.n) + RAD.n) % RAD.n}/${ty}.png`; });
+  const l = $('#wx-rtl'); if (l) l.textContent = `${stampLabel(f.v)}${i === RAD.now ? ' 現在' : i > RAD.now ? ' 予報' : ''}`;
+  const r = $('#wx-rt'); if (r) r.value = i;
+}
+function radarStop() { if (RAD && RAD.timer) { clearInterval(RAD.timer); RAD.timer = null; } const b = $('[data-act="radarPlay"]'); if (b) b.innerHTML = ico('play'); }
+const rerenderWx = () => { radarStop(); rerenderKind('wx', wxSheet); setTimeout(drawRadar, 30); };
+// ---- weather x mood
+function wxCat(d) {
+  const e = S.entries.find(x => x.date === d && x.weather), w = S.wxDays && S.wxDays[d], c = e ? e.weather.code : w ? w.c : null; if (c == null) return null;
+  if (c >= 51 || (w && w.p >= 1)) return 'rain'; return c <= 2 ? 'sun' : 'cloud';
+}
+async function wxBackfill() {
+  const loc = S.settings.wxLoc, T = todayISO(); if (!loc || inFrame || S.settings.wxFill === T) return;
+  const dates = [...new Set(S.entries.map(e => e.date))].filter(d => d <= T).sort(); if (!dates.length) return;
+  const put = j => { const D = j.daily || {}; (D.time || []).forEach((d, i) => { if (D.weather_code[i] != null) S.wxDays[d] = { c: D.weather_code[i], p: D.precipitation_sum[i] || 0 }; }); };
+  S.wxDays = S.wxDays || {};
+  try {
+    put(await fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&timezone=auto&past_days=92&forecast_days=1&daily=weather_code,precipitation_sum`, 12000));
+    const old = dates[0], lim = addDays(T, -93); if (old < lim) put(await fetchJSON(`https://archive-api.open-meteo.com/v1/archive?latitude=${loc.lat}&longitude=${loc.lng}&timezone=auto&start_date=${old < addDays(T, -730) ? addDays(T, -730) : old}&end_date=${lim}&daily=weather_code,precipitation_sum`, 15000));
+    S.settings.wxFill = T; save(true); if (st.tab === 'reflect' && !stack.length) render();
+  } catch (e) {}
+}
+function wxMoodCard() {
+  const cats = { sun: { l: '晴れの日', i: 'sun', s: [], f: {} }, cloud: { l: 'くもりの日', i: 'cloud', s: [], f: {} }, rain: { l: '雨の日', i: 'rain', s: [], f: {} } };
+  for (const d of new Set(S.entries.map(e => e.date))) { const k = wxCat(d), m = dayMood(d); if (!k || !m) continue; cats[k].s.push(m.score); for (const e of entriesOn(d)) for (const f of e.feelings) cats[k].f[f] = (cats[k].f[f] || 0) + 1; }
+  const n = Object.values(cats).reduce((a, c) => a + c.s.length, 0);
+  const head = '<section class="card"><h3>天気と気分 <span class="sub">記録した日</span></h3>';
+  if (n < 3) return head + `<p class="empty" style="padding:8px">${S.settings.wxLoc ? '日記が増えると、晴れ・くもり・雨の日の気分の違いが出てきます' : 'カレンダー右上の天気ボタンから現在地を設定すると、天気と気分の関係が分かるようになります'}</p></section>`;
+  const avg = c => c.s.length ? c.s.reduce((a, b) => a + b, 0) / c.s.length : null, top = c => Object.entries(c.f).sort((a, b) => b[1] - a[1])[0];
+  const col = v => v == null ? 'var(--line)' : v > 0.3 ? '#EDA04B' : v < -0.3 ? '#6C97C2' : '#B4C680';
+  const cells = Object.values(cats).map(c => { const a = avg(c), t = top(c); return `<div>${ico(c.i)}<b>${c.l}</b><small class="num">${c.s.length}日</small><div class="bar"><i style="width:${a == null ? 0 : Math.round((a + 2) / 4 * 100)}%;background:${col(a)}"></i></div>${t ? `<span class="f" style="--c:${feelInfo(t[0]).color}"><i></i>${esc(t[0])}</span>` : '<small>—</small>'}</div>`; }).join('');
+  const topBy = (c, sg) => Object.entries(c.f).filter(([f]) => Math.sign(feelInfo(f).score) === sg).sort((x, y) => y[1] - x[1])[0];
+  const as = avg(cats.sun), ar = avg(cats.rain), tr = topBy(cats.rain, -1), ts = top(cats.sun); let line = '';
+  if (as != null && ar != null && cats.sun.s.length >= 2 && cats.rain.s.length >= 2) line = ar < as - 0.3 ? `雨の日は、晴れの日より気分が下がりやすいようです${tr ? `（「${tr[0]}」が多め）` : ''}。` : ar > as + 0.3 ? '雨の日のほうが、むしろ気分がいい傾向です。' : '天気によって気分はあまり変わらないようです。';
+  else if (ts && cats.sun.s.length >= 2) line = `晴れの日は「${ts[0]}」が多いようです。`;
+  return head + `<div class="wxm">${cells}</div>${line ? `<ul class="ins-lines" style="margin-top:10px"><li>${esc(line)}</li></ul>` : ''}</section>`;
 }
 
 /* ================= month recap card: a shareable image (BeReal / Zenly style) ================= */
@@ -2385,6 +2863,7 @@ function openSheet(inner, cls = '') {
 function closeSheet() {
   const ov = stack.pop(); if (!ov) return;
   if (sgAudio) stopPreview();
+  if (ov.firstElementChild.dataset.kind === 'wx') radarStop();
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
   if (!stack.length) $('#app').classList.remove('behind');
@@ -2457,6 +2936,8 @@ function eventForm() {
         ${rep ? `<div class="fld" style="margin:0"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}</div>` : ''}
       <label class="ev-li">${ico('list')}<span>ルーティン<small>タイムラインにだけ表示します</small></span><input type="checkbox" class="sw-in" id="ev-routine" ${e.routine ? 'checked' : ''}></label>
       <label class="ev-li">${ico('star')}<span>カウントダウン<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" class="sw-in" id="ev-cd" ${e.countdown ? 'checked' : ''}></label>
+      <button class="ev-li" data-act="evX" data-k="items">${ico('bag')}<span>持ち物</span><em class="num">${(e.items || []).length ? `${packedOf(e, occ).length}/${e.items.length}` : ''}</em>${chev('items')}</button>
+      ${e._xitems ? `<div class="ev-x">${packListHTML(e, occ)}<div class="add-row" style="margin-top:6px"><input class="inp" id="ev-item" placeholder="持ち物を追加（例：学生証）" maxlength="30" autocomplete="off" enterkeyhint="done"><button data-act="evItemAdd">追加</button></div>${packSugg(e)}</div>` : ''}
       ${live && !e.allDay ? `<button class="ev-li" data-act="startTimer">${ico('play')}<span>集中タイマー</span><em>${S.timer && S.timer.id === e.id ? '計測中' : 'はじめる'}</em>${ico('right')}</button>` : ''}
     </div>
     <div class="tk-card"><textarea id="ev-memo" rows="4" placeholder="メモ、リンク、電話番号など…" aria-label="メモ">${esc(e.memo)}</textarea></div>
@@ -2903,6 +3384,7 @@ function settingsHTML() {
   <div class="set-sec"><h4>カレンダーの取り込み</h4><div class="set-list">
     <p class="note" style="margin:0">iPhoneやGoogleカレンダーから書き出した .ics ファイルを読み込みます。同じファイルを2回読み込んでも、予定は重複しません。</p>
     <label class="btn file-btn">${ico('upload')}.ics ファイルを読み込む<input type="file" id="ics-file" accept=".ics,text/calendar"></label></div></div>
+  <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
     ${inFrame ? '' : `<div class="toggle"><span>保存のお知らせ<small>決めた時刻をすぎたら、iPhoneの「ファイル」に保存するよう知らせます</small></span></div>
     <div class="seg mc-seg" style="margin:0">${[['daily', '毎日'], ['3d', '3日ごと'], ['weekly', '毎週'], ['off', 'オフ']].map(([k, l]) => `<button data-act="bkRemindSet" data-k="${k}" aria-pressed="${s.bkRemind === k}">${l}</button>`).join('')}</div>
@@ -3022,6 +3504,11 @@ const ACT = {
   tkPick: () => { syncTk(); pickMode = 'task'; tkHost = topSheet(); openSheet(pickHTML(), 'pick'); },
   evPick: () => { syncEvent(); pickMode = 'ev'; tkHost = topSheet(); openSheet(pickHTML(), 'pick'); },
   evMore: () => { syncEvent(); openSheet(evMoreSheet(), 'small'); },
+  evPack: t => { syncEvent(); const e = evDraft, d = e._occ || e.date, it = (e.items || [])[+t.dataset.i]; if (!it) return; togglePacked(e, d, it); const live = e.id && S.events.find(x => x.id === e.id); if (live && (live.items || []).includes(it)) { togglePacked(live, d, it); save(); render(); } rerenderEvent(); },
+  evItemAdd: () => { syncEvent(); const i = $('#ev-item', topSheet()), v = (i && i.value || '').trim().slice(0, 30); if (!v) return; evDraft.items = evDraft.items || []; if (!evDraft.items.includes(v)) evDraft.items.push(v); rerenderEvent(); const n = $('#ev-item', topSheet()); if (n) n.focus({ preventScroll: true }); },
+  evItemSug: t => { syncEvent(); evDraft.items = evDraft.items || []; if (!evDraft.items.includes(t.dataset.t)) evDraft.items.push(t.dataset.t); rerenderEvent(); },
+  evItemRm: t => { syncEvent(); evDraft.items.splice(+t.dataset.i, 1); rerenderEvent(); },
+  packT: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; const it = (ev.items || [])[+t.dataset.i]; if (!it) return; togglePacked(ev, t.dataset.d, it); save(); render(); },
   evX: t => { syncEvent(); const k = '_x' + t.dataset.k; evDraft[k] = !evDraft[k]; rerenderEvent(); },
   evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); rerenderEvent(); },
   tkColor: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
@@ -3119,6 +3606,15 @@ const ACT = {
     enrichSong(sg).then(x => { if (x.preview) { const b = $('[data-act="sgPlay"]', topSheet()); if (b) togglePreview(b, x.preview); } else { toast(x.noPreview ? 'この曲の試聴は見つかりませんでした' : '試聴をさがせませんでした。通信を確認してください'); const b = $('[data-act="sgPlay"]', topSheet()); if (b) b.innerHTML = `${ico('play')}試聴`; } });
   },
   rmSong: () => { stopPreview(); syncEntry(); delete enDraft.song; rerenderEntry(); },
+  lockSetup: () => showLock('setup', rerenderSettings),
+  lockChange: () => showLock('verify', () => setTimeout(() => showLock('setup', rerenderSettings), 50)),
+  lockOff: () => showLock('verify', () => { S.settings.lock = { on: false }; save(); rerenderSettings(); toast('ロックをやめました'); }),
+  lockDelay: t => { S.settings.lock = Object.assign({}, LK(), { delay: +t.dataset.k }); save(); topSheet().querySelectorAll('[data-act="lockDelay"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  wrapped: t => openWrapped(+t.dataset.y),
+  weather: () => { const sh = openSheet(wxSheet(), 'full'); sh.dataset.kind = 'wx'; if (S.settings.wxLoc && !inFrame) { setTimeout(drawRadar, 60); wxFetch().then(rerenderWx).catch(() => rerenderKind('wx', wxSheet)); } },
+  wxLocate: t => { t.disabled = true; wxLocate().then(() => { rerenderKind('wx', wxSheet); return wxFetch(true); }).then(() => { rerenderWx(); updWxBtn(); S.settings.wxFill = ''; wxBackfill(); }).catch(e => { t.disabled = false; if (e && e.message === 'data' || wxErr) rerenderKind('wx', wxSheet); else toast('位置情報を使えませんでした。iPhoneの「設定 → Safari → 位置情報」を確認してください'); }); },
+  wxReload: () => { wxFetch(true).then(rerenderWx).catch(() => rerenderKind('wx', wxSheet)); },
+  radarPlay: t => { if (!RAD) return; if (RAD.timer) { radarStop(); return; } t.innerHTML = ico('pause'); RAD.timer = setInterval(() => radarShow((RAD.idx + 1) % RAD.frames.length), 650); },
   monthCard: () => { mcBlob = null; const sh = openSheet(mcardSheet(), 'full'); sh.dataset.kind = 'mcard'; renderMonthCard(); },
   mcTheme: t => { mcTheme = t.dataset.k; topSheet().querySelectorAll('[data-act="mcTheme"]').forEach(b => b.setAttribute('aria-pressed', b === t)); const b = $('#mc-share'); if (b) b.disabled = true; renderMonthCard(); },
   mcShare: () => {
@@ -3306,6 +3802,11 @@ document.addEventListener('change', async e => {
   else if (t.id === 'sc-sat') { S.school.sat = t.checked; save(); render(); }
   else if (t.id === 'sc-hol') { S.school.holidayOff = t.checked; save(); render(); }
   else if (t.dataset && t.dataset.per !== undefined && t.value) { S.school.periods[+t.dataset.per][+t.dataset.k] = t.value; save(); render(); }
+  else if (t.id === 'set-faceid') {
+    if (!t.checked) { S.settings.lock = Object.assign({}, LK(), { cred: null }); save(); return; }
+    faceRegister().then(id => { S.settings.lock = Object.assign({}, LK(), { cred: id }); save(); toast('Face IDで開けるようにしました'); }).catch(() => { t.checked = false; toast('Face IDを設定できませんでした'); });
+  }
+  else if (t.id === 'wx-rt') { radarStop(); radarShow(+t.value); }
   else if (t.id === 'bk-time' && t.value) { S.settings.bkTime = t.value; save(); checkBackup(); }
   else if (t.id === 'set-loc-entry' || t.id === 'set-loc-open') {
     const k = t.id === 'set-loc-entry' ? 'locEntry' : 'locOpen';
@@ -3326,6 +3827,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('input', e => {
   if (e.target.id === 'q') runSearch();
   else if (e.target.id === 'sg-name' || e.target.id === 'sg-artist') songQuery();
+  else if (e.target.id === 'wx-rt') { radarStop(); radarShow(+e.target.value); }
   else if (/^tmc-\d$/.test(e.target.id)) { const c = tset().custom.slice(); c[+e.target.id.slice(4)] = e.target.value; S.settings.timer = Object.assign(tset(), { custom: c, palette: 'custom' }); const ts = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) ts.firstElementChild.setAttribute('style', tVars(tset(), S.timer.color)); }
   else if (e.target.id === 'tk-title' && tkDraft) {
     tkDraft.title = e.target.value; const sh = topSheet();
@@ -3337,6 +3839,7 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && stack.length) closeSheet();
   if (e.key !== 'Enter' || e.isComposing) return;
+  if (e.target.id === 'ev-item') { e.preventDefault(); ACT.evItemAdd(); return; }
   if (e.target.id === 'tk-sub') { e.preventDefault(); const v = e.target.value.trim(); if (!v) return; syncTk(); tkDraft.subtasks.push({ t: v, done: false }); rerenderTk(); const n = $('#tk-sub', topSheet()); n && n.focus({ preventScroll: true }); }
   else if (e.target.id === 'tk-title' && tkStep === 'title') { e.preventDefault(); ACT.tkNext(); }
 });
@@ -3430,15 +3933,15 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   tick();
   const T = todayISO(); if (T !== lastDay) { if (st.sel === lastDay) st.sel = T; if (st.day === lastDay) { st.day = T; } st.calMonth = st.sel.slice(0, 8) + '01'; lastDay = T; }
-  render(); autoPlace(); checkBackup();
+  render(); autoPlace(); checkBackup(); wxRefresh();
 });
 
 /* ================= boot ================= */
 load();
 const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01';
-applyTheme(); render(); ensureTick();
+applyTheme(); if (lockOn()) showLock('unlock'); render(); ensureTick();
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
-autoPlace(); checkBackup();
+autoPlace(); checkBackup(); wxRefresh();
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
