@@ -103,7 +103,13 @@ svg{display:block}
 .m-title .my{font-size:15px;color:var(--ink-2)}
 .head-icons{display:flex;align-items:center;gap:2px}
 .tl-head h1{white-space:nowrap}
-@media (max-width:359px){.tl-head .icon-btn{width:32px}.tl-head h1{font-size:22px}}
+/* page headers: the icons keep one size and the gear sits at the same spot on every tab; the title gives way on narrow phones */
+.cal-head,.tl-head,.j-head{gap:8px}
+.cal-head>:first-child,.tl-head>:first-child,.j-head>:first-child{min-width:0;flex:0 1 auto;overflow:hidden}
+.head-icons{flex:none;margin-left:auto;gap:0}
+.head-icons .icon-btn{width:40px}
+@media (max-width:389px){.head-icons .icon-btn{width:36px}.head-icons .wx-btn{min-width:36px}.tl-head h1{font-size:25px}.m-title .mn{font-size:48px}}
+@media (max-width:339px){.head-icons .icon-btn{width:33px}.head-icons .wx-btn{min-width:33px}.head-icons .icon-btn .ico{width:21px;height:21px}.tl-head h1{font-size:21px}.tl-head h1 .yr{font-size:15px}.m-title .mn{font-size:42px}.m-title .my{display:none}}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--ink-2);padding:6px 0 2px}
 .dow span.sat{color:var(--sat)} .dow span.sun{color:var(--sun)}
 .month{touch-action:pan-y}
@@ -700,7 +706,7 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .snap-row button{color:var(--accent);font-weight:700;font-size:13px}
 /* weather */
 .ico.big{width:52px;height:52px;stroke-width:1.5}
-.wx-btn{width:auto;min-width:42px;padding:0 6px;gap:3px;display:flex;align-items:center}
+.head-icons .wx-btn{width:auto;min-width:40px;padding:0 4px;gap:3px;display:flex;align-items:center}
 .wx-btn .num{font-size:15px;font-weight:700}
 .wx-btn .ico{width:24px;height:24px}
 .wx-now{border-radius:24px;padding:16px 18px;color:#fff;background:linear-gradient(160deg,var(--wa),var(--wb));box-shadow:0 12px 30px rgba(20,30,60,.18);position:relative;overflow:hidden}
@@ -953,6 +959,13 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .trow i{width:10px;height:10px;border-radius:50%;background:var(--c)}
 .trow.done span:last-child{color:var(--ink-3);text-decoration:line-through}
 .trow.now span:last-child{font-weight:700}
+.qi{text-align:center;padding:6px 6px 4px}
+.qi .script{font-size:28px}
+.qi h2{font-size:26px;margin:6px 0 2px}
+.qi .yomi{font-size:13px;color:var(--ink-2)}
+.qi .src{display:inline-block;margin-top:8px;font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.qi-box{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:14px 16px;margin-top:14px;text-align:left;font-size:15px;line-height:1.8}
+.qi-box b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
 .pring{position:relative;width:min(70vw,250px);aspect-ratio:1;margin:6px auto 4px}
 .pring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .pring circle{fill:none;stroke-linecap:round}
@@ -1441,6 +1454,20 @@ const TAGS = ['仕事','勉強','バイト','家族','友だち','恋愛','趣�
 const TAG_COLORS = ['#E07F78','#E9A23B','#86B067','#6B88B0','#A68BD2','#4FA39B','#D9B44A','#9B4F6E','#8E8E96'];
 const PROMPTS = ['今日いちばん心が動いた瞬間は？','最近「ありがとう」と思ったことは？','いま頭の中を占めていることは？','明日の自分にひとこと','今日がんばった小さなことは？','最近気になっている人やものは？','今週やめたいこと、続けたいことは？','体の調子はどう？','今日食べたもので一番おいしかったのは？','誰かに話したかったことは？'];
 const QUICK = ['嬉しい','楽しい','穏やか','普通','モヤモヤ','疲れた','不安','イライラ'];
+const QUOTE_INFO = {
+  '千里の道も一歩から': ['せんりのみちもいっぽから', 'どんなに大きな目標も、まずは目の前の小さな一歩から始まるということ。', '大きな課題も、今日できることを1つだけやってみよう。'],
+  '継続は力なり': ['けいぞくはちからなり', '地道に続けることが、やがて大きな力になるということ。', '少しでもいいので、今日も続けてみよう。'],
+  '急がば回れ': ['いそがばまわれ', '急いでいるときほど、遠回りでも確実な方法を選んだほうが、結局は早いということ。', 'あせったときこそ、ひと呼吸おいてから。'],
+  '七転び八起き': ['ななころびやおき', '何度失敗しても、くじけずに立ち上がること。', 'うまくいかなかったことも、次への練習。'],
+  '笑う門には福来る': ['わらうかどにはふくきたる', 'いつも笑顔でいる人のところには、自然と幸せがやってくるということ。', '今日は誰かに笑顔で話しかけてみよう。'],
+  '明日は明日の風が吹く': ['あしたはあしたのかぜがふく', '先のことをくよくよ心配しても仕方がない、明日は明日でなんとかなるということ。', '今日は今日のことに集中しよう。'],
+  '塵も積もれば山となる': ['ちりもつもればやまとなる', 'ごくわずかなものでも、積み重ねれば大きなものになるということ。', '5分だけでも、積み重ねは力になる。'],
+  '石の上にも三年': ['いしのうえにもさんねん', '冷たい石の上でも三年座れば温まるように、つらくても辛抱すれば、いつか報われるということ。', 'すぐに結果が出なくても、焦らなくて大丈夫。'],
+  '案ずるより産むが易し': ['あんずるよりうむがやすし', '前もってあれこれ心配するより、実際にやってみると案外たやすいということ。', '迷っていることを、まず少しだけ始めてみよう。'],
+  '住めば都': ['すめばみやこ', 'どんな場所でも、住み慣れればそこがいちばん住みやすく感じられるということ。', '新しい環境も、少しずつ自分の場所になっていく。'],
+  '果報は寝て待て': ['かほうはねてまて', '幸運は、焦らずに待っていれば、そのうちやってくるということ。やれることをやったら、あとは落ち着いて待とうという意味でも使う。', 'やることをやったら、今日はゆっくり休もう。'],
+  '一期一会': ['いちごいちえ', '一生に一度の出会いだと思って、その時を大切にすること。茶道の心得から生まれた言葉。', '今日会う人との時間を、大切にしよう。'],
+};
 const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力なり','ことわざ'],['急がば回れ','ことわざ'],['七転び八起き','ことわざ'],['笑う門には福来る','ことわざ'],['明日は明日の風が吹く','ことわざ'],['塵も積もれば山となる','ことわざ'],['石の上にも三年','ことわざ'],['案ずるより産むが易し','ことわざ'],['住めば都','ことわざ'],['果報は寝て待て','ことわざ'],['一期一会','茶道の言葉']];
 
 /* ================= state / storage ================= */
@@ -1819,7 +1846,7 @@ function viewJournal() {
   ${quickMood(T)}
   ${memories(T)}
   <div class="cards-row">
-    <div class="q-card"><span class="script">Today's Quote</span><p>${esc(q[0])}</p><small>${esc(q[1])}</small></div>
+    <button class="q-card" data-act="quoteInfo" data-q="${esc(q[0])}"><span class="script">Today's Quote</span><p>${esc(q[0])}</p><small>${esc(q[1])}・タップで意味</small></button>
     <button class="q-card" data-act="newEntry" data-d="${T}" data-prompt="${esc(pr)}"><span class="script">Question</span><p>${esc(pr)}</p><small>タップして書く</small></button>
   </div>
   ${sampleBar()}
@@ -2409,7 +2436,8 @@ function nkSheet(q) {
   if (q && q.to) { p.set('from', q.from || ''); p.set('to', q.to); if (q.via) p.set('via', q.via); p.set('type', q.type || 'dep'); p.set('go', '1'); }
   return head + `<iframe class="nk-frame" src="${esc(base)}/?${esc(p.toString())}" title="のりかえ" allow="geolocation"></iframe>`;
 }
-function openNorikae(q) { const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; }
+let nkReplace = null; // set while 「のりかえで調べ直す」 is open: the route event a newly added route replaces
+function openNorikae(q, replaceId) { nkReplace = replaceId || null; const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; }
 window.addEventListener('message', e => {
   const base = nkBase(); if (!base || !e.data || e.data.type !== 'hibi:addRoute') return;
   try { if (e.origin !== new URL(base).origin) return; } catch (err) { return; }
@@ -2417,13 +2445,17 @@ window.addEventListener('message', e => {
   const clean = x => String(x == null ? '' : x).slice(0, 120);
   const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
     steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: /^#[0-9a-f]{3,8}$|^rgb/i.test(x.color || '') ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
-  const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: [route.duration, route.transfers != null ? `乗換${route.transfers}回` : '', route.fare != null ? `${route.fareNote === '目安' ? '約' : ''}${route.fare.toLocaleString()}円` : ''].filter(Boolean).join('・'), done: {}, route };
+  const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: nkMemo(route), done: {}, route };
+  const old = nkReplace && S.events.find(x => x.id === nkReplace);
+  if (old) { for (const k of ['color', 'icon', 'items', 'packed', 'countdown', 'dest', 'from']) if (old[k] !== undefined) ev[k] = old[k]; if (old.memo && old.memo !== nkMemo(old.route)) ev.memo = old.memo; S.events = S.events.filter(x => x.id !== old.id); }
+  nkReplace = null;
   S.events.push(ev); save();
   while (stack.length) closeSheet();
   st.day = ev.date; if (st.tab === 'cal') { st.sel = ev.date; st.calMonth = ev.date.slice(0, 8) + '01'; } else st.tab = 'day';
   saveUI(); main.dataset.tab = ''; render();
-  toast(`${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`);
+  toast(old ? `経路を ${md(ev.date)} ${hm(ev.start)}〜 に差し替えました` : `${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`);
 });
+const nkMemo = r => r ? [r.duration, r.transfers != null ? `乗換${r.transfers}回` : '', r.fare != null ? `${r.fareNote === '目安' ? '約' : ''}${r.fare.toLocaleString()}円` : ''].filter(Boolean).join('・') : '';
 function routeSheet(ev, d) {
   const r = ev.route, sts = r.steps.filter(x => x.k === 's');
   const TAGC = { 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' };
@@ -2436,7 +2468,7 @@ function routeSheet(ev, d) {
     ${r.tags.length ? `<div class="rt-tags">${r.tags.map(t => `<span style="--c:${TAGC[t] || '#8B8FA8'}">${esc(t)}</span>`).join('')}</div>` : ''}</div>
   <ol class="rt-steps">${steps}</ol>
   <div class="rt-acts"><button class="btn primary" data-act="nkAgain" data-id="${ev.id}" data-d="${d || ev.date}">${ico('train')}のりかえで調べ直す</button><button class="btn" data-act="editEvent" data-id="${ev.id}" data-d="${d || ev.date}" data-edit="1">${ico('pen')}予定を編集</button></div>
-  <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。</p>`;
+  <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。「調べ直す」から追加すると、この予定と入れ替わります。</p>`;
 }
 
 /* ================= leave time: when to set off for a plan with a destination station ================= */
@@ -3282,6 +3314,7 @@ function closeSheet() {
   const ov = stack.pop(); if (!ov) return;
   if (sgAudio) stopPreview();
   if (ov.firstElementChild.dataset.kind === 'wx') radarStop();
+  if (ov.firstElementChild.dataset.kind === 'nk') nkReplace = null;
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
   if (!stack.length) $('#app').classList.remove('behind');
@@ -4044,6 +4077,12 @@ const ACT = {
     enrichSong(sg).then(x => { if (x.preview) { const b = $('[data-act="sgPlay"]', topSheet()); if (b) togglePreview(b, x.preview); } else { toast(x.noPreview ? 'この曲の試聴は見つかりませんでした' : '試聴をさがせませんでした。通信を確認してください'); const b = $('[data-act="sgPlay"]', topSheet()); if (b) b.innerHTML = `${ico('play')}試聴`; } });
   },
   rmSong: () => { stopPreview(); syncEntry(); delete enDraft.song; rerenderEntry(); },
+  quoteInfo: t => {
+    const q = QUOTES.find(x => x[0] === t.dataset.q) || [t.dataset.q, ''], i = QUOTE_INFO[q[0]] || ['', '', ''];
+    openSheet(`<div class="sh-bar"><span></span><b>今日の言葉</b><button class="r" data-act="close">閉じる</button></div>
+      <div class="qi"><span class="script">Today's Quote</span><h2>${esc(q[0])}</h2>${i[0] ? `<div class="yomi">${esc(i[0])}</div>` : ''}${q[1] ? `<span class="src">${esc(q[1])}</span>` : ''}
+      ${i[1] ? `<div class="qi-box"><b>意味</b>${esc(i[1])}</div>` : ''}${i[2] ? `<div class="qi-box"><b>今日のひとこと</b>${esc(i[2])}</div>` : ''}</div>`);
+  },
   leaveOpen: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; openNorikae({ from: lvFrom(ev), to: ev.dest, date: t.dataset.d, time: lvArrBy(ev), type: 'arr' }); },
   todoPlan: t => { closeSheet(); openPlan(t.dataset.k, t.dataset.id); },
   tpDay: t => { const i = $('#tp-date', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="tpDay"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
@@ -4171,7 +4210,7 @@ const ACT = {
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
-  nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }); },
+  nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
   editEntry: t => openEntry(t.dataset.id),
