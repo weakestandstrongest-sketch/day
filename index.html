@@ -472,6 +472,114 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .mini-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .mini-chips>span{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;border-radius:999px;padding:4px 10px;background:var(--surface-2);border:1px solid var(--line)}
 .mini-chips i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+/* countdown */
+.cd-row{display:flex;gap:8px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none}
+.cd-row::-webkit-scrollbar{display:none}
+.cd{flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:5px 12px 5px 5px;background:color-mix(in srgb,var(--c) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 40%,transparent);font-size:13px}
+.cd .ic{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center}
+.cd .ic .ico{width:15px;height:15px}
+.cd b{font-weight:700}
+/* pay */
+.pay-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);padding:12px 16px;box-shadow:var(--shadow);margin-top:10px}
+.pay-card>span:first-child{flex:1;min-width:0}
+.pay-card small{display:block;font-size:12px;color:var(--ink-2)}
+.pay-card b{font-size:22px;font-weight:700}
+.pay-card .pay-meta{font-size:12px;color:var(--ink-2);text-align:right;line-height:1.5}
+.pay-card .ico{color:var(--ink-3);flex:none}
+.pay-total{text-align:center;padding:6px 0 4px}
+.pay-total b{display:block;font-size:40px;line-height:1.15}
+.pay-total small{display:block;color:var(--ink-2);font-size:12px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+.kv span:nth-child(odd){color:var(--ink-2)}
+.shift-list{display:flex;flex-direction:column}
+.shift{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);text-align:left;width:100%;font-size:13.5px}
+.shift:first-child{border-top:0}
+.shift .d{font-weight:700}
+.shift small{display:block;color:var(--ink-2);font-size:11.5px}
+.shift .yen{font-weight:700}
+.meter{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden;margin:10px 0 4px}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.meter.over i{background:var(--sun)}
+button.set-row{width:100%;text-align:left}
+button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
+/* school */
+.tt{display:grid;gap:4px}
+.tt-h{font-size:12px;color:var(--ink-2);text-align:center;padding:2px 0}
+.tt-h.now{color:var(--accent);font-weight:700}
+.tt-p{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:700;line-height:1.15}
+.tt-p small{font-size:8.5px;color:var(--ink-3);font-weight:400}
+.tt-cell{min-height:60px;border-radius:10px;padding:5px 4px;font-size:11px;font-weight:700;line-height:1.25;text-align:left;background:color-mix(in srgb,var(--c) 24%,var(--surface));border-left:3px solid var(--c);overflow:hidden;overflow-wrap:anywhere;display:flex;flex-direction:column;justify-content:flex-start;min-width:0}
+.tt-cell small{font-size:9.5px;font-weight:400;color:var(--ink-2);margin-top:2px}
+.tt-cell.empty{background:var(--surface);border:1px dashed var(--line);color:var(--ink-3);align-items:center;justify-content:center;font-size:16px;font-weight:400}
+.att{width:40px;height:30px;border-radius:9px;font-size:11.5px;font-weight:700;justify-self:center;border:1.5px solid var(--line);color:var(--ink-3)}
+.att.present{background:#4E9F72;border-color:#4E9F72;color:#fff}
+.att.late{background:#DE8E2A;border-color:#DE8E2A;color:#fff}
+.att.absent{background:#C9574F;border-color:#C9574F;color:#fff}
+.att.cancel{background:var(--surface-2);color:var(--ink-2);border-style:dashed}
+.tl-item.cancel .tt{text-decoration:line-through;color:var(--ink-3)}
+.tl-item.cancel .pill{opacity:.45}
+.att-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.att-row:first-child{border-top:0}
+.att-row b{display:flex;align-items:center;gap:6px;font-size:14px}
+.att-row b i{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.att-row small{display:block;font-size:12px;color:var(--ink-2);margin-top:2px}
+.left{font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--surface-2);white-space:nowrap}
+.left.warn{background:color-mix(in srgb,var(--sun) 18%,var(--surface));color:var(--sun)}
+.due{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--surface-2);white-space:nowrap}
+.due.soon{background:color-mix(in srgb,var(--hol) 24%,var(--surface))}
+.due.over{background:color-mix(in srgb,var(--sun) 20%,var(--surface));color:var(--sun)}
+.hw{display:grid;grid-template-columns:30px minmax(0,1fr) auto 32px;gap:8px;align-items:center;background:var(--surface);border-radius:14px;padding:8px 6px 8px 12px}
+.hw .chk{--c:var(--accent);width:26px;height:26px}
+.hw .tt2{font-size:15px;overflow-wrap:anywhere;min-width:0}
+.hw .tt2 small{display:block;font-size:11.5px;color:var(--ink-2)}
+.hw.done .tt2{color:var(--ink-3);text-decoration:line-through}
+.hw .del{width:32px;height:32px;display:grid;place-items:center;color:var(--ink-3)}
+.hw .del .ico{width:16px;height:16px}
+.hw-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.hw-form>:first-child,.hw-form>button{grid-column:1/-1}
+.slot-list{display:flex;flex-wrap:wrap;gap:6px}
+.slot-list span{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 6px 5px 12px;background:var(--surface);border:1px solid var(--line);font-size:13.5px}
+.slot-list button{width:24px;height:24px;display:grid;place-items:center;color:var(--ink-3)}
+.slot-list .ico{width:14px;height:14px}
+.slot-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin-top:8px}
+.slot-add .inp{min-height:40px;padding:8px 10px}
+.slot-add button{padding:0 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.per-row{display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.per-row b{text-align:center;font-size:13px}
+.per-row .inp{min-height:40px;padding:6px 10px}
+.hist{display:flex;flex-direction:column}
+.hist div{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.hist div:first-child{border-top:0}
+.hist .att{width:auto;height:auto;padding:3px 10px}
+.tl-title{text-align:left}
+/* year in pixels */
+.pixels{display:grid;grid-template-columns:18px repeat(12,minmax(0,1fr));gap:2px}
+.px{height:10px;border-radius:2px;background:var(--surface-2)}
+.px.on{cursor:pointer}
+.px.x{background:transparent}
+.px.fut{opacity:.45}
+.px-h,.px-d{font-size:9px;color:var(--ink-3);text-align:center;line-height:10px}
+.px-h{line-height:14px}
+/* focus timer */
+.timer{display:flex;flex-direction:column;align-items:center;gap:18px;padding:6px 0 20px}
+.tm-title{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;text-align:center;max-width:100%}
+.tm-title i{width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;flex:none}
+.tm-title .ico{width:18px;height:18px}
+.ring{position:relative;width:240px;height:240px;max-width:100%}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .bgc{stroke:var(--surface-2)}
+.ring .fgc{stroke:var(--c);transition:stroke-dashoffset 1s linear}
+.ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .ctr b{font-size:46px;font-weight:700;line-height:1}
+.ring .ctr small{font-size:12.5px;color:var(--ink-2);margin-top:10px;padding:0 24px}
+.ring .ctr small.over{color:var(--sun);font-weight:700}
+.timer .row2{width:100%}
+.timer-start{width:100%;margin-bottom:14px}
+#timerChip{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;max-width:calc(100% - 32px)}
+#timerChip i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none;animation:pulse 1.6s ease-in-out infinite}
+#timerChip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes pulse{50%{opacity:.35}}
+.tl-item.running .pill{box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 35%,transparent)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -480,6 +588,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
   <header id="topbar" aria-hidden="true"><span id="topTitle"></span></header>
   <main id="main" aria-live="polite"></main>
   <button id="fab" data-act="fab" aria-label="追加"></button>
+  <button id="timerChip" class="glass" data-act="openTimer" hidden></button>
   <nav id="tabs" class="glass" aria-label="画面の切り替え"></nav>
 </div>
 <div id="toast" role="status"></div>
@@ -504,6 +613,9 @@ const weekStart = s => sunStart() ? addDays(s, -wd(s)) : mondayOf(s);
 const weekOrder = () => sunStart() ? [0, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 0];
 const dowHead = cls => weekOrder().map(w => `<span class="${cls}${w === 6 ? ' sat' : w === 0 ? ' sun' : ''}">${WD[w]}</span>`).join('');
 const hhmm = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const evLen = ev => { const x = toMin(ev.end) - toMin(ev.start); return x > 0 ? x : x + 1440; };
+const overnight = ev => !ev.allDay && toMin(ev.end) <= toMin(ev.start);
+const endLabel = ev => (overnight(ev) ? '翌' : '') + hm(ev.end);
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const hm = t => t.replace(/^0(\d)/, '$1');
 const dur = m => m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `${m}分`;
@@ -547,6 +659,9 @@ const IC = {
   list:'<circle cx="5" cy="6" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="18" r="1.6"/><path d="M10 6h10M10 12h10M10 18h7"/>',
   journal:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/>',
   wave:'<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0"/>',
+  school:'<path d="M2 9.5 12 5l10 4.5L12 14z"/><path d="M6 11.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.5M22 9.5V15"/>',
+  play:'<path d="M7 5v14l12-7z"/>',
+  yen:'<path d="M6 4l6 8 6-8M12 12v8M7 13h10M7 17h10"/>',
   inbox:'<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   cloud:'<path d="M7 18h10.5a4 4 0 0 0 .3-8A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
@@ -560,7 +675,7 @@ const EV_ICONS = ['alarm','sun','moon','cup','bolt','book','pen','work','gym','f
 const COLORS = ['#E07F78','#E9A23B','#6B88B0','#86B067','#9B4F6E','#4FA39B','#A68BD2','#8E8E96'];
 const HOLC = '#E9A23B';
 const ACCENTS = [['', 'コーラル', '#E07F78'], ['blue', 'ブルー', '#4F8ED6'], ['green', 'グリーン', '#4E9F72'], ['purple', 'パープル', '#8C78D4'], ['orange', 'オレンジ', '#DE8E2A'], ['pink', 'ピンク', '#D8628E']];
-const ICON_HINTS = [[/バイト|仕事|会議|MTG|ミーティング|出勤|面接|面談|打ち合わせ/i, 'work'], [/ジム|筋トレ|ランニング|運動|ヨガ|部活|練習|試合/, 'gym'], [/誕生日|記念日|バースデー/, 'cake'], [/ごはん|ご飯|ランチ|ディナー|飲み会|食事|朝食|夕食/, 'food'], [/授業|講義|勉強|試験|テスト|ゼミ|課題|レポート|演習|英会話|英語|塾|読書/, 'book'], [/旅行|出張|帰省|新幹線|飛行機/, 'train'], [/病院|歯医者|通院|クリニック|健診/, 'heart'], [/ライブ|コンサート|カラオケ|レッスン|音楽/, 'music'], [/買い物|ショッピング|販売/, 'cart'], [/カフェ|お茶|コーヒー/, 'cup'], [/友だち|友達|デート|遊び|会う/, 'people'], [/起床|起きる/, 'alarm'], [/寝る|就寝|睡眠/, 'moon']];
+const ICON_HINTS = [[/バイト|仕事|会議|MTG|ミーティング|出勤|面接|面談|打ち合わせ|シフト|セブン|ローソン|ファミ|コンビニ/i, 'work'], [/ジム|筋トレ|ランニング|運動|ヨガ|部活|練習|試合/, 'gym'], [/誕生日|記念日|バースデー/, 'cake'], [/ごはん|ご飯|ランチ|ディナー|飲み会|食事|朝食|夕食/, 'food'], [/授業|講義|勉強|試験|テスト|ゼミ|課題|レポート|演習|英会話|英語|塾|読書/, 'book'], [/旅行|出張|帰省|新幹線|飛行機/, 'train'], [/病院|歯医者|通院|クリニック|健診/, 'heart'], [/ライブ|コンサート|カラオケ|レッスン|音楽/, 'music'], [/買い物|ショッピング|販売/, 'cart'], [/カフェ|お茶|コーヒー/, 'cup'], [/友だち|友達|デート|遊び|会う/, 'people'], [/起床|起きる/, 'alarm'], [/寝る|就寝|睡眠/, 'moon']];
 const guessIcon = t => (ICON_HINTS.find(([re]) => re.test(t)) || [0, 'star'])[1];
 
 /* ================= feelings / tags ================= */
@@ -578,12 +693,12 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0 }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); return; }
+    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); S.school = Object.assign(defaults().school, d.school || {}); return; }
   } catch (e) {}
   S = defaults(); seed(); save(true);
 }
@@ -591,7 +706,7 @@ function save(silent) {
   try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
   catch (e) { if (!silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください'); return false; }
 }
-const st = { anim: null, tab: 'cal', calMonth: null, sel: null, day: null, jWeek: 0, range: 7, iWeek: 0, mcal: 0, jLimit: 14 };
+const st = { pxYear: new Date().getFullYear(), anim: null, tab: 'cal', calMonth: null, sel: null, day: null, jWeek: 0, range: 7, iWeek: 0, mcal: 0, jLimit: 14 };
 try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (['cal','day','journal','reflect'].includes(u.tab)) st.tab = u.tab; } catch (e) {}
 const saveUI = () => { try { localStorage.setItem(UIKEY, JSON.stringify({ tab: st.tab })); } catch (e) {} };
 
@@ -650,10 +765,81 @@ function occurrences(from, to) {
     const lo = addDays(from, -span);
     for (let d = ev.date > lo ? ev.date : lo; d <= to; d = addDays(d, 1)) if (matches(ev, d)) out.push({ ev, date: d, end: addDays(d, span) });
   }
+  out.push(...classOcc(from, to));
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (b.ev.allDay - a.ev.allDay) || (a.ev.start || '').localeCompare(b.ev.start || ''));
 }
 const onDay = d => occurrences(d, d);
-const isDone = (ev, d) => !!(ev.done && ev.done[d]);
+const isDone = (ev, d) => ev.cls ? ['present', 'late'].includes(attOf(ev, d)) : !!(ev.done && ev.done[d]);
+
+/* ================= school (timetable, attendance, assignments) ================= */
+const ATT = { present: '出席', late: '遅刻', absent: '欠席', cancel: '休講' };
+const ATT_NEXT = { '': 'present', present: 'late', late: 'absent', absent: 'cancel', cancel: '' };
+const clsById = id => S.school.classes.find(c => c.id === id);
+const attOf = (ev, d) => { const c = clsById(ev.cls); return (c && c.att && c.att[`${d}#${ev.p}`]) || ''; };
+function classOcc(from, to) {
+  const sc = S.school, out = []; if (!sc.classes.length) return out;
+  const a = sc.termStart && sc.termStart > from ? sc.termStart : from, b = sc.termEnd && sc.termEnd < to ? sc.termEnd : to;
+  for (let d = a; d <= b; d = addDays(d, 1)) {
+    if (sc.holidayOff && holidays(+d.slice(0, 4)).get(d)) continue;
+    const w = wd(d);
+    for (const c of sc.classes) for (const sl of c.slots) {
+      const per = sc.periods[sl.p]; if (sl.w !== w || !per) continue;
+      out.push({ ev: { id: `cls_${c.id}_${sl.p}`, cls: c.id, p: sl.p, title: c.name, start: per[0], end: per[1], color: c.color, icon: 'school', routine: true, allDay: false, repeat: 'none', memo: c.room || '' }, date: d, end: d });
+    }
+  }
+  return out;
+}
+function attStats(c) {
+  const v = Object.values(c.att || {}), n = k => v.filter(x => x === k).length, rule = +S.school.lateRule || 0;
+  const st_ = { present: n('present'), late: n('late'), absent: n('absent'), cancel: n('cancel') };
+  st_.used = st_.absent + (rule ? Math.floor(st_.late / rule) : 0); st_.left = (+c.maxAbsent || 0) - st_.used;
+  return st_;
+}
+const leftLabel = x => x.left > 1 ? `あと${x.left}回休める` : x.left === 1 ? 'あと1回だけ休める' : x.left === 0 ? 'もう休めません' : `${-x.left}回オーバー`;
+function dueLabel(due) { const n = diffDays(todayISO(), due); return n < 0 ? [`${-n}日過ぎ`, 'over'] : n === 0 ? ['今日まで', 'over'] : n === 1 ? ['明日まで', 'soon'] : [`あと${n}日`, n <= 3 ? 'soon' : '']; }
+
+/* ================= part-time pay ================= */
+const jobFor = ev => !ev.allDay && !ev.cls && S.jobs.find(j => j.name && ev.title.includes(j.name));
+function shiftPay(job, ev) {
+  const s0 = toMin(ev.start), L = evLen(ev), brk = job.breakAuto ? (L > 480 ? 60 : L > 360 ? 45 : 0) : 0, W = Math.max(0, L - brk);
+  let N = 0; for (const [a, b] of [[0, 300], [1320, 1740], [2760, 2880]]) N += Math.max(0, Math.min(s0 + L, b) - Math.max(s0, a));
+  N = job.night ? Math.min(N, W) : 0;
+  return { W, N, brk, pay: Math.round(W * job.wage / 60 + N * job.wage * 0.25 / 60 + (+job.transport || 0)) };
+}
+function payPeriod(ym, closing) {
+  const [y, m] = ym.split('-').map(Number);
+  return closing ? [iso(new Date(y, m - 2, closing + 1)), iso(new Date(y, m - 1, closing))] : [`${ym}-01`, iso(new Date(y, m, 0))];
+}
+function payData(ym) {
+  const res = { total: 0, W: 0, N: 0, count: 0, transport: 0, rows: [], byJob: [] };
+  for (const job of S.jobs) {
+    const [a, b] = payPeriod(ym, +job.closing || 0); let sub = 0;
+    for (const o of occurrences(a, b)) {
+      if (jobFor(o.ev) !== job) continue;
+      const x = shiftPay(job, o.ev); res.rows.push(Object.assign({ o, job }, x));
+      sub += x.pay; res.W += x.W; res.N += x.N; res.count++; res.transport += +job.transport || 0;
+    }
+    res.byJob.push({ job, a, b, sub }); res.total += sub;
+  }
+  res.rows.sort((x, y) => x.o.date.localeCompare(y.o.date) || x.o.ev.start.localeCompare(y.o.ev.start));
+  return res;
+}
+function yearPay(y) { let t = 0; for (const o of occurrences(`${y}-01-01`, `${y}-12-31`)) { const j = jobFor(o.ev); if (j) t += shiftPay(j, o.ev).pay; } return t; }
+
+/* ================= countdown ================= */
+function nextOcc(ev, T) {
+  const span = ev.allDay && ev.endDate ? Math.max(0, diffDays(ev.date, ev.endDate)) : 0;
+  if (!ev.repeat || ev.repeat === 'none') return ev.date >= T ? [ev.date, false] : addDays(ev.date, span) >= T ? [T, true] : null;
+  for (let d = ev.date > T ? ev.date : T, i = 0; i < 400; d = addDays(d, 1), i++) if (matches(ev, d)) return [d, false];
+  return null;
+}
+function cdRow() {
+  const T = todayISO(), list = [];
+  for (const ev of S.events) if (ev.countdown) { const n = nextOcc(ev, T); if (n) list.push({ ev, d: n[0], on: n[1], k: diffDays(T, n[0]) }); }
+  if (!list.length) return '';
+  list.sort((a, b) => a.k - b.k);
+  return `<div class="cd-row">${list.slice(0, 8).map(x => `<button class="cd" style="--c:${x.ev.color}" data-act="goEvent" data-d="${x.d}"><span class="ic">${ico(x.ev.icon)}</span>${esc(x.ev.title)} <b class="num">${x.on ? '開催中' : x.k === 0 ? '今日！' : x.k === 1 ? '明日' : `あと${x.k}日`}</b></button>`).join('')}</div>`;
+}
 
 /* ================= journal helpers ================= */
 const entriesOn = d => S.entries.filter(e => e.date === d).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
@@ -683,9 +869,10 @@ function seed() {
   E({ title: '友だちとごはん', date: addDays(T, 3), start: '19:00', end: '21:00', color: COLORS[0], icon: 'food' });
   E({ title: '歯医者', date: addDays(T, -2), start: '16:00', end: '16:30', color: COLORS[6], icon: 'heart' });
   E({ title: 'レポート締切', date: addDays(T, 5), allDay: true, color: COLORS[4], icon: 'pen' });
-  E({ title: '旅行（京都）', date: addDays(T, 8), endDate: addDays(T, 10), allDay: true, color: COLORS[5], icon: 'train' });
+  E({ title: '旅行（京都）', date: addDays(T, 8), endDate: addDays(T, 10), allDay: true, color: COLORS[5], icon: 'train', countdown: true });
   E({ title: '母の誕生日', date: addDays(T, -6), allDay: true, color: COLORS[1], icon: 'cake' });
-  E({ title: 'ライブ', date: addDays(T, 14), start: '18:30', end: '21:00', color: COLORS[6], icon: 'music' });
+  E({ title: 'ライブ', date: addDays(T, 14), start: '18:30', end: '21:00', color: COLORS[6], icon: 'music', countdown: true });
+  E({ title: 'バイト（夜勤）', date: addDays(T, -3), start: '22:00', end: '05:00', color: COLORS[5], icon: 'work' });
   E({ title: 'ジム', date: addDays(mon, 2), start: '20:00', end: '21:00', color: COLORS[3], icon: 'gym', repeat: 'weekly' });
   for (const ev of S.events) if (ev.routine) for (let i = 1; i <= 6; i++) { const d = addDays(T, -i); if (matches(ev, d) && i !== 2) ev.done[d] = true; }
   const J = (o, feelings, tags, text) => S.entries.push({ id: uid(), date: addDays(T, -o.d), time: o.t, feelings, tags, text, photo: null, sample: true });
@@ -700,8 +887,13 @@ function seed() {
   J({ d: 11, t: '22:30' }, ['不安'], ['勉強'], '来月の試験範囲が発表された。思っていたより広い。計画を立て直そう。');
   S.tasks.push({ id: uid(), title: '部屋の掃除', done: false, sample: true }, { id: uid(), title: '図書館に本を返す', done: false, sample: true });
   S.templates.push({ id: uid(), title: 'バイト', start: '18:00', end: '22:00', allDay: false, color: COLORS[5], icon: 'work', sample: true });
+  S.jobs.push({ id: uid(), name: 'バイト', wage: 1100, transport: 0, night: true, breakAuto: true, closing: 0, sample: true });
+  const C = (name, color, slots, room) => { const c = { id: uid(), name, room, teacher: '', color, slots, maxAbsent: 4, att: {}, memo: '', sample: true }; S.school.classes.push(c); return c; };
+  const c1 = C('死生学', COLORS[4], [{ w: 1, p: 1 }], '講義棟201'), c2 = C('電磁気学演習', COLORS[2], [{ w: 4, p: 2 }], '理学部3F'), c3 = C('英語コミュニケーション', COLORS[5], [{ w: 2, p: 0 }, { w: 5, p: 0 }], 'LL教室');
+  for (let i = 1; i <= 21; i++) { const d = addDays(T, -i); for (const c of [c1, c2, c3]) for (const sl of c.slots) if (sl.w === wd(d) && !holidays(+d.slice(0, 4)).get(d)) c.att[`${d}#${sl.p}`] = c === c3 && i > 14 ? 'absent' : c === c2 && i < 8 ? 'late' : 'present'; }
+  S.school.tasks.push({ id: uid(), title: '300文字レポート', classId: c1.id, due: addDays(T, 2), done: false, sample: true }, { id: uid(), title: '演習問題 第5回', classId: c2.id, due: addDays(T, 6), done: false, sample: true });
 }
-const hasSample = () => S.events.some(e => e.sample) || S.entries.some(e => e.sample) || S.tasks.some(e => e.sample) || S.templates.some(e => e.sample);
+const hasSample = () => [S.events, S.entries, S.tasks, S.templates, S.jobs, S.school.classes, S.school.tasks].some(a => a.some(e => e.sample));
 const sampleBar = () => hasSample() ? `<div class="sample-bar"><span>サンプルの予定と日記を表示しています</span><button data-act="clearSample">サンプルを消す</button></div>` : '';
 
 /* ================= Calendar view (minical) ================= */
@@ -711,6 +903,7 @@ function viewCal() {
   const gs = weekStart(st.calMonth), ge = addDays(weekStart(last), 6), T = todayISO();
   const items = occurrences(gs, ge).filter(o => !o.ev.routine).map(o => ({ title: o.ev.title, s: o.date, e: o.end, c: o.ev.color, all: !!o.ev.allDay, t: o.ev.start || '' }));
   for (let d = gs; d <= ge; d = addDays(d, 1)) { const h = holName(d); if (h) items.push({ title: h, s: d, e: d, c: HOLC, all: true, t: '', hol: true }); }
+  for (const h of S.school.tasks) if (!h.done && h.due >= gs && h.due <= ge) { const c = clsById(h.classId); items.push({ title: '〆 ' + h.title, s: h.due, e: h.due, c: c ? c.color : COLORS[4], all: true, t: '' }); }
   const MAXL = 3; let weeks = '';
   for (let ws = gs; ws <= ge; ws = addDays(ws, 7)) {
     const we = addDays(ws, 6);
@@ -743,26 +936,36 @@ function viewCal() {
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
     </div>
   </div>
+  ${cdRow()}
   <div class="dow">${dowHead('')}</div>
   <div class="month" id="monthGrid" data-swipe="month">${weeks}</div>
+  ${payCard()}
   ${sampleBar()}
   ${dayDetail(st.sel)}`;
+}
+function payCard() {
+  if (S.settings.showPay === false) return '';
+  const ym = st.calMonth.slice(0, 7), mo = +ym.slice(5);
+  if (!S.jobs.length) return `<button class="pay-card" data-act="pay"><span><b style="font-size:15px">バイトの給料を計算</b><small>時給を登録すると、${mo}月の給料の見込みが出ます</small></span>${ico('right')}</button>`;
+  const x = payData(ym);
+  return `<button class="pay-card" data-act="pay"><span><small>${mo}月のバイト（見込み）</small><b class="num">¥${x.total.toLocaleString()}</b></span><span class="pay-meta num">${dur(x.W)}<br>${x.count}回</span>${ico('right')}</button>`;
 }
 function evCard(o, d) {
   const ev = o.ev; let t;
   if (ev.allDay) t = `終日${o.date !== o.end ? `<small>〜${md(o.end)}</small>` : ''}`;
-  else t = `<span class="num">${hm(ev.start)}</span><small class="num">〜${hm(ev.end)}</small>`;
+  else t = `<span class="num">${hm(ev.start)}</span><small class="num">〜${endLabel(ev)}</small>`;
   return `<button class="ev-card${!ev.allDay && isDone(ev, d) ? ' done' : ''}" style="--c:${ev.color}" data-act="editEvent" data-id="${ev.id}" data-d="${o.date}">
     <span class="t">${t}</span><span class="stripe"></span><span class="ti">${esc(ev.title)}${ev.memo ? `<small>${esc(ev.memo.split('\n')[0])}</small>` : ''}</span></button>`;
 }
 function dayDetail(d) {
-  const occ = onDay(d), main = occ.filter(o => !o.ev.routine), rt = occ.length - main.length, h = holName(d);
+  const occ = onDay(d), main = occ.filter(o => !o.ev.routine), nc = occ.filter(o => o.ev.cls).length, rt = occ.length - main.length - nc, h = holName(d), hws = S.school.tasks.filter(x => !x.done && x.due === d);
   const es = entriesOn(d);
   let html = `<section class="detail">${h ? `<div class="hol-label">${esc(h)}</div>` : ''}<h2>${jpDate(d)}</h2>`;
   if (h) html += `<div class="ev-card" style="--c:${HOLC}"><span class="t">終日</span><span class="stripe"></span><span class="ti">${esc(h)}<small>日本の祝日</small></span></div>`;
+  html += hws.map(x => { const c = clsById(x.classId); return `<button class="ev-card" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="t">締切<small>${dueLabel(x.due)[0]}</small></span><span class="stripe"></span><span class="ti">${esc(x.title)}${c ? `<small>${esc(c.name)}</small>` : ''}</span></button>`; }).join('');
   html += main.map(o => evCard(o, d)).join('');
-  if (!h && !main.length) html += `<p class="empty" style="padding:10px">予定はありません</p>`;
-  if (rt) html += `<div class="routine-note"><span>ルーティン ${rt}件</span><button data-act="openDay" data-d="${d}">タイムラインで見る</button></div>`;
+  if (!h && !main.length && !hws.length) html += `<p class="empty" style="padding:10px">予定はありません</p>`;
+  if (rt || nc) html += `<div class="routine-note"><span>${[nc && `授業 ${nc}件`, rt && `ルーティン ${rt}件`].filter(Boolean).join('・')}</span><button data-act="openDay" data-d="${d}">タイムラインで見る</button></div>`;
   for (const e of es) html += miniEntry(e);
   html += `<div class="detail-actions"><button class="btn" data-act="newEvent" data-d="${d}">${ico('plus')}新しい予定</button><button class="btn" data-act="newEntry" data-d="${d}">${ico('pen')}日記を書く</button></div></section>`;
   return html;
@@ -786,31 +989,34 @@ function viewDay() {
   const h = holName(d), es = entriesOn(d);
   let ad = '';
   if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
+  ad += S.school.tasks.filter(x => !x.done && x.due === d).map(x => { const c = clsById(x.classId); return `<button class="ad-item" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="circ">${ico('pen')}</span><span>〆 ${esc(x.title)}</span></button>`; }).join('');
   ad += all.map(o => `<button class="ad-item" style="--c:${o.ev.color}" data-act="editEvent" data-id="${o.ev.id}" data-d="${o.date}"><span class="circ">${ico(o.ev.icon)}</span><span>${esc(o.ev.title)}</span></button>`).join('');
   let tl = '', prevEnd = null, nowShown = d !== T; const now = toMin(nowHM());
   for (const o of timed) {
-    const ev = o.ev, s = toMin(ev.start), e = Math.max(s, toMin(ev.end)), len = e - s;
+    const ev = o.ev, s = toMin(ev.start), len = evLen(ev), e = s + len;
     if (prevEnd !== null && s - prevEnd >= 30) tl += `<div class="tl-gap">空き時間 ${dur(s - prevEnd)}</div>`;
     if (!nowShown && now < s) { tl += `<div class="tl-now num">${nowHM()}</div>`; nowShown = true; }
-    const H = Math.round(Math.min(170, 58 + len * 0.55)), done = isDone(ev, d);
-    tl += `<div class="tl-item${done ? ' done' : ''}" style="--c:${ev.color}">
+    const H = Math.round(Math.min(170, 58 + len * 0.55)), done = !ev.cls && isDone(ev, d), att = ev.cls ? attOf(ev, d) : '';
+    const act = ev.cls ? `data-act="openClass" data-id="${ev.cls}"` : `data-act="editEvent" data-id="${ev.id}" data-d="${d}"`;
+    const run = S.timer && S.timer.id === ev.id && S.timer.d === d, act2 = ev.actual && ev.actual[d] ? `・実績 ${dur(ev.actual[d])}` : '';
+    tl += `<div class="tl-item${done ? ' done' : ''}${att === 'cancel' ? ' cancel' : ''}${run ? ' running' : ''}" style="--c:${ev.color}">
       <span class="tm num">${hm(ev.start)}</span>
-      <button class="pill" style="height:${H}px" data-act="editEvent" data-id="${ev.id}" data-d="${d}" aria-label="${esc(ev.title)}を編集">${ico(ev.icon)}</button>
-      <button class="tl-body" data-act="editEvent" data-id="${ev.id}" data-d="${d}"><div class="meta num">${hm(ev.start)} – ${hm(ev.end)}（${dur(len)}）</div><div class="tt">${esc(ev.title)}</div></button>
-      <button class="chk${done ? ' on' : ''}" data-act="toggleDone" data-id="${ev.id}" data-d="${d}" aria-pressed="${done}" aria-label="完了">${ico('check')}</button></div>`;
+      <button class="pill" style="height:${H}px" ${act} aria-label="${esc(ev.title)}を開く">${ico(ev.icon)}</button>
+      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}</div></button>
+      ${ev.cls ? `<button class="att ${att}" data-act="att" data-c="${ev.cls}" data-p="${ev.p}" data-d="${d}" aria-label="出欠">${att ? ATT[att] : '出欠'}</button>` : `<button class="chk${done ? ' on' : ''}" data-act="toggleDone" data-id="${ev.id}" data-d="${d}" aria-pressed="${done}" aria-label="完了">${ico('check')}</button>`}</div>`;
     prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
   if (!nowShown && timed.length) tl += `<div class="tl-now num">${nowHM()}</div>`;
   const moodCard = es.map(miniEntry).join('');
   return `
-  <div class="tl-head"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1>
-    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="dayToday" aria-label="今日">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+  <div class="tl-head"><button class="tl-title" data-act="dayToday" aria-label="今日に戻る"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1></button>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="やること">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="学校（時間割）">${ico('school')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
     ${moodCard}
     ${ad ? `<div class="allday-row">${ad}</div>` : ''}
-    ${timed.length ? `<div class="timeline">${tl}</div><p class="tl-hint">アイコンを長押しして上下に動かすと、時間を変えられます</p>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
+    ${timed.length ? `<div class="timeline">${tl}</div><p class="tl-hint">アイコンを長押しして上下に動かすと、時間を変えられます${S.school.classes.length ? '<br>授業は右のボタンを押すたびに 出席→遅刻→欠席→休講 と切り替わります' : ''}</p>` : `<p class="empty">時間の決まった予定はありません。<br>右下の＋から追加できます。</p>`}
     ${sampleBar()}
   </div>`;
 }
@@ -931,6 +1137,8 @@ function insight(ws) {
     }
   }
   const em = eventMood(addDays(we, -59), we); if (em.lines[0]) lines.push(em.lines[0]);
+  let fm = 0; for (const ev of S.events) for (const [k, v] of Object.entries(ev.actual || {})) if (k >= ws && k <= we) fm += v;
+  if (fm) lines.push(`集中タイマーで合計${dur(fm)}、集中しました。`);
   let dn = 0, dt = 0;
   for (let d = ws; d <= we && d <= T; d = addDays(d, 1)) for (const o of onDay(d)) if (!o.ev.allDay) { dt++; if (isDone(o.ev, d)) dn++; }
   if (dt) lines.push(`タイムラインの予定は${dt}件中${dn}件を完了（${Math.round(dn / dt * 100)}%）。`);
@@ -938,13 +1146,30 @@ function insight(ws) {
   if (w.length) lines.push(`よく出てきた言葉は${w.join('')}。`);
   return lines;
 }
+function yearPixels() {
+  const y = st.pxYear, T = todayISO(); let g = '<span></span>', n = 0; const cnt = {};
+  for (let m = 1; m <= 12; m++) g += `<span class="px-h">${m}</span>`;
+  for (let d = 1; d <= 31; d++) {
+    g += `<span class="px-d">${d === 1 || d % 5 === 0 ? d : ''}</span>`;
+    for (let m = 1; m <= 12; m++) {
+      if (d > new Date(y, m, 0).getDate()) { g += '<i class="px x"></i>'; continue; }
+      const k = `${y}-${pad(m)}-${pad(d)}`, mo = dayMood(k);
+      if (mo && mo.top) { n++; cnt[mo.top] = (cnt[mo.top] || 0) + 1; g += `<i class="px on" style="background:${mo.color}" data-act="pxDay" data-d="${k}"></i>`; }
+      else g += `<i class="px${k > T ? ' fut' : ''}"></i>`;
+    }
+  }
+  const tops = Object.entries(cnt).sort((a, b) => b[1] - a[1]), top = tops[0] && tops[0][1] >= 2 && (!tops[1] || tops[0][1] > tops[1][1]) ? tops[0] : null;
+  return `<section class="card"><h3>1年ピクセル <span class="mcal-nav"><button data-act="pxYear" data-n="-1" aria-label="前の年">${ico('left')}</button><span class="sub num">${y}年</span><button data-act="pxYear" data-n="1" aria-label="次の年" ${y >= +T.slice(0, 4) ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></span></h3>
+    <div class="pixels">${g}</div>
+    <p class="note">${n ? `${n}日分の気分を記録しました。${top ? `いちばん多かったのは「${esc(top[0])}」です。` : ''}` : 'まだ記録がありません。'}1マスが1日で、色はその日いちばん多かった気持ちです。</p></section>`;
+}
 function eventMood(from, to) {
   const all = [], by = {}, T = todayISO(), mean = a => a.reduce((x, y) => x + y, 0) / a.length;
   for (let d = from; d <= to; d = addDays(d, 1)) {
     const m = dayMood(d), ok = m && m.top; if (ok) all.push(m.score);
     const nd = addDays(d, 1), m2 = nd <= T ? dayMood(nd) : null, seen = new Set();
     for (const o of onDay(d)) {
-      if (o.ev.routine || seen.has(o.ev.title)) continue; seen.add(o.ev.title);
+      if ((o.ev.routine && !o.ev.cls) || seen.has(o.ev.title)) continue; seen.add(o.ev.title);
       const b = by[o.ev.title] = by[o.ev.title] || { color: o.ev.color, same: [], next: [] };
       if (ok) b.same.push(m.score);
       if (m2 && m2.top) b.next.push(m2.score);
@@ -1090,8 +1315,9 @@ function viewReflect() {
   </section>
   <section class="card"><h3>気分カレンダー <span class="mcal-nav"><button data-act="mcal" data-n="-1" aria-label="前の月">${ico('left')}</button><span class="sub num">${mF.getFullYear()}年${mF.getMonth() + 1}月</span><button data-act="mcal" data-n="1" aria-label="次の月" ${st.mcal >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></span></h3>
     <div class="mcal">${mc}</div>
-    <p class="note">インサイトは端末の中だけで、日記と予定から集計しています。データが外に送られることはありません。</p>
-  </section>`;
+  </section>
+  ${yearPixels()}
+  <p class="note" style="text-align:center">インサイトは端末の中だけで、日記と予定から集計しています。データが外に送られることはありません。</p>`;
 }
 
 /* ================= rendering ================= */
@@ -1148,6 +1374,7 @@ function closeSheet() {
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
   if (!stack.length) $('#app').classList.remove('behind');
+  if (S.timer) setTimeout(tick, 0);
 }
 /* drag a sheet down by its header to dismiss it */
 let drag = null;
@@ -1193,16 +1420,18 @@ function eventForm() {
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${e.id ? '予定を編集' : '新しい予定'}</b><button class="r" data-act="saveEvent">保存</button></div>
   ${!e.id && S.templates.length ? `<div class="fld"><span class="lb">テンプレートから</span><div class="tpl-row">${S.templates.map(t => `<button class="tpl" style="--c:${t.color}" data-act="useTpl" data-id="${t.id}">${ico(t.icon)}${esc(t.title)}<small class="num">${t.allDay ? '終日' : hm(t.start)}</small></button>`).join('')}</div></div>` : ''}
   <div class="fld"><input class="inp title" id="ev-title" placeholder="予定のタイトル" value="${esc(e.title)}" maxlength="60" autocomplete="off"></div>
+  ${e.id && !e.allDay ? `<button class="btn timer-start" data-act="startTimer">${ico('play')}${S.timer && S.timer.id === e.id ? '集中タイマーを開く' : '集中タイマーを始める'}</button>` : ''}
   <div class="fld"><span class="lb">アイコン</span><div class="iconpick" style="--c:${e.color}">${EV_ICONS.map(k => `<button data-act="evIcon" data-k="${k}" aria-pressed="${e.icon === k}" aria-label="${k}">${ico(k)}</button>`).join('')}</div></div>
   <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(c => `<button class="sw" style="--c:${c}" data-act="evColor" data-c="${c}" aria-pressed="${e.color === c}" aria-label="色 ${c}">${ico('check')}</button>`).join('')}</div></div>
   <div class="fld"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label></div>
   <div class="row2"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div>
     ${e.allDay ? `<div class="fld"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>` : '<div></div>'}</div>
-  ${e.allDay ? '' : `<div class="row2"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div>`}
+  ${e.allDay ? '' : `<div class="row2"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><p class="note" id="ev-on" style="margin:-6px 0 14px" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}
   <div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
   ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
   ${e.repeat !== 'none' ? `<div class="fld"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}
   <div class="fld"><label class="toggle"><span>ルーティン<small>タイムラインにだけ表示し、月のカレンダーには出しません</small></span><input type="checkbox" id="ev-routine" ${e.routine ? 'checked' : ''}></label></div>
+  <div class="fld"><label class="toggle"><span>カウントダウンに表示<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" id="ev-cd" ${e.countdown ? 'checked' : ''}></label></div>
   <div class="fld"><label for="ev-memo">メモ</label><textarea class="inp" id="ev-memo" rows="3" style="min-height:80px">${esc(e.memo)}</textarea></div>
   ${e._occ ? `<p class="note">繰り返しの予定です。保存するときに「この回だけ」か「すべての回」かを選べます。</p>` : ''}
   <div class="sheet-actions"><button class="btn primary" data-act="saveEvent">保存する</button>
@@ -1217,6 +1446,7 @@ function syncEvent() {
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
   const u = v('ev-until'); if (u !== null) e.until = u;
   const r = $('#ev-routine', sh); if (r) e.routine = r.checked;
+  const cd = $('#ev-cd', sh); if (cd) e.countdown = cd.checked;
 }
 function rerenderEvent() { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = eventForm(); sh.scrollTop = y; }
 function cleanEv(x) { const o = JSON.parse(JSON.stringify(x)); for (const k of Object.keys(o)) if (k[0] === '_') delete o[k]; delete o.sample; return o; }
@@ -1235,11 +1465,156 @@ function saveOccurrence(orig, occ, next, scope) {
 }
 function shiftEvent(id, d, delta) {
   const ev = S.events.find(x => x.id === id); if (!ev) return;
-  const next = Object.assign(JSON.parse(JSON.stringify(ev)), { start: hhmm(toMin(ev.start) + delta), end: hhmm(toMin(ev.end) + delta), date: d });
-  const fin = () => { if (save()) { render(); toast(`${hm(next.start)} – ${hm(next.end)} に移動しました`); } };
+  const ns = toMin(ev.start) + delta, next = Object.assign(JSON.parse(JSON.stringify(ev)), { start: hhmm(ns), end: hhmm((ns + evLen(ev)) % 1440), date: d });
+  const fin = () => { if (save()) { render(); toast(`${hm(next.start)} – ${endLabel(next)} に移動しました`); } };
   if (ev.repeat && ev.repeat !== 'none') choose(`「${ev.title}」は繰り返しの予定です。どれを動かしますか？`, [['この回だけ', () => { saveOccurrence(ev, d, next, 'one'); fin(); }], ['すべての回', () => { saveOccurrence(ev, d, next, 'all'); fin(); }]]);
   else { ev.start = next.start; ev.end = next.end; fin(); }
 }
+
+/* ---- school sheet ---- */
+let schTab = 'tt', clDraft = null;
+function schoolSheet() {
+  const views = { tt: ttView, hw: hwView, att: attView, set: schSetView };
+  return `<div class="sh-bar"><span></span><b>学校</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="seg" style="display:flex;margin-bottom:14px">${[['tt', '時間割'], ['hw', '課題'], ['att', '出席'], ['set', '設定']].map(([k, l]) => `<button style="flex:1" data-act="schTab" data-k="${k}" aria-pressed="${schTab === k}">${l}</button>`).join('')}</div>
+  ${views[schTab]()}`;
+}
+function ttView() {
+  const sc = S.school, days = sc.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5], tw = wd(todayISO());
+  let g = '<span></span>' + days.map(w => `<span class="tt-h${w === tw ? ' now' : ''}">${WD[w]}</span>`).join('');
+  sc.periods.forEach((per, p) => {
+    g += `<span class="tt-p">${p + 1}<small class="num">${hm(per[0])}</small></span>`;
+    for (const w of days) {
+      const c = sc.classes.find(x => x.slots.some(sl => sl.w === w && sl.p === p));
+      g += c ? `<button class="tt-cell" style="--c:${c.color}" data-act="openClass" data-id="${c.id}">${esc(c.name)}${c.room ? `<small>${esc(c.room)}</small>` : ''}</button>` : `<button class="tt-cell empty" data-act="newClass" data-w="${w}" data-p="${p}" aria-label="${WD[w]}曜${p + 1}限に授業を追加">+</button>`;
+    }
+  });
+  return `<div class="tt" style="grid-template-columns:30px repeat(${days.length},minmax(0,1fr))">${g}</div>
+  <p class="note">空いているマスを押すと授業を追加できます。授業はタイムラインに自動で入り、右のボタンで出欠を記録できます。<br>${sc.termStart || sc.termEnd ? `学期：${sc.termStart ? jpDate(sc.termStart) : ''} 〜 ${sc.termEnd ? jpDate(sc.termEnd) : ''}` : '学期の期間は「設定」で決められます（決めないとずっと表示します）。'}</p>`;
+}
+function hwView() {
+  const list = S.school.tasks.slice().sort((a, b) => a.due.localeCompare(b.due)), open = list.filter(x => !x.done), done = list.filter(x => x.done);
+  const row = x => { const c = clsById(x.classId), [l, k] = dueLabel(x.due); return `<div class="hw${x.done ? ' done' : ''}"><button class="chk${x.done ? ' on' : ''}" data-act="hwDone" data-id="${x.id}" aria-label="提出済みにする">${ico('check')}</button><span class="tt2">${esc(x.title)}<small>${c ? esc(c.name) + '・' : ''}${md(x.due)}(${WD[wd(x.due)]})まで</small></span>${x.done ? '<span></span>' : `<span class="due ${k}">${l}</span>`}<button class="del" data-act="hwDel" data-id="${x.id}" aria-label="削除">${ico('x')}</button></div>`; };
+  return `<div class="hw-form"><input class="inp" id="hw-title" placeholder="課題（例：300文字レポート）" maxlength="60" autocomplete="off">
+    <select class="inp" id="hw-class"><option value="">授業（なし）</option>${S.school.classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+    <input class="inp" type="date" id="hw-due" value="${addDays(todayISO(), 7)}">
+    <button class="btn primary" data-act="addHw">${ico('plus')}課題を追加</button></div>
+  <div class="task-list">${open.map(row).join('') || '<p class="empty">出ている課題はありません</p>'}</div>
+  ${done.length ? `<div class="task-list"><div class="routine-note"><span>提出済み ${done.length}件</span><button data-act="hwClear">提出済みを消す</button></div>${done.map(row).join('')}</div>` : ''}
+  <p class="note">締め切りはカレンダーにも「〆」で表示されます。</p>`;
+}
+function attView() {
+  if (!S.school.classes.length) return '<p class="empty">まだ授業がありません。「時間割」のマスから追加してください。</p>';
+  const rule = +S.school.lateRule;
+  return `<div class="card" style="margin-top:0">${S.school.classes.map(c => { const x = attStats(c); return `<button class="att-row" data-act="openClass" data-id="${c.id}" style="--c:${c.color}"><span style="min-width:0"><b><i></i>${esc(c.name)}</b><small>出席 ${x.present}・遅刻 ${x.late}・欠席 ${x.absent}${x.cancel ? `・休講 ${x.cancel}` : ''}</small></span><span class="left${x.left <= 1 ? ' warn' : ''}">${leftLabel(x)}</span></button>`; }).join('')}</div>
+  <p class="note">休める回数は授業ごとに変えられます（はじめは4回）。${rule ? `遅刻${rule}回で欠席1回として数えています。` : '遅刻は欠席に数えていません。'}</p>`;
+}
+function schSetView() {
+  const sc = S.school;
+  return `<div class="set-list">
+    <div class="row2"><div class="fld" style="margin:0"><label for="sc-start">学期のはじめ</label><input class="inp" type="date" id="sc-start" value="${sc.termStart || ''}"></div><div class="fld" style="margin:0"><label for="sc-end">学期のおわり</label><input class="inp" type="date" id="sc-end" value="${sc.termEnd || ''}"></div></div>
+    <label class="toggle"><span>土曜日も使う</span><input type="checkbox" id="sc-sat" ${sc.sat ? 'checked' : ''}></label>
+    <label class="toggle"><span>祝日は休講にする<small>オフにすると、祝日も授業を表示します</small></span><input type="checkbox" id="sc-hol" ${sc.holidayOff ? 'checked' : ''}></label>
+    <div class="toggle"><span>遅刻の数え方</span><select class="inp" id="sc-late" style="width:auto;min-height:36px;padding:4px 8px">${[[0, '欠席に数えない'], [2, '2回で欠席1回'], [3, '3回で欠席1回'], [4, '4回で欠席1回']].map(([v, l]) => `<option value="${v}" ${+sc.lateRule === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <span class="lb" style="font-size:12px;color:var(--ink-2);margin-top:6px">時限の時間</span>
+    ${sc.periods.map((per, p) => `<div class="per-row"><b>${p + 1}限</b><input class="inp" type="time" data-per="${p}" data-k="0" value="${per[0]}" aria-label="${p + 1}限の開始"><input class="inp" type="time" data-per="${p}" data-k="1" value="${per[1]}" aria-label="${p + 1}限の終了"></div>`).join('')}
+    <div class="row2"><button class="btn ghost" data-act="perAdd">時限を追加</button><button class="btn ghost" data-act="perDel" ${sc.periods.length <= 1 ? 'disabled' : ''}>最後の時限を消す</button></div></div>`;
+}
+const rerenderKind = (kind, html) => { const sh = topSheet(); if (sh && sh.dataset.kind === kind) { const y = sh.scrollTop; sh.innerHTML = html(); sh.scrollTop = y; } };
+function openClass(id, w, p) {
+  const c = id && clsById(id);
+  clDraft = c ? JSON.parse(JSON.stringify(c)) : { id: null, name: '', room: '', teacher: '', color: COLORS[2], slots: w !== undefined ? [{ w: +w, p: +p }] : [], maxAbsent: 4, att: {}, memo: '' };
+  openSheet(classForm(), 'full');
+  if (!c) setTimeout(() => { const t = $('#cl-name'); t && t.focus({ preventScroll: true }); }, 450);
+}
+function classForm() {
+  const c = clDraft, sc = S.school, days = sc.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5], x = c.id ? attStats(c) : null;
+  const hist = Object.entries(c.att || {}).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 20);
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${c.id ? '授業を編集' : '授業を追加'}</b><button class="r" data-act="saveClass">保存</button></div>
+  <div class="fld"><input class="inp title" id="cl-name" placeholder="授業名" value="${esc(c.name)}" maxlength="40" autocomplete="off"></div>
+  <div class="row2"><div class="fld"><label for="cl-room">教室</label><input class="inp" id="cl-room" value="${esc(c.room)}" maxlength="20"></div><div class="fld"><label for="cl-teacher">先生</label><input class="inp" id="cl-teacher" value="${esc(c.teacher)}" maxlength="20"></div></div>
+  <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(k => `<button class="sw" style="--c:${k}" data-act="clColor" data-c="${k}" aria-pressed="${c.color === k}" aria-label="色">${ico('check')}</button>`).join('')}</div></div>
+  <div class="fld"><span class="lb">曜日・時限</span><div class="slot-list">${c.slots.map((sl, i) => `<span>${WD[sl.w]}曜 ${sl.p + 1}限<button data-act="clSlotDel" data-i="${i}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">まだ決まっていません</small>'}</div>
+    <div class="slot-add"><select class="inp" id="cl-w" aria-label="曜日">${days.map(w => `<option value="${w}">${WD[w]}曜</option>`).join('')}</select><select class="inp" id="cl-p" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clSlotAdd">追加</button></div></div>
+  <div class="fld"><label for="cl-max">休める回数（欠席の上限）</label><input class="inp" type="number" inputmode="numeric" min="0" max="30" id="cl-max" value="${c.maxAbsent}"></div>
+  <div class="fld"><label for="cl-memo">メモ</label><textarea class="inp" id="cl-memo" rows="2" style="min-height:64px">${esc(c.memo)}</textarea></div>
+  ${x ? `<section class="card"><h3>出欠 <span class="left${x.left <= 1 ? ' warn' : ''}">${leftLabel(x)}</span></h3><div class="kv"><span>出席</span><span class="num">${x.present}回</span><span>遅刻</span><span class="num">${x.late}回</span><span>欠席</span><span class="num">${x.absent}回</span><span>休講</span><span class="num">${x.cancel}回</span></div>
+    ${hist.length ? `<div class="hist" style="margin-top:10px">${hist.map(([k, v]) => { const [d, p] = k.split('#'); return `<div><span class="num">${md(d)}(${WD[wd(d)]}) ${+p + 1}限</span><span class="att ${v}">${ATT[v]}</span></div>`; }).join('')}</div>` : '<p class="note">出欠は、タイムラインの授業の右にあるボタンで記録できます。</p>'}</section>` : ''}
+  <div class="sheet-actions"><button class="btn primary" data-act="saveClass">保存する</button>${c.id ? '<button class="btn danger" data-act="delClass">この授業を削除</button>' : ''}</div>`;
+}
+function syncClass() {
+  const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; }, c = clDraft;
+  c.name = v('cl-name') ?? c.name; c.room = v('cl-room') ?? c.room; c.teacher = v('cl-teacher') ?? c.teacher; c.memo = v('cl-memo') ?? c.memo;
+  const m = v('cl-max'); if (m !== null && m !== '') c.maxAbsent = Math.max(0, Math.min(30, Math.round(+m) || 0));
+}
+const rerenderClass = () => { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = classForm(); sh.scrollTop = y; };
+
+/* ---- pay sheet ---- */
+let payYM = null, jobDraft = null;
+function paySheet() {
+  const [y, m] = payYM.split('-').map(Number), lim = +S.settings.payLimit || 0;
+  const head = `<div class="sh-bar"><span></span><b>バイト・給料</b><button class="r" data-act="close">閉じる</button></div>
+    <div class="rp-nav"><button data-act="payMonth" data-n="-1" aria-label="前の月">${ico('left')}</button><div class="rp-title"><span class="script">Salary</span><h2 class="num">${y}年${m}月</h2></div><button data-act="payMonth" data-n="1" aria-label="次の月">${ico('right')}</button></div>`;
+  if (!S.jobs.length) return head + `<section class="card"><p style="margin:0 0 12px;font-size:14px;line-height:1.7">バイト先と時給を登録すると、予定から勤務時間と給料の見込みを計算します。予定のタイトルにバイト先の名前（例：セブンイレブン）が入っているものを、シフトとして数えます。</p><button class="btn primary" style="width:100%" data-act="editJob">${ico('plus')}バイト先を追加</button></section>`;
+  const x = payData(payYM), yt = yearPay(y);
+  return head + `
+  <section class="card"><div class="pay-total"><small>${m}月の給料（見込み）</small><b class="num">¥${x.total.toLocaleString()}</b>
+    ${x.byJob.length > 1 || S.jobs.some(j => +j.closing) ? `<small>${x.byJob.map(b => `${esc(b.job.name)}：${md(b.a)}〜${md(b.b)}`).join(' / ')}</small>` : ''}</div>
+    <div class="kv" style="margin-top:12px"><span>勤務</span><span class="num">${dur(x.W)}（${x.count}回）</span><span>うち深夜（22時〜5時）</span><span class="num">${dur(x.N)}</span>${x.transport ? `<span>交通費</span><span class="num">¥${x.transport.toLocaleString()}</span>` : ''}${x.byJob.length > 1 ? x.byJob.map(b => `<span>${esc(b.job.name)}</span><span class="num">¥${b.sub.toLocaleString()}</span>`).join('') : ''}</div></section>
+  <section class="card"><h3>シフト <span class="sub">${x.count}回</span></h3>${x.rows.length ? `<div class="shift-list">${x.rows.map(r_ => `<button class="shift" data-act="editEvent" data-id="${r_.o.ev.id}" data-d="${r_.o.date}"><span class="d num">${md(r_.o.date)}(${WD[wd(r_.o.date)]})</span><span class="num">${hm(r_.o.ev.start)}–${endLabel(r_.o.ev)}<small>${dur(r_.W)}${r_.brk ? `・休憩${r_.brk}分` : ''}${r_.N ? `・深夜${dur(r_.N)}` : ''}</small></span><span class="yen num">¥${r_.pay.toLocaleString()}</span></button>`).join('')}</div>` : `<p class="empty" style="padding:8px">この期間のシフトはありません。予定のタイトルに「${esc(S.jobs[0].name)}」を入れると、シフトとして数えます。</p>`}</section>
+  <section class="card"><h3>${y}年の合計 <span class="sub">1〜12月の勤務分</span></h3><div class="pay-total" style="padding:0"><b class="num" style="font-size:30px">¥${yt.toLocaleString()}</b></div>
+    ${lim ? `<div class="meter${yt > lim ? ' over' : ''}"><i style="width:${Math.min(100, yt / lim * 100).toFixed(1)}%"></i></div><small style="color:var(--ink-2);font-size:12px">${yt > lim ? `目安を¥${(yt - lim).toLocaleString()}超えています` : `目安の¥${lim.toLocaleString()}まで、あと¥${(lim - yt).toLocaleString()}`}</small>` : ''}
+    <div class="fld" style="margin:12px 0 0"><label for="pay-limit">年収の目安（扶養の上限などをメモ）</label><input class="inp" type="number" inputmode="numeric" id="pay-limit" placeholder="例：1230000" value="${lim || ''}"></div></section>
+  <section class="card"><h3>バイト先</h3><div class="set-list">${S.jobs.map(j => `<button class="set-row" data-act="editJob" data-id="${j.id}"><span>${esc(j.name)} <small class="num">時給¥${(+j.wage).toLocaleString()}${+j.closing ? `・${j.closing}日締め` : ''}</small></span>${ico('right')}</button>`).join('')}
+    <button class="btn ghost" data-act="editJob">${ico('plus')}バイト先を追加</button></div>
+    <p class="note">予定のタイトルにバイト先の名前が入っているものをシフトとして数えます。休憩は、6時間を超えると45分、8時間を超えると60分を引いています（オフにもできます）。金額は目安なので、給与明細とは違うことがあります。</p></section>`;
+}
+function jobForm() {
+  const j = jobDraft;
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${j.id ? 'バイト先を編集' : 'バイト先を追加'}</b><button class="r" data-act="saveJob">保存</button></div>
+  <div class="fld"><label for="jb-name">名前（予定のタイトルに入っている言葉）</label><input class="inp title" id="jb-name" value="${esc(j.name)}" placeholder="例：セブンイレブン" maxlength="30" autocomplete="off"></div>
+  <div class="row2"><div class="fld"><label for="jb-wage">時給（円）</label><input class="inp" type="number" inputmode="numeric" id="jb-wage" value="${j.wage || ''}" placeholder="1100"></div><div class="fld"><label for="jb-tr">交通費（1回）</label><input class="inp" type="number" inputmode="numeric" id="jb-tr" value="${j.transport || ''}" placeholder="0"></div></div>
+  <div class="fld"><label class="toggle"><span>深夜割増<small>22時〜5時は25%増しで計算します</small></span><input type="checkbox" id="jb-night" ${j.night ? 'checked' : ''}></label></div>
+  <div class="fld"><label class="toggle"><span>休憩を自動で引く<small>6時間を超えると45分、8時間を超えると60分</small></span><input type="checkbox" id="jb-break" ${j.breakAuto ? 'checked' : ''}></label></div>
+  <div class="fld"><label for="jb-close">締め日</label><select class="inp" id="jb-close">${[[0, '月末'], [10, '10日'], [15, '15日'], [20, '20日'], [25, '25日']].map(([v, l]) => `<option value="${v}" ${(+j.closing || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+  <div class="sheet-actions"><button class="btn primary" data-act="saveJob">保存する</button>${j.id ? '<button class="btn danger" data-act="delJob">このバイト先を削除</button>' : ''}</div>`;
+}
+
+/* ---- focus timer ---- */
+let timerInt = null, wakeLock = null;
+const tElapsed = () => { const t = S.timer; return t ? t.accum + (t.paused ? 0 : Date.now() - t.startedAt) : 0; };
+const mmss = ms => { const s0 = Math.floor(Math.max(0, ms) / 1000), h = Math.floor(s0 / 3600), m = Math.floor(s0 % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s0 % 60); };
+const tSub = el => { const left = S.timer.planned * 60000 - el; return left >= 0 ? `予定 ${dur(S.timer.planned)}・のこり ${mmss(left)}` : `予定より ${mmss(-left)} オーバー`; };
+function timerHTML() {
+  const t = S.timer, el = tElapsed(), C = 2 * Math.PI * 100, frac = Math.min(1, el / (t.planned * 60000));
+  return `<div class="sh-bar"><button class="l" data-act="close">閉じる</button><b>集中タイマー</b><span></span></div>
+  <div class="timer" style="--c:${t.color}"><div class="tm-title"><i>${ico(t.icon)}</i><span>${esc(t.title)}</span></div>
+    <div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="14"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - frac)).toFixed(1)}"/></svg>
+      <div class="ctr"><b id="tm-time" class="num">${mmss(el)}</b><small id="tm-sub" class="${el > t.planned * 60000 ? 'over' : ''}">${t.paused ? '一時停止中・' : ''}${tSub(el)}</small></div></div>
+    <div class="row2"><button class="btn" data-act="tmPause">${t.paused ? ico('play') + '再開' : '一時停止'}</button><button class="btn primary" data-act="tmFinish">終了して記録</button></div>
+    <button class="btn ghost" style="width:100%" data-act="tmCancel">記録せずにやめる</button>
+    <p class="note" style="text-align:center;margin:0">この画面を閉じても、時間は計り続けます。</p></div>`;
+}
+function tick() {
+  const t = S.timer, chip = $('#timerChip');
+  if (!t) { chip.hidden = true; clearInterval(timerInt); timerInt = null; return; }
+  const el = tElapsed();
+  chip.hidden = stack.some(o => o.firstElementChild.dataset.kind === 'timer');
+  chip.style.setProperty('--c', t.color);
+  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : mmss(el)}</span>`;
+  const time = $('#tm-time');
+  if (time) {
+    time.textContent = mmss(el); const sub = $('#tm-sub'); sub.textContent = (t.paused ? '一時停止中・' : '') + tSub(el); sub.classList.toggle('over', el > t.planned * 60000);
+    $('#tm-ring').style.strokeDashoffset = (2 * Math.PI * 100 * (1 - Math.min(1, el / (t.planned * 60000)))).toFixed(1);
+  }
+  if (!t.notified && !t.paused && el >= t.planned * 60000) { t.notified = true; save(); toast('予定の時間になりました'); }
+}
+function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
+function openTimer() {
+  const sh = openSheet(timerHTML(), 'full'); sh.dataset.kind = 'timer'; ensureTick();
+  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {}
+}
+const releaseWake = () => { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; };
 
 /* ---- tasks (inbox) ---- */
 function taskSheet() {
@@ -1349,6 +1724,10 @@ function settingsHTML() {
     <div class="toggle"><span>テーマカラー</span><span class="swatches">${ACCENTS.map(([k, l, c]) => `<button class="sw" style="--c:${c};width:28px;height:28px" data-act="accent" data-k="${k}" aria-pressed="${(s.accent || '') === k}" aria-label="${l}">${ico('check')}</button>`).join('')}</span></div>
     <div class="toggle"><span>週の始まり</span><span class="seg">${[['mon','月曜'],['sun','日曜']].map(([k, l]) => `<button data-act="weekStartSet" data-k="${k}" aria-pressed="${(s.weekStart || 'mon') === k}">${l}</button>`).join('')}</span></div>
     <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label></div></div>
+  <div class="set-sec"><h4>バイト・学校</h4><div class="set-list">
+    <button class="btn" data-act="pay">${ico('yen')}バイト・給料</button>
+    <button class="btn" data-act="openSchool">${ico('school')}学校（時間割・課題・出席）</button>
+    <label class="toggle"><span>カレンダーに給料の見込みを表示</span><input type="checkbox" id="set-pay" ${s.showPay !== false ? 'checked' : ''}></label></div></div>
   <div class="set-sec"><h4>日記</h4><div class="set-list">
     ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
   <div class="set-sec"><h4>予定のテンプレート</h4><div class="set-list">
@@ -1412,7 +1791,7 @@ function icsToEvent(v) {
   const e = v.DTEND ? icsDate(v.DTEND) : null, title = icsText(v.SUMMARY) || '（無題）';
   const ev = { id: uid(), title, date: s.date, allDay: s.allDay, repeat: 'none', routine: false, memo: [icsText(v.LOCATION), icsText(v.DESCRIPTION)].filter(Boolean).join('\n').slice(0, 500), done: {}, skip: {}, color: COLORS[2], icon: guessIcon(title), icsUid: (v.UID || '') + (v['RECURRENCE-ID'] ? '@' + v['RECURRENCE-ID'] : '') };
   if (s.allDay) { ev.endDate = e ? addDays(e.date, -1) : s.date; if (ev.endDate < ev.date) ev.endDate = ev.date; ev.start = '09:00'; ev.end = '10:00'; }
-  else { ev.start = s.time; ev.end = e ? (e.date === s.date ? e.time : '23:59') : hhmm(Math.min(1439, toMin(s.time) + 60)); if (toMin(ev.end) <= toMin(ev.start)) ev.end = hhmm(Math.min(1439, toMin(ev.start) + 30)); }
+  else { ev.start = s.time; ev.end = !e ? hhmm(Math.min(1439, toMin(s.time) + 60)) : e.date === s.date ? e.time : e.date === addDays(s.date, 1) && e.time <= s.time ? e.time : '23:59'; if (ev.end === ev.start) ev.end = hhmm(Math.min(1439, toMin(ev.start) + 30)); }
   if (v.RRULE && !v['RECURRENCE-ID']) applyRRule(ev, v.RRULE);
   for (const x of v.EXDATE) for (const one of x.split(',')) { const d = icsDate(one); if (d) ev.skip[d.date] = true; }
   if (v['RECURRENCE-ID']) ev._master = { uid: v.UID, date: (icsDate(v['RECURRENCE-ID']) || {}).date };
@@ -1434,7 +1813,7 @@ function importData(txt) {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
-      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {});
+      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); S.school = Object.assign(defaults().school, d.school || {});
       save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
@@ -1455,6 +1834,77 @@ const ACT = {
   },
   dayToday: () => { st.day = todayISO(); render(); },
   tasks: () => openSheet(taskSheet(), 'full'),
+  openSchool: t => { schTab = (t && t.dataset.tab) || 'tt'; const sh = openSheet(schoolSheet(), 'full'); sh.dataset.kind = 'school'; },
+  schTab: t => { schTab = t.dataset.k; rerenderKind('school', schoolSheet); topSheet().scrollTop = 0; },
+  newClass: t => openClass(null, t.dataset.w, t.dataset.p),
+  openClass: t => openClass(t.dataset.id),
+  clColor: t => { syncClass(); clDraft.color = t.dataset.c; rerenderClass(); },
+  clSlotAdd: () => { syncClass(); const sh = topSheet(), w = +$('#cl-w', sh).value, p = +$('#cl-p', sh).value; if (!clDraft.slots.some(x => x.w === w && x.p === p)) clDraft.slots.push({ w, p }); rerenderClass(); },
+  clSlotDel: t => { syncClass(); clDraft.slots.splice(+t.dataset.i, 1); rerenderClass(); },
+  saveClass: () => {
+    syncClass(); const c = clDraft; c.name = c.name.trim();
+    if (!c.name) { toast('授業名を入力してください'); return; }
+    if (!c.slots.length) { toast('曜日と時限を追加してください'); return; }
+    const taken = S.school.classes.find(x => x.id !== c.id && x.slots.some(a => c.slots.some(b => a.w === b.w && a.p === b.p)));
+    if (taken) { toast(`同じコマに「${taken.name}」があります`); return; }
+    delete c.sample;
+    if (c.id) S.school.classes[S.school.classes.findIndex(x => x.id === c.id)] = c; else { c.id = uid(); S.school.classes.push(c); }
+    if (save()) { closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を保存しました'); }
+  },
+  delClass: () => confirmIn(`「${clDraft.name}」を時間割から削除します。出欠の記録も消えます。`, '削除する', () => {
+    S.school.classes = S.school.classes.filter(x => x.id !== clDraft.id); S.school.tasks.forEach(x => { if (x.classId === clDraft.id) x.classId = ''; });
+    save(); closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を削除しました');
+  }),
+  att: t => {
+    const c = clsById(t.dataset.c); if (!c) return; c.att = c.att || {};
+    const k = `${t.dataset.d}#${t.dataset.p}`, n = ATT_NEXT[c.att[k] || ''];
+    if (n) c.att[k] = n; else delete c.att[k];
+    save(); render();
+    if (n === 'absent') { const x = attStats(c); toast(`${c.name}：${leftLabel(x)}`); }
+  },
+  addHw: () => {
+    const sh = topSheet(), title = ($('#hw-title', sh).value || '').trim(), due = $('#hw-due', sh).value;
+    if (!title) { toast('課題の名前を入力してください'); return; } if (!due) { toast('締め切りの日を選んでください'); return; }
+    S.school.tasks.push({ id: uid(), title, classId: $('#hw-class', sh).value, due, done: false }); save(); rerenderKind('school', schoolSheet); render(); toast('課題を追加しました');
+  },
+  hwDone: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) { x.done = !x.done; save(); rerenderKind('school', schoolSheet); render(); } },
+  hwDel: t => { S.school.tasks = S.school.tasks.filter(h => h.id !== t.dataset.id); save(); rerenderKind('school', schoolSheet); render(); },
+  hwClear: () => { S.school.tasks = S.school.tasks.filter(h => !h.done); save(); rerenderKind('school', schoolSheet); render(); },
+  perAdd: () => { const ps = S.school.periods, last = ps[ps.length - 1], st0 = toMin(last[1]) + 10; ps.push([hhmm(Math.min(1380, st0)), hhmm(Math.min(1439, st0 + 90))]); save(); rerenderKind('school', schoolSheet); render(); },
+  perDel: () => { const ps = S.school.periods; if (ps.length <= 1) return; const p = ps.length - 1, used = S.school.classes.filter(c => c.slots.some(x => x.p === p));
+    const go = () => { ps.pop(); S.school.classes.forEach(c => { c.slots = c.slots.filter(x => x.p !== p); }); save(); rerenderKind('school', schoolSheet); render(); };
+    if (used.length) confirmIn(`${p + 1}限を消すと、「${used.map(c => c.name).join('」「')}」の${p + 1}限のコマも外れます。`, '消す', go); else go(); },
+  pay: () => { payYM = st.calMonth.slice(0, 7); const sh = openSheet(paySheet(), 'full'); sh.dataset.kind = 'pay'; },
+  payMonth: t => { const F = P(payYM + '-01'); F.setMonth(F.getMonth() + +t.dataset.n); payYM = iso(F).slice(0, 7); rerenderKind('pay', paySheet); topSheet().scrollTop = 0; },
+  editJob: t => { const j = t.dataset.id && S.jobs.find(x => x.id === t.dataset.id); jobDraft = j ? JSON.parse(JSON.stringify(j)) : { id: null, name: '', wage: '', transport: 0, night: true, breakAuto: true, closing: 0 }; openSheet(jobForm(), 'full'); },
+  saveJob: () => {
+    const sh = topSheet(), j = jobDraft;
+    j.name = $('#jb-name', sh).value.trim(); j.wage = Math.round(+$('#jb-wage', sh).value || 0); j.transport = Math.round(+$('#jb-tr', sh).value || 0);
+    j.night = $('#jb-night', sh).checked; j.breakAuto = $('#jb-break', sh).checked; j.closing = +$('#jb-close', sh).value;
+    if (!j.name) { toast('バイト先の名前を入力してください'); return; } if (!(j.wage > 0)) { toast('時給を入力してください'); return; }
+    delete j.sample;
+    if (j.id) S.jobs[S.jobs.findIndex(x => x.id === j.id)] = j; else { j.id = uid(); S.jobs.push(j); }
+    if (save()) { closeSheet(); rerenderKind('pay', paySheet); render(); toast('バイト先を保存しました'); }
+  },
+  delJob: () => confirmIn(`「${jobDraft.name}」を削除します。予定はそのまま残ります。`, '削除する', () => { S.jobs = S.jobs.filter(x => x.id !== jobDraft.id); save(); closeSheet(); rerenderKind('pay', paySheet); render(); }),
+  pxYear: t => { st.pxYear = Math.min(new Date().getFullYear(), st.pxYear + +t.dataset.n); render(); },
+  pxDay: t => { const e = entriesOn(t.dataset.d)[0]; if (e) openEntry(e.id); },
+  startTimer: () => {
+    syncEvent(); const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev || ev.allDay) return;
+    const d = e._occ || ev.date;
+    const go = () => { S.timer = { id: ev.id, d, title: ev.title, color: ev.color, icon: ev.icon, planned: evLen(ev), startedAt: Date.now(), accum: 0, paused: false }; save(); while (stack.length) closeSheet(); render(); openTimer(); };
+    if (S.timer && S.timer.id === ev.id) { while (stack.length) closeSheet(); openTimer(); }
+    else if (S.timer) confirmIn(`「${S.timer.title}」のタイマーを記録せずに止めて、こちらを始めます。`, '始める', go);
+    else go();
+  },
+  openTimer: () => { if (S.timer) openTimer(); },
+  tmPause: () => { const t = S.timer; if (!t) return; if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
+  tmFinish: () => {
+    const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
+    if (ev) { ev.actual = Object.assign({}, ev.actual, { [t.d]: ((ev.actual || {})[t.d] || 0) + min }); ev.done = Object.assign({}, ev.done, { [t.d]: true }); }
+    S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); toast(`${dur(min)}の集中を記録しました`);
+  },
+  tmCancel: () => confirmIn('タイマーを止めて、記録せずに終わります。', 'やめる', () => { S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); }),
   addTask: () => { const el = $('#task-new', topSheet()), v = (el && el.value || '').trim(); if (!v) return; S.tasks.unshift({ id: uid(), title: v, done: false }); save(); rerenderTasks(); const n = $('#task-new', topSheet()); n && n.focus({ preventScroll: true }); },
   taskDone: t => { const k = S.tasks.find(x => x.id === t.dataset.id); if (k) { k.done = !k.done; save(); rerenderTasks(); } },
   taskDel: t => { S.tasks = S.tasks.filter(x => x.id !== t.dataset.id); save(); rerenderTasks(); },
@@ -1490,7 +1940,7 @@ const ACT = {
   settings: () => openSettings(),
   close: () => closeSheet(),
   clearSample: () => confirmIn('サンプルの予定と日記を削除します。あなたが追加したデータはそのまま残ります。', '削除する', () => {
-    S.events = S.events.filter(e => !e.sample); S.entries = S.entries.filter(e => !e.sample); S.tasks = S.tasks.filter(e => !e.sample); S.templates = S.templates.filter(e => !e.sample); save(); while (stack.length) closeSheet(); render(); toast('サンプルを削除しました');
+    S.events = S.events.filter(e => !e.sample); S.entries = S.entries.filter(e => !e.sample); S.tasks = S.tasks.filter(e => !e.sample); S.templates = S.templates.filter(e => !e.sample); S.jobs = S.jobs.filter(e => !e.sample); S.school.classes = S.school.classes.filter(e => !e.sample); S.school.tasks = S.school.tasks.filter(e => !e.sample); save(); while (stack.length) closeSheet(); render(); toast('サンプルを削除しました');
   }),
   // event editor
   evIcon: t => { syncEvent(); evDraft.icon = t.dataset.k; evDraft._iconSet = true; rerenderEvent(); },
@@ -1509,7 +1959,7 @@ const ACT = {
     syncEvent(); const e = evDraft;
     e.title = e.title.trim(); if (!e.title) { toast('タイトルを入力してください'); $('#ev-title', topSheet())?.focus(); return; }
     if (e.allDay) { if (!e.endDate || e.endDate < e.date) e.endDate = e.date; }
-    else { e.endDate = ''; if (toMin(e.end) <= toMin(e.start)) e.end = hhmm(Math.min(1439, toMin(e.start) + 30)); }
+    else { e.endDate = ''; if (toMin(e.end) === toMin(e.start)) e.end = hhmm((toMin(e.start) + 30) % 1440); }
     if (!e._iconSet && e.icon === 'star') e.icon = guessIcon(e.title);
     if (e.repeat === 'weekly') { if (!e.days || !e.days.length) e.days = [wd(e._seriesDate || e.date)]; } else delete e.days;
     if (e.repeat === 'none' || (e.until && e.until < (e._seriesDate || e.date))) delete e.until;
@@ -1572,6 +2022,14 @@ document.addEventListener('change', async e => {
   if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; rerenderEvent(); }
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
+  else if (t.id === 'ev-start' || t.id === 'ev-end') { syncEvent(); const n = $('#ev-on', topSheet()); if (n) n.hidden = !overnight(evDraft); }
+  else if (t.id === 'set-pay') { S.settings.showPay = t.checked; save(); render(); }
+  else if (t.id === 'pay-limit') { S.settings.payLimit = Math.max(0, Math.round(+t.value || 0)); save(); rerenderKind('pay', paySheet); }
+  else if (t.id === 'sc-start' || t.id === 'sc-end') { S.school[t.id === 'sc-start' ? 'termStart' : 'termEnd'] = t.value; save(); render(); }
+  else if (t.id === 'sc-sat') { S.school.sat = t.checked; save(); render(); }
+  else if (t.id === 'sc-hol') { S.school.holidayOff = t.checked; save(); render(); }
+  else if (t.id === 'sc-late') { S.school.lateRule = +t.value; save(); render(); }
+  else if (t.dataset && t.dataset.per !== undefined && t.value) { S.school.periods[+t.dataset.per][+t.dataset.k] = t.value; save(); render(); }
   else if (t.id === 'set-weather') {
     if (!t.checked) { S.settings.weather = false; save(); return; }
     getPos().then(() => { S.settings.weather = true; save(); toast('今日の日記に天気をつけるようにしました'); })
@@ -1605,17 +2063,17 @@ main.addEventListener('touchstart', e => {
   const pill = e.target.closest('.pill[data-id]'); if (!pill || e.touches.length > 1) return;
   const ev = S.events.find(x => x.id === pill.dataset.id); if (!ev || ev.allDay) return;
   const t = e.touches[0], item = pill.closest('.tl-item');
-  dg = { item, ev, d: pill.dataset.d, x: t.clientX, y: t.clientY, on: false, delta: 0, s: toMin(ev.start), en: toMin(ev.end) };
+  dg = { item, ev, d: pill.dataset.d, x: t.clientX, y: t.clientY, on: false, delta: 0, s: toMin(ev.start), len: evLen(ev), ov: overnight(ev) };
   dg.timer = setTimeout(() => { if (dg) { dg.on = true; item.classList.add('dragging'); } }, 320);
 }, { passive: true });
 main.addEventListener('touchmove', e => {
   if (!dg) return; const t = e.touches[0], dy = t.clientY - dg.y;
   if (!dg.on) { if (Math.abs(dy) > 8 || Math.abs(t.clientX - dg.x) > 8) { clearTimeout(dg.timer); dg = null; } return; }
   e.preventDefault();
-  const delta = Math.max(-dg.s, Math.min(1439 - dg.en, Math.round(dy / 5) * 5));
+  const delta = Math.max(-dg.s, Math.min(dg.ov ? 1439 - dg.s : 1439 - dg.s - dg.len, Math.round(dy / 5) * 5));
   dg.delta = delta; dg.item.style.transform = `translateY(${dy}px)`;
-  const a = hhmm(dg.s + delta), b = hhmm(dg.en + delta);
-  dg.item.querySelector('.meta').textContent = `${hm(a)} – ${hm(b)}（${dur(dg.en - dg.s)}）`;
+  const st0 = dg.s + delta, a = hhmm(st0), b = (st0 + dg.len >= 1440 ? '翌' : '') + hm(hhmm((st0 + dg.len) % 1440));
+  dg.item.querySelector('.meta').textContent = `${hm(a)} – ${b}（${dur(dg.len)}）`;
   dg.item.querySelector('.tm').textContent = hm(a);
 }, { passive: false });
 const endDrag = () => {
@@ -1633,6 +2091,7 @@ main.addEventListener('touchcancel', endDrag);
 let lastDay = todayISO();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
+  tick();
   const T = todayISO(); if (T !== lastDay) { if (st.sel === lastDay) st.sel = T; if (st.day === lastDay) { st.day = T; } st.calMonth = st.sel.slice(0, 8) + '01'; lastDay = T; }
   render();
 });
@@ -1640,7 +2099,7 @@ document.addEventListener('visibilitychange', () => {
 /* ================= boot ================= */
 load();
 const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01';
-applyTheme(); render();
+applyTheme(); render(); ensureTick();
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
