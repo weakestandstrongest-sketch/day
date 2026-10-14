@@ -1024,7 +1024,8 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .att.absent{background:#C9574F;border-color:#C9574F;color:#fff}
 .att.cancel{background:var(--surface-2);color:var(--ink-2);border-style:dashed}
 .tl-item.cancel .tt{text-decoration:line-through;color:var(--ink-3)}
-.tl-item.cancel .pill{opacity:.45}
+.tl-item.cancel .pill{background:var(--surface);color:var(--c);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--c) 55%,transparent);opacity:.8}
+.tl-item.cancel .pill::after{content:"";position:absolute;left:14px;right:14px;top:50%;height:2px;background:currentColor;transform:rotate(-35deg);border-radius:1px}
 .att-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);text-align:left;width:100%}
 .att-row:first-child{border-top:0}
 .att-row b{display:flex;align-items:center;gap:6px;font-size:14px}
@@ -1045,6 +1046,37 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .hw-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .hw-form>:first-child,.hw-form>button{grid-column:1/-1}
 .slot-list{display:flex;flex-wrap:wrap;gap:6px}
+.slot-list span small{font-size:10.5px;color:var(--ink-2);margin-left:2px}
+.term-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:-4px 0 12px;padding-bottom:2px}
+.term-row::-webkit-scrollbar{display:none}
+.term-row .chip{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:13px}
+.term-row .chip i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.term-row .chip.add{color:var(--ink-2);border-style:dashed}
+.term-row .chip .ico{width:14px;height:14px}
+.term-info{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--ink-2);margin:12px 2px 0;line-height:1.6}
+.term-info b{color:var(--ink)}
+.term-info button{color:var(--accent);font-weight:700;flex:none;padding:2px 0}
+.term-card{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;background:var(--surface);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
+.tc-h{display:flex;align-items:center;gap:8px}
+.tc-h b{font-size:15.5px}
+.tc-h small{margin-left:auto;font-size:12px;color:var(--ink-2)}
+.tc-now{font-size:10.5px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:99px;padding:1px 8px}
+.tc-r{font-size:13px;color:var(--ink-2)}
+.tc-b{display:flex;flex-wrap:wrap;gap:6px}
+.tc-b i{font-style:normal;display:inline-flex;align-items:center;gap:4px;font-size:12px;border-radius:99px;padding:3px 10px 3px 7px;background:color-mix(in srgb,#E9A23B 16%,var(--surface-2));color:var(--ink)}
+.tc-b .ico{width:13px;height:13px;color:#E9A23B}
+.sd-add,.br-add,.co-mv{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.br-add .chips .chip{padding:5px 12px;font-size:12.5px}
+.set-row .ico{width:15px;height:15px;display:inline;vertical-align:-2px;color:#E9A23B}
+.co-head{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--r);padding:14px;border-left:4px solid var(--c)}
+.co-head .ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c);flex:none}
+.co-head b{display:block;font-size:17px}
+.co-head small{display:block;font-size:12.5px;color:var(--ink-2)}
+.co-st{margin:10px 0 0;font-size:13px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:10px;padding:8px 12px}
+.co-st.off{color:var(--ink-2);background:var(--surface-2);border:1px dashed var(--line)}
+.cl-tag{font-weight:700;color:var(--accent)}
+.tl-item.cancel .cl-tag{color:var(--ink-2)}
+.tl-item.extra .pill{box-shadow:0 0 0 2px var(--surface),0 0 0 4px color-mix(in srgb,var(--c) 45%,transparent)}
 .slot-list span{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 6px 5px 12px;background:var(--surface);border:1px solid var(--line);font-size:13.5px}
 .slot-list button{width:24px;height:24px;display:grid;place-items:center;color:var(--ink-3)}
 .slot-list .ico{width:14px;height:14px}
@@ -1474,14 +1506,14 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); return; }
+    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); migrateSchool(); return; }
   } catch (e) {}
-  S = defaults(); seed(); save(true);
+  S = defaults(); seed(); migrateSchool(); save(true);
 }
 function save(silent) {
   try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
@@ -1557,18 +1589,47 @@ const ATT = { present: '出席', late: '遅刻', absent: '欠席', cancel: '休�
 const ATT_NEXT = { '': 'present', present: 'late', late: 'absent', absent: 'cancel', cancel: '' };
 const clsById = id => S.school.classes.find(c => c.id === id);
 const attOf = (ev, d) => { const c = clsById(ev.cls); return (c && c.att && c.att[`${d}#${ev.p}`]) || ''; };
-function classOcc(from, to) {
+// terms (学期) each have their own timetable and breaks (冬休み…); single days can be 休講日 or follow another weekday (振替授業日)
+const SCH_C = '#5B8FC9';
+const fyName = d => { const y = +d.slice(0, 4), m = +d.slice(5, 7); return `${m < 4 ? y - 1 : y}年度 ${m >= 4 && m <= 8 ? '前期' : '後期'}`; };
+function migrateSchool() {
+  const sc = S.school; if (!Array.isArray(sc.terms)) sc.terms = []; if (!sc.days || typeof sc.days !== 'object') sc.days = {};
+  if (!sc.terms.length && (sc.termStart || sc.termEnd || sc.classes.length)) sc.terms.push({ id: uid(), name: fyName(sc.termStart || todayISO()), start: sc.termStart || '', end: sc.termEnd || '', breaks: [] });
+  for (const t of sc.terms) t.breaks = t.breaks || [];
+  for (const c of sc.classes) { if (!sc.terms.some(t => t.id === c.term)) c.term = sc.terms[0].id; c.off = c.off || {}; c.extra = c.extra || []; }
+}
+const inRange = (d, a, b) => (!a || d >= a) && (!b || d <= b);
+const termAt = d => S.school.terms.filter(t => inRange(d, t.start, t.end)).sort((a, b) => (b.start || '').localeCompare(a.start || ''))[0];
+const breakAt = (t, d) => t && t.breaks.find(b => inRange(d, b.start, b.end));
+const termRange = t => t.start || t.end ? `${t.start ? md(t.start) : ''}〜${t.end ? md(t.end) : ''}` : '期間はまだ決めていません';
+function clsOccObj(c, p, d, k) {
+  const per = S.school.periods[p];
+  return { ev: Object.assign({ id: `cls_${c.id}_${p}${k && k.extra ? '_x' : ''}`, cls: c.id, p, title: c.name, start: per[0], end: per[1], color: c.color, icon: 'school', routine: true, allDay: false, repeat: 'none', memo: c.room || '' }, k), date: d, end: d };
+}
+function classOcc(from, to, withOff) {
   const sc = S.school, out = []; if (!sc.classes.length) return out;
-  const a = sc.termStart && sc.termStart > from ? sc.termStart : from, b = sc.termEnd && sc.termEnd < to ? sc.termEnd : to;
-  for (let d = a; d <= b; d = addDays(d, 1)) {
-    if (sc.holidayOff && holidays(+d.slice(0, 4)).get(d)) continue;
-    const w = wd(d);
-    for (const c of sc.classes) for (const sl of c.slots) {
-      const per = sc.periods[sl.p]; if (sl.w !== w || !per) continue;
-      out.push({ ev: { id: `cls_${c.id}_${sl.p}`, cls: c.id, p: sl.p, title: c.name, start: per[0], end: per[1], color: c.color, icon: 'school', routine: true, allDay: false, repeat: 'none', memo: c.room || '' }, date: d, end: d });
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const day = sc.days[d] || {}, t = termAt(d), sw = day.w !== undefined ? +day.w : null;
+    const reg = !!t && !day.off && (sw !== null || !(breakAt(t, d) || (sc.holidayOff && holidays(+d.slice(0, 4)).get(d))));
+    const w = sw === null ? wd(d) : sw;
+    for (const c of sc.classes) {
+      if (reg && c.term === t.id) for (const sl of c.slots) {
+        if (sl.w !== w || !sc.periods[sl.p]) continue;
+        const off = c.off[`${d}#${sl.p}`]; if (off && !withOff) continue;
+        out.push(clsOccObj(c, sl.p, d, off ? { off: true } : null));
+      }
+      for (const x of c.extra) if (x.d === d && sc.periods[x.p]) out.push(clsOccObj(c, x.p, d, { extra: x.id }));
     }
   }
   return out;
+}
+// what kind of school day this is, for the calendar and timeline
+function schoolDayNote(d) {
+  const sc = S.school; if (!sc.classes.length) return null;
+  const day = sc.days[d], t = termAt(d);
+  if (day && day.off) return { name: day.name || '授業なし', sub: '休講日', icon: 'school' };
+  if (day && day.w !== undefined) return { name: `${WD[day.w]}曜日の授業`, sub: '振替授業日', icon: 'school' };
+  const b = breakAt(t, d); return b ? { name: b.name, sub: `${md(b.start)}〜${md(b.end)}`, icon: 'sun' } : null;
 }
 function attStats(c) {
   const v = Object.values(c.att || {}), n = k => v.filter(x => x === k).length, rule = +S.school.lateRule || 0;
@@ -1757,6 +1818,7 @@ function dayDetail(d) {
   const es = entriesOn(d);
   let html = `<section class="detail">${h ? `<div class="hol-label">${esc(h)}</div>` : ''}<h2>${jpDate(d)}</h2>`;
   if (h) html += `<div class="ev-card" style="--c:${HOLC}"><span class="t">終日</span><span class="stripe"></span><span class="ti">${esc(h)}<small>日本の祝日</small></span></div>`;
+  const sn = schoolDayNote(d); if (sn) html += `<button class="ev-card" style="--c:${SCH_C}" data-act="openSchool" data-tab="term"><span class="t">終日</span><span class="stripe"></span><span class="ti">${esc(sn.name)}<small>${esc(sn.sub)}</small></span></button>`;
   html += hws.map(x => { const c = clsById(x.classId); return `<button class="ev-card" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="t">締切<small>${dueLabel(x.due)[0]}</small></span><span class="stripe"></span><span class="ti">${esc(x.title)}${c ? `<small>${esc(c.name)}</small>` : ''}</span></button>`; }).join('');
   html += S.todos.filter(x => !x.done && x.due === d).map(x => `<button class="ev-card" style="--c:${TODO_C}" data-act="todoEdit" data-k="t" data-id="${x.id}"><span class="t">締切${x.time ? `<small class="num">${hm(x.time)}</small>` : ''}</span><span class="stripe"></span><span class="ti">${esc(x.title)}<small>やること</small></span></button>`).join('');
   html += main.map(o => evCard(o, d)).join('');
@@ -1782,10 +1844,11 @@ function viewDay() {
       <span class="w">${WD[wd(x)]}</span><span class="n num">${P(x).getDate()}</span>
       <span class="dots">${occ.map(o => `<i style="--c:${o.ev.color}"></i>`).join('')}</span></button>`;
   }
-  const occ = onDay(d), all = occ.filter(o => o.ev.allDay), timed = occ.filter(o => !o.ev.allDay).sort((a, b) => a.ev.start.localeCompare(b.ev.start));
+  const occ = onDay(d), all = occ.filter(o => o.ev.allDay), timed = occ.filter(o => !o.ev.allDay).concat(classOcc(d, d, true).filter(o => o.ev.off)).sort((a, b) => a.ev.start.localeCompare(b.ev.start));
   const h = holName(d), es = entriesOn(d);
   let ad = '';
   if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
+  const sn = schoolDayNote(d); if (sn) ad += `<button class="ad-item" style="--c:${SCH_C}" data-act="openSchool" data-tab="term"><span class="circ">${ico(sn.icon)}</span><span>${esc(sn.name)}</span></button>`;
   ad += S.school.tasks.filter(x => !x.done && x.due === d).map(x => { const c = clsById(x.classId); return `<button class="ad-item" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="circ">${ico('pen')}</span><span>〆 ${esc(x.title)}</span></button>`; }).join('');
   ad += S.todos.filter(x => !x.done && x.due === d).map(x => `<button class="ad-item" style="--c:${TODO_C}" data-act="todoEdit" data-k="t" data-id="${x.id}"><span class="circ">${ico('check')}</span><span>〆 ${esc(x.title)}</span></button>`).join('');
   ad += all.map(o => `<button class="ad-item" style="--c:${o.ev.color}" data-act="editEvent" data-id="${o.ev.id}" data-d="${o.date}"><span class="circ">${ico(o.ev.icon)}</span><span>${esc(o.ev.title)}</span></button>`).join('');
@@ -1796,14 +1859,14 @@ function viewDay() {
     if (!nowShown && now < s) { tl += `<div class="tl-now num">${nowHM()}</div>`; nowShown = true; }
     if (ev.dest && !ev.cls && !ev.route) tl += leaveRow(ev, d);
     const H = Math.round(Math.min(170, 58 + len * 0.55)), done = isDone(ev, d);
-    const act = ev.cls ? `data-act="openClass" data-id="${ev.cls}"` : `data-act="editEvent" data-id="${ev.id}" data-d="${d}"`;
+    const act = ev.cls ? `data-act="clsOcc" data-id="${ev.cls}" data-d="${d}" data-p="${ev.p}" data-x="${ev.extra || ''}"` : `data-act="editEvent" data-id="${ev.id}" data-d="${d}"`;
     const run = S.timer && S.timer.id === ev.id && S.timer.d === d, act2 = ev.actual && ev.actual[d] ? `・実績 ${dur(ev.actual[d])}` : '';
-    tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}" style="--c:${ev.color}">
+    tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}${ev.off ? ' cancel' : ''}${ev.extra ? ' extra' : ''}" style="--c:${ev.color}">
       <span class="tm num">${hm(ev.start)}</span>
       <button class="pill" style="height:${H}px" ${act} aria-label="${esc(ev.title)}を開く">${ico(ev.icon)}</button>
-      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}${ev.route ? `<span class="tl-route">${ico('train')}ルート</span>` : ''}</div></button>
+      <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.off ? '・<b class="cl-tag">休講</b>' : ev.extra ? '・<b class="cl-tag">振替</b>' : ''}${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}${ev.route ? `<span class="tl-route">${ico('train')}ルート</span>` : ''}</div></button>
       ${ev.cls ? '<span></span>' : `<button class="chk${done ? ' on' : ''}" data-act="toggleDone" data-id="${ev.id}" data-d="${d}" aria-pressed="${done}" aria-label="完了">${ico('check')}</button>`}</div>`;
-    prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
+    if (!ev.off) prevEnd = prevEnd === null ? e : Math.max(prevEnd, e);
   }
   if (!nowShown && timed.length) tl += `<div class="tl-now num">${nowHM()}</div>`;
   const moodCard = es.map(miniEntry).join('');
@@ -3456,24 +3519,100 @@ function shiftEvent(id, d, delta) {
 /* ---- school sheet ---- */
 let schTab = 'tt', clDraft = null;
 function schoolSheet() {
-  const views = { tt: ttView, hw: hwView, set: schSetView };
+  const views = { tt: ttView, term: termView, hw: hwView, set: schSetView };
   return `<div class="sh-bar"><span></span><b>大学</b><button class="r" data-act="close">閉じる</button></div>
-  <div class="seg" style="display:flex;margin-bottom:14px">${[['tt', '時間割'], ['hw', '課題'], ['set', '設定']].map(([k, l]) => `<button style="flex:1" data-act="schTab" data-k="${k}" aria-pressed="${schTab === k}">${l}</button>`).join('')}</div>
+  <div class="seg" style="display:flex;margin-bottom:14px">${[['tt', '時間割'], ['term', '学期・休み'], ['hw', '課題'], ['set', '設定']].map(([k, l]) => `<button style="flex:1" data-act="schTab" data-k="${k}" aria-pressed="${schTab === k}">${l}</button>`).join('')}</div>
   ${views[schTab]()}`;
 }
+let schTermId = '', trDraft = null, coDraft = null;
+// the term the timetable tab shows: the one picked, else today's, else the next one, else the last
+function curTerm() {
+  const ts = S.school.terms, T = todayISO();
+  return ts.find(t => t.id === schTermId) || termAt(T) || ts.filter(t => t.start > T).sort((a, b) => a.start.localeCompare(b.start))[0] || ts[ts.length - 1] || null;
+}
+const termClasses = t => S.school.classes.filter(c => !t || c.term === t.id);
 function ttView() {
-  const sc = S.school, days = sc.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5], tw = wd(todayISO());
+  const sc = S.school, days = sc.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5], tw = wd(todayISO()), cur = curTerm(), mine = termClasses(cur), T = todayISO();
+  const other = cur && !mine.length && sc.terms.find(t => t.id !== cur.id && termClasses(t).length);
+  const chips = sc.terms.length ? `<div class="term-row">${sc.terms.map(t => `<button class="chip" data-act="schTerm" data-id="${t.id}" aria-pressed="${!!cur && t.id === cur.id}">${esc(t.name)}${t === termAt(T) ? '<i></i>' : ''}</button>`).join('')}<button class="chip add" data-act="termEdit">${ico('plus')}学期</button></div>` : '';
   let g = '<span></span>' + days.map(w => `<span class="tt-h${w === tw ? ' now' : ''}">${WD[w]}</span>`).join('');
   sc.periods.forEach((per, p) => {
     g += `<span class="tt-p">${p + 1}<small class="num">${hm(per[0])}</small></span>`;
     for (const w of days) {
-      const c = sc.classes.find(x => x.slots.some(sl => sl.w === w && sl.p === p));
+      const c = mine.find(x => x.slots.some(sl => sl.w === w && sl.p === p));
       g += c ? `<button class="tt-cell" style="--c:${c.color}" data-act="openClass" data-id="${c.id}">${esc(c.name)}${c.room ? `<small>${esc(c.room)}</small>` : ''}</button>` : `<button class="tt-cell empty" data-act="newClass" data-w="${w}" data-p="${p}" aria-label="${WD[w]}曜${p + 1}限に授業を追加">+</button>`;
     }
   });
-  return `<div class="tt" style="grid-template-columns:30px repeat(${days.length},minmax(0,1fr))">${g}</div>
-  <p class="note">空いているマスを押すと授業を追加できます。授業はタイムラインに自動で入ります。<br>${sc.termStart || sc.termEnd ? `学期：${sc.termStart ? jpDate(sc.termStart) : ''} 〜 ${sc.termEnd ? jpDate(sc.termEnd) : ''}` : '学期の期間は「設定」で決められます（決めないとずっと表示します）。'}</p>`;
+  const brk = cur ? cur.breaks.map(b => `${esc(b.name)} ${md(b.start)}〜${md(b.end)}`).join('・') : '';
+  return chips + `<div class="tt" style="grid-template-columns:30px repeat(${days.length},minmax(0,1fr))">${g}</div>
+  ${other ? `<button class="btn ghost" style="width:100%;margin-top:10px" data-act="termCopy" data-from="${other.id}">${ico('list')}「${esc(other.name)}」の時間割をコピー</button>` : ''}
+  ${cur ? `<div class="term-info"><span><b>${esc(cur.name)}</b>　${termRange(cur)}${brk ? `<br>休み：${brk}` : ''}</span><button data-act="termEdit" data-id="${cur.id}">期間・休み</button></div>` : ''}
+  <p class="note">空いているマスを押すと授業を追加できます。授業は学期の期間中だけタイムラインに入り、休みの間や祝日は出ません。タイムラインの授業をタップすると、その回だけ休講にしたり、別の日に振り替えたりできます。</p>`;
 }
+function termView() {
+  const sc = S.school, T = todayISO(), list = sc.terms.slice().sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+  const days = Object.entries(sc.days).filter(([d]) => d >= addDays(T, -30)).sort((a, b) => a[0].localeCompare(b[0]));
+  const dayLabel = x => x.off ? `授業なし${x.name ? `（${esc(x.name)}）` : ''}` : `${WD[x.w]}曜日の授業をする`;
+  return `<div class="set-list">${list.map(t => `<button class="term-card" data-act="termEdit" data-id="${t.id}"><span class="tc-h"><b>${esc(t.name)}</b>${t === termAt(T) ? '<span class="tc-now">いま</span>' : ''}<small class="num">授業 ${termClasses(t).length}件</small></span>
+      <span class="tc-r num">${termRange(t)}</span>${t.breaks.length ? `<span class="tc-b">${t.breaks.map(b => `<i>${ico('sun')}${esc(b.name)} <span class="num">${md(b.start)}〜${md(b.end)}</span></i>`).join('')}</span>` : ''}</button>`).join('')}
+    <button class="btn ghost" data-act="termEdit">${ico('plus')}学期を追加</button></div>
+  <p class="note">前期・後期のように学期ごとに期間と時間割を分けられます。日付が学期に入ると、その学期の時間割が自動でタイムラインに入ります。冬休みのような学期の途中の休みは、学期の中に「休み」として追加してください。</p>
+  <section class="card"><h3>日ごとの変更 <span class="sub">振替授業日・休講日</span></h3>
+    ${days.length ? `<div class="set-list">${days.map(([d, x]) => `<div class="set-row"><span><b class="num">${md(d)}(${WD[wd(d)]})</b>　${dayLabel(x)}</span><button data-act="sdDel" data-d="${d}">外す</button></div>`).join('')}</div>` : ''}
+    <div class="sd-add"><input class="inp" type="date" id="sd-date" value="${T}" aria-label="日付"><select class="inp" id="sd-mode" aria-label="その日の授業"><option value="off">授業なし（休講日）</option>${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}">${WD[w]}曜日の授業をする</option>`).join('')}</select>
+      <input class="inp" id="sd-name" placeholder="名前（例：大学祭）※なくてもOK" maxlength="20"><button class="btn primary" data-act="sdAdd">この日を変更</button></div>
+    <p class="note" style="margin-bottom:0">「祝日だけど月曜の授業がある日」は「月曜日の授業をする」、大学祭や入試などで授業がない日は「授業なし」を選びます。</p></section>`;
+}
+function termForm() {
+  const t = trDraft, fy = fyName(t.start || t.guess || todayISO()).split(' ')[0];
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${t.id ? '学期を編集' : '学期を追加'}</b><button class="r" data-act="saveTerm">保存</button></div>
+  <div class="fld"><input class="inp title" id="tr-name" placeholder="学期の名前（例：前期）" value="${esc(t.name)}" maxlength="24" autocomplete="off">
+    <div class="chips">${['前期', '後期', '1学期', '2学期', '3学期'].map(n => `<button class="chip" data-act="trName" data-n="${fy} ${n}">${n}</button>`).join('')}</div></div>
+  <div class="row2"><div class="fld"><label for="tr-start">はじまり</label><input class="inp" type="date" id="tr-start" value="${t.start}"></div><div class="fld"><label for="tr-end">おわり</label><input class="inp" type="date" id="tr-end" value="${t.end}"></div></div>
+  <div class="fld"><span class="lb">学期の途中の休み</span>
+    ${t.breaks.length ? `<div class="set-list">${t.breaks.map((b, i) => `<div class="set-row"><span>${ico('sun')} <b>${esc(b.name)}</b> <small class="num">${md(b.start)}(${WD[wd(b.start)]})〜${md(b.end)}(${WD[wd(b.end)]})</small></span><button data-act="brDel" data-i="${i}">削除</button></div>`).join('')}</div>` : '<small style="color:var(--ink-2)">まだありません</small>'}
+    <div class="br-add"><div class="chips">${['冬休み', '夏休み', '春休み', '大学祭', '休講期間'].map(n => `<button class="chip" data-act="brName" data-n="${n}">${n}</button>`).join('')}</div>
+      <input class="inp" id="br-name" placeholder="休みの名前" maxlength="16" value="${esc(t.brName || '')}">
+      <div class="row2"><input class="inp" type="date" id="br-start" aria-label="休みのはじまり" value="${t.brStart || ''}"><input class="inp" type="date" id="br-end" aria-label="休みのおわり" value="${t.brEnd || ''}"></div>
+      <button class="btn ghost" data-act="brAdd">${ico('plus')}休みを追加</button></div></div>
+  <p class="note">休みの間は、この学期の授業がタイムラインに出ません。学期と学期の間（夏休み・春休み）は、学期の期間を分けておけば自動で授業が出なくなります。</p>
+  <div class="sheet-actions"><button class="btn primary" data-act="saveTerm">保存する</button>${t.id ? `<button class="btn danger" data-act="delTerm">この学期を削除</button>` : ''}</div>`;
+}
+function syncTerm() {
+  const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; }, t = trDraft;
+  t.name = v('tr-name') ?? t.name; t.start = v('tr-start') ?? t.start; t.end = v('tr-end') ?? t.end;
+  t.brName = v('br-name') ?? t.brName; t.brStart = v('br-start') ?? t.brStart; t.brEnd = v('br-end') ?? t.brEnd;
+}
+const rerenderTerm = () => rerenderKind('term', termForm);
+function openTerm(id) {
+  const t = id && S.school.terms.find(x => x.id === id), last = S.school.terms.slice().sort((a, b) => (a.end || '').localeCompare(b.end || '')).pop();
+  const guess = last && last.end ? addDays(last.end, 60) : todayISO(); // the term after one ending in late July / early Feb
+  trDraft = t ? JSON.parse(JSON.stringify(t)) : { id: null, name: fyName(guess), start: '', end: '', breaks: [], guess };
+  const sh = openSheet(termForm(), 'full'); sh.dataset.kind = 'term';
+}
+// one class meeting: cancel it, move it to another day, or undo either
+const occLabel = k => { const [d, p] = k.split('#'); return `${md(d)}(${WD[wd(d)]}) ${+p + 1}限`; };
+function clsOccSheet() {
+  const o = coDraft, c = clsById(o.cid); if (!c) return '';
+  const sc = S.school, key = `${o.d}#${o.p}`, per = sc.periods[o.p] || ['', ''], ex = o.x && c.extra.find(e => e.id === o.x);
+  const off = !ex && !!c.off[key], moved = off && c.extra.find(e => e.from === key);
+  const st_ = ex ? (ex.from ? `振替授業（もとは ${occLabel(ex.from)}）` : '補講') : off ? (moved ? `休講 → ${occLabel(`${moved.d}#${moved.p}`)}に振替` : '休講') : '';
+  const mvD = ex ? ex.d : addDays(o.d, 7), mvP = ex ? ex.p : o.p;
+  const form = o.mv ? `<div class="co-mv"><div class="row2"><input class="inp" type="date" id="co-d" value="${mvD}" aria-label="振り替える日"><select class="inp" id="co-p" aria-label="時限">${sc.periods.map((pp, i) => `<option value="${i}" ${i === mvP ? 'selected' : ''}>${i + 1}限 ${hm(pp[0])}〜</option>`).join('')}</select></div>
+    <button class="btn primary" data-act="coMove">${ex ? 'この日に変える' : 'この日に振り替える'}</button></div>` : '';
+  return `<div class="sh-bar"><span></span><b>この回の授業</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="co-head" style="--c:${c.color}"><span class="ic">${ico('school')}</span><span><b>${esc(c.name)}</b><small class="num">${md(o.d)}(${WD[wd(o.d)]}) ${o.p + 1}限 ${hm(per[0])}–${hm(per[1])}${c.room ? `・${esc(c.room)}` : ''}</small></span></div>
+  ${st_ ? `<p class="co-st${off ? ' off' : ''}">${esc(st_)}</p>` : ''}
+  <div class="sheet-actions">
+    ${ex ? `<button class="btn" data-act="coMoveForm">${ico('today')}日にち・時限を変える</button><button class="btn" data-act="coUnmove">${ex.from ? '振り替えをやめる（元の日に戻す）' : 'この補講を消す'}</button>`
+      : off ? `<button class="btn primary" data-act="coRestore">休講を取り消す</button>${moved ? '' : `<button class="btn" data-act="coMoveForm">${ico('today')}振替日を決める</button>`}`
+      : `<button class="btn" data-act="coCancel">${ico('x')}この回を休講にする</button><button class="btn" data-act="coMoveForm">${ico('today')}別の日に振り替える</button>`}
+    ${form}
+    <button class="btn ghost" data-act="openClass" data-id="${c.id}">${ico('pen')}授業の情報を編集</button></div>
+  <p class="note">休講にした回はタイムラインに線を引いて残るので、あとからタップして取り消せます。この日の授業をまるごと休みにしたいときは「大学 → 学期・休み → 日ごとの変更」から。</p>`;
+}
+function openClsOcc(cid, d, p, x) { coDraft = { cid, d, p: +p, x: x || '' }; const sh = openSheet(clsOccSheet()); sh.dataset.kind = 'clsocc'; }
+const afterSchool = msg => { save(); while (stack.length && topSheet().dataset.kind !== 'school') closeSheet(); rerenderKind('school', schoolSheet); render(); if (msg) toast(msg); };
 function hwView() {
   const list = S.school.tasks.slice().sort((a, b) => a.due.localeCompare(b.due)), open = list.filter(x => !x.done), done = list.filter(x => x.done);
   const row = x => { const c = clsById(x.classId), [l, k] = dueLabel(x.due); return `<div class="hw${x.done ? ' done' : ''}"><button class="chk${x.done ? ' on' : ''}" data-act="hwDone" data-id="${x.id}" aria-label="提出済みにする">${ico('check')}</button><span class="tt2">${esc(x.title)}<small>${c ? esc(c.name) + '・' : ''}${md(x.due)}(${WD[wd(x.due)]})まで</small></span>${x.done ? '<span></span>' : `<span class="due ${k}">${l}</span>`}<button class="del" data-act="hwDel" data-id="${x.id}" aria-label="削除">${ico('x')}</button></div>`; };
@@ -3488,7 +3627,6 @@ function hwView() {
 function schSetView() {
   const sc = S.school;
   return `<div class="set-list">
-    <div class="row2"><div class="fld" style="margin:0"><label for="sc-start">学期のはじめ</label><input class="inp" type="date" id="sc-start" value="${sc.termStart || ''}"></div><div class="fld" style="margin:0"><label for="sc-end">学期のおわり</label><input class="inp" type="date" id="sc-end" value="${sc.termEnd || ''}"></div></div>
     <label class="toggle"><span>土曜日も使う</span><input type="checkbox" id="sc-sat" ${sc.sat ? 'checked' : ''}></label>
     <label class="toggle"><span>祝日は休講にする<small>オフにすると、祝日も授業を表示します</small></span><input type="checkbox" id="sc-hol" ${sc.holidayOff ? 'checked' : ''}></label>
     <span class="lb" style="font-size:12px;color:var(--ink-2);margin-top:6px">時限の時間</span>
@@ -3498,7 +3636,8 @@ function schSetView() {
 const rerenderKind = (kind, html) => { const sh = topSheet(); if (sh && sh.dataset.kind === kind) { const y = sh.scrollTop; sh.innerHTML = html(); sh.scrollTop = y; } };
 function openClass(id, w, p) {
   const c = id && clsById(id);
-  clDraft = c ? JSON.parse(JSON.stringify(c)) : { id: null, name: '', room: '', teacher: '', color: COLORS[2], slots: w !== undefined ? [{ w: +w, p: +p }] : [], maxAbsent: 4, att: {}, memo: '' };
+  const cur = curTerm();
+  clDraft = c ? JSON.parse(JSON.stringify(c)) : { id: null, name: '', room: '', teacher: '', color: COLORS[2], slots: w !== undefined ? [{ w: +w, p: +p }] : [], maxAbsent: 4, att: {}, memo: '', term: cur ? cur.id : '', off: {}, extra: [] };
   openSheet(classForm(), 'full');
   if (!c) setTimeout(() => { const t = $('#cl-name'); t && t.focus({ preventScroll: true }); }, 450);
 }
@@ -3510,12 +3649,15 @@ function classForm() {
   <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(k => `<button class="sw" style="--c:${k}" data-act="clColor" data-c="${k}" aria-pressed="${c.color === k}" aria-label="色">${ico('check')}</button>`).join('')}</div></div>
   <div class="fld"><span class="lb">曜日・時限</span><div class="slot-list">${c.slots.map((sl, i) => `<span>${WD[sl.w]}曜 ${sl.p + 1}限<button data-act="clSlotDel" data-i="${i}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">まだ決まっていません</small>'}</div>
     <div class="slot-add"><select class="inp" id="cl-w" aria-label="曜日">${days.map(w => `<option value="${w}">${WD[w]}曜</option>`).join('')}</select><select class="inp" id="cl-p" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clSlotAdd">追加</button></div></div>
+  ${sc.terms.length > 1 ? `<div class="fld"><label for="cl-term">学期</label><select class="inp" id="cl-term">${sc.terms.map(t => `<option value="${t.id}" ${t.id === c.term ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>` : ''}
+  <div class="fld"><span class="lb">振替・補講</span><div class="slot-list">${c.extra.slice().sort((a, b) => a.d.localeCompare(b.d)).map(x => `<span class="num">${md(x.d)}(${WD[wd(x.d)]}) ${x.p + 1}限${x.from ? '<small>振替</small>' : '<small>補講</small>'}<button data-act="clExDel" data-id="${x.id}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">ありません</small>'}</div>
+    <div class="slot-add"><input class="inp" type="date" id="cl-xd" aria-label="補講の日"><select class="inp" id="cl-xp" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clExAdd">追加</button></div></div>
   <div class="fld"><label for="cl-memo">メモ</label><textarea class="inp" id="cl-memo" rows="2" style="min-height:64px">${esc(c.memo)}</textarea></div>
   <div class="sheet-actions"><button class="btn primary" data-act="saveClass">保存する</button>${c.id ? '<button class="btn danger" data-act="delClass">この授業を削除</button>' : ''}</div>`;
 }
 function syncClass() {
   const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; }, c = clDraft;
-  c.name = v('cl-name') ?? c.name; c.room = v('cl-room') ?? c.room; c.teacher = v('cl-teacher') ?? c.teacher; c.memo = v('cl-memo') ?? c.memo;
+  c.name = v('cl-name') ?? c.name; c.room = v('cl-room') ?? c.room; c.teacher = v('cl-teacher') ?? c.teacher; c.memo = v('cl-memo') ?? c.memo; c.term = v('cl-term') ?? c.term;
 }
 const rerenderClass = () => { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = classForm(); sh.scrollTop = y; };
 
@@ -3954,7 +4096,7 @@ function importData(txt) {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
-      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {});
+      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); migrateSchool();
       save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
@@ -4023,6 +4165,51 @@ const ACT = {
   openSchool: t => { schTab = (t && t.dataset.tab) || 'tt'; const sh = openSheet(schoolSheet(), 'full'); sh.dataset.kind = 'school'; },
   schTab: t => { schTab = t.dataset.k; rerenderKind('school', schoolSheet); topSheet().scrollTop = 0; },
   newClass: t => openClass(null, t.dataset.w, t.dataset.p),
+  schTerm: t => { schTermId = t.dataset.id; rerenderKind('school', schoolSheet); },
+  termEdit: t => openTerm(t.dataset.id),
+  trName: t => { syncTerm(); trDraft.name = t.dataset.n; rerenderTerm(); },
+  brName: t => { syncTerm(); trDraft.brName = t.dataset.n; rerenderTerm(); },
+  brAdd: () => {
+    syncTerm(); const t = trDraft, name = (t.brName || '').trim();
+    if (!name) { toast('休みの名前を入れてください'); return; } if (!t.brStart || !t.brEnd) { toast('休みのはじまりとおわりの日を選んでください'); return; }
+    if (t.brStart > t.brEnd) { toast('おわりの日を、はじまりの日より後にしてください'); return; }
+    t.breaks.push({ name, start: t.brStart, end: t.brEnd }); t.breaks.sort((a, b) => a.start.localeCompare(b.start)); t.brName = t.brStart = t.brEnd = ''; rerenderTerm();
+  },
+  brDel: t => { syncTerm(); trDraft.breaks.splice(+t.dataset.i, 1); rerenderTerm(); },
+  saveTerm: () => {
+    syncTerm(); const t = trDraft; t.name = t.name.trim();
+    if (!t.name) { toast('学期の名前を入れてください'); return; } if (t.start && t.end && t.start > t.end) { toast('おわりの日を、はじまりの日より後にしてください'); return; }
+    const out = { id: t.id || uid(), name: t.name, start: t.start, end: t.end, breaks: t.breaks }, ts = S.school.terms, i = ts.findIndex(x => x.id === out.id);
+    if (i >= 0) ts[i] = out; else ts.push(out);
+    if (!S.school.classes.every(c => ts.some(x => x.id === c.term))) S.school.classes.forEach(c => { if (!ts.some(x => x.id === c.term)) c.term = out.id; });
+    schTermId = out.id; afterSchool(t.id ? '学期を保存しました' : '学期を追加しました');
+  },
+  delTerm: () => { const t = trDraft, n = S.school.classes.filter(c => c.term === t.id).length; confirmIn(`「${t.name}」を削除します。${n ? `この学期の授業 ${n}件も時間割から消えます。` : ''}`, '削除する', () => {
+    S.school.terms = S.school.terms.filter(x => x.id !== t.id); S.school.classes = S.school.classes.filter(c => c.term !== t.id); schTermId = ''; afterSchool('学期を削除しました'); }); },
+  termCopy: t => { const cur = curTerm(); if (!cur) return; const src = termClasses(S.school.terms.find(x => x.id === t.dataset.from));
+    for (const c of src) S.school.classes.push(Object.assign(JSON.parse(JSON.stringify(c)), { id: uid(), term: cur.id, off: {}, extra: [], att: {}, sample: undefined }));
+    afterSchool(`${src.length}件の授業をコピーしました`); },
+  sdAdd: () => {
+    const sh = topSheet(), d = $('#sd-date', sh).value, m = $('#sd-mode', sh).value, name = ($('#sd-name', sh).value || '').trim();
+    if (!d) { toast('日付を選んでください'); return; }
+    S.school.days[d] = m === 'off' ? Object.assign({ off: true }, name ? { name } : {}) : { w: +m }; afterSchool(`${md(d)}(${WD[wd(d)]})を変更しました`);
+  },
+  sdDel: t => { delete S.school.days[t.dataset.d]; afterSchool(); },
+  clsOcc: t => openClsOcc(t.dataset.id, t.dataset.d, t.dataset.p, t.dataset.x),
+  coCancel: () => { const o = coDraft, c = clsById(o.cid); c.off[`${o.d}#${o.p}`] = 1; afterSchool('この回を休講にしました（タイムラインでタップすると取り消せます）'); },
+  coRestore: () => { const o = coDraft, c = clsById(o.cid), k = `${o.d}#${o.p}`; delete c.off[k]; c.extra = c.extra.filter(e => e.from !== k); afterSchool('休講を取り消しました'); },
+  coMoveForm: () => { coDraft.mv = true; rerenderKind('clsocc', clsOccSheet); },
+  coMove: () => {
+    const o = coDraft, c = clsById(o.cid), sh = topSheet(), d = $('#co-d', sh).value, p = +$('#co-p', sh).value, k = `${o.d}#${o.p}`;
+    if (!d) { toast('振り替える日を選んでください'); return; }
+    const ex = o.x && c.extra.find(e => e.id === o.x);
+    if (!ex && d === o.d && p === o.p) { toast('元の日と違う日・時限を選んでください'); return; }
+    if (ex) { ex.d = d; ex.p = p; } else { c.off[k] = 1; c.extra = c.extra.filter(e => e.from !== k); c.extra.push({ id: uid(), d, p, from: k }); }
+    afterSchool(`${md(d)}(${WD[wd(d)]}) ${p + 1}限に振り替えました`);
+  },
+  coUnmove: () => { const o = coDraft, c = clsById(o.cid), ex = c.extra.find(e => e.id === o.x); if (!ex) return; c.extra = c.extra.filter(e => e !== ex); if (ex.from) delete c.off[ex.from]; afterSchool(ex.from ? '振り替えをやめて、元の日に戻しました' : '補講を消しました'); },
+  clExAdd: () => { syncClass(); const sh = topSheet(), d = $('#cl-xd', sh).value, p = +$('#cl-xp', sh).value; if (!d) { toast('日付を選んでください'); return; } clDraft.extra.push({ id: uid(), d, p }); rerenderClass(); },
+  clExDel: t => { syncClass(); const x = clDraft.extra.find(e => e.id === t.dataset.id); clDraft.extra = clDraft.extra.filter(e => e !== x); if (x && x.from) delete clDraft.off[x.from]; rerenderClass(); },
   openClass: t => openClass(t.dataset.id),
   clColor: t => { syncClass(); clDraft.color = t.dataset.c; rerenderClass(); },
   clSlotAdd: () => { syncClass(); const sh = topSheet(), w = +$('#cl-w', sh).value, p = +$('#cl-p', sh).value; if (!clDraft.slots.some(x => x.w === w && x.p === p)) clDraft.slots.push({ w, p }); rerenderClass(); },
@@ -4031,15 +4218,17 @@ const ACT = {
     syncClass(); const c = clDraft; c.name = c.name.trim();
     if (!c.name) { toast('授業名を入力してください'); return; }
     if (!c.slots.length) { toast('曜日と時限を追加してください'); return; }
-    const taken = S.school.classes.find(x => x.id !== c.id && x.slots.some(a => c.slots.some(b => a.w === b.w && a.p === b.p)));
+    if (!S.school.terms.length) { S.school.terms.push({ id: uid(), name: fyName(todayISO()), start: '', end: '', breaks: [] }); c.term = S.school.terms[0].id; }
+    if (!S.school.terms.some(t => t.id === c.term)) c.term = (curTerm() || S.school.terms[0]).id;
+    const taken = S.school.classes.find(x => x.id !== c.id && x.term === c.term && x.slots.some(a => c.slots.some(b => a.w === b.w && a.p === b.p)));
     if (taken) { toast(`同じコマに「${taken.name}」があります`); return; }
     delete c.sample;
     if (c.id) S.school.classes[S.school.classes.findIndex(x => x.id === c.id)] = c; else { c.id = uid(); S.school.classes.push(c); }
-    if (save()) { closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を保存しました'); }
+    if (save()) { closeSheet(); if (topSheet() && topSheet().dataset.kind === 'clsocc') closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を保存しました'); }
   },
   delClass: () => confirmIn(`「${clDraft.name}」を時間割から削除します。`, '削除する', () => {
     S.school.classes = S.school.classes.filter(x => x.id !== clDraft.id); S.school.tasks.forEach(x => { if (x.classId === clDraft.id) x.classId = ''; });
-    save(); closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を削除しました');
+    save(); closeSheet(); if (topSheet() && topSheet().dataset.kind === 'clsocc') closeSheet(); rerenderKind('school', schoolSheet); render(); toast('授業を削除しました');
   }),
   addHw: () => {
     const sh = topSheet(), title = ($('#hw-title', sh).value || '').trim(), due = $('#hw-due', sh).value;
