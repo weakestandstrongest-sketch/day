@@ -1190,6 +1190,9 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .ev-list>*+.ev-li::before{content:"";position:absolute;left:56px;right:0;top:0;border-top:1px solid var(--line)}
 .ev-li>.ico:first-child{width:24px;height:24px;color:var(--c);flex:none}
 .ev-li>span{flex:1;min-width:0}
+.ev-show>span{display:flex;flex-direction:column;gap:8px}
+.ev-show .seg{display:flex;align-self:stretch}
+.ev-show .seg button{flex:1;font-size:13px;padding:6px 4px}
 .ev-li>span small{display:block;font-size:12px;color:var(--ink-2)}
 .ev-li em{font-style:normal;color:var(--ink-2);font-size:14.5px;white-space:nowrap}
 .ev-li>.ico:last-child{width:18px;height:18px;color:var(--ink-3);flex:none}
@@ -1582,6 +1585,7 @@ function occurrences(from, to) {
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (b.ev.allDay - a.ev.allDay) || (a.ev.start || '').localeCompare(b.ev.start || ''));
 }
 const onDay = d => occurrences(d, d);
+const tlDay = d => onDay(d).filter(o => !o.ev.calOnly); // what the timeline shows: everything but calendar-only events
 const isDone = (ev, d) => !ev.cls && !!(ev.done && ev.done[d]);
 
 /* ================= school (timetable, attendance, assignments) ================= */
@@ -1839,12 +1843,12 @@ function viewDay() {
   const d = st.day, T = todayISO(), F = P(d), ws = weekStart(d), nTask = S.tasks.filter(t => !t.done).length, nHw = S.school.tasks.filter(x => !x.done && diffDays(T, x.due) <= 7).length;
   let strip = '';
   for (let i = 0; i < 7; i++) {
-    const x = addDays(ws, i), occ = onDay(x).slice(0, 4);
+    const x = addDays(ws, i), occ = tlDay(x).slice(0, 4);
     strip += `<button class="ws-day${x === T ? ' today' : ''}${x === d ? ' sel' : ''}" data-act="pickDay" data-d="${x}">
       <span class="w">${WD[wd(x)]}</span><span class="n num">${P(x).getDate()}</span>
       <span class="dots">${occ.map(o => `<i style="--c:${o.ev.color}"></i>`).join('')}</span></button>`;
   }
-  const occ = onDay(d), all = occ.filter(o => o.ev.allDay), timed = occ.filter(o => !o.ev.allDay).concat(classOcc(d, d, true).filter(o => o.ev.off)).sort((a, b) => a.ev.start.localeCompare(b.ev.start));
+  const occ = tlDay(d), all = occ.filter(o => o.ev.allDay), timed = occ.filter(o => !o.ev.allDay).concat(classOcc(d, d, true).filter(o => o.ev.off)).sort((a, b) => a.ev.start.localeCompare(b.ev.start));
   const h = holName(d), es = entriesOn(d);
   let ad = '';
   if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
@@ -3460,7 +3464,8 @@ function eventForm() {
       ${e._xrep ? `<div class="ev-x"><div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
         ${rep ? `<div class="fld" style="margin:0"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}</div>` : ''}
-      <label class="ev-li">${ico('list')}<span>ルーティン<small>タイムラインにだけ表示します</small></span><input type="checkbox" class="sw-in" id="ev-routine" ${e.routine ? 'checked' : ''}></label>
+      <div class="ev-li ev-show">${ico('list')}<span>表示する場所<small>${e.routine ? 'ルーティン：タイムラインにだけ出します' : e.calOnly ? 'カレンダーにだけ出します（タイムラインには出ません）' : 'カレンダーとタイムラインの両方に出します'}</small>
+        <span class="seg">${[['both', '両方'], ['cal', 'カレンダー'], ['tl', 'タイムライン']].map(([k, l]) => `<button data-act="evShow" data-k="${k}" aria-pressed="${(e.routine ? 'tl' : e.calOnly ? 'cal' : 'both') === k}">${l}</button>`).join('')}</span></span></div>
       <label class="ev-li">${ico('star')}<span>カウントダウン<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" class="sw-in" id="ev-cd" ${e.countdown ? 'checked' : ''}></label>
       <button class="ev-li" data-act="evX" data-k="go">${ico('train')}<span>行き先の駅${e.dest ? `<small>${esc(e.from || S.settings.homeStation || '出発駅')} → ${esc(e.dest)}</small>` : '<small>入れると「何時に出ればいいか」を出します</small>'}</span>${chev('go')}</button>
       ${e._xgo ? `<div class="ev-x"><div class="row2"><div class="fld" style="margin:0"><label for="ev-from">出発駅</label><input class="inp" id="ev-from" value="${esc(e.from || '')}" placeholder="${esc(S.settings.homeStation || '例：名鉄岐阜')}" maxlength="40" autocomplete="off"></div><div class="fld" style="margin:0"><label for="ev-dest">行き先の駅</label><input class="inp" id="ev-dest" value="${esc(e.dest || '')}" placeholder="例：栄" maxlength="40" autocomplete="off"></div></div>
@@ -3489,7 +3494,6 @@ function syncEvent() {
   const ed = v('ev-end-date'); if (ed !== null) e.endDate = ed;
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
   const u = v('ev-until'); if (u !== null) e.until = u;
-  const r = $('#ev-routine', sh); if (r) e.routine = r.checked;
   const ef = v('ev-from'), et = v('ev-dest'); if (ef !== null) e.from = ef.trim(); if (et !== null) e.dest = et.trim();
   const cd = $('#ev-cd', sh); if (cd) e.countdown = cd.checked;
 }
@@ -4134,6 +4138,7 @@ const ACT = {
   evItemSug: t => { syncEvent(); evDraft.items = evDraft.items || []; if (!evDraft.items.includes(t.dataset.t)) evDraft.items.push(t.dataset.t); rerenderEvent(); },
   evItemRm: t => { syncEvent(); evDraft.items.splice(+t.dataset.i, 1); rerenderEvent(); },
   packT: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; const it = (ev.items || [])[+t.dataset.i]; if (!it) return; togglePacked(ev, t.dataset.d, it); save(); render(); },
+  evShow: t => { syncEvent(); const k = t.dataset.k; evDraft.routine = k === 'tl'; if (k === 'cal') evDraft.calOnly = true; else delete evDraft.calOnly; rerenderEvent(); },
   evX: t => { syncEvent(); const k = '_x' + t.dataset.k; evDraft[k] = !evDraft[k]; rerenderEvent(); },
   evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); rerenderEvent(); },
   tkColor: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
