@@ -3607,24 +3607,24 @@ function eventForm() {
     <button class="tk-x" data-act="close" aria-label="閉じる">${ico('x')}</button>
     <button class="tk-x tk-more" data-act="evMore" aria-label="その他の操作">${ico('more')}</button>
     <div class="tk-main"><button class="tk-icon" data-act="evPick" aria-label="色とアイコンを変える"><span class="sq cap">${ico(e.icon)}</span><span class="pal">${ico('palette')}</span></button>
-      <div class="tk-tt"><small class="num">${timeLbl}</small><input id="ev-title" value="${esc(e.title)}" placeholder="予定のタイトル" maxlength="60" autocomplete="off" aria-label="タイトル">${rep ? `<span class="tk-rep" aria-label="繰り返し">${ico('repeat')}</span>` : ''}</div>
+      <div class="tk-tt"><small class="num" data-live="h-time">${timeLbl}</small><input id="ev-title" value="${esc(e.title)}" placeholder="予定のタイトル" maxlength="60" autocomplete="off" aria-label="タイトル">${rep ? `<span class="tk-rep" aria-label="繰り返し">${ico('repeat')}</span>` : ''}</div>
       ${live && !e.allDay ? `<button class="tk-done${done ? ' on' : ''}" data-act="evDoneT" aria-label="完了にする">${ico('check')}</button>` : '<span></span>'}</div></div>
   <div class="tk-body" style="--c:${e.color}">
     ${!e.id && S.templates.length ? `<div class="tpl-row">${S.templates.map(t => `<button class="tpl" style="--c:${t.color}" data-act="useTpl" data-id="${t.id}">${ico(t.icon)}${esc(t.title)}<small class="num">${t.allDay ? '終日' : hm(t.start)}</small></button>`).join('')}</div>` : ''}
     <div class="ev-list">
-      <button class="ev-li" data-act="evX" data-k="date">${ico('cal')}<span class="num">${jpDate(e.date)}</span><em>${rel}</em>${chev('date')}</button>
+      <button class="ev-li" data-act="evX" data-k="date">${ico('cal')}<span class="num" data-live="d-lbl">${jpDate(e.date)}</span><em data-live="d-rel">${rel}</em>${chev('date')}</button>
       ${e._xdate ? `<div class="ev-x"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div></div>` : ''}
-      <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num">${timeLbl}</span><em class="num">${e.allDay ? '' : multiDay(e) ? `${diffDays(e.date, e.endDate) + 1}日間` : dur(evLen(e))}</em>${chev('time')}</button>
+      <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num" data-live="t-lbl">${timeLbl}</span><em class="num" data-live="t-dur">${e.allDay ? '' : multiDay(e) ? `${diffDays(e.date, e.endDate) + 1}日間` : dur(evLen(e))}</em>${chev('time')}</button>
       ${e._xtime ? `<div class="ev-x"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label>
         ${e.allDay ? `<div class="dt-grid"><span class="dt-l">開始</span><input class="inp" type="date" id="ev-sdate" value="${e.date}" aria-label="開始日"><span class="dt-l">終了</span><input class="inp" type="date" id="ev-end-date" min="${e.date}" value="${e.endDate || e.date}" aria-label="終了日"></div>`
         : `<div class="dt-grid t"><span class="dt-l">開始</span><input class="inp" type="date" id="ev-sdate" value="${e.date}" aria-label="開始日"><input class="inp" type="time" id="ev-start" value="${e.start}" aria-label="開始時刻">
           <span class="dt-l">終了</span><input class="inp" type="date" id="ev-end-date2" min="${e.date}" value="${multiDay(e) ? e.endDate : e.date}" aria-label="終了日"><input class="inp" type="time" id="ev-end" value="${e.end}" aria-label="終了時刻"></div>
-          ${multiDay(e) ? `<p class="note" style="margin:8px 0 0">${md(e.date)}(${WD[wd(e.date)]}) ${hm(e.start)} から ${md(e.endDate)}(${WD[wd(e.endDate)]}) ${hm(e.end)} まで（${diffDays(e.date, e.endDate) + 1}日間）。日をまたぐ予定は、カレンダーにだけ表示します。</p>` : `<p class="note" id="ev-on" style="margin:8px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。終了日を変えると、何日もまたぐ予定にできます。</p>`}`}</div>` : ''}
+          <div data-live="t-note">${multiDay(e) ? `<p class="note" style="margin:8px 0 0">${md(e.date)}(${WD[wd(e.date)]}) ${hm(e.start)} から ${md(e.endDate)}(${WD[wd(e.endDate)]}) ${hm(e.end)} まで（${diffDays(e.date, e.endDate) + 1}日間）。日をまたぐ予定は、カレンダーにだけ表示します。</p>` : `<p class="note" id="ev-on" style="margin:8px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。終了日を変えると、何日もまたぐ予定にできます。</p>`}</div>`}</div>` : ''}
       <button class="ev-li" data-act="evX" data-k="rep">${ico('repeat')}<span>${repLbl}</span>${chev('rep')}</button>
       ${e._xrep ? `<div class="ev-x"><div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
         ${rep ? `<div class="fld" style="margin:0"><label for="ev-until">繰り返しの終わり（空欄ならずっと）</label><div class="until-row"><input class="inp" type="date" id="ev-until" value="${e.until || ''}">${e.until ? '<button data-act="clrUntil">クリア</button>' : ''}</div></div>` : ''}</div>` : ''}
-      <div class="ev-li ev-show">${ico('list')}<span>表示する場所<small>${e.routine ? 'ルーティン：タイムラインにだけ出します' : e.calOnly ? 'カレンダーにだけ出します（タイムラインには出ません）' : 'カレンダーとタイムラインの両方に出します'}</small>
+      <div class="ev-li ev-show" data-live="show">${ico('list')}<span>表示する場所<small>${e.routine ? 'ルーティン：タイムラインにだけ出します' : e.calOnly ? 'カレンダーにだけ出します（タイムラインには出ません）' : 'カレンダーとタイムラインの両方に出します'}</small>
         <span class="seg">${[['both', '両方'], ['cal', 'カレンダー'], ['tl', 'タイムライン']].map(([k, l]) => `<button data-act="evShow" data-k="${k}" aria-pressed="${(e.routine ? 'tl' : e.calOnly ? 'cal' : 'both') === k}">${l}</button>`).join('')}</span></span></div>
       <label class="ev-li">${ico('star')}<span>カウントダウン<small>カレンダーの上に「あと◯日」を出します</small></span><input type="checkbox" class="sw-in" id="ev-cd" ${e.countdown ? 'checked' : ''}></label>
       <button class="ev-li" data-act="evX" data-k="go">${ico('train')}<span>行き先の駅${e.dest ? `<small>${esc(e.from || S.settings.homeStation || '出発駅')} → ${esc(e.dest)}</small>` : '<small>入れると「何時に出ればいいか」を出します</small>'}</span>${chev('go')}</button>
@@ -3657,6 +3657,17 @@ function syncEvent() {
   const u = v('ev-until'); if (u !== null) e.until = u;
   const ef = v('ev-from'), et = v('ev-dest'); if (ef !== null) e.from = ef.trim(); if (et !== null) e.dest = et.trim();
   const cd = $('#ev-cd', sh); if (cd) e.countdown = cd.checked;
+}
+// refresh only the [data-live] labels of the open sheet from a fresh render, leaving its inputs (and any open picker) alone
+function refreshLive(html) {
+  const sh = topSheet(); if (!sh) return null; const tmp = document.createElement('div'); tmp.innerHTML = html;
+  sh.querySelectorAll('[data-live]').forEach(el => { const n = tmp.querySelector(`[data-live="${el.dataset.live}"]`); if (n && el.innerHTML !== n.innerHTML) el.innerHTML = n.innerHTML; });
+  return tmp;
+}
+function refreshEventLive() {
+  const sh = topSheet(); if (!sh) return; const tmp = refreshLive(eventForm());
+  for (const id of ['ev-end-date', 'ev-end-date2']) { const a = $('#' + id, sh), b = $('#' + id, tmp); if (a && b) a.min = b.min; }
+  for (const id of ['ev-date', 'ev-sdate']) { const a = $('#' + id, sh); if (a && a !== document.activeElement && a.value !== evDraft.date) a.value = evDraft.date; }
 }
 function rerenderEvent() { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = eventForm(); sh.scrollTop = y; }
 function cleanEv(x) { const o = JSON.parse(JSON.stringify(x)); for (const k of Object.keys(o)) if (k[0] === '_') delete o[k]; delete o.sample; return o; }
@@ -3994,13 +4005,13 @@ function tkHTML() {
   let h = `<div class="tk-head" style="--c:${t.color}"><div class="tk-grab"></div>
     <button class="tk-x" data-act="close" aria-label="閉じる">${ico('x')}</button>
     <div class="tk-main"><button class="tk-icon" data-act="tkPick" aria-label="色とアイコンを変える"><span class="sq">${ico(t.icon)}</span><span class="pal">${ico('palette')}</span></button>
-      <div class="tk-tt">${d2 ? `<small class="num">${meta}</small>` : ''}<input id="tk-title" value="${esc(t.title)}" placeholder="${d2 ? 'タイトル' : 'なにをする？'}" maxlength="60" autocomplete="off" enterkeyhint="next" aria-label="タイトル"></div>
+      <div class="tk-tt">${d2 ? `<small class="num" data-live="tk-meta">${meta}</small>` : ''}<input id="tk-title" value="${esc(t.title)}" placeholder="${d2 ? 'タイトル' : 'なにをする？'}" maxlength="60" autocomplete="off" enterkeyhint="next" aria-label="タイトル"></div>
       ${d2 ? `<button class="tk-done${t.done ? ' on' : ''}" data-act="tkDoneT" aria-label="完了にする">${ico('check')}</button>` : '<span></span>'}</div></div>`;
   if (!d2) return h + `<div id="tk-sugg" style="--c:${t.color}">${suggHTML()}</div><div class="tk-foot" style="--c:${t.color}"><button class="btn tk-go" id="tk-next" data-act="tkNext" ${t.title.trim() ? '' : 'disabled'}>次へ</button></div>`;
   return h + `<div class="tk-body" style="--c:${t.color}">
     <button class="tk-row" data-act="tkDurT">${ico('timer')}<span class="num">${dur(t.dur)}</span>${ico(t._showDur ? 'down' : 'right')}</button>
     ${t._showDur ? `<div class="tk-durs">${DURS.map(m => `<button class="chip num" data-act="tkDur" data-m="${m}" aria-pressed="${t.dur === m}">${dur(m)}</button>`).join('')}</div>` : ''}
-    <div class="tk-chips"><button class="tk-chip${t.date ? ' on' : ''}" data-act="tkDateT">${ico('today')}<span class="num">${t.date ? `${md(t.date)}(${WD[wd(t.date)]}) ${hm(t.start)}〜` : '日付'}</span></button>${t.date ? `<button class="tk-chip ghost" data-act="tkDateClr">あとでに戻す</button>` : ''}</div>
+    <div class="tk-chips" data-live="tk-chips"><button class="tk-chip${t.date ? ' on' : ''}" data-act="tkDateT">${ico('today')}<span class="num">${t.date ? `${md(t.date)}(${WD[wd(t.date)]}) ${hm(t.start)}〜` : '日付'}</span></button>${t.date ? `<button class="tk-chip ghost" data-act="tkDateClr">あとでに戻す</button>` : ''}</div>
     ${t._showDate ? `<div class="row2"><div class="fld" style="margin:0"><label for="tk-date">日付</label><input class="inp" type="date" id="tk-date" value="${t.date}"></div><div class="fld" style="margin:0"><label for="tk-start">開始</label><input class="inp" type="time" id="tk-start" value="${t.start}"></div></div>` : ''}
     <div class="tk-card">
       ${t.subtasks.map((x, i) => `<div class="stk${x.done ? ' on' : ''}"><button class="box" data-act="tkSubT" data-i="${i}" aria-label="完了">${ico('check')}</button><span>${esc(x.t)}</span><button class="rm" data-act="tkSubDel" data-i="${i}" aria-label="削除">${ico('x')}</button></div>`).join('')}
@@ -4688,12 +4699,13 @@ document.addEventListener('click', e => {
 document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; if (!t.checked && evDraft.endDate <= evDraft.date) evDraft.endDate = ''; rerenderEvent(); }
-  else if (t.id === 'ev-end-date2') { syncEvent(); if (multiDay(evDraft)) { evDraft.calOnly = true; evDraft.routine = false; } rerenderEvent(); }
+  else if (t.id === 'ev-end-date2') { syncEvent(); if (multiDay(evDraft)) { evDraft.calOnly = true; evDraft.routine = false; } refreshEventLive(); }
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
-  else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); rerenderTk(); }
-  else if (t.id === 'ev-date' || t.id === 'ev-sdate') { syncEvent(); const e = evDraft; if (t.value) e.date = t.value; if (e.endDate && e.endDate < e.date) e.endDate = e.allDay ? e.date : ''; rerenderEvent(); }
-  else if (['ev-start', 'ev-end', 'ev-end-date', 'ev-until'].includes(t.id)) { syncEvent(); rerenderEvent(); }
+  else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); if (topSheet() && topSheet().dataset.kind === 'task') refreshLive(tkHTML()); }
+  else if (t.id === 'ev-date' || t.id === 'ev-sdate') { syncEvent(); const e = evDraft; if (t.value) e.date = t.value; if (e.endDate && e.endDate < e.date) e.endDate = e.allDay ? e.date : ''; refreshEventLive(); }
+  else if (['ev-start', 'ev-end', 'ev-end-date'].includes(t.id)) { syncEvent(); refreshEventLive(); }
+  else if (t.id === 'ev-until') { syncEvent(); rerenderEvent(); }
   else if (t.id === 'tm-motion') tmApply({ motion: t.checked });
   else if (/^tmc-\d$/.test(t.id)) { const c = tset().custom.slice(); c[+t.id.slice(4)] = t.value; tmApply({ custom: c, palette: 'custom' }); }
   else if (t.id === 'set-pay') { S.settings.showPay = t.checked; save(); render(); }
