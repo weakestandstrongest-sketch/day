@@ -633,6 +633,8 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .mv-stop .t{font-size:12.5px;color:var(--ink-2);text-align:right}
 .mv-stop .fe{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}
 .mv-stop .fe i{width:8px;height:8px;border-radius:50%;background:var(--c2)}
+.mv-stop .dz{display:inline-flex;align-items:center;gap:2px;margin-left:6px;padding:0 6px 0 4px;border-radius:99px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);font-weight:600;font-size:10.5px;line-height:17px;vertical-align:middle}
+.mv-stop .dz .ico{width:11px;height:11px}
 /* month recap card */
 .mc-btn{width:100%;margin:4px 0 10px}
 .mc-seg{display:flex;width:100%;margin:2px 0 12px}
@@ -1472,12 +1474,12 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: false, locOpen: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [] }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); S.school = Object.assign(defaults().school, d.school || {}); return; }
+    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); return; }
   } catch (e) {}
   S = defaults(); seed(); save(true);
 }
@@ -2149,14 +2151,22 @@ const kmText = m => m < 100 ? '0' : (m / 1000).toFixed(m < 10000 ? 1 : 0);
 const hmOf = t => { const d = new Date(t); return `${d.getHours()}:${pad(d.getMinutes())}`; };
 const stayText = ms => { const m = Math.round(ms / 60000); return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60 ? `${m % 60}分` : ''}`; };
 let locBusy = false;
-async function recordPlace(maxAge = 5 * 60000) {
+async function recordPlace(maxAge = 5 * 60000, extra) {
   if (locBusy) return null; locBusy = true;
-  try { const c = await getPos(maxAge), p = { t: Date.now(), lat: +c.latitude.toFixed(5), lng: +c.longitude.toFixed(5), acc: Math.round(c.accuracy || 0) }; S.places.push(p); save(); return p; }
+  try { const c = await getPos(maxAge), p = Object.assign({ t: Date.now(), lat: +c.latitude.toFixed(5), lng: +c.longitude.toFixed(5), acc: Math.round(c.accuracy || 0) }, extra); S.places.push(p); save(); return p; }
   finally { locBusy = false; }
 }
+// writing today's diary also drops a point into Moves (edits within 10 minutes don't add another)
 async function attachPlace(e) {
-  if (!S.settings.locEntry || inFrame || e.date !== todayISO() || e.place) return;
-  try { const p = await recordPlace(); const x = p && S.entries.find(y => y.id === e.id); if (x) { x.place = { lat: p.lat, lng: p.lng }; save(); if (!stack.length) render(); } } catch (err) {}
+  if (!S.settings.locEntry || inFrame || e.date !== todayISO()) return;
+  if (S.places.some(p => p.eid === e.id && Date.now() - p.t < 10 * 60000)) return;
+  try {
+    const p = await recordPlace(5 * 60000, { eid: e.id }); if (!p) return;
+    const x = S.entries.find(y => y.id === e.id); if (x && !x.place) { x.place = { lat: p.lat, lng: p.lng }; save(); }
+    if (topSheet() && topSheet().dataset.kind === 'moves') rerenderMoves(); else if (!stack.length) render();
+  } catch (err) {
+    if (!S.settings.locWarned) { S.settings.locWarned = true; save(true); toast('日記の場所を記録できませんでした。iPhoneの「設定 → Safari → 位置情報」で許可するか、設定 → 場所の記録 でオフにできます'); }
+  }
 }
 function autoPlace() {
   if (!S.settings.locOpen || inFrame) return;
@@ -2188,8 +2198,9 @@ function movesSheet() {
     const m = dayMood(x.d), ents = entriesOn(x.d).filter(e => e.place);
     return `<div class="mv-dh" style="--c:${DAYC[x.i]}"><i></i><b>${md(x.d)}(${WD[wd(x.d)]})</b>${m ? `<span class="md" style="background:${m.color}" title="その日の気分"></span>` : ''}<span class="km num">${kmText(pathLen(x.stops))}km</span></div>
     <div class="mv-stops">${x.stops.map((s, k) => {
-      const fe = ents.filter(e => hav(e.place, s) < 250).flatMap(e => e.feelings).slice(0, 3);
-      return `<button class="mv-stop" style="--c:${DAYC[x.i]}" data-act="mvStop" data-d="${x.d}" data-k="${k}"><span class="ic">${ico(s.spot ? s.spot.icon : 'pin')}</span><span>${s.spot ? `<b>${esc(s.spot.name)}</b>` : '<b class="un">名前のない場所</b>'}<small>${s.to - s.from >= 10 * 60000 ? `${stayText(s.to - s.from)}くらい` : 'ここを通った'}${fe.length ? `<span class="fe">${fe.map(f => `<i style="--c2:${feelInfo(f).color}"></i>`).join('')}</span>` : ''}</small></span><span class="t num">${hmOf(s.from)}${s.to - s.from >= 10 * 60000 ? `<br>〜${hmOf(s.to)}` : ''}</span></button>`;
+      const near = ents.filter(e => hav(e.place, s) < 250), fe = near.flatMap(e => e.feelings).slice(0, 3);
+      const dz = near.length || x.pts.some(p => p.eid && s.ts.includes(p.t));
+      return `<button class="mv-stop" style="--c:${DAYC[x.i]}" data-act="mvStop" data-d="${x.d}" data-k="${k}"><span class="ic">${ico(s.spot ? s.spot.icon : 'pin')}</span><span>${s.spot ? `<b>${esc(s.spot.name)}</b>` : '<b class="un">名前のない場所</b>'}<small>${s.to - s.from >= 10 * 60000 ? `${stayText(s.to - s.from)}くらい` : 'ここを通った'}${dz ? `<span class="dz">${ico('pen')}日記</span>` : ''}${fe.length ? `<span class="fe">${fe.map(f => `<i style="--c2:${feelInfo(f).color}"></i>`).join('')}</span>` : ''}</small></span><span class="t num">${hmOf(s.from)}${s.to - s.from >= 10 * 60000 ? `<br>〜${hmOf(s.to)}` : ''}</span></button>`;
     }).join('')}</div>`;
   };
   const list = shown.filter(x => x.stops.length).reverse().map(dayBlock).join('');
@@ -2230,6 +2241,7 @@ const MAP_ATTR = '<span class="mv-attr">地理院タイル / © OpenStreetMap</s
 const unmx = (x, z) => x / (256 * 2 ** z) * 360 - 180;
 const unmy = (y, z) => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / (256 * 2 ** z)))) * 180 / Math.PI;
 function mapView(box, v) {
+  box.style.isolation = 'isolate'; // keep the zoom buttons under the sticky sheet bar
   const clampZ = z => Math.max(v.min || 3, Math.min(v.max || 19, z));
   v.draw = () => {
     const W = box.clientWidth, H = box.clientHeight, ox = wmx(v.lng, v.z) - W / 2, oy = wmy(v.lat, v.z) - H / 2;
@@ -3829,7 +3841,7 @@ function settingsHTML() {
   <div class="set-sec"><h4>日記</h4><div class="set-list">
     ${inFrame ? '<p class="note" style="margin:0">天気の自動記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>天気を自動で記録<small>今日の日記を保存したとき、現在地の天気と気温をつけます</small></span><input type="checkbox" id="set-weather" ${s.weather ? 'checked' : ''}></label>`}</div></div>
   <div class="set-sec"><h4>場所の記録</h4><div class="set-list">
-    ${inFrame ? '<p class="note" style="margin:0">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>日記を書いたときに場所も記録<small>今日の日記を保存したとき、いる場所をいっしょに残します</small></span><input type="checkbox" id="set-loc-entry" ${s.locEntry ? 'checked' : ''}></label>
+    ${inFrame ? '<p class="note" style="margin:0">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<label class="toggle"><span>日記を書いたときに場所も記録<small>今日の日記を保存すると、いる場所を「この1週間の動き」に自動で残します</small></span><input type="checkbox" id="set-loc-entry" ${s.locEntry ? 'checked' : ''}></label>
     <label class="toggle"><span>アプリを開いたときに記録<small>開くたびに（15分に1回まで）いまの場所を残して、1週間の動きを地図にします</small></span><input type="checkbox" id="set-loc-open" ${s.locOpen ? 'checked' : ''}></label>`}
     <button class="toggle" data-act="moves" style="width:100%;text-align:left"><span>この1週間の動きを見る<small>記録 ${S.places.length}件・名前をつけた場所 ${S.spots.length}か所</small></span>${ico('right')}</button>
     <p class="note" style="margin:0">iPhoneのブラウザは、アプリを閉じている間の場所は記録できません。開いたときと日記を書いたときの場所をつないで表示します。</p>
@@ -3942,7 +3954,7 @@ function importData(txt) {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
-      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); S.school = Object.assign(defaults().school, d.school || {});
+      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {});
       save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
