@@ -22,7 +22,7 @@
   --bg:#F5EFEB; --surface:#FFFFFF; --surface-2:#FAF6F3; --ink:#232A5C; --ink-2:#6D7092; --ink-3:#A9AABD;
   --line:#E9E1DB; --accent:#E07F78; --accent-ink:#FFFFFF; --sun:#D45850; --sat:#5779B0; --hol:#E9A23B;
   --overlay:rgba(24,26,48,.32); --shadow:0 6px 22px rgba(35,42,92,.08); --sel:#FFFFFF;
-  --glass:rgba(255,255,255,.62); --glass-edge:rgba(255,255,255,.75); --glass-hi:rgba(255,255,255,.9); --glass-sel:rgba(35,42,92,.07); --glass-shadow:0 10px 30px rgba(35,42,92,.14);
+  --glass:rgba(255,255,255,.62); --glass-rgb:255,255,255; --glass-a:.62; --glass-edge:rgba(255,255,255,.75); --glass-hi:rgba(255,255,255,.9); --glass-sel:rgba(35,42,92,.07); --glass-shadow:0 10px 30px rgba(35,42,92,.14);
   --f-body:ui-rounded,"SF Pro Rounded","Hiragino Sans","Zen Maru Gothic","Noto Sans JP",system-ui,sans-serif;
   --f-script:"Allura","Snell Roundhand","Apple Chancery",cursive;
   --r:16px; --pay:#1FA046;
@@ -32,14 +32,14 @@
     --bg:#141414; --surface:#252526; --surface-2:#1C1C1D; --ink:#F2F1F4; --ink-2:#A3A3AD; --ink-3:#66666F;
     --line:#303034; --accent:#EF8A82; --accent-ink:#1A1414; --sun:#F07D74; --sat:#86A6D9; --hol:#EDAE52;
     --overlay:rgba(0,0,0,.6); --shadow:none; --sel:#2C2C2E; color-scheme:dark; --pay:#34C759;
-    --glass:rgba(44,44,48,.5); --glass-edge:rgba(255,255,255,.13); --glass-hi:rgba(255,255,255,.1); --glass-sel:rgba(255,255,255,.12); --glass-shadow:0 10px 30px rgba(0,0,0,.45);
+    --glass:rgba(44,44,48,.5); --glass-rgb:44,44,48; --glass-a:.5; --glass-edge:rgba(255,255,255,.13); --glass-hi:rgba(255,255,255,.1); --glass-sel:rgba(255,255,255,.12); --glass-shadow:0 10px 30px rgba(0,0,0,.45);
   }
 }
 :root[data-theme="dark"]{
   --bg:#141414; --surface:#252526; --surface-2:#1C1C1D; --ink:#F2F1F4; --ink-2:#A3A3AD; --ink-3:#66666F;
   --line:#303034; --accent:#EF8A82; --accent-ink:#1A1414; --sun:#F07D74; --sat:#86A6D9; --hol:#EDAE52;
   --overlay:rgba(0,0,0,.6); --shadow:none; --sel:#2C2C2E; color-scheme:dark; --pay:#34C759;
-    --glass:rgba(44,44,48,.5); --glass-edge:rgba(255,255,255,.13); --glass-hi:rgba(255,255,255,.1); --glass-sel:rgba(255,255,255,.12); --glass-shadow:0 10px 30px rgba(0,0,0,.45);
+    --glass:rgba(44,44,48,.5); --glass-rgb:44,44,48; --glass-a:.5; --glass-edge:rgba(255,255,255,.13); --glass-hi:rgba(255,255,255,.1); --glass-sel:rgba(255,255,255,.12); --glass-shadow:0 10px 30px rgba(0,0,0,.45);
 }
 *,*::before,*::after{box-sizing:border-box}
 html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overflow:hidden;background:var(--bg)}
@@ -63,6 +63,16 @@ svg{display:block}
   box-shadow:inset 0 1px 0 var(--glass-hi);transition:transform .45s cubic-bezier(.3,1.35,.5,1);pointer-events:none}
 #tabs button{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10px;font-weight:500;color:var(--ink-2);padding:6px 0 5px;border-radius:999px;min-width:0}
 #tabs button span{white-space:nowrap}
+/* user-chosen see-through level for the bottom bar (設定 → 下のバーの透け具合) */
+:root.tab-a #tabs,.tb-prev .tb-bar{background:rgba(var(--glass-rgb),var(--tab-a,var(--glass-a)));-webkit-backdrop-filter:blur(var(--tab-blur,30px)) saturate(180%);backdrop-filter:blur(var(--tab-blur,30px)) saturate(180%)}
+.tb-prev{position:relative;height:74px;border-radius:14px;overflow:hidden;background:var(--bg)}
+.tb-prev .tb-bg{position:absolute;inset:0;padding:8px 10px;display:grid;gap:5px;align-content:start}
+.tb-prev .tb-bg i{display:block;height:13px;border-radius:7px;background:var(--c)}
+.tb-prev .tb-bar{position:absolute;left:10px;right:10px;bottom:9px;height:40px;border-radius:999px;border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);display:grid;grid-template-columns:repeat(4,1fr);place-items:center;color:var(--ink-2)}
+.tb-prev .tb-bar svg{width:19px;height:19px}
+.tb-prev .tb-bar svg:first-child{color:var(--accent)}
+.tb-range{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-2)}
+.tb-range input{flex:1;min-width:0;accent-color:var(--accent)}
 #tabs button[aria-current="page"]{color:var(--accent)}
 #fab{position:absolute;right:12px;bottom:10px;width:62px;height:62px;border-radius:50%;color:#fff;display:grid;place-items:center;z-index:6;
   background:var(--accent);border:1px solid rgba(255,255,255,.22);box-shadow:0 0 0 1px rgba(0,0,0,.04),0 2px 14px rgba(0,0,0,.16)}
@@ -3944,8 +3954,26 @@ function applyTheme() {
   const t = S.settings.theme, r = document.documentElement;
   if (t === 'light' || t === 'dark') r.dataset.theme = t; else delete r.dataset.theme;
   const a = ACCENTS.find(x => x[0] === (S.settings.accent || '')); if (a && a[0]) r.style.setProperty('--accent', a[2]); else r.style.removeProperty('--accent');
+  applyTabAlpha();
   const m = $('meta[name="theme-color"]'); if (m) m.content = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#F5EFEB';
   try { localStorage.setItem('hibi.accentColor', getComputedStyle(r).getPropertyValue('--accent').trim()); } catch (e) {} // the launch animation reads this before the app starts
+}
+// bottom bar see-through: tabAlpha is 0–100 (% opaque); unset = the theme's own glass. Blur fades out with it so 0 is truly clear
+function tabAlphaVars(v) { const a = Math.max(0, Math.min(100, Math.round(v))) / 100; return { a, blur: Math.round(30 * Math.min(1, a / .5) * 10) / 10 }; }
+function applyTabAlpha() {
+  const r = document.documentElement, v = S.settings.tabAlpha;
+  if (typeof v !== 'number' || !isFinite(v)) { r.classList.remove('tab-a'); r.style.removeProperty('--tab-a'); r.style.removeProperty('--tab-blur'); return; }
+  const { a, blur } = tabAlphaVars(v); r.classList.add('tab-a'); r.style.setProperty('--tab-a', a); r.style.setProperty('--tab-blur', blur + 'px');
+}
+let tabAlphaSave = 0;
+function tabAlphaNow() { const v = S.settings.tabAlpha; if (typeof v === 'number' && isFinite(v)) return Math.round(v); return Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--glass-a')) * 100) || 60; }
+function tabAlphaHTML() {
+  const v = tabAlphaNow(), { a, blur } = tabAlphaVars(v), set = typeof S.settings.tabAlpha === 'number';
+  return `<div class="toggle" style="display:block"><span>下のバーの透け具合<small>カレンダー・タイムラインなどを切り替えるバーです</small></span>
+    <div class="tb-prev" aria-hidden="true"><div class="tb-bg">${['#E07F78','#4F8ED6','#4E9F72','#DE8E2A','#8C78D4'].map((c, i) => `<i style="--c:${c};width:${[86,62,94,70,80][i]}%"></i>`).join('')}</div>
+      <div class="tb-bar" id="tb-bar" style="--tab-a:${a};--tab-blur:${blur}px">${TABDEF.map(t => ico(t[2])).join('')}</div></div>
+    <div class="tb-range" style="margin-top:10px"><span>透明</span><input type="range" id="set-tabalpha" min="0" max="100" step="1" value="${v}" aria-label="下のバーの不透明度"><span>不透明</span><b class="num" id="tb-val" style="min-width:3.2em;text-align:right">${v}%</b></div>
+    ${set ? '<button class="btn ghost" data-act="tabAlphaReset" style="margin-top:10px">元の透け具合に戻す</button>' : ''}</div>`;
 }
 function endSplash(now) {
   const el = $('#splash'); if (!el || el.classList.contains('out')) return;
@@ -4573,6 +4601,7 @@ function settingsHTML() {
   <div class="set-sec"><h4>表示</h4><div class="set-list">
     <div class="toggle"><span>テーマ</span><span class="seg">${[['system','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button data-act="theme" data-k="${k}" aria-pressed="${s.theme === k}">${l}</button>`).join('')}</span></div>
     <div class="toggle"><span>テーマカラー</span><span class="swatches">${ACCENTS.map(([k, l, c]) => `<button class="sw" style="--c:${c};width:28px;height:28px" data-act="accent" data-k="${k}" aria-pressed="${(s.accent || '') === k}" aria-label="${l}">${ico('check')}</button>`).join('')}</span></div>
+    ${tabAlphaHTML()}
     <div class="toggle"><span>週の始まり</span><span class="seg">${[['mon','月曜'],['sun','日曜']].map(([k, l]) => `<button data-act="weekStartSet" data-k="${k}" aria-pressed="${(s.weekStart || 'mon') === k}">${l}</button>`).join('')}</span></div>
     <label class="toggle"><span>日本の祝日を表示</span><input type="checkbox" id="set-hol" ${s.holidays ? 'checked' : ''}></label>
     <button class="toggle" data-act="tmSet" style="width:100%;text-align:left"><span>集中タイマーの見た目<small>デザイン・色・数字の書体</small></span>${ico('right')}</button>
@@ -5015,6 +5044,7 @@ const ACT = {
   sFeel: t => { sf.feel = sf.feel === t.dataset.f ? '' : t.dataset.f; topSheet().querySelectorAll('[data-act="sFeel"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === sf.feel)); runSearch(); },
   sTag: t => { sf.tag = sf.tag === t.dataset.t ? '' : t.dataset.t; topSheet().querySelectorAll('[data-act="sTag"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === sf.tag)); runSearch(); },
   accent: t => { S.settings.accent = t.dataset.k; save(); applyTheme(); rerenderSettings(); render(); },
+  tabAlphaReset: () => { delete S.settings.tabAlpha; save(); applyTabAlpha(); rerenderSettings(); },
   weekStartSet: t => { S.settings.weekStart = t.dataset.k; save(); rerenderSettings(); render(); },
   delTpl: t => { S.templates = S.templates.filter(x => x.id !== t.dataset.id); save(); rerenderSettings(); },
   pickDay: t => { st.day = t.dataset.d; st.sel = st.day; st.calMonth = st.day.slice(0, 8) + '01'; render(); },
@@ -5192,6 +5222,12 @@ document.addEventListener('input', e => {
   if (e.target.id === 'q') runSearch();
   else if (e.target.id === 'sg-name' || e.target.id === 'sg-artist') songQuery();
   else if (e.target.id === 'wx-rt') { radarStop(); radarShow(+e.target.value); }
+  else if (e.target.id === 'set-tabalpha') {
+    const v = +e.target.value, { a, blur } = tabAlphaVars(v), had = typeof S.settings.tabAlpha === 'number'; S.settings.tabAlpha = v; applyTabAlpha(); clearTimeout(tabAlphaSave); tabAlphaSave = setTimeout(save, 250);
+    const b = $('#tb-bar'); if (b) { b.style.setProperty('--tab-a', a); b.style.setProperty('--tab-blur', blur + 'px'); }
+    const l = $('#tb-val'); if (l) l.textContent = v + '%';
+    if (!had) { const x = e.target.closest('.toggle'); if (x && !$('[data-act="tabAlphaReset"]', x)) x.insertAdjacentHTML('beforeend', '<button class="btn ghost" data-act="tabAlphaReset" style="margin-top:10px">元の透け具合に戻す</button>'); }
+  }
   else if (/^tmc-\d$/.test(e.target.id)) { const c = tset().custom.slice(); c[+e.target.id.slice(4)] = e.target.value; S.settings.timer = Object.assign(tset(), { custom: c, palette: 'custom' }); const ts = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) ts.firstElementChild.setAttribute('style', tVars(tset(), S.timer.color)); }
   else if (e.target.id === 'tk-title' && tkDraft) {
     tkDraft.title = e.target.value; const sh = topSheet();
@@ -5316,7 +5352,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v55';
+const APP_VER = 'hibi-v56';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
