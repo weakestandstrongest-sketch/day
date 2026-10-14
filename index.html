@@ -186,6 +186,7 @@ svg{display:block}
 /* Structured-style links: dotted, centred on the pills, fading from one event's color into the next (drawn by drawTlLinks) */
 .tl-links{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
 .timeline:has(.tl-item.dragging) .tl-links{opacity:0}
+.tl-links .tl-near{stroke:color-mix(in srgb,var(--ink-3) 55%,var(--surface))}
 .tl-item{display:grid;grid-template-columns:52px 64px minmax(0,1fr) 40px;align-items:center;column-gap:6px;padding:6px 0;position:relative}
 .tl-item .tm{font-size:12px;color:var(--ink-2);text-align:right;padding-right:4px;align-self:start;padding-top:6px}
 .pill{justify-self:center;width:58px;border-radius:29px;background:var(--c);color:#fff;display:grid;place-items:center;position:relative;z-index:1}
@@ -3902,7 +3903,10 @@ function drawTlLinks() {
   const items = [...tl.querySelectorAll('.tl-item')], base = tl.getBoundingClientRect(); let defs = '', lines = '';
   for (let i = 0; i < items.length - 1; i++) {
     const pa = $('.pill', items[i]), pb = $('.pill', items[i + 1]), a = pa.getBoundingClientRect(), b = pb.getBoundingClientRect();
-    const x = (a.left + a.width / 2 - base.left).toFixed(1), y1 = a.bottom - base.top + 5, y2 = b.top - base.top - 5; if (y2 - y1 < 8) continue;
+    const x = (a.left + a.width / 2 - base.left).toFixed(1), gap = b.top - a.bottom; if (gap <= 1) continue;
+    // close together: one plain line joining the two pills, like Structured
+    if (gap < 40) { lines += `<line class="tl-near" x1="${x}" x2="${x}" y1="${(a.bottom - base.top - 2).toFixed(1)}" y2="${(b.top - base.top + 2).toFixed(1)}" stroke-width="5" stroke-linecap="round"/>`; continue; }
+    const y1 = a.bottom - base.top + 5, y2 = b.top - base.top - 5;
     const ca = getComputedStyle(items[i]).getPropertyValue('--c').trim() || 'var(--line)', cb = getComputedStyle(items[i + 1]).getPropertyValue('--c').trim() || ca;
     defs += `<linearGradient id="tlg${i}" gradientUnits="userSpaceOnUse" x1="0" y1="${y1.toFixed(1)}" x2="0" y2="${y2.toFixed(1)}"><stop offset="0" stop-color="${esc(ca)}"/><stop offset="1" stop-color="${esc(cb)}"/></linearGradient>`;
     lines += `<line x1="${x}" x2="${x}" y1="${y1.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="url(#tlg${i})" stroke-width="3" stroke-linecap="round" stroke-dasharray="3.5 6.5"/>`;
@@ -5310,7 +5314,23 @@ function openToday() { const sh = openSheet(todaySheet(), 'full'); sh.dataset.ki
 if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday')) openToday();
 if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; setTimeout(endSplash, quick ? 700 : 1950); $('#splash').addEventListener('click', () => endSplash(true)); }
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+// iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
+const APP_VER = 'hibi-v55';
+let verChecked = Date.now();
+async function checkVersion() {
+  if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
+  try {
+    const t = await (await fetch('sw.js?v=' + Date.now(), { cache: 'no-store' })).text(), v = (t.match(/CACHE = '([^']+)'/) || [])[1];
+    if (!v || v === APP_VER) return;
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) reg.update().catch(() => {});
+    const busy = stack.length || CAM || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+    if (!busy) { location.reload(); return; }
+    toast('新しいバージョンがあります', '更新', () => location.reload());
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
+setInterval(() => { if (document.visibilityState === 'visible') checkVersion(); }, 30 * 60000);
 })();
 </script>
 </body>
