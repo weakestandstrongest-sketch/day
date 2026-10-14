@@ -921,10 +921,16 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .ob-big{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 33% 27%,rgba(255,255,255,.95) 0 8%,rgba(255,255,255,0) 30%),radial-gradient(circle at 30% 68%,#4F7CFF,rgba(79,124,255,0) 72%),radial-gradient(circle at 74% 80%,#2EC5F0,rgba(46,197,240,0) 62%),#1D2447;box-shadow:0 10px 30px rgba(79,124,255,.45),inset 0 -4px 8px rgba(0,0,0,.35);animation:obPulse 1.6s ease-in-out infinite}
 @keyframes obPulse{50%{transform:scale(1.08);box-shadow:0 14px 40px rgba(46,197,240,.55),inset 0 -4px 8px rgba(0,0,0,.35)}}
 .nk-wrap.fail .ob-big{display:none}
-.bb-ico{width:23px;height:23px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
-.bb-big{width:64px;height:64px;display:block;animation:bbSpin 1.2s linear infinite}
-.bb-big .bb-ico{width:100%;height:100%}
-@keyframes bbSpin{to{transform:rotate(360deg)}}
+.bb-ico{width:26px;height:26px;display:block;color:var(--ink)}
+.bb-ico .dl{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round}
+.bb-ico .b1,.bb-ico .b2,.bb-ico .b3{fill:var(--bg);stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.bb-ico .b1,.bb-ico .b2{fill:#F2A93B;stroke:#F2A93B}
+.bb-ico .hp{fill:currentColor}
+.bb-big{width:64px;height:64px;display:block;color:var(--ink-2)}
+.bb-big .bb-ico{width:100%;height:100%;color:var(--ink-2)}
+.bb-big .bb-ico .b1,.bb-big .bb-ico .b2,.bb-big .bb-ico .b3{fill:var(--bg);stroke:currentColor;animation:bbRun 1.5s infinite}
+.bb-big .bb-ico .b2{animation-delay:.5s}.bb-big .bb-ico .b3{animation-delay:1s}
+@keyframes bbRun{0%,30%{fill:#F2A93B;stroke:#F2A93B}40%,100%{fill:var(--bg);stroke:currentColor}}
 .nk-wrap.fail .bb-big{display:none}
 .nk-empty{padding:24px 6px;text-align:center;font-size:14px;line-height:1.8;color:var(--ink-2)}
 .rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
@@ -2557,7 +2563,7 @@ function nkSheet(q) {
       <span class="nk-fail"><b>のりかえを開けませんでした</b><small>通信が不安定か、のりかえが古い版のままかもしれません。</small><button class="btn primary" data-act="nkRetry">もう一度開く</button></span></div></div>`;
 }
 /* ---- 野球速報 inside ひび手帳 (its own Cloudflare Worker; shown once the page has loaded) ---- */
-const BALL_SVG = '<svg class="bb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#FBF8F3" stroke="#D9D2C8" stroke-width=".8"/><path d="M6.6 4.6c1.7 2 2.6 4.6 2.6 7.4s-.9 5.4-2.6 7.4M17.4 4.6c-1.7 2-2.6 4.6-2.6 7.4s.9 5.4 2.6 7.4" fill="none" stroke="#E0574F" stroke-width="1.1" stroke-dasharray="1.3 1.1" stroke-linecap="round"/></svg>';
+const BALL_SVG = '<svg class="bb-ico" viewBox="0 0 24 24" aria-hidden="true"><path class="dl" d="M12 4.3 19.7 12 12 19.7 4.3 12z"/><path class="b2" d="M12 1.2l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="b1" d="M19.7 8.9l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="b3" d="M4.3 8.9l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="hp" d="M9.9 17.9h4.2v2.2L12 22l-2.1-1.9z"/></svg>';
 const bbBase = () => { const u = (S.settings.baseball || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://').replace(/\/+$/, ''); return /^https?:\/\/[^\s/]+/.test(u) ? u + '/' : ''; };
 function bbSheet() {
   const head = '<div class="sh-bar"><span></span><b>野球速報</b><button class="r" data-act="close">閉じる</button></div>', base = bbBase();
@@ -4125,7 +4131,7 @@ function settingsHTML() {
     <p class="note" style="margin:0">日記の右上の丸いボタンから、Orbをひび手帳の中で開けます。サイトはOrbと同じく、上に開くSafariの画面で表示されます。</p>
     <div class="fld" style="margin:0"><label for="set-orb">OrbのURL</label><input class="inp" id="set-orb" type="url" value="${esc(s.orb || '')}" placeholder="https://○○○.github.io/browser/" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>野球速報</h4><div class="set-list">
-    <p class="note" style="margin:0">日記の右上の野球ボールのボタンから、野球速報をひび手帳の中で開けます。</p>
+    <p class="note" style="margin:0">日記の右上のダイヤモンド（塁）のボタンから、野球速報をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-baseball">野球速報のURL</label><input class="inp" id="set-baseball" type="url" value="${esc(s.baseball || '')}" placeholder="https://baseball.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
