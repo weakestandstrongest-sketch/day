@@ -100,7 +100,11 @@ svg{display:block}
 .cal-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .m-title{display:flex;align-items:baseline;gap:8px}
 .m-title .mn{font-size:56px;font-weight:500;line-height:1;letter-spacing:-.02em}
-.m-title .my{font-size:15px;color:var(--ink-2)}
+.m-title .my{font-size:15px;color:var(--ink-2);white-space:nowrap}
+.m-title{flex:none;white-space:nowrap}
+/* with the weather and six buttons the calendar header gets tight: the buttons give way first, then the year shortens (2026年 → '26) */
+.m-title .my .yy{display:none}
+@media (max-width:355px){.m-title .my .yf{display:none}.m-title .my .yy{display:inline}}
 .head-icons{display:flex;align-items:center;gap:2px}
 .tl-head h1{white-space:nowrap}
 /* page headers: the icons keep one size and the gear sits at the same spot on every tab; the title gives way on narrow phones */
@@ -108,7 +112,9 @@ svg{display:block}
 .cal-head>:first-child,.tl-head>:first-child,.j-head>:first-child{min-width:0;flex:0 1 auto;overflow:hidden}
 .head-icons{flex:none;margin-left:auto;gap:0}
 .head-icons .icon-btn{width:40px}
-@media (max-width:389px){.head-icons .icon-btn{width:36px}.head-icons .wx-btn{min-width:36px}.tl-head h1{font-size:25px}.m-title .mn{font-size:48px}}
+@media (max-width:440px){.head-icons .icon-btn{width:37px}.head-icons .wx-btn{min-width:37px;padding:0 2px}}
+@media (max-width:409px){.head-icons .icon-btn{width:34px}.head-icons .wx-btn{min-width:34px}.head-icons .icon-btn .ico{width:24px;height:24px}.cal-head .wx-btn .num{font-size:14px}.m-title{gap:6px}}
+@media (max-width:389px){.head-icons .icon-btn{width:34px}.head-icons .wx-btn{min-width:34px}.tl-head h1{font-size:25px}.m-title .mn{font-size:48px}}
 @media (max-width:339px){.head-icons .icon-btn{width:33px}.head-icons .wx-btn{min-width:33px}.head-icons .icon-btn .ico{width:21px;height:21px}.tl-head h1{font-size:21px}.tl-head h1 .yr{font-size:15px}.m-title .mn{font-size:42px}.m-title .my{display:none}}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--ink-2);padding:6px 0 2px}
 .dow span.sat{color:var(--sat)} .dow span.sun{color:var(--sun)}
@@ -1963,7 +1969,7 @@ function viewCal() {
   }
   return `
   <div class="cal-head">
-    <button class="m-title" data-act="calToday" aria-label="今日に戻る"><span class="mn num">${mo + 1}</span><span class="my">${y}年</span></button>
+    <button class="m-title" data-act="calToday" aria-label="今日に戻る"><span class="mn num">${mo + 1}</span><span class="my"><span class="yf">${y}年</span><span class="yy num">'${String(y).slice(2)}</span></span></button>
     <div class="head-icons">
       <button class="icon-btn wx-btn" data-act="weather" aria-label="天気">${wxBtnInner()}</button>
       <button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button>
