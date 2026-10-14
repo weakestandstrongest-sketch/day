@@ -66,7 +66,7 @@ minical・Structured・muute を合わせたような、iPhone の Safari で動
 ## iPhone で使う
 
 1. このリポジトリの **Settings → Pages** で、Source を `Deploy from a branch`、Branch を `main` / `(root)` にして保存
-2. 表示された URL（`https://<ユーザー名>.github.io/dairy2/`）を iPhone の Safari で開く
+2. 表示された URL（`https://<ユーザー名>.github.io/day/`）を iPhone の Safari で開く
 3. 共有ボタン →「ホーム画面に追加」で、アプリのように全画面で使えます（オフラインでも起動します）
 
 ## データについて
