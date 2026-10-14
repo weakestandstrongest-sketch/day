@@ -1572,11 +1572,51 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
 const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
+// stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
+// and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
+const okColor = c => typeof c === 'string' && (/^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\([\d.,\s%]+\)$/i.test(c) || /^var\(--[a-z0-9-]+\)$/i.test(c));
+const okImg = x => typeof x === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(x) ? x : '';
+const okId = x => (typeof x === 'string' || typeof x === 'number') && /^[\w-]{1,48}$/.test(String(x)) ? String(x) : uid();
+const asArr = x => Array.isArray(x) ? x.filter(v => v && typeof v === 'object') : [];
+const asObj = x => x && typeof x === 'object' && !Array.isArray(x) ? x : {};
+function normalizeState(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('not a backup');
+  const n = Object.assign(defaults(), d), dd = defaults();
+  for (const k of ['events', 'entries', 'tasks', 'templates', 'jobs', 'todos', 'places', 'spots']) n[k] = asArr(n[k]);
+  n.customFeelings = asArr(n.customFeelings).filter(c => typeof c.name === 'string').map(c => Object.assign(c, { color: okColor(c.color) ? c.color : '#C98A6E' }));
+  n.customTags = Array.isArray(n.customTags) ? n.customTags.filter(t => typeof t === 'string') : [];
+  n.settings = Object.assign(dd.settings, asObj(d.settings)); if (!asObj(d.settings).locEntryAuto) n.settings.locEntry = true;
+  n.school = Object.assign(dd.school, asObj(d.school));
+  n.school.classes = asArr(n.school.classes); n.school.tasks = asArr(n.school.tasks);
+  if (!Array.isArray(n.school.periods) || !n.school.periods.length || !n.school.periods.every(x => Array.isArray(x) && x.length === 2)) n.school.periods = dd.school.periods;
+  n.events = n.events.filter(e => typeof e.date === 'string').map(e => {
+    Object.assign(e, { id: okId(e.id), title: String(e.title ?? ''), color: okColor(e.color) ? e.color : COLORS[0], done: asObj(e.done), skip: asObj(e.skip) });
+    if (e.route) { if (typeof e.route !== 'object' || !Array.isArray(e.route.steps)) delete e.route; else e.route.steps.forEach(x => { if (x && x.color && !okColor(x.color)) x.color = ''; }); }
+    if (e.items && !Array.isArray(e.items)) delete e.items;
+    return e;
+  });
+  n.entries = n.entries.filter(e => typeof e.date === 'string').map(e => {
+    Object.assign(e, { id: okId(e.id), feelings: Array.isArray(e.feelings) ? e.feelings.map(String) : [], tags: Array.isArray(e.tags) ? e.tags.map(String) : [], text: String(e.text ?? ''), photo: okImg(e.photo) });
+    if (e.song) { if (typeof e.song !== 'object' || typeof e.song.name !== 'string') delete e.song; else { if (e.song.art && !/^https:\/\//.test(e.song.art)) delete e.song.art; if (e.song.artData && !okImg(e.song.artData)) delete e.song.artData; } }
+    return e;
+  });
+  for (const k of ['tasks', 'todos', 'templates', 'jobs', 'spots']) for (const x of n[k]) { if ('id' in x) x.id = okId(x.id); if ('color' in x && !okColor(x.color)) x.color = COLORS[0]; }
+  for (const c of n.school.classes) Object.assign(c, { id: okId(c.id), name: String(c.name ?? ''), color: okColor(c.color) ? c.color : COLORS[2], slots: asArr(c.slots) });
+  for (const x of n.school.tasks) x.id = okId(x.id);
+  return n;
+}
+let loadFailed = false;
 function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); migrateSchool(); return; }
-  } catch (e) {}
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) {}
+  if (raw) {
+    try { S = normalizeState(JSON.parse(raw)); migrateSchool(); return; }
+    catch (e) {
+      // never overwrite data we could not read: keep the original text aside and start empty (no samples)
+      try { if (!localStorage.getItem(KEY + '.broken')) localStorage.setItem(KEY + '.broken', raw); } catch (e2) {}
+      S = defaults(); migrateSchool(); loadFailed = true; return;
+    }
+  }
   S = defaults(); seed(); migrateSchool(); save(true);
 }
 function save(silent) {
@@ -2479,7 +2519,7 @@ async function artSweep() {
   const list = S.entries.map(e => e.song).filter(sg => sg && sg.art && !sg.artData && !(sg.artTry > Date.now() - 6 * 3600e3)).slice(0, 8);
   for (const sg of list) if (await cacheArt(sg)) got++;
   artBusy = false;
-  if (list.length) save(true);
+  if (list.length && !save(true)) { for (const sg of list) { delete sg.artData; sg.artTry = Date.now(); } save(true); return; }
   if (got && !stack.length && (st.tab === 'journal' || st.tab === 'reflect')) render();
 }
 // a cover that fails to load shows the colored placeholder behind it instead of a broken image
@@ -2675,7 +2715,7 @@ window.addEventListener('message', e => {
   const r = e.data.route; if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || !/^\d{1,2}:\d{2}$/.test(r.dep || '') || !/^\d{1,2}:\d{2}$/.test(r.arr || '')) { toast('この経路は予定にできませんでした'); return; }
   const clean = x => String(x == null ? '' : x).slice(0, 120);
   const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
-    steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: /^#[0-9a-f]{3,8}$|^rgb/i.test(x.color || '') ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
+    steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: okColor(x.color) ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
   const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: nkMemo(route), done: {}, route };
   const old = nkReplace && S.events.find(x => x.id === nkReplace);
   if (old) { for (const k of ['color', 'icon', 'items', 'packed', 'countdown', 'dest', 'from']) if (old[k] !== undefined) ev[k] = old[k]; if (old.memo && old.memo !== nkMemo(old.route)) ev.memo = old.memo; S.events = S.events.filter(x => x.id !== old.id); }
@@ -2951,7 +2991,7 @@ function lockClick(ev) {
   if (k === 'cancel') { hideLock(); return; }
   if (k === 'forgot') { LKS.view = 'forgot'; lockRender(); return; }
   if (k === 'back') { LKS.view = 'pad'; lockRender(); return; }
-  if (k === 'erase') { try { localStorage.removeItem(KEY); localStorage.removeItem(WX_KEY); localStorage.removeItem(UIKEY); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {} location.reload(); }
+  if (k === 'erase') { try { for (const x of [KEY, WX_KEY, UIKEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(x); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {} location.reload(); }
 }
 const lockOn = () => LK().on && LK().hash;
 document.addEventListener('visibilitychange', () => {
@@ -3461,14 +3501,14 @@ function closeStory(now) {
 const standalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 function snapDB() { return new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const r = indexedDB.open('hibi-snaps', 1); r.onupgradeneeded = () => r.result.createObjectStore('snaps', { keyPath: 'day' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 let snapCache = [];
-async function snapPut() {
-  const db = await snapDB(), tx = db.transaction('snaps', 'readwrite'), os = tx.objectStore('snaps');
-  os.put({ day: todayISO(), at: Date.now(), json: JSON.stringify(S), ev: S.events.length, en: S.entries.length });
+async function snapPut(note, json = JSON.stringify(S), ev = S.events.length, en = S.entries.length) {
+  const db = await snapDB(), tx = db.transaction('snaps', 'readwrite'), os = tx.objectStore('snaps'), T = todayISO();
+  os.put({ day: note ? `${T}#${Date.now()}` : T, at: Date.now(), json, ev, en, note: note || '' });
   const keys = os.getAllKeys(); keys.onsuccess = () => { const k = keys.result.slice().sort(); for (const old of k.slice(0, Math.max(0, k.length - 7))) os.delete(old); };
   await new Promise((r, j) => { tx.oncomplete = r; tx.onerror = () => j(tx.error); });
 }
 async function snapList() { try { const db = await snapDB(); return await new Promise(r => { const q = db.transaction('snaps').objectStore('snaps').getAll(); q.onsuccess = () => r(q.result.sort((a, b) => b.day.localeCompare(a.day))); q.onerror = () => r([]); }); } catch (e) { return []; } }
-function snapRows() { return snapCache.length ? snapCache.map(x => `<div class="snap-row"><span>${md(x.day)}(${WD[wd(x.day)]}) ${hmOf(x.at)}<br><small>予定 ${x.ev}件・日記 ${x.en}件</small></span><button data-act="snapRestore" data-day="${x.day}">この控えに戻す</button></div>`).join('') : '<p class="note" style="margin:0">まだ控えはありません</p>'; }
+function snapRows() { return snapCache.length ? snapCache.map(x => `<div class="snap-row"><span>${md(x.day.slice(0, 10))}(${WD[wd(x.day.slice(0, 10))]}) ${hmOf(x.at)}${x.note ? `・${esc(x.note)}` : ''}<br><small>予定 ${x.ev}件・日記 ${x.en}件</small></span><button data-act="snapRestore" data-day="${x.day}">この控えに戻す</button></div>`).join('') : '<p class="note" style="margin:0">まだ控えはありません</p>'; }
 const refreshSnaps = () => snapList().then(l => { snapCache = l; const el = $('#snap-list'); if (el) el.innerHTML = snapRows(); });
 const bkAt = () => { const [h, m] = (S.settings.bkTime || '21:00').split(':').map(Number), d = new Date(); d.setHours(h || 0, m || 0, 0, 0); return d.getTime(); };
 function bkDue() {
@@ -3478,7 +3518,9 @@ function bkDue() {
 }
 function checkBackup() {
   const T = todayISO();
-  if (Date.now() >= bkAt() && S.settings.lastSnap !== T) snapPut().then(() => { S.settings.lastSnap = T; save(true); refreshSnaps(); }).catch(() => {});
+  // one copy at the first open of the day, refreshed once more after the reminder time
+  const late = Date.now() >= bkAt();
+  if (S.settings.lastSnap !== T || (late && S.settings.lastSnapLate !== T)) snapPut().then(() => { S.settings.lastSnap = T; if (late) S.settings.lastSnapLate = T; save(true); refreshSnaps(); }).catch(() => {});
   let bar = $('#bkbar');
   if (!bar) { bar = document.createElement('div'); bar.id = 'bkbar'; bar.className = 'bkbar'; bar.hidden = true; bar.innerHTML = `${ico('save')}<span><b>バックアップの時間です</b>「ファイル」に保存しておくと安心</span><button class="later" data-act="bkLater">あとで</button><button class="go" data-act="bkSave">保存</button>`; document.body.append(bar); }
   bar.hidden = !bkDue();
@@ -4199,8 +4241,9 @@ function settingsHTML() {
     <label class="toggle"><span>時刻</span><input class="inp" type="time" id="bk-time" value="${esc(s.bkTime || '21:00')}" style="width:auto"></label>
     <p class="note" style="margin:0">最後にファイルに保存：${s.lastBackup ? `${md(iso(new Date(s.lastBackup)))} ${hmOf(s.lastBackup)}` : 'まだ保存していません'}</p>
     <button class="btn primary" data-act="bkSave">${ico('save')}いまバックアップを保存</button>`}
-    <p class="note" style="margin:0">このほか、毎日決めた時刻をすぎると、この端末の中に自動で控えを取ります（7日分）。まちがえて消したときは、ここから戻せます。</p>
+    <p class="note" style="margin:0">このほか、その日はじめて開いたときと、決めた時刻をすぎたときに、この端末の中に自動で控えを取ります（7件まで）。まちがえて消したときは、ここから戻せます。</p>
     <div id="snap-list">${snapRows()}</div>
+    ${(() => { try { return localStorage.getItem(KEY + '.broken'); } catch (e) { return null; } })() ? `<p class="note" style="margin:0;color:var(--sun)">以前に読み込めなかったデータを、別に保管しています。</p><button class="btn ghost" data-act="exportBroken">${ico('save')}読み込めなかったデータを書き出す</button>` : ''}
     ${standalone() ? '' : '<p class="note" style="margin:0"><b>ホーム画面に追加しておくと、データが消えにくくなります。</b>Safariは、しばらく開かなかったサイトのデータを消すことがあります（共有ボタン →「ホーム画面に追加」）。</p>'}</div></div>
   <div class="set-sec"><h4>データ</h4><div class="set-list">
     <p class="note" style="margin:0">データはこの端末のブラウザの中にだけ保存されます。機種変更やブラウザのデータ削除の前に、バックアップを取っておいてください。</p>
@@ -4279,8 +4322,13 @@ function importData(txt) {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
-      S = Object.assign(defaults(), d); S.settings = Object.assign(defaults().settings, d.settings || {}); if (!(d.settings || {}).locEntryAuto) S.settings.locEntry = true; S.school = Object.assign(defaults().school, d.school || {}); migrateSchool();
-      save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
+      const prev = S; let next;
+      try { next = normalizeState(JSON.parse(JSON.stringify(d))); next.settings.lastSnap = prev.settings.lastSnap; } catch (e) { toast('バックアップの中身が壊れているようで、読み込めませんでした'); return; }
+      snapPut('復元する前').then(refreshSnaps).catch(() => {}); // the data being replaced stays restorable for a while
+      S = next;
+      try { migrateSchool(); render(); } catch (e) { S = prev; render(); toast('このバックアップは読み込めませんでした（中身が壊れているようです）。いまのデータはそのままです'); return; }
+      if (!save()) { S = prev; render(); return; }
+      applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
 }
@@ -4684,8 +4732,10 @@ const ACT = {
   },
   exportFile: () => { S.settings.lastBackup = Date.now(); save(true); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' })); a.download = `hibi-backup-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
   importText: () => { const v = ($('#imp-text') || {}).value || ''; if (!v.trim()) { toast('バックアップを貼り付けてください'); return; } importData(v); },
+  exportBroken: () => { let raw = ''; try { raw = localStorage.getItem(KEY + '.broken') || ''; } catch (e) {} if (!raw) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' })); a.download = `hibi-unreadable-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
   resetAll: () => confirmIn('予定・日記・設定をすべて削除します。元に戻せません。', 'すべて削除', () => {
-    S = defaults(); save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
+    try { for (const k of [WX_KEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(k); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {}
+    snapCache = []; S = defaults(); migrateSchool(); save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
   }),
 };
 let noClickUntil = 0;
@@ -4861,7 +4911,10 @@ document.addEventListener('visibilitychange', () => {
 /* ================= boot ================= */
 load();
 const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01';
-applyTheme(); if (lockOn()) showLock('unlock'); render(); ensureTick();
+applyTheme(); if (lockOn()) showLock('unlock');
+try { render(); } catch (e) { console.error(e); main.innerHTML = `<p class="empty">画面を表示できませんでした。データは消えていません。<br>設定 → バックアップ から書き出して、もう一度読み込んでみてください。</p><div style="text-align:center"><button class="btn primary" data-act="settings">設定を開く</button></div>`; }
+ensureTick();
+if (loadFailed) setTimeout(() => toast('保存されていたデータを読み込めませんでした。元のデータは別に保管してあります（設定 → バックアップ）'), 2400);
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
 function openToday() { const sh = openSheet(todaySheet(), 'full'); sh.dataset.kind = 'today'; }
