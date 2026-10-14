@@ -193,6 +193,8 @@ svg{display:block}
 .tl-gap{padding:6px 0 6px 122px;font-size:12px;color:var(--ink-3)}
 .tl-now{display:flex;align-items:center;gap:8px;padding:2px 0 2px 46px;font-size:11.5px;color:var(--accent);font-weight:700}
 .tl-now::after{content:"";flex:1;height:2px;background:var(--accent);border-radius:1px}
+.tl-now.in{position:absolute;left:0;right:0;z-index:3;padding:0 0 0 6px;transform:translateY(-50%);pointer-events:none}
+.tl-now.in::before{content:"";position:absolute;left:79px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface)}
 .empty{color:var(--ink-2);font-size:14px;text-align:center;padding:28px 12px}
 
 /* ---------- Journal ---------- */
@@ -1892,9 +1894,11 @@ function viewDay() {
     if (!nowShown && now < s) { tl += `<div class="tl-now num">${nowHM()}</div>`; nowShown = true; }
     if (ev.dest && !ev.cls && !ev.route) tl += leaveRow(ev, d);
     const H = Math.round(Math.min(170, 58 + len * 0.55)), done = isDone(ev, d);
+    // happening right now: draw the now line across this item at the matching point of its pill
+    const inNow = !nowShown && !ev.off && now >= s && now < e; if (inNow) nowShown = true;
     const act = ev.cls ? `data-act="clsOcc" data-id="${ev.cls}" data-d="${d}" data-p="${ev.p}" data-x="${ev.extra || ''}"` : `data-act="editEvent" data-id="${ev.id}" data-d="${d}"`;
     const run = S.timer && S.timer.id === ev.id && S.timer.d === d, act2 = ev.actual && ev.actual[d] ? `・実績 ${dur(ev.actual[d])}` : '';
-    tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}${ev.off ? ' cancel' : ''}${ev.extra ? ' extra' : ''}" style="--c:${ev.color}">
+    tl += `<div class="tl-item${done ? ' done' : ''}${run ? ' running' : ''}${ev.off ? ' cancel' : ''}${ev.extra ? ' extra' : ''}" style="--c:${ev.color}">${inNow ? `<div class="tl-now in num" style="top:${(6 + (now - s) / len * H).toFixed(1)}px">${nowHM()}</div>` : ''}
       <span class="tm num">${hm(ev.start)}</span>
       <button class="pill" style="height:${H}px" ${act} aria-label="${esc(ev.title)}を開く">${ico(ev.icon)}</button>
       <button class="tl-body" ${act}><div class="meta num">${hm(ev.start)} – ${endLabel(ev)}（${ev.cls ? `${ev.p + 1}限${ev.off ? '・<b class="cl-tag">休講</b>' : ev.extra ? '・<b class="cl-tag">振替</b>' : ''}${ev.memo ? '・' + esc(ev.memo) : ''}` : dur(len) + act2}）</div><div class="tt">${esc(ev.title)}${packBadge(ev, d)}${ev.route ? `<span class="tl-route">${ico('train')}ルート</span>` : ''}</div></button>
