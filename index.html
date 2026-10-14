@@ -2442,9 +2442,30 @@ function recentSongs() {
 }
 // songs typed in by hand have no artwork: give each a stable gradient instead
 const phStyle = sg => { let h = 0; for (const c of sg.name + sg.artist) h = (h * 31 + c.charCodeAt(0)) % 360; return `background:linear-gradient(135deg,hsl(${h} 55% 38%),hsl(${(h + 70) % 360} 70% 66%))`; };
-const artHTML = (sg, cls) => sg.art ? `<img class="${cls}" src="${esc(sg.art)}" alt="" style="${phStyle(sg)}">` : `<span class="${cls}" style="${phStyle(sg)}">${ico('music')}</span>`;
+// covers are kept as a small copy inside ひび手帳 (artData) so a flaky connection can't leave a half-loaded, dark card
+const artSrc = sg => sg.artData || sg.art || '';
+const artHTML = (sg, cls) => sg.art ? `<img class="${cls}" src="${esc(artSrc(sg))}" alt="" style="${phStyle(sg)}" data-art>` : `<span class="${cls}" style="${phStyle(sg)}">${ico('music')}</span>`;
+let artBusy = false;
+async function cacheArt(sg) {
+  try {
+    const r = await fetch(sg.art, { mode: 'cors', cache: 'no-store' }); if (!r.ok) throw new Error(r.status);
+    const bmp = await createImageBitmap(await r.blob()), c = document.createElement('canvas'), n = 160, k = Math.max(n / bmp.width, n / bmp.height);
+    c.width = c.height = n; c.getContext('2d').drawImage(bmp, (n - bmp.width * k) / 2, (n - bmp.height * k) / 2, bmp.width * k, bmp.height * k);
+    sg.artData = c.toDataURL('image/jpeg', 0.82); return true;
+  } catch (e) { sg.artTry = Date.now(); return false; }
+}
+async function artSweep() {
+  if (artBusy || inFrame) return; artBusy = true; let got = 0;
+  const list = S.entries.map(e => e.song).filter(sg => sg && sg.art && !sg.artData && !(sg.artTry > Date.now() - 6 * 3600e3)).slice(0, 8);
+  for (const sg of list) if (await cacheArt(sg)) got++;
+  artBusy = false;
+  if (list.length) save(true);
+  if (got && !stack.length && (st.tab === 'journal' || st.tab === 'reflect')) render();
+}
+// a cover that fails to load shows the colored placeholder behind it instead of a broken image
+document.addEventListener('error', e => { const t = e.target; if (t.tagName === 'IMG' && !t.dataset.failed && (t.hasAttribute('data-art') || t.classList.contains('bg') || t.classList.contains('np-bg'))) { t.dataset.failed = 1; t.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='; } }, true);
 const spotifyURL = sg => 'https://open.spotify.com/search/' + encodeURIComponent(`${sg.name} ${sg.artist}`.trim());
-const songMini = sg => `<div class="e-song">${sg.art ? `<img class="bg" src="${esc(sg.art)}" alt="">` : `<span class="bg" style="${phStyle(sg)}"></span>`}${artHTML(sg, 'art')}<span><b>${esc(sg.name)}</b><small>${esc(sg.artist)}</small></span>${ico('music')}</div>`;
+const songMini = sg => `<div class="e-song">${sg.art ? `<img class="bg" src="${esc(artSrc(sg))}" alt="" style="${phStyle(sg)}">` : `<span class="bg" style="${phStyle(sg)}"></span>`}${artHTML(sg, 'art')}<span><b>${esc(sg.name)}</b><small>${esc(sg.artist)}</small></span>${ico('music')}</div>`;
 function jsonp(url, ms = 7000) {
   return new Promise((res, rej) => {
     const cb = '__hibiSong' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), sc = document.createElement('script');
@@ -2535,7 +2556,7 @@ function togglePreview(btn, url, onFail) {
 function songField(e) {
   if (e.song) {
     const sg = e.song;
-    return `<div class="np">${sg.art ? `<img class="np-bg" src="${esc(sg.art)}" alt="">` : `<span class="np-bg" style="${phStyle(sg)}"></span>`}
+    return `<div class="np">${sg.art ? `<img class="np-bg" src="${esc(artSrc(sg))}" alt="" style="${phStyle(sg)}">` : `<span class="np-bg" style="${phStyle(sg)}"></span>`}
       <div class="np-in">${artHTML(sg, 'np-art')}<div class="np-tx"><span class="np-lbl">この日の曲</span><b>${esc(sg.name)}</b><small>${esc(sg.artist)}</small></div></div>
       <button class="np-x" data-act="rmSong" aria-label="曲を外す">${ico('x')}</button>
       <div class="np-act">${sg.noPreview && !sg.preview ? '' : `<button data-act="sgPlay">${ico('play')}試聴</button>`}<a href="${esc(spotifyURL(sg))}" target="_blank" rel="noopener">${ico('music')}Spotifyで開く</a></div></div>`;
@@ -3251,7 +3272,7 @@ async function drawMonthCard(F, theme) {
   } });
   // 4) song of the month + places
   const sc = {}; for (const e of es) if (e.song) { const k = songKey(e.song); sc[k] = sc[k] || { n: 0, sg: e.song }; sc[k].n++; sc[k].sg = e.song; }
-  const song = (Object.values(sc).sort((a, b) => b.n - a.n)[0] || {}).sg, art = song && song.art ? await loadImg(song.art, true) : null;
+  const song = (Object.values(sc).sort((a, b) => b.n - a.n)[0] || {}).sg, art = song && song.art ? (await loadImg(song.artData, false)) || (await loadImg(song.art, true)) : null;
   let km = 0; const stops = []; for (let d = first; d <= last; d = addDays(d, 1)) { const st_ = stopsOf(dayPts(d)); km += pathLen(st_); stops.push(...st_); }
   const pc = stops.length ? placeCount(stops) : 0;
   if (song || pc) blocks.push({ h: 172, draw: Y => {
@@ -3467,6 +3488,7 @@ function render() {
   fab.setAttribute('aria-label', jr ? '日記を書く' : '予定を追加');
   $('#topTitle').textContent = topTitle();
   onScroll();
+  if (st.tab === 'journal' || st.tab === 'reflect') setTimeout(artSweep, 1200);
   if (topSheet() && topSheet().dataset.kind === 'today') rerenderKind('today', todaySheet);
   if (st.anim) { const el = $(st.anim.sel); if (el) { el.classList.remove('slide-n', 'slide-p'); void el.offsetWidth; el.classList.add(st.anim.dir > 0 ? 'slide-n' : 'slide-p'); } st.anim = null; }
 }
