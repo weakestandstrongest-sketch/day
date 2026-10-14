@@ -1398,7 +1398,10 @@ const weekOrder = () => sunStart() ? [0, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6, 
 const dowHead = cls => weekOrder().map(w => `<span class="${cls}${w === 6 ? ' sat' : w === 0 ? ' sun' : ''}">${WD[w]}</span>`).join('');
 const hhmm = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 const evLen = ev => { const x = toMin(ev.end) - toMin(ev.start); return x > 0 ? x : x + 1440; };
-const overnight = ev => !ev.allDay && toMin(ev.end) <= toMin(ev.start);
+const overnight = ev => !ev.allDay && !multiDay(ev) && toMin(ev.end) <= toMin(ev.start);
+// days an event covers after its first: 終日 spans and timed events running over several days (those stay on the calendar only)
+const evSpan = ev => ev.endDate && ev.endDate > ev.date && (ev.allDay || ev.calOnly) ? diffDays(ev.date, ev.endDate) : 0;
+const multiDay = ev => !ev.allDay && !!ev.endDate && ev.endDate > ev.date;
 const endLabel = ev => (overnight(ev) ? '翌' : '') + hm(ev.end);
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const hm = t => t.replace(/^0(\d)/, '$1');
@@ -1586,7 +1589,7 @@ function matches(ev, d) {
 function occurrences(from, to) {
   const out = [];
   for (const ev of S.events) {
-    const span = ev.allDay && ev.endDate ? Math.max(0, diffDays(ev.date, ev.endDate)) : 0;
+    const span = evSpan(ev);
     if (!ev.repeat || ev.repeat === 'none') {
       const end = addDays(ev.date, span);
       if (ev.date <= to && end >= from && !(ev.skip && ev.skip[ev.date])) out.push({ ev, date: ev.date, end });
@@ -1659,7 +1662,7 @@ const leftLabel = x => x.left > 1 ? `あと${x.left}回休める` : x.left === 1
 function dueLabel(due) { const n = diffDays(todayISO(), due); return n < 0 ? [`${-n}日過ぎ`, 'over'] : n === 0 ? ['今日まで', 'over'] : n === 1 ? ['明日まで', 'soon'] : [`あと${n}日`, n <= 3 ? 'soon' : '']; }
 
 /* ================= part-time pay ================= */
-const jobFor = ev => !ev.allDay && !ev.cls && S.jobs.find(j => j.name && ev.title.includes(j.name));
+const jobFor = ev => !ev.allDay && !ev.cls && !multiDay(ev) && S.jobs.find(j => j.name && ev.title.includes(j.name));
 function shiftPay(job, ev) {
   const s0 = toMin(ev.start), L = evLen(ev), brk = job.breakAuto ? (L > 480 ? 60 : L > 360 ? 45 : 0) : 0, W = Math.max(0, L - brk);
   let N = 0; for (const [a, b] of [[0, 300], [1320, 1740], [2760, 2880]]) N += Math.max(0, Math.min(s0 + L, b) - Math.max(s0, a));
@@ -1690,7 +1693,7 @@ function yearPay(y) { let t = 0; for (const o of occurrences(`${y}-01-01`, `${y}
 
 /* ================= countdown ================= */
 function nextOcc(ev, T) {
-  const span = ev.allDay && ev.endDate ? Math.max(0, diffDays(ev.date, ev.endDate)) : 0;
+  const span = evSpan(ev);
   if (!ev.repeat || ev.repeat === 'none') return ev.date >= T ? [ev.date, false] : addDays(ev.date, span) >= T ? [T, true] : null;
   for (let d = ev.date > T ? ev.date : T, i = 0; i < 400; d = addDays(d, 1), i++) if (matches(ev, d)) return [d, false];
   return null;
@@ -1763,7 +1766,7 @@ function viewCal() {
   const F = P(st.calMonth), y = F.getFullYear(), mo = F.getMonth();
   const last = iso(new Date(y, mo + 1, 0));
   const gs = weekStart(st.calMonth), ge = addDays(weekStart(last), 6), T = todayISO();
-  const items = occurrences(gs, ge).filter(o => !o.ev.routine).map(o => ({ title: o.ev.title, s: o.date, e: o.end, c: o.ev.color, all: !!o.ev.allDay, t: o.ev.start || '' }));
+  const items = occurrences(gs, ge).filter(o => !o.ev.routine).map(o => ({ title: o.ev.title, s: o.date, e: o.end, c: o.ev.color, all: !!o.ev.allDay || o.end > o.date, t: o.ev.start || '' }));
   for (let d = gs; d <= ge; d = addDays(d, 1)) { const h = holName(d); if (h) items.push({ title: h, s: d, e: d, c: HOLC, all: true, t: '', hol: true }); }
   for (const h of S.school.tasks) if (!h.done && h.due >= gs && h.due <= ge) { const c = clsById(h.classId); items.push({ title: '〆 ' + h.title, s: h.due, e: h.due, c: c ? c.color : COLORS[4], all: true, t: '' }); }
   for (const x of S.todos) if (!x.done && x.due && x.due >= gs && x.due <= ge) items.push({ title: '〆 ' + x.title, s: x.due, e: x.due, c: TODO_C, all: true, t: '' });
@@ -1827,6 +1830,7 @@ function payCard() {
 function evCard(o, d) {
   const ev = o.ev; let t;
   if (ev.allDay) t = `終日${o.date !== o.end ? `<small>〜${md(o.end)}</small>` : ''}`;
+  else if (o.end > o.date) t = d <= o.date ? `<span class="num">${hm(ev.start)}</span><small class="num">〜${md(o.end)} ${hm(ev.end)}</small>` : d >= o.end ? `<span class="num">〜${hm(ev.end)}</span><small class="num">${md(o.date)}から</small>` : `終日<small class="num">${md(o.date)}〜${md(o.end)}</small>`;
   else t = `<span class="num">${hm(ev.start)}</span><small class="num">〜${endLabel(ev)}</small>`;
   return `<button class="ev-card${!ev.allDay && isDone(ev, d) ? ' done' : ''}" style="--c:${ev.color}" data-act="editEvent" data-id="${ev.id}" data-d="${o.date}">
     <span class="t">${t}</span><span class="stripe"></span><span class="ti">${esc(ev.title)}${ev.memo ? `<small>${esc(ev.memo.split('\n')[0])}</small>` : ''}</span></button>`;
@@ -2668,7 +2672,7 @@ function icsBuild() {
   const vev = (uid, d, ev, desc, loc, allDayEnd) => {
     L.push('BEGIN:VEVENT', `UID:${uid}@hibi-techo`, `DTSTAMP:${stamp}`, `SUMMARY:${esc2(ev.title)}`);
     if (ev.allDay) { L.push(`DTSTART;VALUE=DATE:${dd(d)}`, `DTEND;VALUE=DATE:${dd(addDays(allDayEnd || d, 1))}`); }
-    else { const end = toMin(ev.end) > toMin(ev.start) ? d : addDays(d, 1); L.push(`DTSTART;TZID=Asia/Tokyo:${dd(d)}T${tt(ev.start)}`, `DTEND;TZID=Asia/Tokyo:${dd(end)}T${tt(ev.end)}`); }
+    else { const end = allDayEnd && allDayEnd > d ? allDayEnd : toMin(ev.end) > toMin(ev.start) ? d : addDays(d, 1); L.push(`DTSTART;TZID=Asia/Tokyo:${dd(d)}T${tt(ev.start)}`, `DTEND;TZID=Asia/Tokyo:${dd(end)}T${tt(ev.end)}`); }
     if (desc) L.push(`DESCRIPTION:${esc2(desc)}`); if (loc) L.push(`LOCATION:${esc2(loc)}`);
     if (alarm && !ev.allDay) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc2(ev.title)}`, `TRIGGER:-PT${alarm}M`, 'END:VALARM');
     if (ev.allDay && ev.alarm9) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc2(ev.title)}`, 'TRIGGER:PT9H', 'END:VALARM');
@@ -2678,7 +2682,7 @@ function icsBuild() {
   for (const o of occurrences(a, z)) {
     const ev = o.ev; if (ev.routine || ev.cls) continue;
     const r = ev.route, desc = [ev.memo, r ? r.steps.filter(x => x.k === 'a' && !x.walk).map(x => `${x.line}${x.platform ? `（${x.platform}）` : ''}`).join(' → ') : '', (ev.items || []).length ? `持ち物：${ev.items.join('、')}` : ''].filter(Boolean).join('\n');
-    vev(`${ev.id}-${o.date}`, o.date, ev, desc, ev.dest || (r ? `${r.from} → ${r.to}` : ''), ev.allDay ? o.end : null); n++;
+    vev(`${ev.id}-${o.date}`, o.date, ev, desc, ev.dest || (r ? `${r.from} → ${r.to}` : ''), o.end); n++;
   }
   for (const o of S.settings.icsClass === false ? [] : classOcc(a, z)) { vev(`${o.ev.id}-${o.date}`, o.date, o.ev, '大学の授業', (clsById(o.ev.cls) || {}).room || '', null); n++; }
   if (S.settings.icsTodo !== false) for (const x of todoItems()) if (!x.done && x.due && x.due >= a) { vev(`todo-${x.id}`, x.due, { title: `〆 ${x.title}${x.time ? `（${hm(x.time)}まで）` : ''}`, allDay: true, alarm9: true }, x.note, '', null); n++; }
@@ -2690,7 +2694,7 @@ function icsBuild() {
 function todaySheet() {
   const T = todayISO(), now = toMin(nowHM()), h = new Date().getHours(), name = S.settings.name;
   const hello = h < 4 ? 'こんばんは' : h < 11 ? 'おはよう' : h < 18 ? 'こんにちは' : 'こんばんは';
-  const occ = onDay(T).filter(o => !o.ev.routine || o.ev.cls), timed = occ.filter(o => !o.ev.allDay).sort((a, b) => a.ev.start.localeCompare(b.ev.start)), all = occ.filter(o => o.ev.allDay);
+  const occ = onDay(T).filter(o => !o.ev.routine || o.ev.cls), timed = occ.filter(o => !o.ev.allDay && o.end === o.date).sort((a, b) => a.ev.start.localeCompare(b.ev.start)), all = occ.filter(o => o.ev.allDay || o.end > o.date);
   const next = timed.find(o => toMin(o.ev.start) > now) || null;
   const c = WX && WX.j && WX.j.current, D = WX && WX.j && WX.j.daily, di = D ? Math.max(0, D.time.indexOf(T)) : 0;
   let wx = '';
@@ -3459,7 +3463,7 @@ function openEvent(id, date, preset) {
   if (!evDraft.end) evDraft.end = hhmm(Math.min(1439, toMin(evDraft.start) + (evDraft._len || 60)));
   if (ev && ev.repeat && ev.repeat !== 'none' && date) {
     evDraft._occ = date; evDraft._seriesDate = ev.date; evDraft.date = date;
-    if (ev.allDay && ev.endDate) evDraft.endDate = addDays(date, diffDays(ev.date, ev.endDate));
+    if (evSpan(ev)) evDraft.endDate = addDays(date, evSpan(ev));
   }
   if (ev) evDraft._iconSet = true;
   const sh = openSheet(eventForm(), 'full tk'); sh.dataset.kind = 'event';
@@ -3470,7 +3474,7 @@ function eventForm() {
   const e = evDraft, base = e._seriesDate || e.date, days = e.days && e.days.length ? e.days : [wd(base)], T = todayISO();
   const live = e.id && S.events.find(x => x.id === e.id), occ = e._occ || e.date, done = live && !e.allDay && isDone(live, occ);
   const rel = { [T]: '今日', [addDays(T, 1)]: '明日', [addDays(T, -1)]: '昨日' }[e.date] || '';
-  const timeLbl = e.allDay ? `終日${e.endDate && e.endDate !== e.date ? `（〜${md(e.endDate)}）` : ''}` : `${hm(e.start)} – ${endLabel(e)}`;
+  const timeLbl = e.allDay ? `終日${e.endDate && e.endDate !== e.date ? `（〜${md(e.endDate)}）` : ''}` : multiDay(e) ? `${hm(e.start)} – ${md(e.endDate)} ${hm(e.end)}` : `${hm(e.start)} – ${endLabel(e)}`;
   const rep = e.repeat && e.repeat !== 'none', repLbl = rep ? repeatOptions(base).find(x => x[0] === e.repeat)[1] + (e.until ? `（${md(e.until)}まで）` : '') : '繰り返さない';
   const chev = k => ico(e['_x' + k] ? 'down' : 'right');
   return `<div class="tk-head" style="--c:${e.color}"><div class="tk-grab"></div>
@@ -3484,10 +3488,11 @@ function eventForm() {
     <div class="ev-list">
       <button class="ev-li" data-act="evX" data-k="date">${ico('cal')}<span class="num">${jpDate(e.date)}</span><em>${rel}</em>${chev('date')}</button>
       ${e._xdate ? `<div class="ev-x"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div></div>` : ''}
-      <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num">${timeLbl}</span><em class="num">${e.allDay ? '' : dur(evLen(e))}</em>${chev('time')}</button>
+      <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num">${timeLbl}</span><em class="num">${e.allDay ? '' : multiDay(e) ? `${diffDays(e.date, e.endDate) + 1}日間` : dur(evLen(e))}</em>${chev('time')}</button>
       ${e._xtime ? `<div class="ev-x"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label>
         ${e.allDay ? `<div class="fld" style="margin-top:10px"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>`
-        : `<div class="row2" style="margin-top:10px"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><p class="note" id="ev-on" style="margin:-4px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}</div>` : ''}
+        : `<div class="row2" style="margin-top:10px"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><div class="fld" style="margin:0"><label for="ev-end-date2">終了日（日をまたぐ予定）</label><input class="inp" type="date" id="ev-end-date2" min="${e.date}" value="${multiDay(e) ? e.endDate : e.date}"></div>
+          ${multiDay(e) ? `<p class="note" style="margin:8px 0 0">${md(e.date)}(${WD[wd(e.date)]}) ${hm(e.start)} から ${md(e.endDate)}(${WD[wd(e.endDate)]}) ${hm(e.end)} までの予定です。日をまたぐ予定は、カレンダーにだけ表示します。</p>` : `<p class="note" id="ev-on" style="margin:8px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}`}</div>` : ''}
       <button class="ev-li" data-act="evX" data-k="rep">${ico('repeat')}<span>${repLbl}</span>${chev('rep')}</button>
       ${e._xrep ? `<div class="ev-x"><div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
@@ -3520,6 +3525,7 @@ function syncEvent() {
   const e = evDraft, sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
   e.title = v('ev-title') ?? e.title; e.date = v('ev-date') || e.date; e.repeat = v('ev-repeat') || e.repeat; e.memo = v('ev-memo') ?? e.memo;
   const ed = v('ev-end-date'); if (ed !== null) e.endDate = ed;
+  const ed2 = v('ev-end-date2'); if (ed2 !== null) e.endDate = ed2 > e.date ? ed2 : '';
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
   const u = v('ev-until'); if (u !== null) e.until = u;
   const ef = v('ev-from'), et = v('ev-dest'); if (ef !== null) e.from = ef.trim(); if (et !== null) e.dest = et.trim();
@@ -3535,7 +3541,7 @@ function saveOccurrence(orig, occ, next, scope) {
     S.events.push(one);
   } else {
     const all = cleanEv(next);
-    if (next.date === occ) { const span = all.allDay && all.endDate ? diffDays(all.date, all.endDate) : 0; all.date = orig.date; if (all.allDay) all.endDate = addDays(all.date, span); }
+    if (next.date === occ) { const span = evSpan(all); all.date = orig.date; if (span) all.endDate = addDays(all.date, span); }
     all.skip = orig.skip || {}; all.done = orig.done || {};
     S.events[S.events.findIndex(x => x.id === orig.id)] = all;
   }
@@ -4166,7 +4172,7 @@ const ACT = {
   evItemSug: t => { syncEvent(); evDraft.items = evDraft.items || []; if (!evDraft.items.includes(t.dataset.t)) evDraft.items.push(t.dataset.t); rerenderEvent(); },
   evItemRm: t => { syncEvent(); evDraft.items.splice(+t.dataset.i, 1); rerenderEvent(); },
   packT: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; const it = (ev.items || [])[+t.dataset.i]; if (!it) return; togglePacked(ev, t.dataset.d, it); save(); render(); },
-  evShow: t => { syncEvent(); const k = t.dataset.k; evDraft.routine = k === 'tl'; if (k === 'cal') evDraft.calOnly = true; else delete evDraft.calOnly; rerenderEvent(); },
+  evShow: t => { syncEvent(); const k = t.dataset.k; if (k !== 'cal' && multiDay(evDraft)) { toast('日をまたぐ予定は、カレンダーにだけ表示します'); return; } evDraft.routine = k === 'tl'; if (k === 'cal') evDraft.calOnly = true; else delete evDraft.calOnly; rerenderEvent(); },
   evX: t => { syncEvent(); const k = '_x' + t.dataset.k; evDraft[k] = !evDraft[k]; rerenderEvent(); },
   evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); rerenderEvent(); },
   tkColor: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
@@ -4478,6 +4484,7 @@ const ACT = {
     syncEvent(); const e = evDraft;
     e.title = e.title.trim(); if (!e.title) { toast('タイトルを入力してください'); $('#ev-title', topSheet())?.focus(); return; }
     if (e.allDay) { if (!e.endDate || e.endDate < e.date) e.endDate = e.date; }
+    else if (multiDay(e)) { e.calOnly = true; e.routine = false; }
     else { e.endDate = ''; if (toMin(e.end) === toMin(e.start)) e.end = hhmm((toMin(e.start) + 30) % 1440); }
     if (!e._iconSet && e.icon === 'star') e.icon = guessIcon(e.title);
     if (e.repeat === 'weekly') { if (!e.days || !e.days.length) e.days = [wd(e._seriesDate || e.date)]; } else delete e.days;
@@ -4542,7 +4549,8 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', async e => {
   const t = e.target;
-  if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; rerenderEvent(); }
+  if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; if (!t.checked && evDraft.endDate <= evDraft.date) evDraft.endDate = ''; rerenderEvent(); }
+  else if (t.id === 'ev-end-date2') { syncEvent(); if (multiDay(evDraft)) { evDraft.calOnly = true; evDraft.routine = false; } rerenderEvent(); }
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
   else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); rerenderTk(); }
