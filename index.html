@@ -898,7 +898,21 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 /* transit (のりかえ) */
 .sheet.nk{display:flex;flex-direction:column;padding-bottom:0}
 .sheet.nk .sh-bar{flex:none}
-.nk-frame{flex:1;width:calc(100% + 32px);margin:0 -16px;border:0;background:var(--bg);min-height:0}
+.nk-wrap{position:relative;flex:1;display:flex;margin:0 -16px;min-height:0}
+.nk-frame{flex:1;width:100%;border:0;background:var(--bg);min-height:0;opacity:0;pointer-events:none;transition:opacity .25s}
+.nk-wrap.ready .nk-frame{opacity:1;pointer-events:auto}
+.nk-load{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--bg);color:var(--ink-2);font-size:14px;padding:0 32px;text-align:center;transition:opacity .25s}
+.nk-load>b{font-weight:500}
+.nk-wrap.ready .nk-load{opacity:0;pointer-events:none}
+.nk-spin{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,#4F8ED6 16%,var(--surface));color:#4F8ED6;animation:nkBob 1.1s ease-in-out infinite}
+.nk-spin .ico{width:26px;height:26px}
+@keyframes nkBob{50%{transform:translateY(-6px)}}
+.nk-fail{display:none;flex-direction:column;align-items:center;gap:8px}
+.nk-fail b{color:var(--ink);font-size:15px}
+.nk-fail small{font-size:12.5px;line-height:1.6}
+.nk-fail .btn{margin-top:6px;min-width:180px}
+.nk-wrap.fail .nk-fail{display:flex}
+.nk-wrap.fail .nk-load>b,.nk-wrap.fail .nk-spin{display:none}
 .nk-empty{padding:24px 6px;text-align:center;font-size:14px;line-height:1.8;color:var(--ink-2)}
 .rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
 .rt-sum .od{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;flex-wrap:wrap}
@@ -2513,13 +2527,27 @@ function nkSheet(q) {
   const p = new URLSearchParams({ embed: 'hibi', parent: location.origin, theme: isDark() ? 'dark' : 'light', date: d, time: q && q.time || (d === T ? nowHM() : '09:00') });
   if (/^#[0-9a-f]{6}$/i.test(accent)) p.set('accent', accent);
   if (q && q.to) { p.set('from', q.from || ''); p.set('to', q.to); if (q.via) p.set('via', q.via); p.set('type', q.type || 'dep'); p.set('go', '1'); }
-  return head + `<iframe class="nk-frame" src="${esc(base)}/?${esc(p.toString())}" title="のりかえ" allow="geolocation"></iframe>`;
+  // the frame stays hidden behind a loader until のりかえ says its ひび手帳 look is in place, so its own blue screen never shows
+  return head + `<div class="nk-wrap"><iframe class="nk-frame" src="${esc(base)}/?${esc(p.toString())}" title="のりかえ" allow="geolocation"></iframe>
+    <div class="nk-load"><span class="nk-spin">${ico('train')}</span><b>のりかえを開いています…</b>
+      <span class="nk-fail"><b>のりかえを開けませんでした</b><small>通信が不安定か、のりかえが古い版のままかもしれません。</small><button class="btn primary" data-act="nkRetry">もう一度開く</button></span></div></div>`;
+}
+let nkTimer = 0;
+function nkWatch(wrap) {
+  clearTimeout(nkTimer); wrap.classList.remove('ready', 'fail');
+  nkTimer = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 15000);
 }
 let nkReplace = null; // set while 「のりかえで調べ直す」 is open: the route event a newly added route replaces
-function openNorikae(q, replaceId) { nkReplace = replaceId || null; const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; }
+function openNorikae(q, replaceId) { nkReplace = replaceId || null; const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; const w = $('.nk-wrap', sh); if (w) nkWatch(w); }
 window.addEventListener('message', e => {
-  const base = nkBase(); if (!base || !e.data || e.data.type !== 'hibi:addRoute') return;
+  const base = nkBase(); if (!base || !e.data) return;
   try { if (e.origin !== new URL(base).origin) return; } catch (err) { return; }
+  if (e.data.type === 'hibi:ready' || e.data.type === 'hibi:fail') {
+    const f = [...document.querySelectorAll('.nk-frame')].find(x => x.contentWindow === e.source), w = f && f.parentElement;
+    if (w) { if (e.data.type === 'hibi:ready') { clearTimeout(nkTimer); w.classList.remove('fail'); w.classList.add('ready'); } else if (!w.classList.contains('ready')) w.classList.add('fail'); }
+    return;
+  }
+  if (e.data.type !== 'hibi:addRoute') return;
   const r = e.data.route; if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || !/^\d{1,2}:\d{2}$/.test(r.dep || '') || !/^\d{1,2}:\d{2}$/.test(r.arr || '')) { toast('この経路は予定にできませんでした'); return; }
   const clean = x => String(x == null ? '' : x).slice(0, 120);
   const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
@@ -4415,6 +4443,7 @@ const ACT = {
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
+  nkRetry: t => { const w = t.closest('.nk-wrap'), f = w && $('.nk-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); nkWatch(w); f.src = u.toString(); },
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
   nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
