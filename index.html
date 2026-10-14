@@ -200,7 +200,9 @@ svg{display:block}
 /* ---------- Journal ---------- */
 .j-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .ttl{display:flex;align-items:baseline;gap:12px}
-.ttl h1{margin:0;font-size:26px;font-weight:700}
+.ttl h1{margin:0;font-size:26px;font-weight:700;white-space:nowrap}
+@media (max-width:389px){.j-head .ttl{gap:8px}.j-head .ttl .script{font-size:25px}}
+@media (max-width:339px){.j-head .ttl .script{display:none}}
 .brand{font-size:32px;font-weight:700;letter-spacing:.01em;line-height:1}
 .brand small{display:block;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--ink-2);margin-top:4px}
 .j-week{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,var(--bg)),var(--bg));border-radius:24px;padding:14px 10px 12px;margin-top:8px}
@@ -388,6 +390,64 @@ input.inp[type=date]::-webkit-date-and-time-value,input.inp[type=time]::-webkit-
 .set-sec{margin-top:18px}
 .set-sec h4{margin:0 0 8px;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:.06em}
 .set-list{display:flex;flex-direction:column;gap:8px}
+/* silent camera */
+.cam{position:fixed;inset:0;z-index:75;background:#0B0B0F;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);opacity:0;transform:scale(1.03);transition:opacity .25s,transform .3s cubic-bezier(.2,.9,.25,1);-webkit-user-select:none;user-select:none;--fh:calc(100dvh - 300px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+.cam.in{opacity:1;transform:none}
+.cam .ico{width:20px;height:20px}
+.cam-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px}
+.cam-tools{display:flex;gap:8px;align-items:center}
+.cam-ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#fff;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);position:relative;flex:none;transition:background .2s,color .2s}
+.cam-ic[aria-pressed="true"]{background:#fff;color:#111}
+.cam-ic b{position:absolute;right:-3px;bottom:-3px;font-size:10px;background:var(--accent);color:#fff;border-radius:8px;padding:0 4px;line-height:15px}
+.cam-ic b:empty{display:none}
+.cam-st{font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.02em}
+.cam-st[aria-pressed="true"]{color:#E8741F}
+.cam-chip{height:32px;min-width:48px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.cam-stage{flex:1;min-height:0;display:grid;place-items:center;padding:0 12px}
+.cam-frame{position:relative;width:min(100%,calc(var(--fh) * .75));aspect-ratio:3/4;border-radius:26px;overflow:hidden;isolation:isolate;-webkit-mask-image:-webkit-radial-gradient(white,black);transform:translateZ(0);background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.06);transition:aspect-ratio .3s,width .3s;touch-action:none}
+.cam.sq .cam-frame{width:min(100%,var(--fh));aspect-ratio:1/1}
+.cam-frame video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam-frame video.mirror{transform:scaleX(-1)}
+.cam-grid{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.38) calc(33.33% - .5px) calc(33.33% + .5px),transparent calc(33.33% + .5px) calc(66.66% - .5px),rgba(255,255,255,.38) calc(66.66% - .5px) calc(66.66% + .5px),transparent calc(66.66% + .5px)),linear-gradient(180deg,transparent calc(33.33% - .5px),rgba(255,255,255,.38) calc(33.33% - .5px) calc(33.33% + .5px),transparent calc(33.33% + .5px) calc(66.66% - .5px),rgba(255,255,255,.38) calc(66.66% - .5px) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.cam.grid .cam-grid{opacity:1}
+.cam-stampv{position:absolute;right:16px;bottom:14px;font:700 15px/1 ui-monospace,Menlo,monospace;color:#FF9A3C;text-shadow:0 0 7px rgba(255,120,30,.85);letter-spacing:.04em;display:none;pointer-events:none}
+.cam.stamp .cam-stampv{display:block}
+.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.cam-flash.go{animation:camFlash .38s ease-out}
+@keyframes camFlash{0%{opacity:.92}100%{opacity:0}}
+.cam-count{position:absolute;inset:0;display:grid;place-items:center;font-size:110px;font-weight:700;color:#fff;text-shadow:0 6px 40px rgba(0,0,0,.45);pointer-events:none;font-variant-numeric:tabular-nums}
+.cam-count.pop{animation:camPop 1s ease-out}
+@keyframes camPop{0%{transform:scale(1.35);opacity:0}20%{transform:scale(1);opacity:1}80%{opacity:1}100%{opacity:.2}}
+.cam-zl{position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:12px;background:rgba(0,0,0,.45);font-size:12.5px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none}
+.cam-zl.on{opacity:1}
+.cam-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center;font-size:14px;line-height:1.75;color:rgba(255,255,255,.85);background:#000}
+.cam-msg[hidden]{display:none}
+.cam-zooms{display:flex;justify-content:center;gap:6px;padding:12px 0 2px;min-height:44px}
+.cam-zooms button{min-width:38px;height:30px;padding:0 8px;border-radius:15px;background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.cam-zooms button[aria-pressed="true"]{background:rgba(255,255,255,.92);color:#111}
+.cam-filters{display:flex;gap:18px;overflow-x:auto;padding:8px 20px 12px;scrollbar-width:none;justify-content:safe center}
+.cam-filters::-webkit-scrollbar{display:none}
+.cam-filters button{flex:none;font-size:13px;color:rgba(255,255,255,.55);padding:4px 0 6px;position:relative;transition:color .2s}
+.cam-filters button[aria-pressed="true"]{color:#fff;font-weight:700}
+.cam-filters button[aria-pressed="true"]::after{content:"";position:absolute;left:50%;bottom:-2px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
+.cam-bottom{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 30px 16px}
+.cam-thumb{justify-self:start;width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.08) center/cover no-repeat;border:2px solid rgba(255,255,255,.25)}
+.cam-thumb.on{border-color:rgba(255,255,255,.9)}
+.cam-shutter{width:80px;height:80px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center;padding:0;background:none}
+.cam-shutter i{width:64px;height:64px;border-radius:50%;background:var(--accent);transition:transform .12s}
+.cam-shutter:active i{transform:scale(.86)}
+.cam-bottom .cam-ic.big{justify-self:end;width:48px;height:48px}
+.cam-review{position:absolute;inset:0;background:#0B0B0F;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 18px);animation:camRv .3s cubic-bezier(.2,.9,.25,1)}
+.cam-review[hidden]{display:none}
+@keyframes camRv{from{opacity:0;transform:translateY(24px)}}
+.cam-rv-img{flex:1;min-height:0;display:grid;place-items:center}
+.cam-rv-img img{max-width:100%;max-height:100%;border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.cam-rv-act{display:flex;flex-direction:column;gap:10px;padding-top:18px}
+.cam-rv-act .btn{width:100%}
+.cam-rv-act .cam-rv-w{background:rgba(255,255,255,.12);color:#fff;box-shadow:none}
+.cam-rv-row{display:flex;justify-content:space-between;padding:4px 6px 0}
+.cam-rv-row button{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.75);font-size:14px;padding:6px 2px}
+.cam-rv-row .ico{width:17px;height:17px}
 #splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--accent);transition:opacity .45s ease,transform .5s cubic-bezier(.3,.8,.3,1)}
 #splash svg{width:min(52vw,230px);height:auto;overflow:visible}
 .sp-pen{fill:none;stroke:#FFF3EE;stroke-width:15;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:spWrite 1.05s cubic-bezier(.6,.05,.35,1) .2s forwards}
@@ -1501,6 +1561,8 @@ const IC = {
   bag:'<path d="M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2"/>',
   palette:'<path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.8-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.1"/><circle cx="10" cy="7.5" r="1.1"/><circle cx="14.5" cy="7.5" r="1.1"/>',
   timer:'<circle cx="12" cy="13" r="8"/><path d="M12 13 9 9.5M9 2h6"/>',
+  flip:'<path d="M4 9a8 8 0 0 1 14.3-3.3L20 8M20 4v4h-4M20 15a8 8 0 0 1-14.3 3.3L4 16M4 20v-4h4"/>',
+  grid:'<path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>',
   down:'<path d="m6 9 6 6 6-6"/>',
   more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
@@ -2013,7 +2075,7 @@ function viewJournal() {
   if (!dates.length) list = `<p class="empty">まだ日記がありません。<br>右下の＋から、今日の気持ちを書いてみましょう。</p>`;
   return `
   <div class="j-head"><div class="ttl"><h1>日記</h1><span class="script">diary</span></div>
-    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
   ${quickMood(T)}
@@ -2643,6 +2705,148 @@ function nkSheet(q) {
     <div class="nk-load"><span class="nk-spin">${ico('train')}</span><b>のりかえを開いています…</b>
       <span class="nk-fail"><b>のりかえを開けませんでした</b><small>通信が不安定か、のりかえが古い版のままかもしれません。</small><button class="btn primary" data-act="nkRetry">もう一度開く</button></span></div></div>`;
 }
+/* ================= silent camera: a frame of the live video is drawn onto a canvas, so there is no shutter sound ================= */
+const CAM_FILTERS = [['', 'ナチュラル', 'none'], ['film', 'フィルム', 'contrast(1.08) saturate(1.18) sepia(.12)'], ['warm', 'あたたか', 'saturate(1.12) sepia(.28) hue-rotate(-10deg) brightness(1.02)'], ['cool', 'クール', 'saturate(.92) hue-rotate(14deg) brightness(1.04) contrast(1.02)'], ['mono', 'モノクロ', 'grayscale(1) contrast(1.12)'], ['soft', 'ふんわり', 'brightness(1.08) contrast(.9) saturate(.88)']];
+const camCanFilter = (() => { let ok = null; return () => { if (ok === null) try { ok = 'filter' in document.createElement('canvas').getContext('2d'); } catch (e) { ok = false; } return ok; }; })();
+let CAM = null;
+const camStampText = () => { const d = new Date(); return `'${String(d.getFullYear()).slice(2)} ${d.getMonth() + 1} ${d.getDate()}`; };
+function camShell() {
+  return `<div class="cam-top"><button class="cam-ic" data-cam="close" aria-label="カメラを閉じる">${ico('x')}</button>
+    <div class="cam-tools"><button class="cam-ic" data-cam="torch" aria-label="ライト" hidden>${ico('bolt')}</button><button class="cam-ic" data-cam="timer" aria-label="セルフタイマー">${ico('timer')}<b></b></button><button class="cam-ic" data-cam="grid" aria-label="グリッド">${ico('grid')}</button><button class="cam-ic cam-st" data-cam="stamp" aria-label="日付を写しこむ">'26</button><button class="cam-chip" data-cam="sq" aria-label="写真の形"></button></div></div>
+  <div class="cam-stage"><div class="cam-frame"><video playsinline muted autoplay></video><div class="cam-grid"></div><span class="cam-stampv"></span><div class="cam-count"></div><div class="cam-flash"></div><span class="cam-zl"></span><div class="cam-msg" hidden></div></div></div>
+  <div class="cam-zooms"></div>
+  <div class="cam-filters">${camCanFilter() ? CAM_FILTERS.map(([k, l]) => `<button data-cam="filter" data-k="${k}">${l}</button>`).join('') : ''}</div>
+  <div class="cam-bottom"><button class="cam-thumb" data-cam="last" aria-label="さっき撮った写真"></button><button class="cam-shutter" data-cam="shot" aria-label="撮影（音は鳴りません）"><i></i></button><button class="cam-ic big" data-cam="flip" aria-label="カメラを切り替え">${ico('flip')}</button></div>
+  <div class="cam-review" hidden><div class="cam-rv-img"><img alt="撮った写真"></div>
+    <div class="cam-rv-act"><button class="btn primary" data-cam="addOnly">${ico('image')}写真だけ日記に追加</button><button class="btn cam-rv-w" data-cam="addWrite">${ico('pen')}言葉や気持ちを添える</button>
+      <div class="cam-rv-row"><button data-cam="retake">${ico('left')}撮り直す</button><button data-cam="savePhotos">${ico('save')}写真アプリに保存</button></div></div></div>`;
+}
+function camSync() {
+  const c = CAM, el = c.el; if (!el) return;
+  el.classList.toggle('sq', c.sq); el.classList.toggle('grid', c.grid); el.classList.toggle('stamp', c.stamp);
+  $('[data-cam="sq"]', el).textContent = c.sq ? '1:1' : '3:4';
+  $('[data-cam="grid"]', el).setAttribute('aria-pressed', c.grid); $('[data-cam="stamp"]', el).setAttribute('aria-pressed', c.stamp);
+  const tb = $('[data-cam="timer"]', el); tb.setAttribute('aria-pressed', !!c.timer); $('b', tb).textContent = c.timer ? c.timer + 's' : '';
+  $('.cam-stampv', el).textContent = camStampText();
+  el.querySelectorAll('[data-cam="filter"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === c.filter));
+  const v = $('video', el), f = CAM_FILTERS.find(x => x[0] === c.filter); v.style.filter = f && f[0] ? f[2] : ''; v.classList.toggle('mirror', c.facing === 'user');
+  const t = $('[data-cam="torch"]', el); t.hidden = !c.torchCap; t.setAttribute('aria-pressed', !!c.torch);
+  const th = $('.cam-thumb', el); th.style.backgroundImage = c.shot ? `url("${c.shot.small}")` : ''; th.classList.toggle('on', !!c.shot);
+  const z = $('.cam-zooms', el), zc = c.zoomCap;
+  if (zc) { const vals = [...new Set([zc.min, 1, 2, 3, 5].filter(x => x >= zc.min && x <= zc.max).map(x => Math.round(x * 10) / 10))];
+    z.innerHTML = vals.map(x => `<button data-cam="zoom" data-z="${x}" aria-pressed="${Math.abs(c.zoom - x) < .05}">${x < 1 ? String(x).replace(/^0/, '') : x}×</button>`).join(''); } else z.innerHTML = '';
+}
+function camSavePrefs() { const c = CAM; S.settings.cam = { facing: c.facing, sq: c.sq, grid: c.grid, stamp: c.stamp, filter: c.filter, timer: c.timer }; save(true); }
+function camMsg(text, retry) { const m = $('.cam-msg', CAM.el); m.hidden = !text; m.innerHTML = text ? `<span>${esc(text).replace(/\n/g, '<br>')}</span>${retry ? '<button class="btn primary" data-cam="retry">もう一度</button>' : ''}` : ''; }
+function camStop() { if (CAM && CAM.stream) CAM.stream.getTracks().forEach(t => t.stop()); if (CAM) { CAM.stream = CAM.track = null; } }
+async function camStart() {
+  const c = CAM; if (!c) return; const seq = ++c.seq; camStop(); camMsg('');
+  if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camMsg('このページではカメラを使えません。\nGitHub Pages 版のひび手帳（Safari・ホーム画面）で開いてください。'); return; }
+  let s;
+  try { s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: c.facing }, width: { ideal: 4032 }, height: { ideal: 3024 } }, audio: false }); }
+  catch (err) {
+    if (seq !== c.seq) return;
+    camMsg(err && (err.name === 'NotAllowedError' || err.name === 'SecurityError') ? 'カメラの使用が許可されていません。\niPhoneの「設定 → Safari → カメラ」を「許可」にしてから、もう一度試してください。' : 'カメラを起動できませんでした。\nほかのアプリがカメラを使っていないか確かめてください。', true); return;
+  }
+  if (!CAM || seq !== c.seq) { s.getTracks().forEach(t => t.stop()); return; }
+  c.stream = s; c.track = s.getVideoTracks()[0];
+  const v = $('video', c.el); v.srcObject = s; try { await v.play(); } catch (e) {}
+  const caps = c.track.getCapabilities ? c.track.getCapabilities() : {};
+  c.zoomCap = caps.zoom && caps.zoom.max > caps.zoom.min ? { min: caps.zoom.min, max: Math.min(caps.zoom.max, 10) } : null;
+  c.zoom = c.zoomCap ? ((c.track.getSettings() || {}).zoom || c.zoomCap.min) : 1;
+  c.torchCap = !!caps.torch; c.torch = false;
+  if (c.zoomCap && c.zoomCap.min < 1 && c.zoom < 1) camZoom(1); // start at 1× like the iPhone camera
+  camSync();
+}
+function camZoom(z) {
+  const c = CAM; if (!c || !c.zoomCap || !c.track) return;
+  c.zoom = Math.min(c.zoomCap.max, Math.max(c.zoomCap.min, z));
+  c.track.applyConstraints({ advanced: [{ zoom: c.zoom }] }).catch(() => {});
+  const l = $('.cam-zl', c.el); l.textContent = `${c.zoom.toFixed(1)}×`; l.classList.add('on'); clearTimeout(c.zlT); c.zlT = setTimeout(() => l.classList.remove('on'), 900);
+  c.el.querySelectorAll('[data-cam="zoom"]').forEach(b => b.setAttribute('aria-pressed', Math.abs(+b.dataset.z - c.zoom) < .05));
+}
+function camCanvas(maxSide) {
+  const c = CAM, v = $('video', c.el), vw = v.videoWidth, vh = v.videoHeight; if (!vw || !vh) return null;
+  const fr = $('.cam-frame', c.el).getBoundingClientRect(), k = Math.max(fr.width / vw, fr.height / vh), sw = fr.width / k, sh = fr.height / k, sx = (vw - sw) / 2, sy = (vh - sh) / 2; // what object-fit:cover shows
+  const scale = Math.min(1, maxSide / Math.max(sw, sh)), w = Math.round(sw * scale), h = Math.round(sh * scale), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d'), f = CAM_FILTERS.find(x => x[0] === c.filter);
+  if (f && f[0] && camCanFilter()) g.filter = f[2];
+  if (c.facing === 'user') { g.translate(w, 0); g.scale(-1, 1); }
+  g.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.filter = 'none';
+  if (c.stamp) { const fs = Math.round(Math.min(w, h) * 0.045); g.font = `700 ${fs}px ui-monospace, Menlo, monospace`; g.textAlign = 'right'; g.textBaseline = 'bottom'; g.fillStyle = '#FF9A3C'; g.shadowColor = 'rgba(255,120,30,.85)'; g.shadowBlur = fs * 0.45; g.fillText(camStampText(), w - fs * 1.1, h - fs * 0.9); g.shadowBlur = 0; }
+  return cv;
+}
+function camShoot() {
+  const c = CAM; if (!c || !c.track || c.busy) return;
+  const go = () => {
+    const full = camCanvas(4096); if (!full) return;
+    const fl = $('.cam-flash', c.el); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    const sm = document.createElement('canvas'), k = Math.min(1, 720 / Math.max(full.width, full.height)); sm.width = Math.round(full.width * k); sm.height = Math.round(full.height * k);
+    sm.getContext('2d').drawImage(full, 0, 0, sm.width, sm.height);
+    c.shot = { small: sm.toDataURL('image/jpeg', 0.85), full };
+    camSync(); setTimeout(camReview, 260);
+  };
+  if (!c.timer) return go();
+  c.busy = true; let n = c.timer; const cnt = $('.cam-count', c.el);
+  const tick = () => { if (!CAM) return; if (n <= 0) { cnt.textContent = ''; c.busy = false; go(); return; } cnt.textContent = n; cnt.classList.remove('pop'); void cnt.offsetWidth; cnt.classList.add('pop'); n--; c.cntT = setTimeout(tick, 1000); };
+  tick();
+}
+function camReview(show = true) { const r = $('.cam-review', CAM.el); if (show) $('img', r).src = CAM.shot.small; r.hidden = !show; CAM.el.classList.toggle('reviewing', show); }
+function camAddEntry(withWords) {
+  const c = CAM, photo = c.shot && c.shot.small; if (!photo) return;
+  if (withWords) { closeCam(); openEntry(null, todayISO()); enDraft.photo = photo; rerenderEntry(false); return; }
+  const out = { id: uid(), date: todayISO(), time: nowHM(), feelings: [], tags: [], text: '', photo };
+  S.entries.push(out); if (!save()) { S.entries.pop(); return; }
+  closeCam(); render(); toast('写真を日記に追加しました'); attachWeather(out); attachPlace(out);
+}
+async function camSavePhotos() {
+  const c = CAM; if (!c || !c.shot) return;
+  const blob = await new Promise(r => c.shot.full.toBlob(r, 'image/jpeg', 0.92)); if (!blob) return;
+  const file = new File([blob], `hibi-${todayISO()}-${nowHM().replace(':', '')}.jpg`, { type: 'image/jpeg' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+function openCam() {
+  if (CAM) return;
+  const pf = Object.assign({ facing: 'environment', sq: false, grid: false, stamp: false, filter: '', timer: 0 }, S.settings.cam || {});
+  const el = document.createElement('div'); el.id = 'cam'; el.className = 'cam'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'カメラ');
+  CAM = Object.assign(pf, { el, seq: 0, shot: null, zoom: 1 });
+  el.innerHTML = camShell(); document.body.append(el); requestAnimationFrame(() => el.classList.add('in'));
+  el.addEventListener('click', camClick);
+  // pinch to zoom on the viewfinder
+  const fr = $('.cam-frame', el), pts = new Map(); let d0 = 0, z0 = 1;
+  fr.addEventListener('pointerdown', e => { pts.set(e.pointerId, e); if (pts.size === 2) { const [a, b] = [...pts.values()]; d0 = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); z0 = CAM.zoom; } });
+  fr.addEventListener('pointermove', e => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, e); if (pts.size === 2 && d0) { const [a, b] = [...pts.values()]; camZoom(z0 * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / d0); } });
+  const up = e => { pts.delete(e.pointerId); if (pts.size < 2) d0 = 0; };
+  fr.addEventListener('pointerup', up); fr.addEventListener('pointercancel', up);
+  camSync(); camStart();
+}
+function closeCam() {
+  if (!CAM) return; const el = CAM.el; clearTimeout(CAM.cntT); camStop(); CAM = null;
+  el.classList.remove('in'); setTimeout(() => el.remove(), 260);
+}
+function camClick(e) {
+  const b = e.target.closest('[data-cam]'); if (!b || !CAM) return; const c = CAM, k = b.dataset.cam;
+  if (k === 'close') closeCam();
+  else if (k === 'shot') camShoot();
+  else if (k === 'flip') { c.facing = c.facing === 'user' ? 'environment' : 'user'; camSavePrefs(); camSync(); camStart(); }
+  else if (k === 'sq') { c.sq = !c.sq; camSavePrefs(); camSync(); }
+  else if (k === 'grid') { c.grid = !c.grid; camSavePrefs(); camSync(); }
+  else if (k === 'stamp') { c.stamp = !c.stamp; camSavePrefs(); camSync(); }
+  else if (k === 'timer') { c.timer = { 0: 3, 3: 10, 10: 0 }[c.timer] ?? 0; camSavePrefs(); camSync(); }
+  else if (k === 'filter') { c.filter = b.dataset.k; camSavePrefs(); camSync(); }
+  else if (k === 'zoom') camZoom(+b.dataset.z);
+  else if (k === 'torch') { c.torch = !c.torch; c.track && c.track.applyConstraints({ advanced: [{ torch: c.torch }] }).catch(() => { c.torch = false; }); camSync(); }
+  else if (k === 'retry') camStart();
+  else if (k === 'last') { if (c.shot) camReview(); }
+  else if (k === 'retake') camReview(false);
+  else if (k === 'addOnly') camAddEntry(false);
+  else if (k === 'addWrite') camAddEntry(true);
+  else if (k === 'savePhotos') camSavePhotos();
+}
+document.addEventListener('visibilitychange', () => { if (!CAM) return; if (document.hidden) camStop(); else camStart(); });
+
 /* ---- 野球速報 inside ひび手帳 (its own Cloudflare Worker; shown once the page has loaded) ---- */
 const BALL_SVG = '<svg class="bb-ico" viewBox="0 0 24 24" aria-hidden="true"><path class="dl" d="M12 4.3 19.7 12 12 19.7 4.3 12z"/><path class="b2" d="M12 1.2l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="b1" d="M19.7 8.9l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="b3" d="M4.3 8.9l3.1 3.1-3.1 3.1-3.1-3.1z"/><path class="hp" d="M9.9 17.9h4.2v2.2L12 22l-2.1-1.9z"/></svg>';
 const bbBase = () => { const u = (S.settings.baseball || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://').replace(/\/+$/, ''); return /^https?:\/\/[^\s/]+/.test(u) ? u + '/' : ''; };
@@ -4643,6 +4847,7 @@ const ACT = {
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
   orb: () => openOrb(),
+  camera: () => openCam(),
   baseball: () => openBaseball(),
   bbRetry: t => { const w = t.closest('.bb-wrap'), f = w && $('.bb-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); bbWatch(w); f.src = u.toString(); },
   obRetry: t => { const w = t.closest('.ob-wrap'), f = w && $('.ob-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); orbWatch(w); f.src = u.toString(); },
