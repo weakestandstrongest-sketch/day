@@ -329,7 +329,9 @@ svg{display:block}
 .dp-d i{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
 textarea.inp{min-height:120px;resize:vertical;line-height:1.7}
 .inp.title{font-size:20px;font-weight:700}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+input.inp[type=date],input.inp[type=time]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block}
+input.inp[type=date]::-webkit-date-and-time-value,input.inp[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
 .swatches{display:flex;flex-wrap:wrap;gap:10px}
 .sw{width:34px;height:34px;border-radius:50%;background:var(--c);display:grid;place-items:center;color:#fff}
 .sw .ico{width:16px;height:16px;stroke-width:3;opacity:0}
@@ -1210,7 +1212,12 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .ev-li>span small{display:block;font-size:12px;color:var(--ink-2)}
 .ev-li em{font-style:normal;color:var(--ink-2);font-size:14.5px;white-space:nowrap}
 .ev-li>.ico:last-child{width:18px;height:18px;color:var(--ink-3);flex:none}
-.ev-x{padding:2px 18px 14px 56px}
+.ev-x{padding:2px 18px 14px 56px;min-width:0}
+.dt-grid{display:grid;grid-template-columns:32px minmax(0,1fr);gap:8px;align-items:center;margin-top:8px}
+.dt-grid.t{grid-template-columns:32px minmax(0,1.3fr) minmax(0,1fr)}
+.dt-l{font-size:12.5px;color:var(--ink-2)}
+.dt-grid .inp{min-height:44px;padding:9px 10px;font-size:16px}
+@media (max-width:389px){.ev-x{padding-left:20px}}
 .ev-x .fld{margin-bottom:10px}
 .sw-in{appearance:none;-webkit-appearance:none;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;flex:none;transition:background .2s;margin:0}
 .sw-in::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
@@ -3490,9 +3497,10 @@ function eventForm() {
       ${e._xdate ? `<div class="ev-x"><div class="fld"><label for="ev-date">${e.allDay ? '開始日' : '日付'}</label><input class="inp" type="date" id="ev-date" value="${e.date}"></div></div>` : ''}
       <button class="ev-li" data-act="evX" data-k="time">${ico('clock')}<span class="num">${timeLbl}</span><em class="num">${e.allDay ? '' : multiDay(e) ? `${diffDays(e.date, e.endDate) + 1}日間` : dur(evLen(e))}</em>${chev('time')}</button>
       ${e._xtime ? `<div class="ev-x"><label class="toggle"><span>終日</span><input type="checkbox" id="ev-allday" ${e.allDay ? 'checked' : ''}></label>
-        ${e.allDay ? `<div class="fld" style="margin-top:10px"><label for="ev-end-date">終了日</label><input class="inp" type="date" id="ev-end-date" value="${e.endDate || e.date}"></div>`
-        : `<div class="row2" style="margin-top:10px"><div class="fld"><label for="ev-start">開始</label><input class="inp" type="time" id="ev-start" value="${e.start}"></div><div class="fld"><label for="ev-end">終了</label><input class="inp" type="time" id="ev-end" value="${e.end}"></div></div><div class="fld" style="margin:0"><label for="ev-end-date2">終了日（日をまたぐ予定）</label><input class="inp" type="date" id="ev-end-date2" min="${e.date}" value="${multiDay(e) ? e.endDate : e.date}"></div>
-          ${multiDay(e) ? `<p class="note" style="margin:8px 0 0">${md(e.date)}(${WD[wd(e.date)]}) ${hm(e.start)} から ${md(e.endDate)}(${WD[wd(e.endDate)]}) ${hm(e.end)} までの予定です。日をまたぐ予定は、カレンダーにだけ表示します。</p>` : `<p class="note" id="ev-on" style="margin:8px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。</p>`}`}</div>` : ''}
+        ${e.allDay ? `<div class="dt-grid"><span class="dt-l">開始</span><input class="inp" type="date" id="ev-sdate" value="${e.date}" aria-label="開始日"><span class="dt-l">終了</span><input class="inp" type="date" id="ev-end-date" min="${e.date}" value="${e.endDate || e.date}" aria-label="終了日"></div>`
+        : `<div class="dt-grid t"><span class="dt-l">開始</span><input class="inp" type="date" id="ev-sdate" value="${e.date}" aria-label="開始日"><input class="inp" type="time" id="ev-start" value="${e.start}" aria-label="開始時刻">
+          <span class="dt-l">終了</span><input class="inp" type="date" id="ev-end-date2" min="${e.date}" value="${multiDay(e) ? e.endDate : e.date}" aria-label="終了日"><input class="inp" type="time" id="ev-end" value="${e.end}" aria-label="終了時刻"></div>
+          ${multiDay(e) ? `<p class="note" style="margin:8px 0 0">${md(e.date)}(${WD[wd(e.date)]}) ${hm(e.start)} から ${md(e.endDate)}(${WD[wd(e.endDate)]}) ${hm(e.end)} まで（${diffDays(e.date, e.endDate) + 1}日間）。日をまたぐ予定は、カレンダーにだけ表示します。</p>` : `<p class="note" id="ev-on" style="margin:8px 0 0" ${overnight(e) ? '' : 'hidden'}>終了が開始より前なので、次の日に終わる予定（夜勤など）として保存します。終了日を変えると、何日もまたぐ予定にできます。</p>`}`}</div>` : ''}
       <button class="ev-li" data-act="evX" data-k="rep">${ico('repeat')}<span>${repLbl}</span>${chev('rep')}</button>
       ${e._xrep ? `<div class="ev-x"><div class="fld"><label for="ev-repeat">繰り返し</label><select class="inp" id="ev-repeat">${repeatOptions(base).map(([k, l]) => `<option value="${k}" ${e.repeat === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         ${e.repeat === 'weekly' ? `<div class="fld"><span class="lb">曜日</span><div class="wdays">${weekOrder().map(w => `<button data-act="evDay" data-w="${w}" aria-pressed="${days.includes(w)}">${WD[w]}</button>`).join('')}</div></div>` : ''}
@@ -3523,7 +3531,7 @@ function evMoreSheet() {
 }
 function syncEvent() {
   const e = evDraft, sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
-  e.title = v('ev-title') ?? e.title; e.date = v('ev-date') || e.date; e.repeat = v('ev-repeat') || e.repeat; e.memo = v('ev-memo') ?? e.memo;
+  e.title = v('ev-title') ?? e.title; e.date = v('ev-sdate') || v('ev-date') || e.date; e.repeat = v('ev-repeat') || e.repeat; e.memo = v('ev-memo') ?? e.memo;
   const ed = v('ev-end-date'); if (ed !== null) e.endDate = ed;
   const ed2 = v('ev-end-date2'); if (ed2 !== null) e.endDate = ed2 > e.date ? ed2 : '';
   const s = v('ev-start'), en = v('ev-end'); if (s) e.start = s; if (en) e.end = en;
@@ -4554,7 +4562,8 @@ document.addEventListener('change', async e => {
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
   else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); rerenderTk(); }
-  else if (['ev-start', 'ev-end', 'ev-date', 'ev-end-date', 'ev-until'].includes(t.id)) { syncEvent(); rerenderEvent(); }
+  else if (t.id === 'ev-date' || t.id === 'ev-sdate') { syncEvent(); const e = evDraft; if (t.value) e.date = t.value; if (e.endDate && e.endDate < e.date) e.endDate = e.allDay ? e.date : ''; rerenderEvent(); }
+  else if (['ev-start', 'ev-end', 'ev-end-date', 'ev-until'].includes(t.id)) { syncEvent(); rerenderEvent(); }
   else if (t.id === 'tm-motion') tmApply({ motion: t.checked });
   else if (/^tmc-\d$/.test(t.id)) { const c = tset().custom.slice(); c[+t.id.slice(4)] = t.value; tmApply({ custom: c, palette: 'custom' }); }
   else if (t.id === 'set-pay') { S.settings.showPay = t.checked; save(); render(); }
