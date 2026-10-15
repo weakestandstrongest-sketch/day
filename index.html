@@ -221,8 +221,10 @@ svg{display:block}
 .j-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .ttl{display:flex;align-items:baseline;gap:12px}
 .ttl h1{margin:0;font-size:26px;font-weight:700;white-space:nowrap}
-@media (max-width:440px){.j-head .head-icons .icon-btn{width:32px}.j-head .ttl{gap:8px}.j-head .ttl .script{font-size:26px}}
-@media (max-width:389px){.j-head .head-icons .icon-btn{width:31px}.j-head .ttl{gap:6px}.j-head .ttl .script{font-size:23px}}
+/* the icons keep the same size and spots as on the other tabs; when the row is full, "diary" wraps onto a hidden second line */
+.j-head .ttl{flex-wrap:wrap;overflow:hidden;max-height:40px;row-gap:40px}
+@media (max-width:440px){.j-head .ttl{gap:8px;row-gap:40px}.j-head .ttl .script{font-size:26px}}
+@media (max-width:389px){.j-head .ttl{gap:6px;row-gap:40px}.j-head .ttl .script{font-size:23px}}
 @media (max-width:339px){.j-head .ttl .script{display:none}}
 .brand{font-size:32px;font-weight:700;letter-spacing:.01em;line-height:1}
 .brand small{display:block;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--ink-2);margin-top:4px}
@@ -1853,6 +1855,23 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hb-chk .ico{width:17px;height:17px;stroke-width:3}
 .hb-chk.on{background:var(--c);border-color:var(--c);color:#fff}
 .hb-heat{display:block;width:100%;height:auto}
+.hb-mh{margin:0 4px 8px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.hb-mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hb-mc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 10px 8px;cursor:pointer;min-width:0}
+.hb-mch{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+.hb-mch span{font-size:15px}
+.hb-mch b{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-chk.sm{width:24px;height:24px}.hb-chk.sm .ico{width:14px;height:14px}
+.hb-mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.hb-mcg i{aspect-ratio:1;border-radius:5px;display:grid;place-items:center;font-style:normal;font-size:8.5px;font-weight:700;color:var(--ink-3);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.hb-mcg i.e{background:transparent}
+.hb-mcg i.on{background:var(--c);color:#fff}
+.hb-mcg i.part{box-shadow:inset 0 0 0 1.5px var(--c);color:var(--ink-2)}
+.hb-mcg i.fut{background:transparent}
+.hb-mcg i.t{outline:1.5px solid var(--ink);outline-offset:1px}
+.hb-mcf{display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:12px;font-weight:700;color:var(--ink-2)}
+.hb-mcf span{display:inline-flex;align-items:center;gap:3px}
+.hb-mcf .ico{width:13px;height:13px}
 .hb-heat .t{stroke:var(--ink);stroke-width:1.2}
 .hb-arch{display:flex;flex-direction:column;gap:8px}
 .hb-ar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
@@ -1895,7 +1914,7 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hb-tr .sun{color:var(--sun)}.hb-tr .sat{color:var(--sat)}
 .hb-tr i{width:24px;height:24px;border-radius:7px;background:color-mix(in srgb,var(--c) 16%,transparent)}
 .hb-tr i.on{background:var(--c)}
-.hb-tr i.part{background:color-mix(in srgb,var(--c) 50%,transparent)}
+.hb-tr i.part{background:color-mix(in srgb,var(--c) 14%,transparent);box-shadow:inset 0 0 0 2px var(--c)}
 .hb-tr i.pre{background:transparent}
 .hb-tr i.rest{background:transparent;border:1px dashed color-mix(in srgb,var(--c) 35%,transparent)}
 .hb-tr i.sk{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 25%,transparent) 0 3px,transparent 3px 6px)}
@@ -4541,7 +4560,7 @@ function closeSheet() {
   if (ov.firstElementChild.dataset.kind === 'note') setTimeout(closeNote, 0);
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
-  if (!stack.length) $('#app').classList.remove('behind');
+  if (!stack.length) { $('#app').classList.remove('behind'); setTimeout(fixScroll, 450); }
   if (S.timer) setTimeout(tick, 0);
 }
 /* drag a sheet down by its header to dismiss it */
@@ -5135,6 +5154,9 @@ function runSearch() {
 }
 
 /* ---- settings ---- */
+const fixScroll = () => { const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return; if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } };
+window.addEventListener('orientationchange', () => { for (const t of [60, 300, 700]) setTimeout(fixScroll, t); });
+window.addEventListener('resize', () => setTimeout(fixScroll, 120));
 const appBuild = () => +APP_VER.replace(/\D/g, '');
 const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
 function settingsHTML() {
@@ -6666,12 +6688,29 @@ function hbHeatSVG(h, weeks) {
   }
   return `<svg class="hb-heat" viewBox="0 0 ${(weeks * (cs + g) - g).toFixed(1)} ${(7 * (cs + g) - g).toFixed(1)}" aria-hidden="true">${r}</svg>`;
 }
+// 1か月: this month as a small calendar per habit, two cards across
+function hbMonthCard(h) {
+  const T = todayISO(), m = T.slice(0, 7), F = P(m + '-01'), dim = new Date(F.getFullYear(), F.getMonth() + 1, 0).getDate(), lead = (F.getDay() - weekOrder()[0] + 7) % 7;
+  let cells = '', sch = 0, ok = 0, cnt = 0;
+  for (let i = 0; i < lead; i++) cells += '<i class="e"></i>';
+  for (let k = 1; k <= dim; k++) {
+    const x = `${m}-${pad(k)}`, f = hbClamp(((hbE(x, h.id) || {}).v || 0) / h.goal), fut = x > T, pre = x < h.c;
+    if (!fut && !pre && hbSched(h, x) && !hbSkip(h, x) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; }
+    if (f >= 1) cnt++;
+    cells += `<i class="${f >= 1 ? 'on' : f > 0 ? 'part' : fut || pre ? 'fut' : ''}${x === T ? ' t' : ''}">${k}</i>`;
+  }
+  return `<div class="hb-mc" style="--c:${h.color}" data-act="hbOpen" data-id="${h.id}" data-d="${T}">
+    <div class="hb-mch"><span>${esc(h.emoji || '•')}</span><b>${esc(h.name)}</b><button class="hb-chk sm${hbDone(h, T) ? ' on' : ''}" data-act="hbTap" data-id="${h.id}" data-d="${T}" aria-label="${esc(h.name)}">${ico('check')}</button></div>
+    <div class="hb-mcg">${cells}</div>
+    <div class="hb-mcf">${h.freq.t !== 'week' ? `<span>${ico('clock')}${sch ? Math.round(ok / sch * 100) : 0}%</span>` : ''}<span>${ico('check')}${cnt}</span></div></div>`;
+}
 function hbHeatHTML() {
   const T = todayISO(), act = hbAct(), arch = S.habits.list.filter(h => h.arch);
-  const segs = [[53, '1年'], [26, '半年'], [13, '3か月']];
+  const segs = [[1, '1か月'], [13, '3か月'], [26, '半年'], [53, '1年']];
   let s = `<div class="hb-row"><div class="seg">${segs.map(([n, l]) => `<button data-act="hbHeatN" data-n="${n}" aria-pressed="${HBV.heat === n}">${l}</button>`).join('')}</div><span class="hb-cnt num">${act.filter(h => hbDone(h, T)).length}/${act.length}</span></div>`;
   if (!act.length) s += `<p class="empty">習慣を追加すると、毎日の積み重ねがここに並びます。</p>`;
-  s += act.map(h => {
+  if (HBV.heat === 1) s += `<p class="hb-mh">${P(T).getMonth() + 1}月</p><div class="hb-mgrid">${act.map(hbMonthCard).join('')}</div>`;
+  else s += act.map(h => {
     const n = hbStreak(h), tot = hbTotal(h), done = hbDone(h, T);
     return `<div class="hb-hc" style="--c:${h.color}" data-act="hbOpen" data-id="${h.id}" data-d="${T}">
       <div class="hb-hh"><span class="hb-em sm">${esc(h.emoji || '•')}</span><b>${esc(h.name)}</b>
@@ -6697,13 +6736,13 @@ function hbStatsHTML() {
       for (let ws = weekStart(from); ws <= T; ws = addDays(ws, 7)) {
         let c = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c && hbDone(h, d)) c++; }
         if (addDays(ws, 6) < h.c) continue;
-        const need = addDays(ws, 6) < T ? h.freq.n : Math.min(h.freq.n, c); tot += need; done += Math.min(c, h.freq.n);
+        tot += h.freq.n; done += Math.min(c, h.freq.n);
       }
     }
     for (let d = from > h.c ? from : h.c, i = 0; d <= T && i < 400; d = addDays(d, 1), i++) {
       const e = hbE(d, h.id), ok = hbDone(h, d);
       if (ok && e && e.t) hours[new Date(e.t).getHours()]++;
-      if (h.freq.t === 'week' || !hbSched(h, d) || hbSkip(h, d) || (d === T && !ok)) continue;
+      if (h.freq.t === 'week' || !hbSched(h, d) || hbSkip(h, d)) continue;
       tot++; wdT[wd(d)]++; if (ok) { done++; wdD[wd(d)]++; }
     }
   }
@@ -6758,7 +6797,7 @@ function hbdHTML() {
   for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let k = 1; k <= dim; k++) {
     const x = `${m}-${pad(k)}`, f = hbClamp(((hbE(x, h.id) || {}).v || 0) / h.goal), fut = x > T, sc = hbSched(h, x) && !fut;
-    if (sc && !hbSkip(h, x) && h.freq.t !== 'week' && (x < T || f >= 1)) { sch++; if (f >= 1) ok++; }
+    if (sc && !hbSkip(h, x) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; }
     if (f >= 1) cnt++;
     cells += `<button class="hb-cd${f >= 1 ? ' on' : f > 0 ? ' part' : ''}${hbSkip(h, x) ? ' sk' : ''}${x === d ? ' sel' : ''}${fut || x < h.c ? ' fut' : ''}${!sc && !fut && x >= h.c ? ' rest' : ''}" data-act="hbdDay" data-d="${x}" ${fut ? 'disabled' : ''} style="--f:${f}">${k}</button>`;
   }
@@ -7167,10 +7206,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v71';
+const APP_VER = 'hibi-v72';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.0.0';
-const HIBI_CHANGES = ['習慣化アプリ「灯」（日記の右上の炎のボタン）', '設定でバージョンを確認できるように', '「あとで」の中にメモ（iOSのメモ・Notion風）', '家計簿とカレンダーの2本指での拡大・縮小'];
+const HIBI_VERSION = '2.0.1';
+const HIBI_CHANGES = ['日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
