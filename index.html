@@ -1506,7 +1506,7 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--inc:#7FAEEA;--exp:#F07D74}}
 :root[data-theme="dark"]{--inc:#7FAEEA;--exp:#F07D74}
 .inc{color:var(--inc)} .exp{color:var(--exp)}
-.month .mny{pointer-events:none;display:flex;flex-direction:column;align-items:center;font-size:9.5px;line-height:11.5px;padding:0 0 2px;margin-top:-2px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:hidden}
+.month .mny{pointer-events:none;display:flex;flex-direction:column;align-items:center;font-size:9.5px;line-height:11.5px;padding:0 0 2px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:hidden}
 .month .mny i{font-style:normal;color:var(--exp);white-space:nowrap}
 .month .mny i.inc{color:var(--inc)}
 .month.z0 .week{padding-bottom:4px}
@@ -1516,9 +1516,9 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .month.z2 .bar{font-size:11.5px}
 .month.z2 .bar small{font-size:9.5px;color:var(--ink-2);margin-right:3px}
 .month .bar,.month .mny,.month .more,.month .cdots{opacity:var(--pzf,1)}
-.month.zfade .bar,.month.zfade .mny,.month.zfade .more,.month.zfade .cdots{animation:zFade .4s ease both}
+.month.zfade .bar,.month.zfade .mny,.month.zfade .more,.month.zfade .cdots{animation:zFade .34s ease .06s both}
+.pz-ghost .day.sel{box-shadow:none}
 @keyframes zFade{from{opacity:0}}
-.month .week{will-change:transform}
 .pay-card.mn-card>span:nth-child(2){flex:1;min-width:0}
 .pay-card.mn-card>.mn-ic{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
 .mn-card .mn-ic .ico{width:22px;height:22px}
@@ -2118,26 +2118,26 @@ function viewCal() {
     const segs = items.filter(i => i.s <= we && i.e >= ws).map(i => Object.assign({}, i, { ss: i.s < ws ? ws : i.s, se: i.e > we ? we : i.e }));
     segs.sort((a, b) => (a.ss < b.ss ? -1 : a.ss > b.ss ? 1 : 0) || (diffDays(b.ss, b.se) - diffDays(a.ss, a.se)) || ((b.hol ? 1 : 0) - (a.hol ? 1 : 0)) || ((b.all ? 1 : 0) - (a.all ? 1 : 0)) || a.t.localeCompare(b.t));
     const lanes = [], hidden = [0, 0, 0, 0, 0, 0, 0], dots = []; let bars = '';
-    const off = mBy && [0, 1, 2, 3, 4, 5, 6].some(k => mBy.has(addDays(ws, k))) ? 1 : 0; // money goes right under the date, events below it
+    const off = mBy && [0, 1, 2, 3, 4, 5, 6].some(k => mBy.has(addDays(ws, k))) ? 1 : 0; // this week has money: one more row at the bottom of the cells (events above, amounts below)
     for (const g of segs) {
       let L = lanes.findIndex(end => end < g.ss); if (L < 0) { L = lanes.length; lanes.push(''); }
       lanes[L] = g.se;
       const c0 = diffDays(ws, g.ss) + 1, c1 = diffDays(ws, g.se) + 2;
       if (L >= MAXL) { for (let k = c0 - 1; k < c1 - 1; k++) hidden[k]++; if (!Z) for (let k = c0 - 1; k < c1 - 1; k++) (dots[k] = dots[k] || []).push(g.c); continue; }
       const cls = (g.all ? 'all' : 'timed') + (g.s < g.ss ? ' cl' : '') + (g.e > g.se ? ' cr' : '');
-      bars += `<div class="bar ${cls}" style="grid-column:${c0}/${c1};grid-row:${L + 2 + off};--c:${g.c}">${Z === 2 && !g.all && g.t ? `<small class="num">${hm(g.t)}</small>` : ''}${esc(g.title)}</div>`;
+      bars += `<div class="bar ${cls}" style="grid-column:${c0}/${c1};grid-row:${L + 2};--c:${g.c}">${Z === 2 && !g.all && g.t ? `<small class="num">${hm(g.t)}</small>` : ''}${esc(g.title)}</div>`;
     }
     let days = ''; const NL = Z === 2 ? Math.max(3, Math.min(MAXL, lanes.length)) : MAXL; // tall view: as many rows as this week needs
     for (let i = 0; i < 7; i++) {
       const d = addDays(ws, i), w = wd(d), m = dayMood(d);
       const cls = ['day', d.slice(0, 7) !== st.calMonth.slice(0, 7) && 'out', w === 6 && 'sat', w === 0 && 'sun', holName(d) && 'hol', d === T && 'today', d === st.sel && 'sel'].filter(Boolean).join(' ');
       days += `<button class="${cls}" style="grid-column:${i + 1}" data-act="selDay" data-d="${d}" aria-label="${jpDate(d)}"><span class="dn num">${P(d).getDate()}</span>${m ? `<i class="md" style="background:${m.color}"></i>` : ''}</button>`;
-      if (!Z) { if (dots[i]) bars += `<div class="cdots" style="grid-column:${i + 1};grid-row:${2 + off}">${dots[i].slice(0, 4).map(c => `<i style="background:${c}"></i>`).join('')}</div>`; }
-      else if (hidden[i]) bars += `<div class="more" style="grid-column:${i + 1};grid-row:${NL + 2 + off}">+${hidden[i]}</div>`;
+      if (!Z) { if (dots[i]) bars += `<div class="cdots" style="grid-column:${i + 1};grid-row:2">${dots[i].slice(0, 4).map(c => `<i style="background:${c}"></i>`).join('')}</div>`; }
+      else if (hidden[i]) bars += `<div class="more" style="grid-column:${i + 1};grid-row:${NL + 2}">+${hidden[i]}</div>`;
       const mo_ = mBy && mBy.get(d);
-      if (mo_) { bars += `<div class="mny" style="grid-column:${i + 1};grid-row:2">${mo_.i ? `<i class="inc">${mo_.i.toLocaleString()}</i>` : ''}${mo_.o ? `<i>${mo_.o.toLocaleString()}</i>` : ''}</div>`; }
+      if (mo_) { bars += `<div class="mny" style="grid-column:${i + 1};grid-row:${Z ? NL + 3 : 3}">${mo_.i ? `<i class="inc">${mo_.i.toLocaleString()}</i>` : ''}${mo_.o ? `<i>${mo_.o.toLocaleString()}</i>` : ''}</div>`; }
     }
-    weeks += `<div class="week" style="grid-template-rows:${Z ? `32px ${off ? 'auto ' : ''}repeat(${NL},19px) 15px` : `31px ${off ? 'auto ' : ''}12px`}">${days}${bars}</div>`;
+    weeks += `<div class="week" style="grid-template-rows:${Z ? `32px repeat(${NL},19px) 15px${off ? ' auto' : ''}` : `31px 12px${off ? ' auto' : ''}`}">${days}${bars}</div>`;
   }
   return `
   <div class="cal-head">
@@ -5965,35 +5965,47 @@ function mnDayHTML(d) {
 }
 
 /* calendar pinch: 2 fingers apart/together switch the month between 3 sizes (dots → normal → tall cells), like iOS Calendar.
-   While the fingers move, the week rows follow them (spreading apart / closing up, text never squashed);
-   on release the new size is laid out and every row glides from where it was to where it belongs (FLIP) */
-let pz = null;
+   Everything moves with transforms only (no relayout while the fingers move, so it stays at 60fps):
+   - while pinching, the week rows spread apart / close up under the fingers, and the cards below ride along;
+   - on release the new size is laid out once, the old picture cross-fades away, and every row and card
+     glides from where it was on screen to where it now belongs (FLIP). */
+let pz = null, pzRaf = 0;
 const calZoomLv = () => [0, 1, 2].includes(S.settings.calZoom) ? S.settings.calZoom : 1;
-const PZ_EASE = '.4s cubic-bezier(.22,.9,.28,1)';
+const PZ_EASE = '.42s cubic-bezier(.2,.85,.25,1)';
+const pzBelow = g => { const out = []; for (let n = g.nextElementSibling; n; n = n.nextElementSibling) out.push(n); return out; };
 function pzLive(p) {
   const g = $('#monthGrid'); if (!g) return;
-  const ws = [...g.children], step = p > 0 ? 30 : 16;
-  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = p ? `translateY(${(i * step * p).toFixed(1)}px)` : ''; });
-  g.style.transition = 'none'; g.style.marginBottom = p ? `${((ws.length - 1) * step * p).toFixed(1)}px` : '';
+  const ws = [...g.children], step = p > 0 ? 32 : 17, tail = ((ws.length - 1) * step * p).toFixed(1);
+  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = p ? `translate3d(0,${(i * step * p).toFixed(1)}px,0)` : ''; });
+  pzBelow(g).forEach(n => { n.style.transition = 'none'; n.style.transform = p ? `translate3d(0,${tail}px,0)` : ''; });
   g.style.setProperty('--pzf', p < 0 ? Math.max(0, 1 + p * 1.4).toFixed(3) : '1');
 }
 function pzSettle() {
   const g = $('#monthGrid'); if (!g) return;
-  [...g.children].forEach(w => { w.style.transition = `transform ${PZ_EASE}`; w.style.transform = ''; });
-  g.style.transition = `margin-bottom ${PZ_EASE}`; g.style.marginBottom = ''; g.style.setProperty('--pzf', '1');
+  [...g.children, ...pzBelow(g)].forEach(n => { n.style.transition = `transform ${PZ_EASE}`; n.style.transform = ''; });
+  g.style.setProperty('--pzf', '1');
+  setTimeout(() => { if (g.isConnected) [...g.children, ...pzBelow(g)].forEach(n => { n.style.transition = ''; }); }, 460);
 }
 function calZoomTo(z) {
-  const g0 = $('#monthGrid');
-  const tops = g0 ? [...g0.children].map(w => w.getBoundingClientRect().top) : [], h0 = g0 ? g0.getBoundingClientRect().height + (parseFloat(g0.style.marginBottom) || 0) : 0;
+  const g0 = $('#monthGrid'); if (!g0) { S.settings.calZoom = z; save(); render(); return; }
+  const rows0 = [...g0.children].map(w => w.getBoundingClientRect().top), below0 = pzBelow(g0)[0], b0 = below0 ? below0.getBoundingClientRect().top : 0;
+  // a picture of the month as it is now, laid over the new one and faded out
+  const r = g0.getBoundingClientRect(), ghost = g0.cloneNode(true);
+  ghost.removeAttribute('id'); ghost.classList.add('pz-ghost');
+  Object.assign(ghost.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, margin: '0', pointerEvents: 'none', zIndex: 5 });
   S.settings.calZoom = z; save(); render();
-  const g = $('#monthGrid'); if (!g || !tops.length) return;
-  const ws = [...g.children], h1 = g.getBoundingClientRect().height;
-  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = `translateY(${(tops[Math.min(i, tops.length - 1)] - w.getBoundingClientRect().top).toFixed(1)}px)`; });
-  g.style.transition = 'none'; g.style.height = `${h0}px`; g.classList.add('zfade');
+  const g = $('#monthGrid'); if (!g) return;
+  document.body.append(ghost);
+  const ws = [...g.children], below = pzBelow(g), b1 = below[0] ? below[0].getBoundingClientRect().top : 0;
+  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = `translate3d(0,${(rows0[Math.min(i, rows0.length - 1)] - w.getBoundingClientRect().top).toFixed(1)}px,0)`; });
+  below.forEach(n => { n.style.transition = 'none'; n.style.transform = `translate3d(0,${(b0 - b1).toFixed(1)}px,0)`; });
+  g.classList.add('zfade');
   void g.offsetWidth;
-  ws.forEach(w => { w.style.transition = `transform ${PZ_EASE}`; w.style.transform = ''; });
-  g.style.transition = `height ${PZ_EASE}`; g.style.height = `${h1}px`;
-  setTimeout(() => { if (!g.isConnected) return; g.style.height = ''; g.style.transition = ''; g.classList.remove('zfade'); ws.forEach(w => { w.style.transition = ''; }); }, 450);
+  requestAnimationFrame(() => {
+    [...ws, ...below].forEach(n => { n.style.transition = `transform ${PZ_EASE}`; n.style.transform = ''; });
+    ghost.style.transition = 'opacity .24s ease'; ghost.style.opacity = '0';
+  });
+  setTimeout(() => { ghost.remove(); if (g.isConnected) { g.classList.remove('zfade'); [...ws, ...below].forEach(n => { n.style.transition = ''; }); } }, 480);
 }
 main.addEventListener('touchstart', e => {
   if (e.touches.length !== 2 || !e.target.closest('#monthGrid')) return;
@@ -6004,11 +6016,12 @@ main.addEventListener('touchmove', e => {
   const [a, b] = e.touches, r = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pz.d0;
   let p = r >= 1 ? (r - 1) / .5 : (r - 1) / .32; p = Math.max(-1.15, Math.min(1.15, p));
   if ((pz.z === 2 && p > 0) || (pz.z === 0 && p < 0)) p *= .22; // already at the end: just a little give
-  pz.p = p; pzLive(p);
+  pz.p = p;
+  if (!pzRaf) pzRaf = requestAnimationFrame(() => { pzRaf = 0; if (pz) pzLive(pz.p); }); // at most once per frame
 }, { passive: false });
 const pzEnd = e => {
   if (!pz || e.touches.length >= 2) return;
-  const { p, z } = pz; pz = null; zone = null;
+  const { p, z } = pz; pz = null; zone = null; if (pzRaf) { cancelAnimationFrame(pzRaf); pzRaf = 0; }
   if (p > .4 && z < 2) calZoomTo(z + 1); else if (p < -.4 && z > 0) calZoomTo(z - 1); else pzSettle();
 };
 main.addEventListener('touchend', pzEnd); main.addEventListener('touchcancel', pzEnd);
@@ -6109,7 +6122,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v61';
+const APP_VER = 'hibi-v62';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
