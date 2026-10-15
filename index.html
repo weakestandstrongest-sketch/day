@@ -1672,6 +1672,79 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-spark{width:100%;height:70px}.mn-spark path{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}.mn-spark circle{fill:var(--accent)}
 .mn-map{display:grid;grid-template-columns:7.5em minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .mn-map .inp{min-height:40px;padding:6px 10px;font-size:15px}
+
+/* ---- メモ（あとで） ---- */
+.ib-seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px;margin:0 0 12px}
+.ib-seg button{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0;border-radius:11px;font-size:14px;font-weight:600;color:var(--ink-2)}
+.ib-seg button .ico{width:16px;height:16px}
+.ib-seg button small{font-size:11px;background:var(--surface-2);border-radius:99px;padding:0 7px;color:var(--ink-2)}
+.ib-seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.ib-seg button[aria-selected="true"] small{background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
+.nt-top{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.nt-search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:42px;color:var(--ink-3)}
+.nt-search .ico{width:17px;height:17px;flex:none}
+.nt-search input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;padding:8px 0;color:var(--ink);outline:none}
+.nt-new{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);flex:none}
+.nt-new .ico{width:20px;height:20px}
+.nt-gh{display:flex;align-items:center;gap:5px;margin:16px 4px 6px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.nt-gh .ico{width:14px;height:14px;color:var(--accent)}
+.nt-row{display:block;padding:0}
+.nt-main{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;min-width:0}
+.nt-ic{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:20px;background:var(--surface-2);color:var(--ink-3)}
+.nt-ic .ico{width:18px;height:18px}
+.nt-tx{flex:1;min-width:0}
+.nt-tx b{display:block;font-size:15.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt-tx small{display:block;font-size:12.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.nt-tx small .num{color:var(--ink);margin-right:8px;font-weight:600}
+.nt-tx small i{font-style:normal;color:var(--ink-3)}
+.nt-todo{flex:none;display:flex;align-items:center;gap:3px;font-size:11.5px;color:var(--ink-2);background:var(--surface-2);border-radius:99px;padding:3px 8px}
+.nt-todo .ico{width:12px;height:12px}.nt-todo.all{color:var(--pay)}
+.nt-empty{text-align:center;padding:40px 16px;color:var(--ink-2)}
+.nt-empty>.ico{width:40px;height:40px;color:var(--accent);opacity:.6}
+.nt-empty p{font-size:14px;line-height:1.8;margin:10px 0 18px}
+.sheet.nt{background:var(--surface)}
+.sheet.nt .sh-bar{background:var(--surface)}
+.nt-bar .l{display:flex;align-items:center;gap:2px;color:var(--accent);font-weight:600}
+.nt-bar .l .ico{width:20px;height:20px}
+.nt-acts{display:flex;gap:4px}
+.nt-acts button{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:var(--ink-2)}
+.nt-acts button .ico{width:20px;height:20px}
+.nt-acts button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.nt-page{padding:4px 6px 160px}
+.nt-icon{font-size:44px;line-height:1;padding:2px 0;margin:4px 0 2px}
+.nt-icon.none{font-size:13px;color:var(--ink-3);display:flex;align-items:center;gap:4px;padding:4px 0}
+.nt-icon.none .ico{width:14px;height:14px}
+.nt-title{width:100%;border:0;background:transparent;resize:none;font-size:27px;font-weight:700;line-height:1.3;color:var(--ink);padding:0;overflow:hidden;outline:none;font-family:inherit}
+.nt-title::placeholder{color:var(--ink-3)}
+.nt-meta{font-size:12px;color:var(--ink-3);margin:6px 0 14px}
+.nb{display:flex;align-items:flex-start;gap:6px;position:relative}
+.nb-tx{flex:1;min-width:0;border:0;background:transparent;resize:none;outline:none;color:var(--ink);font-family:inherit;font-size:16px;line-height:1.65;padding:3px 0;overflow:hidden}
+.nb-tx::placeholder{color:transparent}
+.nb-tx:focus::placeholder{color:var(--ink-3)}
+.nb-h1 .nb-tx{font-size:22px;font-weight:700;line-height:1.4;padding-top:12px}
+.nb-h2 .nb-tx{font-size:18.5px;font-weight:700;line-height:1.45;padding-top:8px}
+.nb-pre{flex:none;width:20px;text-align:center;font-size:16px;line-height:1.65;padding-top:3px;color:var(--ink-2)}
+.nb-ul .nb-pre{font-size:20px;line-height:1.3;color:var(--accent)}
+.nb-ol .nb-pre{font-size:14.5px;color:var(--accent);font-weight:700}
+.nb-chk{flex:none;width:22px;height:22px;margin:5px 2px 0 0;border-radius:7px;border:2px solid var(--ink-3);display:grid;place-items:center;color:transparent;transition:background .15s,border-color .15s}
+.nb-chk .ico{width:14px;height:14px;stroke-width:3}
+.nb-chk[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.nb-todo.done .nb-tx{color:var(--ink-3);text-decoration:line-through}
+.nb-quote{border-left:3px solid var(--accent);padding-left:12px;margin:4px 0}
+.nb-quote .nb-tx{color:var(--ink-2)}
+.nb-hrb{display:block;width:100%;padding:10px 0}.nb-hrb hr{border:0;border-top:1.5px solid var(--line);margin:0}
+.nt-tail{display:block;width:100%;height:120px}
+.nt-tools{position:fixed;left:0;right:0;bottom:0;z-index:6;display:none;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--line)}
+.sheet.nt.editing .nt-tools{display:flex}
+.nt-tools button{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;height:46px;border-radius:12px;color:var(--ink);touch-action:manipulation}
+.nt-tools button span{font-size:16px;font-weight:700;line-height:1.1}.nt-tools button span .ico{width:17px;height:17px}
+.nt-tools button small{font-size:9.5px;color:var(--ink-2);margin-top:2px}
+.nt-tools button:active{background:var(--surface-2)}
+.nt-tools .kb{margin-left:auto;color:var(--ink-2)}.nt-tools .kb .ico{width:20px;height:20px}
+.nt-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding-bottom:12px}
+.nt-icons button{aspect-ratio:1;border-radius:14px;background:var(--surface);font-size:28px;display:grid;place-items:center}
+.nt-icons button:first-child{font-size:13px;color:var(--ink-2)}
+.nt-icons button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
 </style>
 </head>
 <body>
@@ -1847,7 +1920,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults() });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [] });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -1881,6 +1954,7 @@ function normalizeState(d) {
   for (const c of n.school.classes) Object.assign(c, { id: okId(c.id), name: String(c.name ?? ''), color: okColor(c.color) ? c.color : COLORS[2], slots: asArr(c.slots) });
   for (const x of n.school.tasks) x.id = okId(x.id);
   n.money = normMoney(d.money);
+  n.notes = normNotes(d.notes);
   return n;
 }
 let loadFailed = false;
@@ -4222,6 +4296,7 @@ function closeSheet() {
   if (sgAudio) stopPreview();
   if (ov.firstElementChild.dataset.kind === 'wx') radarStop();
   if (ov.firstElementChild.dataset.kind === 'nk') nkReplace = null;
+  if (ov.firstElementChild.dataset.kind === 'note') setTimeout(closeNote, 0);
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
   if (!stack.length) $('#app').classList.remove('behind');
@@ -4647,7 +4722,9 @@ function taskSheet() {
   const open = S.tasks.filter(t => !t.done), done = S.tasks.filter(t => t.done);
   const row0 = t => `<div class="ib-row${t.done ? ' done' : ''}" style="--c:${t.color || COLORS[0]}"><button class="ib-main" data-act="tkEdit" data-id="${t.id}"><span class="ib-ic">${ico(t.icon || guessIcon(t.title))}</span><span class="ib-tt"><small class="num">${dur(t.dur || 30)}${t.subtasks && t.subtasks.length ? `・サブタスク ${t.subtasks.filter(x => x.done).length}/${t.subtasks.length}` : ''}</small>${esc(t.title)}</span></button>${t.done ? '<span></span>' : `<button class="ib-cal" data-act="tkSched" data-id="${t.id}" aria-label="日付を決める">${ico('today')}</button>`}<button class="chk${t.done ? ' on' : ''}" data-act="taskDone" data-id="${t.id}" aria-label="完了">${ico('check')}</button></div>`;
   const row = t => `<div class="sw-wrap"><button class="sw-del" data-act="taskDel" data-id="${t.id}" tabindex="-1" aria-label="削除"><span>${ico('trash')}削除</span></button>${row0(t)}</div>`;
-  return `<div class="sh-bar"><span></span><b>あとで</b><button class="r" data-act="close">閉じる</button></div>
+  const seg = `<div class="ib-seg" role="tablist"><button role="tab" data-act="ibView" data-k="tasks" aria-selected="${IBV !== 'notes'}">${ico('inbox')}あとで${open.length ? `<small class="num">${open.length}</small>` : ''}</button><button role="tab" data-act="ibView" data-k="notes" aria-selected="${IBV === 'notes'}">${ico('pen')}メモ${S.notes.length ? `<small class="num">${S.notes.length}</small>` : ''}</button></div>`;
+  if (IBV === 'notes') return `<div class="sh-bar"><span></span><b>メモ</b><button class="r" data-act="close">閉じる</button></div>${seg}${notesHTML()}`;
+  return `<div class="sh-bar"><span></span><b>あとで</b><button class="r" data-act="close">閉じる</button></div>${seg}
   <button class="btn primary ib-add" data-act="tkNew">${ico('plus')}あとでやることを追加</button>
   <div class="task-list">${open.map(row).join('') || '<p class="empty">いつかやりたいことを書き出しておきましょう。<br>日付を決めると、タイムラインに入ります。</p>'}</div>
   ${done.length ? `<div class="task-list"><div class="routine-note"><span>完了 ${done.length}件</span><button data-act="taskClear">完了したものを消す</button></div>${done.map(row).join('')}</div>` : ''}
@@ -4808,8 +4885,10 @@ function runSearch() {
   if (!q && !filt) { box.innerHTML = '<p class="empty">キーワードを入力するか、気持ち・できごとを選んでください</p>'; return; }
   const evs = filt ? [] : S.events.filter(e => (e.title + ' ' + (e.memo || '')).toLowerCase().includes(q)).sort((a, b) => b.date.localeCompare(a.date));
   const ens = S.entries.filter(e => (!sf.feel || e.feelings.includes(sf.feel)) && (!sf.tag || e.tags.includes(sf.tag)) && (!q || (e.text + ' ' + e.tags.join(' ') + ' ' + e.feelings.join(' ') + (e.song ? ' ' + e.song.name + ' ' + e.song.artist : '')).toLowerCase().includes(q))).sort((a, b) => b.date.localeCompare(a.date));
-  const n = evs.length + ens.length;
+  const nts = filt || !q ? [] : S.notes.filter(x => (x.title + '\n' + noteText(x)).toLowerCase().includes(q)).sort((a, b) => b.u - a.u);
+  const n = evs.length + ens.length + nts.length;
   box.innerHTML = n ? `<p class="res-count">${n}件</p>` + evs.map(e => `<button data-act="goEvent" data-d="${e.date}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(e.date)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`).join('') +
+    nts.map(x => `<button data-act="openNote" data-id="${x.id}" style="--c:var(--accent)"><i></i><span>${x.icon ? x.icon + ' ' : ''}${esc(noteName(x))}<small>メモ ・ ${noteWhen(x.u)}</small></span></button>`).join('') +
     ens.map(e => `<button data-act="goEntry" data-id="${e.id}" style="--c:${e.feelings[0] ? feelInfo(e.feelings[0]).color : 'var(--ink-3)'}"><i></i><span>${esc(e.text.slice(0, 60) || e.feelings.join('・'))}<small>${jpDate(e.date)}${e.feelings.length ? '・' + esc(e.feelings.join('・')) : ''}</small></span></button>`).join('') : '<p class="empty">見つかりませんでした</p>';
 }
 
@@ -6108,6 +6187,200 @@ const endDrag = () => {
 main.addEventListener('touchend', endDrag);
 main.addEventListener('touchcancel', endDrag);
 
+/* ================= メモ (inside あとで) =================
+   iOS メモ-style list (pinned, grouped by date, search) and a Notion-style page editor made of blocks:
+   p 本文 / h1 h2 見出し / ul 箇条書き / ol 番号 / todo チェック / quote 引用 / hr 区切り線.
+   note: { id, icon, title, blocks:[{ id, t, x, d }], pin, c (created), u (updated) } */
+const NB_TYPES = ['p', 'h1', 'h2', 'ul', 'ol', 'todo', 'quote', 'hr'];
+const NOTE_ICONS = ['', '📝', '💡', '📚', '🎵', '🍳', '🛒', '✈️', '🎓', '💼', '🏃', '🎮', '🎁', '💰', '❤️', '⭐', '📌', '🌱', '☕', '🗓'];
+function normNotes(a) {
+  return asArr(a).map(n => ({
+    id: okId(n.id), icon: NOTE_ICONS.includes(n.icon) ? n.icon : '', title: String(n.title ?? '').slice(0, 200), pin: !!n.pin, c: +n.c || Date.now(), u: +n.u || +n.c || Date.now(),
+    blocks: asArr(n.blocks).map(b => ({ id: okId(b.id), t: NB_TYPES.includes(b.t) ? b.t : 'p', x: String(b.x ?? '').slice(0, 20000), d: !!b.d })),
+  })).map(n => (n.blocks.length ? n : Object.assign(n, { blocks: [{ id: uid(), t: 'p', x: '', d: false }] })));
+}
+let IBV = 'tasks', NQ = '', NOTE = null, noteSaveT = 0;
+const noteById = id => S.notes.find(n => n.id === id);
+const noteText = n => n.blocks.filter(b => b.t !== 'hr').map(b => b.x).join('\n');
+const noteEmpty = n => !n.title.trim() && !n.blocks.some(b => b.x.trim() || b.t === 'hr');
+function noteName(n) { return n.title.trim() || (n.blocks.find(b => b.x.trim()) || {}).x?.split('\n')[0].slice(0, 40) || '新規メモ'; }
+function notePreview(n) {
+  const lines = n.blocks.filter(b => b.t !== 'hr' && b.x.trim()).map(b => b.x.replace(/\n+/g, ' '));
+  if (!n.title.trim()) lines.shift();
+  return lines.join(' ').slice(0, 80);
+}
+function noteWhen(ts) {
+  const d = new Date(ts), T = todayISO(), k = iso(d);
+  if (k === T) return `${d.getHours()}:${pad(d.getMinutes())}`;
+  if (k === addDays(T, -1)) return '昨日';
+  if (diffDays(k, T) < 7) return `${WD[d.getDay()]}曜日`;
+  return d.getFullYear() === new Date().getFullYear() ? `${d.getMonth() + 1}/${d.getDate()}` : `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+function noteGroup(ts) {
+  const k = iso(new Date(ts)), T = todayISO(), dd = diffDays(k, T);
+  if (dd <= 0) return '今日'; if (dd === 1) return '昨日'; if (dd < 7) return '過去7日間'; if (dd < 30) return '過去30日間';
+  const d = new Date(ts); return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
+function noteRow(n) {
+  const todos = n.blocks.filter(b => b.t === 'todo'), dn = todos.filter(b => b.d).length;
+  return `<div class="sw-wrap"><button class="sw-del" data-act="noteDel" data-id="${n.id}" tabindex="-1" aria-label="削除"><span>${ico('trash')}削除</span></button>
+    <div class="ib-row nt-row"><button class="nt-main" data-act="noteOpen" data-id="${n.id}"><span class="nt-ic">${n.icon || ico('pen')}</span><span class="nt-tx"><b>${esc(noteName(n))}</b><small><span class="num">${noteWhen(n.u)}</span>${esc(notePreview(n)) || '<i>追加テキストなし</i>'}</small></span>${todos.length ? `<span class="nt-todo num${dn === todos.length ? ' all' : ''}">${ico('check')}${dn}/${todos.length}</span>` : ''}</button></div></div>`;
+}
+function notesHTML() {
+  const q = NQ.trim().toLowerCase(), list = [...S.notes].filter(n => !q || (n.title + '\n' + noteText(n)).toLowerCase().includes(q)).sort((a, b) => b.u - a.u);
+  const pins = list.filter(n => n.pin), rest = list.filter(n => !n.pin), groups = [];
+  for (const n of rest) { const g = noteGroup(n.u); if (!groups.length || groups[groups.length - 1][0] !== g) groups.push([g, []]); groups[groups.length - 1][1].push(n); }
+  return `<div class="nt-top"><label class="nt-search">${ico('search')}<input id="nt-q" type="search" placeholder="メモを検索" value="${esc(NQ)}" autocomplete="off" enterkeyhint="search"></label><button class="nt-new" data-act="noteNew" aria-label="新しいメモ">${ico('pen')}</button></div>
+    <div id="nt-list">${!S.notes.length ? `<div class="nt-empty">${ico('pen')}<p>思いついたこと、買うもの、授業のメモ、旅行の計画…<br>なんでも書いておけます。</p><button class="btn primary" data-act="noteNew">${ico('plus')}新しいメモ</button></div>`
+      : !list.length ? '<p class="empty">見つかりませんでした</p>'
+      : `${pins.length ? `<p class="nt-gh">${ico('pin')}ピン留め</p><div class="task-list">${pins.map(noteRow).join('')}</div>` : ''}${groups.map(([g, ns]) => `<p class="nt-gh">${g}</p><div class="task-list">${ns.map(noteRow).join('')}</div>`).join('')}
+        <p class="note" style="text-align:center">${S.notes.length}件のメモ ・ 左にスライドで削除</p>`}</div>`;
+}
+const refreshNoteList = () => { const l = $('#nt-list'); if (l) { const tmp = document.createElement('div'); tmp.innerHTML = notesHTML(); l.replaceWith(tmp.querySelector('#nt-list')); } };
+
+/* ---- the page editor ---- */
+function nbHTML(b, num) {
+  if (b.t === 'hr') return `<div class="nb nb-hr" data-bid="${b.id}"><button class="nb-hrb" data-act="nbHr" data-bid="${b.id}" aria-label="区切り線（タップで削除）"><hr></button></div>`;
+  const ph = { h1: '見出し1', h2: '見出し2', ul: 'リスト', ol: 'リスト', todo: 'やること', quote: '引用' }[b.t] || '';
+  const pre = b.t === 'ul' ? '<span class="nb-pre">•</span>' : b.t === 'ol' ? `<span class="nb-pre num">${num}.</span>` : b.t === 'todo' ? `<button class="nb-chk" data-act="nbChk" data-bid="${b.id}" aria-pressed="${b.d}" aria-label="完了">${ico('check')}</button>` : '';
+  return `<div class="nb nb-${b.t}${b.t === 'todo' && b.d ? ' done' : ''}" data-bid="${b.id}">${pre}<textarea class="nb-tx" data-bid="${b.id}" rows="1" placeholder="${ph}" enterkeyhint="enter">${esc(b.x)}</textarea></div>`;
+}
+function nbAll(n) { let k = 0; return n.blocks.map(b => { k = b.t === 'ol' ? k + 1 : 0; return nbHTML(b, k); }).join(''); }
+function noteSheet() {
+  const n = NOTE, d = new Date(n.u);
+  return `<div class="sh-bar nt-bar"><button class="l" data-act="close">${ico('left')}メモ</button><b></b><span class="r nt-acts"><button data-act="notePin" aria-pressed="${n.pin}" aria-label="ピン留め">${ico('pin')}</button><button data-act="noteMore" aria-label="そのほか">${ico('more')}</button></span></div>
+    <div class="nt-page">
+      <button class="nt-icon${n.icon ? '' : ' none'}" data-act="noteIcon">${n.icon || `${ico('plus')}アイコン`}</button>
+      <textarea id="nt-title" class="nt-title" rows="1" placeholder="タイトル" maxlength="200">${esc(n.title)}</textarea>
+      <p class="nt-meta num">${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours()}:${pad(d.getMinutes())}</p>
+      <div class="nt-blocks" id="nt-blocks">${nbAll(n)}</div>
+      <button class="nt-tail" data-act="nbTail" aria-label="下に書き足す"></button>
+    </div>
+    <div class="nt-tools" id="nt-tools" role="toolbar" aria-label="書式">
+      ${[['p', '本文', 'Aa'], ['h1', '見出し', 'H'], ['ul', '箇条書き', '•'], ['ol', '番号', '1.'], ['todo', 'チェック', ico('check')], ['quote', '引用', '❝'], ['hr', '区切り線', '—']].map(([t, l, g]) => `<button data-act="nbType" data-t="${t}" aria-label="${l}"><span>${g}</span><small>${l}</small></button>`).join('')}
+      <button class="kb" data-act="nbDone" aria-label="キーボードを閉じる">${ico('down')}</button>
+    </div>`;
+}
+const nbFit = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
+function noteFitAll() { const sh = topSheet(); if (!sh) return; sh.querySelectorAll('.nb-tx, #nt-title').forEach(nbFit); }
+function noteTouch() { NOTE.u = Date.now(); clearTimeout(noteSaveT); noteSaveT = setTimeout(() => save(), 400); }
+function openNote(id) {
+  NOTE = noteById(id); if (!NOTE) return;
+  const sh = openSheet(noteSheet(), 'full nt'); sh.dataset.kind = 'note';
+  requestAnimationFrame(noteFitAll);
+  if (noteEmpty(NOTE)) setTimeout(() => { const t = $('#nt-title'); if (t) t.focus(); }, 380);
+}
+function closeNote() {
+  if (!NOTE) return; clearTimeout(noteSaveT);
+  if (noteEmpty(NOTE)) S.notes = S.notes.filter(n => n !== NOTE); // nothing written: don't keep an empty page
+  NOTE = null; save(); rerenderKind('inbox', taskSheet);
+}
+const nbIdx = id => NOTE.blocks.findIndex(b => b.id === id);
+let nbFocus = null; // last block (id) the caret was in, for the toolbar
+function nbRedraw(focusId, caret) {
+  const box = $('#nt-blocks'); if (!box) return;
+  box.innerHTML = nbAll(NOTE); box.querySelectorAll('.nb-tx').forEach(nbFit);
+  if (focusId) { const el = box.querySelector(`.nb-tx[data-bid="${focusId}"]`); if (el) { el.focus({ preventScroll: false }); const c = caret === 'end' || caret == null ? el.value.length : caret; el.setSelectionRange(c, c); } }
+}
+// markdown-like shortcuts typed at the start of a block: "- " "・" "1. " "[] " "# " "## " "> " "---"
+const NB_SHORT = [[/^(-|・|\*)\s$/, 'ul'], [/^1[.)．]\s$/, 'ol'], [/^(\[\s?\]|［\s?］)\s$/, 'todo'], [/^#\s$/, 'h1'], [/^##\s$/, 'h2'], [/^>\s$/, 'quote'], [/^(---|ーーー)$/, 'hr']];
+function nbInput(el) {
+  const i = nbIdx(el.dataset.bid); if (i < 0) return; const b = NOTE.blocks[i];
+  if (b.t === 'p' || b.t === 'ul') {
+    const hit = NB_SHORT.find(([re]) => re.test(el.value));
+    if (hit && !(b.t === 'ul' && hit[1] === 'ul')) {
+      if (hit[1] === 'hr') { b.t = 'hr'; b.x = ''; const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.splice(i + 1, 0, nb); noteTouch(); nbRedraw(nb.id, 0); return; }
+      b.t = hit[1]; b.x = ''; noteTouch(); nbRedraw(b.id, 0); return;
+    }
+  }
+  b.x = el.value; nbFit(el); noteTouch();
+}
+function nbKey(e) {
+  const el = e.target; if (!el.classList || !el.classList.contains('nb-tx') || !NOTE) return;
+  if (e.isComposing || e.keyCode === 229) return; // 日本語の変換中は何もしない
+  const i = nbIdx(el.dataset.bid); if (i < 0) return; const b = NOTE.blocks[i];
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const list = ['ul', 'ol', 'todo', 'quote'].includes(b.t);
+    if (list && !el.value) { b.t = 'p'; noteTouch(); nbRedraw(b.id, 0); return; } // empty list item + Enter = end the list
+    const a = el.selectionStart, rest = el.value.slice(el.selectionEnd);
+    b.x = el.value.slice(0, a);
+    const nb = { id: uid(), t: ['ul', 'ol', 'todo'].includes(b.t) ? b.t : 'p', x: rest, d: false };
+    NOTE.blocks.splice(i + 1, 0, nb); noteTouch(); nbRedraw(nb.id, 0);
+  } else if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
+    if (b.t !== 'p') { e.preventDefault(); b.t = 'p'; noteTouch(); nbRedraw(b.id, 0); return; }
+    if (i === 0) { if (!el.value) { e.preventDefault(); const t = $('#nt-title'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } } return; }
+    e.preventDefault();
+    let j = i - 1; while (j >= 0 && NOTE.blocks[j].t === 'hr') j--;
+    if (NOTE.blocks[i - 1].t === 'hr') { NOTE.blocks.splice(i - 1, 1); noteTouch(); nbRedraw(b.id, 0); return; }
+    const prev = NOTE.blocks[j], at = prev.x.length; prev.x += b.x; NOTE.blocks.splice(i, 1); noteTouch(); nbRedraw(prev.id, at);
+  }
+}
+function nbSetType(t) {
+  if (!NOTE) return;
+  let i = nbFocus ? nbIdx(nbFocus) : -1; if (i < 0) i = NOTE.blocks.length - 1;
+  const b = NOTE.blocks[i];
+  if (t === 'hr') { const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.splice(i + 1, 0, { id: uid(), t: 'hr', x: '', d: false }, nb); noteTouch(); nbRedraw(nb.id, 0); return; }
+  if (t === 'h1' && b.t === 'h1') t = 'h2'; else if (t === 'h1' && b.t === 'h2') t = 'p'; // 見出し: tap again for smaller, then back to 本文
+  else if (b.t === t) t = 'p';
+  b.t = t; noteTouch(); nbRedraw(b.id, 'end');
+}
+// keep the format bar just above the iPhone keyboard
+function ntToolsPlace() {
+  const tb = $('#nt-tools'), vv = window.visualViewport; if (!tb) return;
+  const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+  tb.style.transform = kb ? `translateY(${-kb}px)` : '';
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', ntToolsPlace); visualViewport.addEventListener('scroll', ntToolsPlace); }
+document.addEventListener('focusin', e => {
+  const sh = e.target.closest && e.target.closest('.sheet.nt'); if (!sh) return;
+  if (e.target.classList.contains('nb-tx')) nbFocus = e.target.dataset.bid;
+  sh.classList.toggle('editing', e.target.classList.contains('nb-tx') || e.target.id === 'nt-title'); setTimeout(ntToolsPlace, 60);
+});
+document.addEventListener('focusout', e => { const sh = e.target.closest && e.target.closest('.sheet.nt'); if (sh) setTimeout(() => { if (!sh.contains(document.activeElement)) sh.classList.remove('editing'); }, 120); });
+document.addEventListener('pointerdown', e => { if (e.target.closest('#nt-tools button:not(.kb)')) e.preventDefault(); }); // tapping the bar keeps the keyboard up
+document.addEventListener('keydown', nbKey);
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'nt-q') { NQ = t.value; refreshNoteList(); }
+  else if (t.id === 'nt-title' && NOTE) { NOTE.title = t.value.replace(/\n/g, ''); if (t.value.includes('\n')) { t.value = NOTE.title; const f = NOTE.blocks[0]; nbRedraw(f.id, 0); } nbFit(t); noteTouch(); }
+  else if (t.classList && t.classList.contains('nb-tx') && NOTE) nbInput(t);
+});
+
+Object.assign(ACT, {
+  ibView: t => { IBV = t.dataset.k; rerenderKind('inbox', taskSheet); },
+  noteNew: () => { const n = { id: uid(), icon: '', title: '', blocks: [{ id: uid(), t: 'p', x: '', d: false }], pin: false, c: Date.now(), u: Date.now() }; S.notes.push(n); openNote(n.id); },
+  noteOpen: t => openNote(t.dataset.id),
+  openNote: t => { IBV = 'notes'; const sh = openSheet(taskSheet(), 'full'); sh.dataset.kind = 'inbox'; openNote(t.dataset.id); },
+  noteDel: t => {
+    const i = S.notes.findIndex(n => n.id === t.dataset.id); if (i < 0) return; const [n] = S.notes.splice(i, 1);
+    if (!save()) { S.notes.splice(i, 0, n); return; }
+    rerenderKind('inbox', taskSheet); toast('メモを削除しました', '元に戻す', () => { S.notes.splice(i, 0, n); save(); rerenderKind('inbox', taskSheet); });
+  },
+  notePin: t => { NOTE.pin = !NOTE.pin; t.setAttribute('aria-pressed', NOTE.pin); save(); toast(NOTE.pin ? 'ピン留めしました' : 'ピン留めをやめました'); },
+  noteIcon: () => {
+    const sh = openSheet(`<div class="sh-bar"><span></span><b>アイコン</b><button class="r" data-act="close">閉じる</button></div><div class="nt-icons">${NOTE_ICONS.map(i => `<button data-act="noteIconSet" data-i="${i}" aria-pressed="${NOTE.icon === i}">${i || 'なし'}</button>`).join('')}</div>`); sh.dataset.kind = 'noteicon';
+  },
+  noteIconSet: t => { NOTE.icon = t.dataset.i; noteTouch(); closeSheet(); const b = topSheet() && $('.nt-icon', topSheet()); if (b) { b.className = `nt-icon${NOTE.icon ? '' : ' none'}`; b.innerHTML = NOTE.icon || `${ico('plus')}アイコン`; } },
+  noteMore: () => {
+    const n = NOTE;
+    choose(noteName(n), [
+      ['「あとで」にする', () => { S.tasks.push({ id: uid(), title: noteName(n).slice(0, 60), color: COLORS[2], icon: guessIcon(noteName(n)), dur: 30, subtasks: n.blocks.filter(b => b.t === 'todo').map(b => ({ t: b.x, done: b.d })), notes: noteText(n).slice(0, 2000), done: false }); save(); toast('「あとで」に追加しました'); }],
+      ['テキストをコピー', () => { const txt = [n.title, ...n.blocks.map(b => b.t === 'hr' ? '———' : (b.t === 'ul' ? '・' : b.t === 'todo' ? (b.d ? '☑ ' : '☐ ') : '') + b.x)].filter((x, i) => i || x).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('コピーしました'), () => toast('コピーできませんでした')); }],
+      ['このメモを削除', () => confirmIn('このメモを削除しますか？', '削除', () => { S.notes = S.notes.filter(x => x !== n); NOTE = null; save(); closeSheet(); rerenderKind('inbox', taskSheet); })],
+    ]);
+  },
+  nbChk: t => { const b = NOTE.blocks[nbIdx(t.dataset.bid)]; if (!b) return; b.d = !b.d; t.setAttribute('aria-pressed', b.d); t.closest('.nb').classList.toggle('done', b.d); noteTouch(); },
+  nbHr: t => choose('区切り線', [['削除', () => { const i = nbIdx(t.dataset.bid); if (i >= 0) { NOTE.blocks.splice(i, 1); if (!NOTE.blocks.length) NOTE.blocks.push({ id: uid(), t: 'p', x: '', d: false }); noteTouch(); nbRedraw(); } }]]),
+  nbType: t => nbSetType(t.dataset.t),
+  nbDone: () => { if (document.activeElement) document.activeElement.blur(); },
+  nbTail: () => { // tap below the last block: write on (a new line if the last one is not empty)
+    const last = NOTE.blocks[NOTE.blocks.length - 1];
+    if (last.t !== 'hr' && !last.x) { nbRedraw(last.id, 0); return; }
+    const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.push(nb); noteTouch(); nbRedraw(nb.id, 0);
+  },
+});
+
 /* あとで: swipe a row left to reveal 削除, or swipe all the way to delete (iOS style) */
 const SW_OPEN = 88;
 let sw = null;
@@ -6140,7 +6413,7 @@ document.addEventListener('touchmove', e => {
 const swEnd = () => {
   if (!sw) return; const g = sw; sw = null; if (!g.on) return;
   noClickUntil = Date.now() + 350;
-  if (g.cur < -g.w * 0.55) { const b = g.wrap.querySelector('.sw-del'); g.wrap.dataset.going = '1'; collapseRow(g.wrap, () => ACT.taskDel({ dataset: b.dataset })); return; }
+  if (g.cur < -g.w * 0.55) { const b = g.wrap.querySelector('.sw-del'); g.wrap.dataset.going = '1'; collapseRow(g.wrap, () => ACT[b.dataset.act]({ dataset: b.dataset })); return; }
   const open = g.cur < -SW_OPEN / 2;
   g.wrap.classList.toggle('open', open); swSet(g.wrap, open ? -SW_OPEN : 0, true);
   if (!open) setTimeout(() => g.wrap.classList.remove('drag'), 320);
@@ -6173,7 +6446,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v67';
+const APP_VER = 'hibi-v68';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
