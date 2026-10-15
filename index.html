@@ -1515,11 +1515,10 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .month .cdots i{width:5px;height:5px;border-radius:50%}
 .month.z2 .bar{font-size:11.5px}
 .month.z2 .bar small{font-size:9.5px;color:var(--ink-2);margin-right:3px}
-.month.zin{animation:zIn .32s cubic-bezier(.2,.9,.3,1.2)}
-.month.zout{animation:zOut .3s ease}
-@keyframes zIn{from{transform:scaleY(.9);opacity:.6}}
-@keyframes zOut{from{transform:scaleY(1.08);opacity:.6}}
-#monthGrid{transform-origin:50% 0;transition:transform .08s}
+.month .bar,.month .mny,.month .more,.month .cdots{opacity:var(--pzf,1)}
+.month.zfade .bar,.month.zfade .mny,.month.zfade .more,.month.zfade .cdots{animation:zFade .4s ease both}
+@keyframes zFade{from{opacity:0}}
+.month .week{will-change:transform}
 .pay-card.mn-card>span:nth-child(2){flex:1;min-width:0}
 .pay-card.mn-card>.mn-ic{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
 .mn-card .mn-ic .ico{width:22px;height:22px}
@@ -1641,6 +1640,16 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-brow span{display:flex;align-items:center;gap:7px}.mn-brow i{width:9px;height:9px;border-radius:50%}
 .mn-brow .inp{width:130px;text-align:right;min-height:42px;padding:8px 12px}
 .mn-maps{display:flex;flex-direction:column;gap:6px}
+.mn-acc0 p{margin:0 0 12px;font-size:14px;line-height:1.7}.mn-acc0 small{color:var(--ink-2);font-size:12px}
+.mn-qa{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mn-qa .mn-chip{color:var(--accent);font-weight:700}
+.mn-swrow{display:flex;flex-wrap:wrap;gap:10px}
+.mn-swrow .mn-sw{width:32px;height:32px;margin:0}
+.mn-sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--c)}
+.mn-big{font-size:24px;font-weight:700;text-align:right}
+.mn-crow .t small.d{font-size:11px;color:var(--ink-3)}
+.mn-crow .neg{color:var(--sun)}
+.mn-spark{width:100%;height:70px}.mn-spark path{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}.mn-spark circle{fill:var(--accent)}
 .mn-map{display:grid;grid-template-columns:7.5em minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .mn-map .inp{min-height:40px;padding:6px 10px;font-size:15px}
 </style>
@@ -5455,11 +5464,11 @@ const MN_COLORS = ['#8EC392','#B9B5AE','#F0B65A','#5AA8D8','#8E4FB5','#4A4658','
 const mnDefaults = () => {
   const mk = names => names.map((name, i) => ({ id: uid() + i, name, color: MN_COLORS[i % MN_COLORS.length] }));
   return { entries: [], cats: { out: mk(['食費','学食費','外食費','日用品','薬','衣服','趣味','交通費','交際費','教科書','部活費','髪','飲料代','友達との遊び代','その他']), in: mk(['給料','仕送り','お小遣い','臨時収入','その他']) },
-    budget: { total: 0, cats: {} }, fixed: [], set: { start: 1, carry: false, pct: true, cal: true, ops: true } };
+    budget: { total: 0, cats: {} }, fixed: [], accts: [], hist: [], set: { start: 1, carry: false, pct: true, cal: true, ops: true } };
 };
 function normMoney(m) {
   const dd = mnDefaults(); m = asObj(m);
-  const cats = asObj(m.cats), out = { entries: [], cats: { out: [], in: [] }, budget: { total: 0, cats: {} }, fixed: [], set: Object.assign(dd.set, asObj(m.set)) };
+  const cats = asObj(m.cats), out = { entries: [], cats: { out: [], in: [] }, budget: { total: 0, cats: {} }, fixed: [], accts: [], hist: [], set: Object.assign(dd.set, asObj(m.set)) };
   for (const k of ['out', 'in']) {
     const a = asArr(cats[k]).filter(c => typeof c.name === 'string' && c.name.trim()).map(c => ({ id: okId(c.id), name: c.name.trim().slice(0, 30), color: okColor(c.color) ? c.color : MN_COLORS[0] }));
     out.cats[k] = a.length ? a : dd.cats[k];
@@ -5472,6 +5481,9 @@ function normMoney(m) {
   for (const [k, v] of Object.entries(asObj(b.cats))) if (+v > 0 && /^[\w-]{1,48}$/.test(k)) out.budget.cats[k] = Math.round(+v);
   out.fixed = asArr(m.fixed).filter(f => Number.isFinite(+f.amt)).map(f => ({ id: okId(f.id), k: f.k === 'in' ? 'in' : 'out', amt: Math.round(Math.abs(+f.amt)), cat: okId(f.cat), memo: String(f.memo ?? '').slice(0, 80),
     day: Math.min(31, Math.max(1, Math.round(+f.day) || 1)), from: /^\d{4}-\d{2}$/.test(f.from) ? f.from : todayISO().slice(0, 7), done: asObj(f.done) }));
+  // 貯金額: balances typed in by hand per place (bank, PayPay, cash …), plus the total on each day it changed
+  out.accts = asArr(m.accts).filter(a => typeof a.name === 'string' && a.name.trim()).map(a => ({ id: okId(a.id), name: a.name.trim().slice(0, 30), color: okColor(a.color) ? a.color : MN_COLORS[0], bal: Math.round(+a.bal) || 0, ts: +a.ts || 0 }));
+  out.hist = asArr(m.hist).filter(h => /^\d{4}-\d{2}-\d{2}$/.test(h.d) && Number.isFinite(+h.t)).map(h => ({ d: h.d, t: Math.round(+h.t) })).slice(-400);
   out.set.start = Math.min(28, Math.max(1, Math.round(+out.set.start) || 1));
   return out;
 }
@@ -5607,7 +5619,7 @@ function mnDonut(parts, total, label) {
 }
 function mnGraphHTML() {
   const g = MNV.g, seg = [['out', '支出'], ['in', '収入'], ['save', '貯金額'], ['budget', '予算']];
-  const top = `<div class="mn-gseg">${seg.map(([k, l]) => `<button data-act="mnG" data-k="${k}" aria-pressed="${g === k}">${l}</button>`).join('')}</div>${mnNav(MNV.ym)}`;
+  const top = `<div class="mn-gseg">${seg.map(([k, l]) => `<button data-act="mnG" data-k="${k}" aria-pressed="${g === k}">${l}</button>`).join('')}</div>${g === 'save' ? '' : mnNav(MNV.ym)}`;
   if (g === 'save') return top + mnSaveHTML();
   if (g === 'budget') return top + mnBudgetHTML();
   const x = mnMonth(MNV.ym), list = x.list.filter(e => e.k === g), tot = g === 'in' ? x.i : x.o, by = new Map();
@@ -5621,16 +5633,40 @@ function mnGraphHTML() {
       || '<p class="empty" style="padding:8px">この月の記録はありません</p>'}
       ${zero.length && rows.length ? `<p class="note" style="margin:6px 2px 0">記録のないカテゴリー：${zero.map(c => esc(c.name)).join('・')}</p>` : ''}</section>`;
 }
+const ACCT_QUICK = ['現金', '銀行', 'PayPay', '交通系IC', '楽天ペイ', 'd払い', 'au PAY'];
 function mnSaveHTML() {
-  const months = []; for (let i = 11; i >= 0; i--) months.push(ymAdd(MNV.ym, -i));
-  let cum = mnCarry(months[0]); const data = months.map(ym => { const x = mnMonth(ym); cum += x.net; return { ym, x, cum }; });
-  const max = Math.max(1, ...data.map(d => Math.abs(d.x.net))), W = 300, H = 120, bw = W / 12;
-  const bars = data.map((d, i) => { const h = Math.abs(d.x.net) / max * (H / 2 - 8), y = d.x.net >= 0 ? H / 2 - h : H / 2;
-    return `<rect x="${(i * bw + bw * .2).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * .6).toFixed(1)}" height="${Math.max(h, d.x.net ? 1.5 : 0).toFixed(1)}" rx="2" fill="${d.x.net >= 0 ? 'var(--pay)' : 'var(--sun)'}"${d.ym === MNV.ym ? '' : ' opacity=".55"'}/><text x="${(i * bw + bw / 2).toFixed(1)}" y="${H + 12}" text-anchor="middle">${+d.ym.slice(5)}</text>`; }).join('');
-  const last = data[data.length - 1];
-  return `<section class="card mn-save"><small>${+MNV.ym.slice(5)}月末までにたまったお金（記録した収入 − 支出）</small><b class="num">${yenS(last.cum)}</b>
-      <svg viewBox="0 0 ${W} ${H + 16}" class="mn-bars" aria-hidden="true"><line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}"/>${bars}</svg><p class="note" style="margin:2px 0 0">棒は月ごとの収支（緑＝プラス、赤＝マイナス）</p></section>
-    <section class="card"><table class="mn-tab"><tr><th>月</th><th>収入</th><th>支出</th><th>収支</th><th>残高</th></tr>${[...data].reverse().map(d => `<tr${d.ym === MNV.ym ? ' class="cur"' : ''}><td>${+d.ym.slice(5)}月</td><td class="num">${d.x.i.toLocaleString()}</td><td class="num">${d.x.o.toLocaleString()}</td><td class="num ${d.x.net < 0 ? 'neg' : ''}">${(d.x.net < 0 ? '−' : '') + Math.abs(d.x.net).toLocaleString()}</td><td class="num">${(d.cum < 0 ? '−' : '') + Math.abs(d.cum).toLocaleString()}</td></tr>`).join('')}</table></section>`;
+  const A = [...S.money.accts].sort((a, b) => b.bal - a.bal), pos = A.filter(a => a.bal > 0), ptot = pos.reduce((n, a) => n + a.bal, 0), tot = A.reduce((n, a) => n + a.bal, 0);
+  const quick = ACCT_QUICK.filter(n => !A.some(a => a.name === n));
+  if (!A.length) return `<section class="card mn-acc0"><p>銀行・PayPay・現金など、お金を置いている場所ごとに今の残高を入れると、どこにいくらあるかを円グラフで見られます。<br><small>家計簿の入力とは別に、自分で入れた残高だけを使います。</small></p>
+      <div class="mn-qa">${quick.map(n => `<button class="mn-chip" data-act="mnAcct" data-name="${esc(n)}">＋ ${esc(n)}</button>`).join('')}</div>
+      <button class="btn primary" data-act="mnAcct" style="width:100%">${ico('plus')}名前をつけて追加</button></section>`;
+  const H = S.money.hist, spark = H.length >= 2 ? (() => {
+    const W = 300, Ht = 70, lo = Math.min(...H.map(h => h.t)), hi = Math.max(...H.map(h => h.t)), span = hi - lo || 1, t0 = P(H[0].d), days = Math.max(1, (P(H[H.length - 1].d) - t0) / 864e5);
+    const pt = h => [((P(h.d) - t0) / 864e5 / days * (W - 8) + 4).toFixed(1), (Ht - 6 - (h.t - lo) / span * (Ht - 14)).toFixed(1)];
+    const d = H.map((h, i) => (i ? 'L' : 'M') + pt(h).join(' ')).join(' '), last = pt(H[H.length - 1]), diff = H[H.length - 1].t - H[0].t;
+    return `<section class="card"><h3>合計の移り変わり<span class="sub num">${md(H[0].d)}から ${diff >= 0 ? '+' : '−'}${yen(Math.abs(diff))}</span></h3><svg class="mn-spark" viewBox="0 0 ${W} ${Ht}" aria-hidden="true"><path d="${d}"/><circle cx="${last[0]}" cy="${last[1]}" r="3.5"/></svg></section>`;
+  })() : '';
+  return `<section class="card mn-chart">${mnDonut(pos.map(a => ({ color: a.color, v: a.bal })), ptot, 'いまのお金')}${tot !== ptot ? `<p class="note" style="margin:8px 0 0">マイナスの残高を引くと ${yenS(tot)}</p>` : ''}</section>
+    <section class="card mn-crows">${A.map(a => `<button class="mn-crow" data-act="mnAcct" data-id="${a.id}"><i style="background:${a.color}"></i><span class="t">${esc(a.name)}${a.ts ? `<small class="d"> ${md(iso(new Date(a.ts)))}更新</small>` : ''}</span>${S.money.set.pct !== false && ptot && a.bal > 0 ? `<small class="num">${(a.bal / ptot * 100).toFixed(1)}%</small>` : ''}<b class="num${a.bal < 0 ? ' neg' : ''}">${yenS(a.bal)}</b>${ico('right')}</button>
+      <span class="mn-cbar"><i style="width:${(Math.max(0, a.bal) / (A[0].bal || 1) * 100).toFixed(1)}%;background:${a.color}"></i></span>`).join('')}
+      ${quick.length ? `<div class="mn-qa" style="margin-top:10px">${quick.slice(0, 4).map(n => `<button class="mn-chip" data-act="mnAcct" data-name="${esc(n)}">＋ ${esc(n)}</button>`).join('')}</div>` : ''}
+      <button class="btn ghost" data-act="mnAcct" style="width:100%;margin-top:10px">${ico('plus')}お金の置き場所を追加</button></section>
+    ${spark}
+    <p class="note">家計簿の入力とは別に、ここで入れた残高だけを使います。行をタップすると、残高の更新・名前や色の変更・削除ができます。</p>`;
+}
+let ACD = null;
+function mnAcctSheet() {
+  const a = ACD;
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${a.id ? esc(a.name) : 'お金の置き場所を追加'}</b><button class="r" data-act="mnAcctSave">保存</button></div>
+    <div class="fld"><label for="ac-bal">いまの残高</label><input class="inp num mn-big" id="ac-bal" type="text" inputmode="numeric" value="${a.bal ? a.bal.toLocaleString() : ''}" placeholder="例：52,000" autocomplete="off"></div>
+    <div class="fld"><label for="ac-name">名前</label><input class="inp" id="ac-name" value="${esc(a.name)}" placeholder="例：〇〇銀行・PayPay・現金" maxlength="30" autocomplete="off"></div>
+    <div class="fld"><span class="lb">色</span><div class="mn-swrow">${MN_COLORS.map(c => `<button class="mn-sw" style="--c:${c}" data-act="mnAcColor" data-c="${c}" aria-pressed="${a.color === c}" aria-label="この色にする"></button>`).join('')}</div></div>
+    ${a.id ? `<button class="btn danger" data-act="mnAcctDel" style="width:100%;margin-top:6px">${ico('trash')}この置き場所を削除</button>` : ''}`;
+}
+function mnHistPut() {
+  const H = S.money.hist, d = todayISO(), t = S.money.accts.reduce((n, a) => n + a.bal, 0);
+  if (H.length && H[H.length - 1].d === d) H[H.length - 1].t = t; else H.push({ d, t });
+  if (H.length > 400) H.splice(0, H.length - 400);
 }
 function mnBudgetHTML() {
   const B = S.money.budget, x = mnMonth(MNV.ym), T = todayISO(), cats = Object.keys(B.cats);
@@ -5802,6 +5838,8 @@ function mnInput(e) {
   else if (t.id === 'mn-date' && MNI && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) { MNI.date = t.value; const l = $('#mn-dlb'); if (l) l.textContent = mnDateLabel(t.value); }
   else if (t.dataset.mncat && e.type === 'change') { const c = mnCats(MNV.ck).find(x => x.id === t.dataset.mncat), v = t.value.trim().slice(0, 30); if (c && v) { c.name = v; save(); render(); } else t.value = c ? c.name : ''; }
   else if (t.dataset.csv && e.type === 'change' && CSV) { CSV.map[t.dataset.csv] = +t.value; rerenderKind('mncsv', mnCsvSheet); }
+  else if (t.id === 'ac-name' && ACD) ACD.name = t.value;
+  else if (t.id === 'ac-bal' && ACD) { const v = t.value.normalize('NFKC').replace(/[^\d-]/g, ''); ACD.bal = Math.round(+v) || 0; }
   else if (/^fx-/.test(t.id) && FXD) { const v = t.value; if (t.id === 'fx-amt') FXD.amt = Math.round(+v || 0); else if (t.id === 'fx-cat') FXD.cat = v; else if (t.id === 'fx-memo') FXD.memo = v; else if (t.id === 'fx-day') FXD.day = +v; else if (t.id === 'fx-from' && /^\d{4}-\d{2}$/.test(v)) FXD.from = v; }
   else if (e.type === 'change' && /^mn-s-/.test(t.id)) {
     const s = S.money.set;
@@ -5892,6 +5930,21 @@ Object.assign(ACT, {
     save(); const n = mnApplyFixed(); closeSheet(); rerenderMoney(); render(); if (n) toast(`今月までの分 ${n}件を記録しました`);
   },
   mnFixedDel: () => confirmIn('この固定費をやめますか？（これまでの記録は残ります）', 'やめる', () => { S.money.fixed = S.money.fixed.filter(x => x.id !== FXD.id); save(); closeSheet(); rerenderMoney(); }),
+  mnAcct: t => {
+    const a = S.money.accts.find(x => x.id === t.dataset.id), n = S.money.accts.length;
+    ACD = a ? Object.assign({}, a) : { id: null, name: t.dataset.name || '', color: [3, 0, 9, 11, 6, 8, 2, 12, 4, 7, 10, 13, 1, 14, 15, 5].map(i => MN_COLORS[i]).find(c => !S.money.accts.some(x => x.color === c)) || MN_COLORS[n % MN_COLORS.length], bal: 0, ts: 0 };
+    const sh = openSheet(mnAcctSheet()); sh.dataset.kind = 'mnacct';
+    const f = $(ACD.name ? '#ac-bal' : '#ac-name', sh); if (f) setTimeout(() => f.focus(), 350);
+  },
+  mnAcColor: t => { ACD.color = t.dataset.c; topSheet().querySelectorAll('[data-act="mnAcColor"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  mnAcctSave: () => {
+    const a = ACD, name = a.name.trim().slice(0, 30); if (!name) { toast('名前を入れてください'); return; }
+    const o = a.id && S.money.accts.find(x => x.id === a.id), now = Date.now();
+    if (o) { if (o.bal !== a.bal) o.ts = now; Object.assign(o, { name, color: a.color, bal: a.bal }); }
+    else S.money.accts.push({ id: uid(), name, color: a.color, bal: a.bal, ts: now });
+    mnHistPut(); save(); closeSheet(); rerenderMoney();
+  },
+  mnAcctDel: () => confirmIn(`「${ACD.name}」を削除しますか？`, '削除', () => { S.money.accts = S.money.accts.filter(x => x.id !== ACD.id); mnHistPut(); save(); closeSheet(); rerenderMoney(); }),
   mnCsvGo: () => mnCsvImport(),
   mnExport: () => { if (!S.money.entries.length) { toast('書き出す記録がありません'); return; } mnExport(); },
   mnReset: () => confirmIn('家計簿の記録をすべて削除しますか？（カテゴリー・予算・固定費の設定は残ります）', 'すべて削除', () => {
@@ -5911,27 +5964,53 @@ function mnDayHTML(d) {
   return `<div class="mn-dd"><p class="mn-ddh"><span>${ico('yen')}家計簿</span><button data-act="money" data-d="${d}">${ico('plus')}記録</button></p><div class="mn-list">${list.map(mnRow).join('')}</div></div>`;
 }
 
-/* calendar pinch: 2 fingers apart/together switch the month between 3 sizes (dots → normal → tall cells), like iOS Calendar */
+/* calendar pinch: 2 fingers apart/together switch the month between 3 sizes (dots → normal → tall cells), like iOS Calendar.
+   While the fingers move, the week rows follow them (spreading apart / closing up, text never squashed);
+   on release the new size is laid out and every row glides from where it was to where it belongs (FLIP) */
 let pz = null;
 const calZoomLv = () => [0, 1, 2].includes(S.settings.calZoom) ? S.settings.calZoom : 1;
-function calZoom(dir) {
-  const z0 = calZoomLv(), z = Math.max(0, Math.min(2, z0 + dir));
-  if (z === z0) return;
+const PZ_EASE = '.4s cubic-bezier(.22,.9,.28,1)';
+function pzLive(p) {
+  const g = $('#monthGrid'); if (!g) return;
+  const ws = [...g.children], step = p > 0 ? 30 : 16;
+  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = p ? `translateY(${(i * step * p).toFixed(1)}px)` : ''; });
+  g.style.transition = 'none'; g.style.marginBottom = p ? `${((ws.length - 1) * step * p).toFixed(1)}px` : '';
+  g.style.setProperty('--pzf', p < 0 ? Math.max(0, 1 + p * 1.4).toFixed(3) : '1');
+}
+function pzSettle() {
+  const g = $('#monthGrid'); if (!g) return;
+  [...g.children].forEach(w => { w.style.transition = `transform ${PZ_EASE}`; w.style.transform = ''; });
+  g.style.transition = `margin-bottom ${PZ_EASE}`; g.style.marginBottom = ''; g.style.setProperty('--pzf', '1');
+}
+function calZoomTo(z) {
+  const g0 = $('#monthGrid');
+  const tops = g0 ? [...g0.children].map(w => w.getBoundingClientRect().top) : [], h0 = g0 ? g0.getBoundingClientRect().height + (parseFloat(g0.style.marginBottom) || 0) : 0;
   S.settings.calZoom = z; save(); render();
-  const g = $('#monthGrid'); if (g) { g.classList.remove('zin', 'zout'); void g.offsetWidth; g.classList.add(dir > 0 ? 'zin' : 'zout'); }
+  const g = $('#monthGrid'); if (!g || !tops.length) return;
+  const ws = [...g.children], h1 = g.getBoundingClientRect().height;
+  ws.forEach((w, i) => { w.style.transition = 'none'; w.style.transform = `translateY(${(tops[Math.min(i, tops.length - 1)] - w.getBoundingClientRect().top).toFixed(1)}px)`; });
+  g.style.transition = 'none'; g.style.height = `${h0}px`; g.classList.add('zfade');
+  void g.offsetWidth;
+  ws.forEach(w => { w.style.transition = `transform ${PZ_EASE}`; w.style.transform = ''; });
+  g.style.transition = `height ${PZ_EASE}`; g.style.height = `${h1}px`;
+  setTimeout(() => { if (!g.isConnected) return; g.style.height = ''; g.style.transition = ''; g.classList.remove('zfade'); ws.forEach(w => { w.style.transition = ''; }); }, 450);
 }
 main.addEventListener('touchstart', e => {
   if (e.touches.length !== 2 || !e.target.closest('#monthGrid')) return;
-  const [a, b] = e.touches; pz = { d0: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, fired: false }; zone = null;
+  const [a, b] = e.touches; pz = { d0: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, z: calZoomLv(), p: 0 }; zone = null;
 }, { passive: true });
 main.addEventListener('touchmove', e => {
   if (!pz || e.touches.length !== 2) return; e.preventDefault();
-  const [a, b] = e.touches, r = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pz.d0, g = $('#monthGrid');
-  if (pz.fired || !g) return;
-  g.style.transform = `scaleY(${Math.max(.88, Math.min(1.14, r)).toFixed(3)})`;
-  if (r > 1.25 || r < .8) { pz.fired = true; g.style.transform = ''; calZoom(r > 1 ? 1 : -1); }
+  const [a, b] = e.touches, r = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pz.d0;
+  let p = r >= 1 ? (r - 1) / .5 : (r - 1) / .32; p = Math.max(-1.15, Math.min(1.15, p));
+  if ((pz.z === 2 && p > 0) || (pz.z === 0 && p < 0)) p *= .22; // already at the end: just a little give
+  pz.p = p; pzLive(p);
 }, { passive: false });
-const pzEnd = e => { if (pz && e.touches.length < 2) { const g = $('#monthGrid'); if (g) g.style.transform = ''; pz = null; zone = null; } };
+const pzEnd = e => {
+  if (!pz || e.touches.length >= 2) return;
+  const { p, z } = pz; pz = null; zone = null;
+  if (p > .4 && z < 2) calZoomTo(z + 1); else if (p < -.4 && z > 0) calZoomTo(z - 1); else pzSettle();
+};
 main.addEventListener('touchend', pzEnd); main.addEventListener('touchcancel', pzEnd);
 document.addEventListener('gesturestart', e => { if (e.target && e.target.closest && e.target.closest('#monthGrid')) e.preventDefault(); });
 
@@ -6030,7 +6109,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v60';
+const APP_VER = 'hibi-v61';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
