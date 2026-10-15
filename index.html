@@ -181,6 +181,7 @@ svg{display:block}
 .tl-sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
 .tl-date{font-size:13px;color:var(--ink-2);margin:0 0 10px}
 .tl-date b{color:var(--ink);font-size:16px;margin-right:6px}
+.tl-hol{color:var(--sun);font-weight:700;margin-right:8px}
 .allday-row{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 14px;scrollbar-width:none}
 .allday-row::-webkit-scrollbar{display:none}
 .ad-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;flex:none}
@@ -2058,7 +2059,6 @@ function viewDay() {
   const occ = tlDay(d), all = occ.filter(o => o.ev.allDay), timed = occ.filter(o => !o.ev.allDay).concat(classOcc(d, d, true).filter(o => o.ev.off)).sort((a, b) => a.ev.start.localeCompare(b.ev.start));
   const h = holName(d), es = entriesOn(d);
   let ad = '';
-  if (h) ad += `<div class="ad-item" style="--c:${HOLC}"><span class="circ">${ico('star')}</span><span>${esc(h)}</span></div>`;
   const sn = schoolDayNote(d); if (sn) ad += `<button class="ad-item" style="--c:${SCH_C}" data-act="openSchool" data-tab="term"><span class="circ">${ico(sn.icon)}</span><span>${esc(sn.name)}</span></button>`;
   ad += S.school.tasks.filter(x => !x.done && x.due === d).map(x => { const c = clsById(x.classId); return `<button class="ad-item" style="--c:${c ? c.color : COLORS[4]}" data-act="openSchool" data-tab="hw"><span class="circ">${ico('pen')}</span><span>〆 ${esc(x.title)}</span></button>`; }).join('');
   ad += S.todos.filter(x => !x.done && x.due === d).map(x => `<button class="ad-item" style="--c:${TODO_C}" data-act="todoEdit" data-k="t" data-id="${x.id}"><span class="circ">${ico('check')}</span><span>〆 ${esc(x.title)}</span></button>`).join('');
@@ -2088,7 +2088,7 @@ function viewDay() {
     <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
-    <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${occ.length}件の予定</p>
+    <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${h ? `<span class="tl-hol">${esc(h)}</span>` : ''}${occ.length}件の予定</p>
     ${todoJump()}
     ${d === T && new Date().getHours() >= 17 ? packCard(addDays(T, 1)) : ''}${packCard(d)}
     ${moodCard}
@@ -5391,7 +5391,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v58';
+const APP_VER = 'hibi-v59';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
