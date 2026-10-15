@@ -2005,6 +2005,21 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .ver-log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px}
 .ver-log summary{cursor:pointer;font-weight:600}
 .ver-log ul{margin:8px 0 2px;padding-left:20px;color:var(--ink-2)}
+.rf-dots{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin:14px 0 4px}
+.rf-dots i{aspect-ratio:1;border-radius:50%;background:var(--surface-2);border:1.5px dashed var(--line)}
+.rf-dots i.on{border:0}
+.rf-dots i.t{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--ink-3)}
+.rf-dl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)}
+.rf-note{margin:10px 0 0;font-size:13px;color:var(--ink-2)}
+.rf-gap{margin-top:14px}
+.rf-wds{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.rf-wds .bar{position:relative;display:block;height:110px;border-radius:8px;background:var(--surface-2);overflow:hidden}
+.rf-wds .bar::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--line)}
+.rf-wds .bar i{position:absolute;z-index:1;left:18%;right:18%;border-radius:5px}
+.rf-wds .bar i.pos{bottom:50%;background:linear-gradient(#E8703F,#F2C35A)}
+.rf-wds .bar i.neg{top:50%;background:linear-gradient(#9EC3E0,#4E7FAF)}
+.rf-wds .w{display:block;font-size:12px;margin-top:4px}.rf-wds .sun{color:var(--sun)}.rf-wds .sat{color:var(--sat)}
+.rf-wds small{font-size:11px;color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -2867,6 +2882,56 @@ function donut(entries) {
   return `<div class="donut-wrap"><svg viewBox="0 0 130 130" role="img" aria-label="よく書いたことの割合">${segs}<text class="ctr" x="65" y="68" text-anchor="middle">${sum}</text><text class="ctr2" x="65" y="84" text-anchor="middle">タグ</text></svg>
     <div class="dlegend">${top.map(([t, v], i) => `<div style="--c:${TAG_COLORS[i % TAG_COLORS.length]}"><i></i><span>${esc(t)}</span><span class="c num">${Math.round(v / sum * 100)}%</span></div>`).join('')}</div></div>`;
 }
+/* ---- ふりかえり: the 灯 (habit) style statistics applied to the diary and plans ---- */
+function rfStreakCard() {
+  const T = todayISO(), has = d => S.entries.some(e => e.date === d), days = new Set(S.entries.map(e => e.date));
+  let cur = 0; for (let d = has(T) ? T : addDays(T, -1); has(d); d = addDays(d, -1)) cur++;
+  let best = 0, run = 0, prev = null;
+  for (const d of [...days].sort()) { run = prev && addDays(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; }
+  const m1 = T.slice(0, 8) + '01', dim = diffDays(m1, T) + 1; let md2 = 0; for (let d = m1; d <= T; d = addDays(d, 1)) if (has(d)) md2++;
+  const sub = has(T) ? (cur > 1 ? 'この調子で続けましょう' : '今日も書けました') : cur ? `今日書くと ${cur + 1}日連続` : '今日から始めましょう';
+  // the last 14 days as small dots, like the week strip in 灯
+  let dots = ''; for (let i = 13; i >= 0; i--) { const d = addDays(T, -i), m = has(d) ? dayMood(d) : null; dots += `<i class="${m ? 'on' : ''}${d === T ? ' t' : ''}" style="${m ? `background:${m.color}` : ''}" title="${md(d)}"></i>`; }
+  return `<section class="card"><h3>日記の連続記録</h3>
+    <div class="hb-big2"><span class="hb-ic f">${HB_FLAME}</span><div><b class="num">${cur}日</b><small>${sub}</small></div></div>
+    <div class="rf-dots">${dots}</div><div class="rf-dl num"><span>${md(addDays(T, -13))}</span><span>今日</span></div>
+    <div class="hb-kv"><span>最長</span><b class="num">${best}日</b><small>${P(T).getMonth() + 1}月は ${md2}/${dim}日 書きました</small></div></section>`;
+}
+function rfTimeCard() {
+  const T = todayISO(), from = addDays(T, -89), es = rangeEntries(from, T);
+  const hours = Array(24).fill(0); for (const e of es) { const h = parseInt((e.time || '').slice(0, 2), 10); if (h >= 0 && h < 24) hours[h]++; }
+  const B = [['朝', 5, 11, '#F0A04B'], ['午後', 11, 17, '#5AA8D8'], ['夕方', 17, 21, '#C056E0'], ['夜', 21, 29, '#6F7BE0']];
+  const band = h => B.find(b => (h >= b[1] && h < b[2]) || (h + 24 >= b[1] && h + 24 < b[2])), mx = Math.max(1, ...hours);
+  const tot = hours.reduce((a, b) => a + b, 0), top = tot ? B.map(b => [b[0], hours.reduce((n, x, i) => n + (band(i) === b ? x : 0), 0)]).sort((a, b) => b[1] - a[1])[0] : null;
+  const sc = Array(7).fill(0), cnt = Array(7).fill(0);
+  for (const d of new Set(es.map(e => e.date))) { const m = dayMood(d); if (!m || m.top === null) continue; sc[wd(d)] += m.score; cnt[wd(d)]++; }
+  const avg = sc.map((v, i) => cnt[i] ? v / cnt[i] : null), good = avg.some(v => v !== null) ? weekOrder().filter(w => avg[w] !== null).sort((a, b) => avg[b] - avg[a])[0] : null;
+  return `<section class="card"><h3>日記を書く時間帯 <span class="sub">直近90日</span></h3>
+    ${tot ? `<div class="hb-hours">${hours.map((n, i) => `<i style="height:${n ? Math.max(6, n / mx * 100) : 0}%;background:${band(i)[3]}" title="${i}時 ${n}件"></i>`).join('')}</div>
+    <div class="hb-hx num"><span>0時</span><span>6時</span><span>12時</span><span>18時</span><span></span></div>
+    <div class="hb-leg">${B.map(b => `<span style="--k:${b[3]}">${b[0]} ${hours.reduce((n, x, i) => n + (band(i) === b ? x : 0), 0)}</span>`).join('')}</div>
+    <p class="rf-note">${esc(top[0])}に書くことがいちばん多いです</p>` : '<p class="empty" style="padding:8px">日記を書くと、書いた時間帯がここに集計されます</p>'}
+  </section>
+  <section class="card"><h3>曜日ごとの気分 <span class="sub">直近90日</span></h3>
+    ${good !== null ? `<div class="rf-wds">${weekOrder().map(w => { const v = avg[w], h = v === null ? 0 : Math.abs(v) / 2 * 100; return `<div><span class="bar"><i class="${v !== null && v < 0 ? 'neg' : 'pos'}" style="height:${Math.max(v === null ? 0 : 4, h / 2)}%"></i></span><span class="w${w === 0 ? ' sun' : w === 6 ? ' sat' : ''}">${WD[w]}</span><small class="num">${cnt[w] ? cnt[w] + '日' : '-'}</small></div>`; }).join('')}</div>
+    <p class="rf-note">${WD[good]}曜日は気分がいい日が多いようです</p>` : '<p class="empty" style="padding:8px">気持ちをつけて日記を書くと、曜日ごとの気分がわかります</p>'}
+  </section>`;
+}
+function rfDoneCard(n) {
+  const T = todayISO(), from = addDays(T, -(n - 1)); let dn = 0, dt = 0; const wT = Array(7).fill(0), wD = Array(7).fill(0); let focus = 0;
+  for (let d = from; d <= T; d = addDays(d, 1)) for (const o of onDay(d)) if (!o.ev.allDay && !o.ev.cls) { const ok = isDone(o.ev, d); dt++; wT[wd(d)]++; if (ok) { dn++; wD[wd(d)]++; } }
+  for (const ev of S.events) for (const [k, v] of Object.entries(ev.actual || {})) if (k >= from && k <= T) focus += +v || 0;
+  const tds = S.todos.filter(x => x.due && x.due >= from && x.due <= T), tdn = tds.filter(x => x.done).length;
+  const doneNow = S.todos.filter(x => x.done && x.doneAt && iso(new Date(x.doneAt)) >= from).length;
+  const pct = dt ? Math.round(dn / dt * 100) : 0;
+  return `<section class="card"><h3>予定の完了率 <span class="sub">${n}日間</span></h3>
+    ${dt ? `<div class="hb-big2"><span class="hb-ic g">${ico('check')}</span><div><b class="num">${pct}%</b><small>${dt}件中${dn}件 できました</small></div></div>
+    <div class="hb-bar2"><i style="width:${dn / dt * 100}%"></i></div><div class="hb-leg"><span class="g">完了 ${dn}件</span><span class="o">未完了 ${dt - dn}件</span></div>
+    ${wT.some(Boolean) ? `<div class="hb-wds rf-gap">${weekOrder().map(w => { const p = wT[w] ? wD[w] / wT[w] : 0; return `<div><i><b style="height:${p * 100}%"></b></i><span>${WD[w]}</span><small class="num">${wT[w] ? Math.round(p * 100) + '%' : '-'}</small></div>`; }).join('')}</div>` : ''}`
+    : '<p class="empty" style="padding:8px">この期間の予定はありません</p>'}
+    <div class="hb-kv"><span>やること</span><b class="num">${tds.length ? `${tdn}/${tds.length}` : doneNow}</b><small>${tds.length ? 'この期間が締切のうち完了' : 'この期間に完了'}</small></div>
+    <div class="hb-kv"><span>集中タイマー</span><b class="num">${focus ? dur(focus) : '0分'}</b><small>合計</small></div></section>`;
+}
 function viewReflect() {
   const T = todayISO(), ws = addDays(T, -6 + st.iWeek * 7), we = addDays(ws, 6), n = st.range;
   const rs = rangeEntries(addDays(T, -(n - 1)), T);
@@ -2903,6 +2968,9 @@ function viewReflect() {
     <div><b class="num">${streak}</b><span>連続記録<br>（日）</span></div>
     <div><b class="num">${dt ? Math.round(dn / dt * 100) : 0}<small style="font-size:14px">%</small></b><span>予定の完了<br><span class="num">${dn}/${dt}</span></span></div>
   </section>
+  ${rfStreakCard()}
+  ${rfDoneCard(n)}
+  ${rfTimeCard()}
   <section class="card"><h3>気持ちのランキング <span class="sub">${n}日間</span></h3>
     ${rank.length ? `<div class="rank">${rank.map(([f, v]) => `<div style="--c:${feelInfo(f).color}"><span>${esc(f)}</span><span class="trk"><i style="width:${v / maxR * 100}%"></i></span><span class="c num">${v}</span></div>`).join('')}</div>` : '<p class="empty" style="padding:8px">この期間の記録はまだありません</p>'}
   </section>
@@ -7206,10 +7274,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v74';
+const APP_VER = 'hibi-v75';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.0.3';
-const HIBI_CHANGES = ['カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.1.0';
+const HIBI_CHANGES = ['ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
