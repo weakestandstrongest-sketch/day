@@ -1556,8 +1556,11 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;font-size:14.5px}
 .mn-row+.mn-row,.mn-sugg+.mn-row{border-top:1px solid var(--line)}
 .mn-row>span:first-child{color:var(--ink-2);flex:none}
+.mn-row input#mn-memo:focus,.mn-row input#mn-memo:focus-visible{outline:none}
+.mn-fields .mn-row:focus-within>span:first-child{color:var(--accent);font-weight:700}
 .mn-row input#mn-memo{flex:1;min-width:0;text-align:right;border:0;background:transparent;font-size:16px;padding:10px 0;color:var(--ink)}
-.mn-sugg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px}
+.mn-sugg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.mn-sugg::-webkit-scrollbar{display:none}
 .mn-sugg:empty{display:none}
 .mn-chip{flex:none;font-size:12.5px;padding:5px 11px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
 .mn-date{display:flex;align-items:center;gap:4px}
@@ -2708,26 +2711,35 @@ function mapView(box, v) {
   };
   const P = new Map(); let g = null, lastTap = 0;
   const rel = e => { const r = box.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  const begin = () => { const L = [...P.values()]; g = L.length > 1 ? { two: true, d0: Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) || 1, m0: [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2], s: 1, t: [0, 0], moved: true } : { two: false, p0: L[0], s: 1, t: [0, 0], moved: false }; };
+  // after2: the finger left over once a pinch ends is never a tap (it used to count as one, and a quick second pinch became a "double tap" zoom-in)
+  const begin = after2 => { const L = [...P.values()]; g = L.length > 1 ? { two: true, d0: Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) || 1, m0: [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2], s: 1, t: [0, 0], moved: true } : { two: false, p0: L[0], s: 1, t: [0, 0], moved: false, after2: !!after2, t0: Date.now() }; };
+  // keep the live pinch inside the zoom limits, so nothing snaps back the other way when the fingers lift
+  const sLim = s => Math.max(2 ** ((v.min || 3) - v.z), Math.min(2 ** ((v.max || 19) - v.z), s));
   const finish = () => { if (g && (g.moved || g.s !== 1)) commit(g.s, g.two ? g.m0 : [0, 0], g.t); g = null; };
   box.addEventListener('pointerdown', e => {
     if (e.target.closest('.mv-zoom')) return;
+    if (P.size >= 2) return; // a third finger: ignore it
     box.setPointerCapture(e.pointerId); finish(); P.set(e.pointerId, rel(e)); begin();
   });
   box.addEventListener('pointermove', e => {
     if (!P.has(e.pointerId) || !g) return; P.set(e.pointerId, rel(e)); const L = [...P.values()], layer = box.querySelector('.mv-layer'); if (!layer) return;
-    if (g.two && L.length > 1) { const m = [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2]; g.s = Math.max(0.15, Math.min(8, Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) / g.d0)); g.t = [m[0] - g.m0[0], m[1] - g.m0[1]]; layer.style.transformOrigin = `${g.m0[0]}px ${g.m0[1]}px`; }
+    if (g.two && L.length > 1) { const m = [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2]; g.s = sLim(Math.max(0.15, Math.min(8, Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) / g.d0))); g.t = [m[0] - g.m0[0], m[1] - g.m0[1]]; layer.style.transformOrigin = `${g.m0[0]}px ${g.m0[1]}px`; }
     else if (!g.two) { g.t = [L[0][0] - g.p0[0], L[0][1] - g.p0[1]]; if (Math.hypot(...g.t) > 4) g.moved = true; layer.style.transformOrigin = '0 0'; }
     layer.style.transform = `translate(${g.t[0]}px,${g.t[1]}px) scale(${g.s})`;
   });
   const up = e => {
     if (!P.has(e.pointerId)) return; const was = g, p = P.get(e.pointerId); P.delete(e.pointerId);
-    if (was && !was.two && !was.moved && P.size === 0) { g = null; const now = Date.now(); if (now - lastTap < 320) { lastTap = 0; commit(2, p, [0, 0]); } else lastTap = now; return; }
-    finish(); if (P.size) begin();
+    if (was && !was.two && !was.moved && P.size === 0) {
+      g = null; const now = Date.now();
+      if (was.after2 || now - was.t0 > 300) { lastTap = 0; return; } // not a real tap
+      if (now - lastTap < 320) { lastTap = 0; if (v.z < (v.max || 19)) commit(sLim(2), p, [0, 0]); } else lastTap = now; return;
+    }
+    const two = !!(was && was.two); finish(); if (P.size) begin(two);
   };
   box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
   box.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
   box.addEventListener('touchmove', e => { e.stopPropagation(); if (e.cancelable) e.preventDefault(); }, { passive: false });
+  box.addEventListener('gesturestart', e => e.preventDefault()); // Safari's own page zoom must not join in
   box.addEventListener('click', e => { const b = e.target.closest('[data-mz]'); if (!b) return; e.stopPropagation(); box.classList.add('still'); if (b.dataset.mz === 'fit') v.fit(v); else v.z = clampZ(Math.round(v.z) + +b.dataset.mz); v.draw(); });
   box.classList.add('live'); box.classList.remove('still'); v.draw();
 }
@@ -6161,7 +6173,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v66';
+const APP_VER = 'hibi-v67';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
