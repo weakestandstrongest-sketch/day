@@ -499,7 +499,7 @@ input.inp[type=date]::-webkit-date-and-time-value,input.inp[type=time]::-webkit-
 @keyframes spDot{to{transform:scale(1)}}
 #splash.out{opacity:0;transform:scale(1.08);pointer-events:none}
 @media (prefers-reduced-motion:reduce){.sp-pen{animation:none;stroke-dashoffset:0}.sp-dot{animation:none;transform:none}#splash{transition:opacity .3s}#splash.out{transform:none}}
-#toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translate(-50%,-16px) scale(.96);color:var(--ink);
+#toast{white-space:pre-line;position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translate(-50%,-16px) scale(.96);color:var(--ink);
   background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border:1px solid var(--glass-edge);
   box-shadow:var(--glass-shadow);padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;
   transition:transform .35s cubic-bezier(.3,1.35,.5,1),opacity .25s;z-index:90;width:max-content;max-width:calc(100% - 32px);text-align:center}
@@ -1806,6 +1806,48 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hb-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .hb-card.hb-lift{transition:none;z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.35)}
 .hb-hint{margin:14px 0 0;text-align:center;font-size:12px;color:var(--ink-3)}
+#hb-cel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:rgba(0,0,0,.35);opacity:0;transition:opacity .3s;overflow:hidden}
+#hb-cel.on{opacity:1}
+.hb-conf i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:hbFall linear forwards}
+@keyframes hbFall{to{transform:translate(var(--x),110vh) rotate(var(--r))}}
+.hb-celc{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:26px 30px 22px;border-radius:28px;background:var(--surface);box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;max-width:300px;transform:scale(.8);transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+#hb-cel.on .hb-celc{transform:none}
+.hb-medal{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:42px;background:color-mix(in srgb,var(--c) 22%,var(--surface));box-shadow:inset 0 0 0 4px var(--c);margin-bottom:6px}
+.hb-celc b{font-size:22px}
+.hb-celc small{font-size:13px;color:var(--ink-2)}
+.hb-celc small.nt{margin-top:4px;color:var(--ink-3);font-size:12px}
+.hb-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;margin-top:6px}
+.hb-bd{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ink-2);text-align:center}
+.hb-bd i{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:21px;background:var(--surface-2);box-shadow:inset 0 0 0 2px var(--line);filter:grayscale(1);opacity:.55}
+.hb-bd.got i{background:color-mix(in srgb,var(--c) 22%,var(--surface));box-shadow:inset 0 0 0 3px var(--c);filter:none;opacity:1}
+.hb-bd.got{color:var(--ink);font-weight:700}
+.hb-bd small{font-size:10px;color:var(--ink-3);font-weight:400}
+.hbd-sec{margin:22px 4px 8px;text-align:left;font-size:13px;font-weight:700;color:var(--ink-2)}
+.hbd-sw{margin-top:14px;text-align:left}
+.hbd-sw span{font-size:14px;font-weight:600}.hbd-sw span small{font-weight:400;margin-top:2px}
+/* 灯 on the timeline and the today screen */
+.tl-hb{display:flex;align-items:center;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:2px 16px 4px}
+.tl-hb::-webkit-scrollbar{display:none}
+.tl-hb .hb-go{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-2)}
+.tl-hb .hb-go .hb-ico{width:44px;height:44px;border-radius:12px}
+.hb-chip2{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;width:56px;font-size:10.5px;color:var(--ink-2)}
+.hb-chip2 .r{position:relative;width:46px;height:46px;display:grid;place-items:center;font-size:20px}
+.hb-chip2 .r .hb-ring{position:absolute;inset:0;width:100%;height:100%}
+.hb-chip2 .hb-ring .tr{stroke:color-mix(in srgb,var(--c) 28%,transparent)}
+.hb-chip2 .hb-ring .pg{stroke:var(--c)}
+.hb-chip2.done .r{background:var(--c);border-radius:50%}
+.hb-chip2.done .r::after{content:"✓";position:absolute;right:-2px;bottom:-2px;width:18px;height:18px;border-radius:50%;background:var(--c);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.hb-chip2 span:last-child{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-hb{margin-bottom:14px}
+.td-hb h3{display:flex;justify-content:space-between;align-items:center}
+.td-hb h3 button{font-size:13px;color:var(--accent);font-weight:700}
+.td-hbr{display:flex;align-items:center;gap:12px;padding:8px 4px;border-top:1px solid var(--line)}
+.td-hbr .hb-em{width:30px;font-size:22px}
+.td-hbr .hb-tx b{font-size:15px}.td-hbr .hb-tx small{font-size:12px}
+.td-hbr .hb-act{width:42px;height:42px}
+.td-hbr .hb-act .ico{width:19px;height:19px}
+.td-hbr.done .hb-tx b{color:var(--ink-3);text-decoration:line-through}
+.td-hbr .hb-ok{width:38px;height:38px;background:var(--c)}.td-hbr .hb-ok .ico{color:#fff}
 .hb-card.prog::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 34%,transparent) var(--p),transparent var(--p));transition:background .5s}
 .hb-card.done{background:var(--c);border-color:transparent;color:#fff}
 .hb-card.done .hb-tx small{color:rgba(255,255,255,.85)}
@@ -2205,7 +2247,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], habits: { list: [], log: {}, run: null } });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], habits: { list: [], log: {}, run: null, seen: {} } });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -2628,6 +2670,7 @@ function viewDay() {
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${h ? `<span class="tl-hol">${esc(h)}</span>` : ''}${occ.length}件の予定</p>
+    ${hbStripHTML(d)}
     ${todoJump()}
     ${d === T && new Date().getHours() >= 17 ? packCard(addDays(T, 1)) : ''}${packCard(d)}
     ${moodCard}
@@ -3874,6 +3917,7 @@ function todaySheet() {
   ${wx}${nx}
   ${all.length ? `<div class="tlist"><h3>終日</h3>${all.map(o => `<div class="trow" style="--c:${o.ev.color}"><span class="t">終日</span><i></i><span>${esc(o.ev.title)}</span></div>`).join('')}</div>` : ''}
   <div class="tlist"><h3>今日の予定 ${timed.length}件</h3>${rows || '<p class="empty" style="padding:6px 0 10px">今日は時間の決まった予定はありません</p>'}</div>
+  ${hbTodayRows()}
   ${tds.length ? `<div class="td-g" style="margin-bottom:12px"><p class="td-gl">今日・明日までのやること<span class="num">${tds.length}</span></p>${tds.map(x => { const [l, cl] = dueLabel(x.due); return `<div class="td-row" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="完了にする">${ico('check')}</button><span class="td-main"><b>${esc(x.title)}</b></span><span class="td-due ${cl}">${l}</span></div>`; }).join('')}</div>` : ''}
   ${packCard(T)}
   <div class="sheet-actions"><button class="btn primary" data-act="close">ひび手帳をひらく</button></div>`;
@@ -5673,7 +5717,12 @@ const ACT = {
   tmFinish: () => {
     const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
     if (ev) { ev.actual = Object.assign({}, ev.actual, { [t.d]: ((ev.actual || {})[t.d] || 0) + min }); ev.done = Object.assign({}, ev.done, { [t.d]: true }); }
-    S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); toast(`${dur(min)}の集中を記録しました`);
+    // the same practice as a 灯 timer habit (same name, or the plan 灯 made): add the minutes there too
+    const nk2 = x => String(x || '').replace(/[\s　]/g, ''), hh = ev && hbAct().find(h => h.kind === 'time' && (ev.habit === h.id || nk2(h.name) === nk2(ev.title)));
+    S.timer = null; save(); releaseWake(); while (stack.length) closeSheet();
+    if (hh && !ev.habit) { if (hbSet(hh.id, t.d, hbVal(hh, t.d) + min * 60)) hbCheer(hh, t.d); else toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
+    else toast(`${dur(min)}の集中を記録しました`);
+    render(); tick();
   },
   tmCancel: () => confirmIn('タイマーを止めて、記録せずに終わりますか？', '記録せずに終了', () => { S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); }, 'タイマーを続ける'),
   taskDel: t => {
@@ -6566,17 +6615,18 @@ function normHabits(x) {
       id: okId(h.id), name: h.name.slice(0, 60), emoji: typeof h.emoji === 'string' ? h.emoji.slice(0, 16) : '', color: okColor(h.color) ? h.color : HB_COLORS[0], kind,
       goal: kind === 'check' ? 1 : Math.max(1, Math.min(kind === 'time' ? 86400 : 999, Math.round(+h.goal || (kind === 'time' ? 300 : 1)))),
       unit: typeof h.unit === 'string' ? h.unit.slice(0, 8) : '', freq: { t, days: [...new Set(days)], n: Math.max(1, Math.min(7, Math.round(+f.n || 3))) },
-      c: isYmd(h.c) ? h.c : todayISO(), arch: !!h.arch,
+      c: isYmd(h.c) ? h.c : todayISO(), arch: !!h.arch, tl: h.tl !== false,
     };
   });
   const log = {};
   for (const [d, o] of Object.entries(asObj(x.log))) {
     if (!isYmd(d)) continue; const r = {};
-    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; }
+    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; if (+e.s) r[id].s = +e.s; }
     if (Object.keys(r).length) log[d] = r;
   }
   const r = asObj(x.run), run = list.some(h => h.id === r.id) && +r.s && isYmd(r.d) ? { id: r.id, d: r.d, s: +r.s, b: +r.b || 0 } : null;
-  return { list, log, run };
+  const seen = {}; for (const [k, v] of Object.entries(asObj(x.seen))) if (/^[\w:-]{1,80}$/.test(k) && v) seen[k] = 1;
+  return { list, log, run, seen };
 }
 
 /* ---- data helpers ---- */
@@ -6665,21 +6715,61 @@ function hbSet(id, d, v) {
   if (!Object.keys(day).length) delete L[d];
   save(); return !was && e.v >= h.goal;
 }
+/* ---- rewards: badges for streaks and totals, and a celebration when one is reached ---- */
+const HB_SM = [3, 7, 14, 30, 50, 100, 200, 365], HB_TM = [10, 30, 50, 100, 200, 365, 500, 1000];
+function hbBadges(h) {
+  const best = hbBest(h), tot = hbTotal(h), u = h.freq.t === 'week' ? '週' : '日';
+  return [...HB_SM.map(n => ({ k: 's' + n, ic: '🔥', n, lbl: `${n}${u}連続`, got: best >= n, left: n - hbStreak(h) })), ...HB_TM.map(n => ({ k: 't' + n, ic: '✓', n, lbl: `合計${n}回`, got: tot >= n, left: n - tot }))];
+}
 function hbCheer(h, d) {
-  const n = hbStreak(h, d > todayISO() ? todayISO() : d), u = h.freq.t === 'week' ? '週' : '日';
-  toast(`${h.emoji || '✓'} ${h.name} 達成！${n > 1 ? `　🔥 ${n}${u}連続` : ''}`);
+  const T = todayISO(), n = hbStreak(h, d > T ? T : d), u = h.freq.t === 'week' ? '週' : '日', tot = hbTotal(h), seen = S.habits.seen || (S.habits.seen = {});
+  const note = hbTlNote; hbTlNote = '';
+  const once = k => { if (seen[k]) return false; seen[k] = 1; save(); return true; };
+  if (HB_SM.includes(n) && once(`${h.id}:s${n}`)) return hbCelebrate('🔥', `${n}${u}連続！`, `${h.emoji || ''} ${h.name}`, h.color, note);
+  if (HB_TM.includes(tot) && once(`${h.id}:t${tot}`)) return hbCelebrate('🏅', `合計${tot}回！`, `${h.emoji || ''} ${h.name}`, h.color, note);
+  if (d === T && hbDayFrac(T) >= 1 && hbAct().filter(x => hbSched(x, T) && x.freq.t !== 'week').length > 1 && once(`all:${T}`)) return hbCelebrate('🎉', '今日の習慣をぜんぶ達成！', 'おつかれさま。この調子で続けましょう', 'var(--accent)', note);
+  toast(`${h.emoji || '✓'} ${h.name} 達成！${n > 1 ? `　🔥 ${n}${u}連続` : ''}${note ? '\n' + note : ''}`);
+}
+function hbCelebrate(icon, title, sub, color, note) {
+  const old = $('#hb-cel'); if (old) old.remove();
+  const quiet = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches, C = ['#F0A04B', '#5BC4D1', '#E9707A', '#7DBE5A', '#9B7BDB', '#EE6FA4', '#E8B93C'];
+  const bits = quiet ? '' : Array.from({ length: 46 }, (_, i) => `<i style="left:${(Math.random() * 100).toFixed(1)}%;background:${C[i % C.length]};animation-delay:${(Math.random() * .5).toFixed(2)}s;animation-duration:${(1.8 + Math.random() * 1.4).toFixed(2)}s;--r:${Math.round(Math.random() * 720 - 360)}deg;--x:${Math.round(Math.random() * 120 - 60)}px"></i>`).join('');
+  const el = document.createElement('div'); el.id = 'hb-cel'; el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="hb-conf">${bits}</div><div class="hb-celc" style="--c:${color}"><span class="hb-medal">${icon}</span><b>${esc(title)}</b><small>${esc(sub)}</small>${note ? `<small class="nt">${esc(note)}</small>` : ''}</div>`;
+  document.body.append(el); requestAnimationFrame(() => el.classList.add('on'));
+  if (navigator.vibrate) navigator.vibrate([12, 60, 12]);
+  const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 350); };
+  el.addEventListener('click', close); setTimeout(close, 3400);
 }
 function hbStart(id, d) {
   if (S.habits.run) hbStop();
   const h = hbById(id); if (!h) return;
-  S.habits.run = { id, d, s: Date.now(), b: hbVal(h, d) }; save(); hbTicker();
+  const now = Date.now(), L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || (day[id] = { v: 0, t: 0 });
+  if (!e.s) e.s = now; // when today's practice began (for the timeline)
+  S.habits.run = { id, d, s: now, b: hbVal(h, d) }; save(); hbTicker();
 }
 function hbStop(quiet) {
   const r = S.habits.run; if (!r) return; const h = hbById(r.id);
   const v = h ? hbVal(h, r.d) : 0; S.habits.run = null;
-  if (h) { const got = hbSet(r.id, r.d, v); if (got && !quiet) hbCheer(h, r.d); } else save();
+  if (h) {
+    const e0 = hbE(r.d, r.id), began = (e0 && e0.s) || r.s, got = hbSet(r.id, r.d, v);
+    // finished with the timer: the practice goes onto the timeline as a done plan
+    if (got && !quiet && h.kind === 'time' && h.tl !== false) hbToTimeline(h, r.d, began, r.b < h.goal ? r.s + (h.goal - r.b) * 1000 : Date.now());
+    if (got && !quiet) hbCheer(h, r.d);
+  } else save();
   hbTicker();
 }
+function hbToTimeline(h, d, from, to) {
+  const a = new Date(from), b = new Date(Math.max(to, from + 60000)), hmOf2 = x => `${pad(x.getHours())}:${pad(x.getMinutes())}`;
+  const start = iso(a) === d ? hmOf2(a) : '00:00', end = iso(b) === d ? hmOf2(b) : '23:59', min = Math.max(1, Math.round((to - from) / 60000));
+  if (end <= start) return;
+  let ev = S.events.find(x => x.habit === h.id && x.date === d);
+  if (ev) Object.assign(ev, { start: toMin(start) < toMin(ev.start) ? start : ev.start, end: toMin(end) > toMin(ev.end) ? end : ev.end });
+  else { ev = { id: uid(), title: h.name, date: d, endDate: '', allDay: false, start, end, color: h.color, icon: guessIcon(h.name), repeat: 'none', routine: false, memo: `${h.emoji ? h.emoji + ' ' : ''}灯の習慣`, done: {}, habit: h.id }; S.events.push(ev); }
+  ev.done = Object.assign({}, ev.done, { [d]: true }); ev.actual = Object.assign({}, ev.actual, { [d]: Math.round(hbVal(h, d) / 60) || min });
+  save(); hbTlNote = `タイムラインに「${h.name}」${start}〜${end} を入れました`;
+}
+let hbTlNote = '';
 let hbT = null;
 function hbTicker() { clearInterval(hbT); hbT = S.habits.run ? setInterval(hbTick, 1000) : null; }
 function hbTick() {
@@ -6698,6 +6788,21 @@ function hbTick() {
 }
 setTimeout(() => { if (S.habits && S.habits.run) { hbTicker(); hbTick(); } }, 0);
 
+/* ---- 灯 on the timeline (a row of rings) and on the today screen ---- */
+function hbStripHTML(d) {
+  if (d > todayISO()) return '';
+  const hs = hbAct().filter(h => d >= h.c && hbSched(h, d)); if (!hs.length) return '';
+  return `<div class="tl-hb" aria-label="灯の習慣"><button class="hb-go" data-act="habits">${HB_SVG}<span>灯</span></button>${hs.map(h => { const v = hbVal(h, d), f = hbClamp(v / h.goal), done = f >= 1;
+    return `<button class="hb-chip2${done ? ' done' : ''}" style="--c:${h.color}" data-act="hbTap" data-id="${h.id}" data-d="${d}" aria-label="${esc(h.name)}${done ? '（できた）' : ''}"><span class="r">${done ? '' : hbRing(f, 20, 4).replace('class="pg"', `class="pg" data-hbp="${h.id}"`)}${esc(h.emoji || '•')}</span><span>${esc(h.name)}</span></button>`; }).join('')}</div>`;
+}
+function hbTodayRows() {
+  const T = todayISO(), hs = hbAct().filter(h => T >= h.c && hbSched(h, T)); if (!hs.length) return '';
+  const dn = hs.filter(h => hbDone(h, T)).length;
+  return `<div class="tlist td-hb"><h3>今日の習慣 ${dn}/${hs.length}<button data-act="habits">灯をひらく</button></h3>${hs.map(h => { const v = hbVal(h, T), f = hbClamp(v / h.goal), done = f >= 1, run = S.habits.run && S.habits.run.id === h.id;
+    return `<div class="td-hbr${done ? ' done' : ''}" style="--c:${h.color}"><span class="hb-em">${esc(h.emoji || '•')}</span><button class="hb-tx" data-act="hbOpen" data-id="${h.id}" data-d="${T}" style="text-align:left"><b>${esc(h.name)}</b><small id="hbs-${h.id}">${esc(hbSub(h, T))}</small></button>
+      <button class="hb-act" data-act="hbTap" data-id="${h.id}" data-d="${T}" aria-label="${esc(h.name)}">${done ? `<i class="hb-ok">${ico('check')}</i>` : hbRing(f, 17, 4).replace('class="pg"', `class="pg" data-hbp="${h.id}"`) + (h.kind === 'time' ? (run ? '<i class="hb-stop"></i>' : `<i class="hb-play">${ico('play')}</i>`) : `<i class="hb-plus">${ico('plus')}</i>`)}</button></div>`; }).join('')}</div>`;
+}
+
 /* ---- the 灯 screen ---- */
 const HBV = { tab: 'today', d: null, heat: 53, sp: 28, sh: '' };
 function hbRe() {
@@ -6705,6 +6810,7 @@ function hbRe() {
     const sh = ov.firstElementChild, k = sh.dataset.kind;
     if (k === 'hb') { const sc = $('.hb-scroll', sh), y = sc ? sc.scrollTop : 0; sh.innerHTML = hbHTML(); const s2 = $('.hb-scroll', sh); if (s2) s2.scrollTop = y; }
     else if (k === 'hbd') { const y = sh.scrollTop; sh.innerHTML = hbdHTML(); sh.scrollTop = y; }
+    else if (k === 'today') { const y = sh.scrollTop; sh.innerHTML = todaySheet(); sh.scrollTop = y; }
   }
 }
 function openHabits() { HBV.d = todayISO(); HBV.tab = 'today'; const sh = openSheet(hbHTML(), 'full hb'); sh.dataset.kind = 'hb'; }
@@ -6849,6 +6955,9 @@ function hbStatsHTML() {
     <div class="hb-leg">${B.map(b => `<span style="--k:${b[3]}">${b[0]} ${hours.reduce((n, x, i) => n + (band(i) === b ? x : 0), 0)}</span>`).join('')}</div></div>`;
   // by weekday
   if (wdT.some(Boolean)) s += `<div class="hb-sec">曜日ごとの完了率</div><div class="hb-card2"><div class="hb-wds">${weekOrder().map(w => { const p = wdT[w] ? wdD[w] / wdT[w] : 0; return `<div><i><b style="height:${p * 100}%"></b></i><span>${WD[w]}</span><small class="num">${wdT[w] ? Math.round(p * 100) + '%' : '-'}</small></div>`; }).join('')}</div></div>`;
+  // badges
+  const bds = hs.flatMap(h => hbBadges(h).filter(b => b.got).map(b => Object.assign({ h }, b)));
+  s += `<div class="hb-sec">集めたバッジ <span class="num">${bds.length}個</span></div><div class="hb-card2">${bds.length ? `<div class="hb-badges">${bds.slice(-16).reverse().map(b => `<div class="hb-bd got" style="--c:${b.h.color}"><i>${b.ic}</i>${esc(b.lbl)}<small>${esc(b.h.emoji || '')} ${esc(b.h.name)}</small></div>`).join('')}</div>` : '<p class="empty" style="padding:6px">3日続けると、最初のバッジがもらえます</p>'}</div>`;
   // the last 7 days, habit by habit
   if (all) {
     const days = [...Array(7)].map((_, i) => addDays(T, i - 6));
@@ -6893,6 +7002,9 @@ function hbdHTML() {
         <div class="hbd-dow">${weekOrder().map(w => `<span>${WD[w]}</span>`).join('')}</div><div class="hbd-grid">${cells}</div>
         <div class="hbd-foot">${rate !== null ? `<span>${ico('clock')}達成率 <b class="num">${rate}%</b></span>` : ''}<span>${ico('check')}<b class="num">${cnt}</b>日</span></div></div>
       <div class="hbd-kvs"><div><small>連続</small><b class="num">${n}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>最長</small><b class="num">${hbBest(h)}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>合計</small><b class="num">${hbTotal(h)}回</b></div></div>
+      <p class="hbd-sec">バッジ <span class="num">${hbBadges(h).filter(b => b.got).length}/${hbBadges(h).length}</span></p>
+      <div class="hb-badges">${hbBadges(h).map(b => `<div class="hb-bd${b.got ? ' got' : ''}"><i>${b.ic}</i>${esc(b.lbl)}${!b.got && b.left > 0 ? `<small>あと${b.left}${b.k[0] === 's' ? (h.freq.t === 'week' ? '週' : '日') : '回'}</small>` : ''}</div>`).join('')}</div>
+      ${h.kind === 'time' ? `<label class="toggle hbd-sw"><span>終わったらタイムラインに記録<small>タイマーで目標までやりきると、その時間を予定として残します</small></span><input type="checkbox" id="hbd-tl" ${h.tl !== false ? 'checked' : ''}></label>` : ''}
       <p class="hbd-since">${md(h.c)}から${hbGoalTx(h) ? ` · 目標 ${esc(hbGoalTx(h))}` : ''}</p>
     </div>`;
 }
@@ -7058,6 +7170,7 @@ document.addEventListener('touchend', e => {
   const T = todayISO(); let d = addDays(HBV.d || T, dx < 0 ? 7 : -7); if (d > T) d = T;
   HBV.d = d; hbRe(); noClickUntil = Date.now() + 350;
 }, { passive: true });
+document.addEventListener('change', e => { if (e.target.id === 'hbd-tl') { const h = hbById(HBD.id); if (h) { h.tl = e.target.checked; save(); } } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hbe-name') { e.preventDefault(); e.target.blur(); } });
 
 /* ================= メモ (inside あとで) =================
@@ -7319,10 +7432,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v76';
+const APP_VER = 'hibi-v77';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.2.0';
-const HIBI_CHANGES = ['灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.3.0';
+const HIBI_CHANGES = ['灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
