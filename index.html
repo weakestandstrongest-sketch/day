@@ -3054,6 +3054,13 @@ function ngWatch(wrap) {
     clearTimeout(t); setTimeout(() => { wrap.classList.toggle('ready', ok); wrap.classList.toggle('fail', !ok); }, ok ? 200 : 0);
   }, { once: true });
 }
+// 凪's "Cometで開く" runs an iOS Shortcut (shortcuts://…), which iOS refuses to start from inside a frame.
+// 凪 opens it from this outer page itself when it can (same site); otherwise it asks here
+window.addEventListener('message', e => {
+  const d = e.data, f = $('.ng-frame');
+  if (!d || d.type !== 'nagi:open-url' || !f || e.source !== f.contentWindow) return;
+  if (/^shortcuts:\/\/run-shortcut\?/.test(String(d.url || ''))) location.href = d.url;
+});
 function openNagi() { const sh = openSheet(ngSheet(), 'full nk'); sh.dataset.kind = 'nagi'; const w = $('.ng-wrap', sh); if (w) ngWatch(w); }
 
 /* ---- Orb (the AI browser) inside ひび手帳 ---- */
@@ -5384,7 +5391,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v57';
+const APP_VER = 'hibi-v58';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
