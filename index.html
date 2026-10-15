@@ -1803,6 +1803,9 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hb-card{position:relative;display:flex;align-items:center;gap:14px;min-height:78px;padding:12px 12px 12px 18px;border-radius:22px;cursor:pointer;overflow:hidden;isolation:isolate;
   background:color-mix(in srgb,var(--c) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 38%,transparent);transition:background .3s,transform .15s}
 .hb-card:active{transform:scale(.985)}
+.hb-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.hb-card.hb-lift{transition:none;z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.hb-hint{margin:14px 0 0;text-align:center;font-size:12px;color:var(--ink-3)}
 .hb-card.prog::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 34%,transparent) var(--p),transparent var(--p));transition:background .5s}
 .hb-card.done{background:var(--c);border-color:transparent;color:#fff}
 .hb-card.done .hb-tx small{color:rgba(255,255,255,.85)}
@@ -2011,7 +2014,14 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .rf-dots i.t{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--ink-3)}
 .rf-dl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)}
 .rf-note{margin:10px 0 0;font-size:13px;color:var(--ink-2)}
-.rf-gap{margin-top:14px}
+.rf-mcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px;text-align:center}
+.rf-mcal b{font-size:11px;font-weight:500;color:var(--ink-2)}.rf-mcal b.sun{color:var(--sun)}.rf-mcal b.sat{color:var(--sat)}
+.rf-mcal i{position:relative;aspect-ratio:1.3;border-radius:7px;display:grid;place-items:center;font-style:normal;background:var(--surface-2);overflow:hidden}
+.rf-mcal i::before{content:"";position:absolute;inset:0;background:var(--accent);opacity:var(--a)}
+.rf-mcal i span{position:relative;font-size:11px;font-weight:700;color:var(--ink)}
+.rf-mcal i.past{opacity:.38}
+.rf-mcal i.e{background:transparent}.rf-mcal i.e::before{display:none}
+.rf-mcal i.t{box-shadow:inset 0 0 0 2px var(--ink)}
 .rf-wds{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
 .rf-wds .bar{position:relative;display:block;height:110px;border-radius:8px;background:var(--surface-2);overflow:hidden}
 .rf-wds .bar::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--line)}
@@ -2917,28 +2927,34 @@ function rfTimeCard() {
     <p class="rf-note">${WD[good]}曜日は気分がいい日が多いようです</p>` : '<p class="empty" style="padding:8px">気持ちをつけて日記を書くと、曜日ごとの気分がわかります</p>'}
   </section>`;
 }
-function rfDoneCard(n) {
-  const T = todayISO(), from = addDays(T, -(n - 1)); let dn = 0, dt = 0; const wT = Array(7).fill(0), wD = Array(7).fill(0); let focus = 0;
-  for (let d = from; d <= T; d = addDays(d, 1)) for (const o of onDay(d)) if (!o.ev.allDay && !o.ev.cls) { const ok = isDone(o.ev, d); dt++; wT[wd(d)]++; if (ok) { dn++; wD[wd(d)]++; } }
-  for (const ev of S.events) for (const [k, v] of Object.entries(ev.actual || {})) if (k >= from && k <= T) focus += +v || 0;
-  const tds = S.todos.filter(x => x.due && x.due >= from && x.due <= T), tdn = tds.filter(x => x.done).length;
-  const doneNow = S.todos.filter(x => x.done && x.doneAt && iso(new Date(x.doneAt)) >= from).length;
-  const pct = dt ? Math.round(dn / dt * 100) : 0;
-  return `<section class="card"><h3>予定の完了率 <span class="sub">${n}日間</span></h3>
-    ${dt ? `<div class="hb-big2"><span class="hb-ic g">${ico('check')}</span><div><b class="num">${pct}%</b><small>${dt}件中${dn}件 できました</small></div></div>
-    <div class="hb-bar2"><i style="width:${dn / dt * 100}%"></i></div><div class="hb-leg"><span class="g">完了 ${dn}件</span><span class="o">未完了 ${dt - dn}件</span></div>
-    ${wT.some(Boolean) ? `<div class="hb-wds rf-gap">${weekOrder().map(w => { const p = wT[w] ? wD[w] / wT[w] : 0; return `<div><i><b style="height:${p * 100}%"></b></i><span>${WD[w]}</span><small class="num">${wT[w] ? Math.round(p * 100) + '%' : '-'}</small></div>`; }).join('')}</div>` : ''}`
-    : '<p class="empty" style="padding:8px">この期間の予定はありません</p>'}
-    <div class="hb-kv"><span>やること</span><b class="num">${tds.length ? `${tdn}/${tds.length}` : doneNow}</b><small>${tds.length ? 'この期間が締切のうち完了' : 'この期間に完了'}</small></div>
-    <div class="hb-kv"><span>集中タイマー</span><b class="num">${focus ? dur(focus) : '0分'}</b><small>合計</small></div></section>`;
+// this month's plans: how many are already behind you (past plans count as done, checked or not)
+function rfMonthCard() {
+  const T = todayISO(), now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), F = P(T); F.setDate(1);
+  const m1 = iso(F), mEnd = iso(new Date(F.getFullYear(), F.getMonth() + 1, 0)), dim = diffDays(m1, mEnd) + 1;
+  const occ = occurrences(m1, mEnd).filter(o => !o.ev.cls && o.date >= m1);
+  const over = o => o.end < T || (o.end === T && !o.ev.allDay && !multiDay(o.ev) && !overnight(o.ev) && toMin(o.ev.end) <= nm);
+  const past = occ.filter(over).length, all = occ.length, pct = all ? Math.round(past / all * 100) : 0, mp = Math.round((diffDays(m1, T) + nm / 1440) / dim * 100);
+  const per = {}; for (const o of occ) per[o.date] = (per[o.date] || 0) + 1; const mx = Math.max(1, ...Object.values(per));
+  const lead = (F.getDay() - weekOrder()[0] + 7) % 7; let cells = '';
+  for (let i = 0; i < lead; i++) cells += '<i class="e"></i>';
+  for (let d = m1; d <= mEnd; d = addDays(d, 1)) { const c = per[d] || 0; cells += `<i class="${d < T ? 'past' : ''}${d === T ? ' t' : ''}" style="--a:${c ? (.25 + .75 * c / mx).toFixed(2) : 0}" title="${md(d)} ${c}件"><span class="num">${P(d).getDate()}</span></i>`; }
+  const busy = Object.entries(per).filter(([d]) => d >= T).sort((a, b) => b[1] - a[1])[0];
+  let focus = 0; for (const ev of S.events) for (const [k, v] of Object.entries(ev.actual || {})) if (k >= m1 && k <= mEnd) focus += +v || 0;
+  const tds = S.todos.filter(x => x.due && x.due >= m1 && x.due <= mEnd), tdn = tds.filter(x => x.done).length;
+  return `<section class="card"><h3>${F.getMonth() + 1}月の予定 <span class="sub">月の${mp}%がすぎました</span></h3>
+    ${all ? `<div class="hb-big2"><span class="hb-ic g">${ico('cal')}</span><div><b class="num">${pct}%</b><small>${all}件中${past}件の予定が終わりました</small></div></div>
+    <div class="hb-bar2"><i style="width:${past / all * 100}%"></i></div><div class="hb-leg"><span class="g">終わった ${past}件</span><span class="o">これから ${all - past}件</span></div>
+    <div class="rf-mcal">${weekOrder().map(w => `<b class="${w === 0 ? 'sun' : w === 6 ? 'sat' : ''}">${WD[w]}</b>`).join('')}${cells}</div>
+    <p class="rf-note">色が濃い日ほど予定が多く、うすい日はもう終わった日です${busy ? `。これからだと ${md(busy[0])}(${WD[wd(busy[0])]}) がいちばん多く ${busy[1]}件` : ''}</p>`
+    : '<p class="empty" style="padding:8px">今月の予定はまだありません</p>'}
+    <div class="hb-kv"><span>やること</span><b class="num">${tdn}/${tds.length}</b><small>今月が締切のうち完了</small></div>
+    <div class="hb-kv"><span>集中タイマー</span><b class="num">${focus ? dur(focus) : '0分'}</b><small>今月の合計</small></div></section>`;
 }
 function viewReflect() {
   const T = todayISO(), ws = addDays(T, -6 + st.iWeek * 7), we = addDays(ws, 6), n = st.range;
   const rs = rangeEntries(addDays(T, -(n - 1)), T);
   const fc = {}; for (const e of rs) for (const f of e.feelings) fc[f] = (fc[f] || 0) + 1;
   const rank = Object.entries(fc).sort((a, b) => b[1] - a[1]).slice(0, 6), maxR = rank.length ? rank[0][1] : 1;
-  let streak = 0; for (let d = entriesOn(T).length ? T : addDays(T, -1); entriesOn(d).length; d = addDays(d, -1)) streak++;
-  let dn = 0, dt = 0; for (let d = addDays(T, -(n - 1)); d <= T; d = addDays(d, 1)) for (const o of onDay(d)) if (!o.ev.allDay && !o.ev.cls) { dt++; if (isDone(o.ev, d)) dn++; }
   const wl = words(rs.map(e => e.text)).slice(0, 14), wmax = wl.length ? wl[0][1] : 1;
   let wk = ''; for (let i = 0; i < 7; i++) { const d = addDays(ws, i), e = entriesOn(d)[0]; wk += `<div><span class="w">${WD[wd(d)]}</span><i style="--c:${e ? dayMood(d).color : 'var(--line)'}"></i><span>${e ? esc(e.text || e.feelings.join('・')) : '—'}</span></div>`; }
   const mF = P(T); mF.setDate(1); mF.setMonth(mF.getMonth() + st.mcal); const mfirst = iso(mF), mlast = iso(new Date(mF.getFullYear(), mF.getMonth() + 1, 0));
@@ -2963,13 +2979,8 @@ function viewReflect() {
     ${moodChart(n)}
     <div class="legend"><span style="--c:#EDA04B"><i></i>前向きな気持ち</span><span style="--c:#6C97C2"><i></i>沈んだ気持ち</span></div>
   </section>
-  <section class="card stats">
-    <div><b class="num">${new Set(rs.map(e => e.date)).size}</b><span>記録した日<br>（${n}日間）</span></div>
-    <div><b class="num">${streak}</b><span>連続記録<br>（日）</span></div>
-    <div><b class="num">${dt ? Math.round(dn / dt * 100) : 0}<small style="font-size:14px">%</small></b><span>予定の完了<br><span class="num">${dn}/${dt}</span></span></div>
-  </section>
   ${rfStreakCard()}
-  ${rfDoneCard(n)}
+  ${rfMonthCard()}
   ${rfTimeCard()}
   <section class="card"><h3>気持ちのランキング <span class="sub">${n}日間</span></h3>
     ${rank.length ? `<div class="rank">${rank.map(([f, v]) => `<div style="--c:${feelInfo(f).color}"><span>${esc(f)}</span><span class="trk"><i style="width:${v / maxR * 100}%"></i></span><span class="c num">${v}</span></div>`).join('')}</div>` : '<p class="empty" style="padding:8px">この期間の記録はまだありません</p>'}
@@ -6741,6 +6752,7 @@ function hbTodayHTML(d) {
   s += `<div class="hb-sum"><span>${d === todayISO() ? '今日の習慣' : `${md(d)}の習慣`}</span><b class="num">${done}/${on.length}</b></div>`;
   s += `<div class="hb-list">${on.map(h => hbCardHTML(h, d)).join('') || '<p class="empty">この日の習慣はありません</p>'}</div>`;
   if (off.length) s += `<div class="hb-sum off"><span>この日はお休み</span></div><div class="hb-list off">${off.map(h => hbCardHTML(h, d)).join('')}</div>`;
+  if (act.length > 1) s += '<p class="hb-hint">カードを長押ししてドラッグすると、並べ替えられます</p>';
   return s + '<div class="hb-pad"></div>';
 }
 
@@ -7004,6 +7016,39 @@ function hbDelete(id, fromEdit) {
     hbRe(); render(); toast('削除しました');
   });
 }
+// long-press a habit card, then drag it up or down to change the order
+let hbDr = null;
+document.addEventListener('touchstart', e => {
+  const card = e.target.closest('.hb-list .hb-card'); if (!card || e.target.closest('.hb-act') || e.touches.length > 1) return;
+  const t = e.touches[0]; hbDr = { card, x0: t.clientX, y0: t.clientY, on: false, timer: setTimeout(hbDrStart, 380) };
+}, { passive: true });
+function hbDrStart() {
+  const g = hbDr; if (!g || !g.card.isConnected) { hbDr = null; return; }
+  g.items = [...g.card.parentElement.children].filter(x => x.classList.contains('hb-card'));
+  if (g.items.length < 2) { hbDr = null; return; }
+  g.on = true; g.idx = g.to = g.items.indexOf(g.card);
+  const r = g.items.map(x => x.getBoundingClientRect()); g.step = r[1].top - r[0].top;
+  g.card.classList.add('hb-lift'); if (navigator.vibrate) navigator.vibrate(10);
+}
+document.addEventListener('touchmove', e => {
+  const g = hbDr; if (!g) return; const t = e.touches[0];
+  if (!g.on) { if (Math.hypot(t.clientX - g.x0, t.clientY - g.y0) > 8) { clearTimeout(g.timer); hbDr = null; } return; }
+  e.preventDefault();
+  const dy = t.clientY - g.y0, to = Math.max(0, Math.min(g.items.length - 1, g.idx + Math.round(dy / g.step)));
+  g.card.style.transform = `translateY(${dy}px) scale(1.03)`; g.to = to;
+  g.items.forEach((x, i) => { if (x === g.card) return; const sh = g.idx < to && i > g.idx && i <= to ? -g.step : g.idx > to && i < g.idx && i >= to ? g.step : 0; x.style.transform = sh ? `translateY(${sh}px)` : ''; });
+}, { passive: false });
+const hbDrEnd = () => {
+  const g = hbDr; hbDr = null; if (!g) return; clearTimeout(g.timer); if (!g.on) return;
+  noClickUntil = Date.now() + 400;
+  if (g.to !== g.idx) {
+    const ids = g.items.map(x => x.dataset.id), [m] = ids.splice(g.idx, 1); ids.splice(g.to, 0, m);
+    const L = S.habits.list, pos = ids.map(id => L.findIndex(h => h.id === id)).sort((a, b) => a - b), objs = ids.map(hbById);
+    pos.forEach((p, i) => { L[p] = objs[i]; }); save();
+  }
+  hbRe();
+};
+document.addEventListener('touchend', hbDrEnd); document.addEventListener('touchcancel', hbDrEnd);
 // swipe the week strip to move a week
 let hbSw = null;
 document.addEventListener('touchstart', e => { const w = e.target.closest('.hb-week'); hbSw = w ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null; }, { passive: true });
@@ -7274,10 +7319,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v75';
+const APP_VER = 'hibi-v76';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.1.0';
-const HIBI_CHANGES = ['ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.2.0';
+const HIBI_CHANGES = ['灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
