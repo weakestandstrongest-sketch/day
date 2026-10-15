@@ -1506,12 +1506,12 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--inc:#7FAEEA;--exp:#F07D74}}
 :root[data-theme="dark"]{--inc:#7FAEEA;--exp:#F07D74}
 .inc{color:var(--inc)} .exp{color:var(--exp)}
-.month .mny{pointer-events:none;display:flex;flex-direction:column;align-items:center;font-size:9.5px;line-height:11.5px;padding:0 0 2px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:hidden}
+.month .mny{pointer-events:none;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;font-size:9.5px;line-height:11.5px;padding:0 0 2px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:hidden}
 .month .mny i{font-style:normal;color:var(--exp);white-space:nowrap}
 .month .mny i.inc{color:var(--inc)}
 .month.z0 .week{padding-bottom:4px}
 .month.z0 .day .dn{font-size:15px;width:27px;height:27px;line-height:27px}
-.month .cdots{pointer-events:none;display:flex;justify-content:center;gap:2px;padding-top:2px}
+.month .cdots{pointer-events:none;position:relative;z-index:1;display:flex;justify-content:center;gap:2px;padding-top:2px}
 .month .cdots i{width:5px;height:5px;border-radius:50%}
 .month.z2,.dow.z2{margin-left:-11px;margin-right:-11px} /* tall view: use the full width */
 .month.z2 .week{row-gap:3px;padding-bottom:12px}
@@ -1646,6 +1646,17 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-brow span{display:flex;align-items:center;gap:7px}.mn-brow i{width:9px;height:9px;border-radius:50%}
 .mn-brow .inp{width:130px;text-align:right;min-height:42px;padding:8px 12px}
 .mn-maps{display:flex;flex-direction:column;gap:6px}
+.mn-bh{margin:6px 2px 8px;font-size:13px;font-weight:700;color:var(--ink)}.mn-bh small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-2);margin-top:2px}
+.mn-gcard{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:10px;margin-bottom:10px}
+.mn-grow{display:flex;gap:6px;align-items:center}
+.mn-grow .inp{min-height:42px;padding:8px 12px}.mn-grow .inp:first-child{flex:1;min-width:0}.mn-grow .inp.num{width:110px;flex:none;text-align:right}
+.mn-grow .del{width:36px;height:40px;display:grid;place-items:center;color:var(--sun);flex:none}.mn-grow .del .ico{width:17px;height:17px}
+.mn-gchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.mn-gchip{font-size:12.5px;padding:5px 11px 5px 9px;border-radius:99px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink-2);display:inline-flex;align-items:center;gap:5px}
+.mn-gchip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.mn-gchip[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--ink);font-weight:700}
+.mn-bg .t{gap:6px}.mn-bg .dots{display:inline-flex;gap:2px}.mn-bg .dots i{width:7px;height:7px;border-radius:50%}
+.mn-bg .mem{grid-column:1/-1;font-size:11px;color:var(--ink-2);margin-top:3px}.mn-bg .mem .neg{color:var(--sun)}
 .mn-acc0 p{margin:0 0 12px;font-size:14px;line-height:1.7}.mn-acc0 small{color:var(--ink-2);font-size:12px}
 .mn-qa{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .mn-qa .mn-chip{color:var(--accent);font-weight:700}
@@ -5470,11 +5481,11 @@ const MN_COLORS = ['#8EC392','#B9B5AE','#F0B65A','#5AA8D8','#8E4FB5','#4A4658','
 const mnDefaults = () => {
   const mk = names => names.map((name, i) => ({ id: uid() + i, name, color: MN_COLORS[i % MN_COLORS.length] }));
   return { entries: [], cats: { out: mk(['食費','学食費','外食費','日用品','薬','衣服','趣味','交通費','交際費','教科書','部活費','髪','飲料代','友達との遊び代','その他']), in: mk(['給料','仕送り','お小遣い','臨時収入','その他']) },
-    budget: { total: 0, cats: {} }, fixed: [], accts: [], hist: [], set: { start: 1, carry: false, pct: true, cal: true, ops: true } };
+    budget: { total: 0, cats: {}, groups: [] }, fixed: [], accts: [], hist: [], set: { start: 1, carry: false, pct: true, cal: true, ops: true } };
 };
 function normMoney(m) {
   const dd = mnDefaults(); m = asObj(m);
-  const cats = asObj(m.cats), out = { entries: [], cats: { out: [], in: [] }, budget: { total: 0, cats: {} }, fixed: [], accts: [], hist: [], set: Object.assign(dd.set, asObj(m.set)) };
+  const cats = asObj(m.cats), out = { entries: [], cats: { out: [], in: [] }, budget: { total: 0, cats: {}, groups: [] }, fixed: [], accts: [], hist: [], set: Object.assign(dd.set, asObj(m.set)) };
   for (const k of ['out', 'in']) {
     const a = asArr(cats[k]).filter(c => typeof c.name === 'string' && c.name.trim()).map(c => ({ id: okId(c.id), name: c.name.trim().slice(0, 30), color: okColor(c.color) ? c.color : MN_COLORS[0] }));
     out.cats[k] = a.length ? a : dd.cats[k];
@@ -5484,6 +5495,8 @@ function normMoney(m) {
     if (e.fx) x.fx = okId(e.fx); return x;
   });
   const b = asObj(m.budget); out.budget.total = Math.max(0, Math.round(+b.total || 0));
+  // groups: one budget shared by several categories (食費＋学食費＋外食費 で月3万円 など)
+  out.budget.groups = asArr(b.groups).map(g => ({ id: okId(g.id), name: String(g.name ?? '').trim().slice(0, 30) || 'グループ', amt: Math.max(0, Math.round(+g.amt || 0)), cats: (Array.isArray(g.cats) ? g.cats : []).filter(c => /^[\w-]{1,48}$/.test(String(c))).map(String) }));
   for (const [k, v] of Object.entries(asObj(b.cats))) if (+v > 0 && /^[\w-]{1,48}$/.test(k)) out.budget.cats[k] = Math.round(+v);
   out.fixed = asArr(m.fixed).filter(f => Number.isFinite(+f.amt)).map(f => ({ id: okId(f.id), k: f.k === 'in' ? 'in' : 'out', amt: Math.round(Math.abs(+f.amt)), cat: okId(f.cat), memo: String(f.memo ?? '').slice(0, 80),
     day: Math.min(31, Math.max(1, Math.round(+f.day) || 1)), from: /^\d{4}-\d{2}$/.test(f.from) ? f.from : todayISO().slice(0, 7), done: asObj(f.done) }));
@@ -5675,13 +5688,15 @@ function mnHistPut() {
   if (H.length > 400) H.splice(0, H.length - 400);
 }
 function mnBudgetHTML() {
-  const B = S.money.budget, x = mnMonth(MNV.ym), T = todayISO(), cats = Object.keys(B.cats);
-  if (!B.total && !cats.length) return `<section class="card"><p style="margin:0 0 12px;font-size:14px;line-height:1.7">1か月に使うお金の予算を決めると、残りと「1日あたり使える金額」が出ます。カテゴリーごとにも決められます。</p><button class="btn primary" data-act="mnBudget" style="width:100%">${ico('target')}予算を決める</button></section>`;
+  const B = S.money.budget, x = mnMonth(MNV.ym), T = todayISO(), cats = Object.keys(B.cats), groups = B.groups.filter(g => g.amt > 0);
+  if (!B.total && !cats.length && !groups.length) return `<section class="card"><p style="margin:0 0 12px;font-size:14px;line-height:1.7">1か月に使うお金の予算を決めると、残りと「1日あたり使える金額」が出ます。カテゴリーごとや、いくつかのカテゴリーをまとめたグループ（食費＋学食費＋外食費 で3万円 など）でも決められます。</p><button class="btn primary" data-act="mnBudget" style="width:100%">${ico('target')}予算を決める</button></section>`;
   const by = new Map(); for (const e of x.list) if (e.k === 'out') by.set(e.cat, (by.get(e.cat) || 0) + e.amt);
   const meter = (used, lim) => `<div class="meter${used > lim ? ' over' : ''}"><i style="width:${Math.min(100, lim ? used / lim * 100 : 0).toFixed(1)}%"></i></div>`;
   const left = B.total - x.o, daysLeft = T >= x.a && T <= x.b ? diffDays(T, x.b) + 1 : 0;
   return `${B.total ? `<section class="card mn-bud"><div class="mn-bud-top"><span><small>予算</small><b class="num">${yen(B.total)}</b></span><span><small>使った</small><b class="num">${yen(x.o)}</b></span><span><small>${left >= 0 ? '残り' : '超えた分'}</small><b class="num ${left < 0 ? 'neg' : 'pos'}">${yen(Math.abs(left))}</b></span></div>${meter(x.o, B.total)}
       ${daysLeft && left > 0 ? `<p class="mn-per">あと${daysLeft}日 ・ 1日あたり <b class="num">${yen(Math.floor(left / daysLeft))}</b> 使えます</p>` : ''}</section>` : ''}
+    ${groups.length ? `<section class="card"><h3>グループ</h3>${groups.map(g => { const u = g.cats.reduce((n, id) => n + (by.get(id) || 0), 0), l = g.amt, r = l - u;
+      return `<div class="mn-bc mn-bg"><span class="t"><span class="dots">${g.cats.slice(0, 5).map(id => `<i style="background:${mnCat('out', id).color}"></i>`).join('')}</span>${esc(g.name)}</span><span class="num">${yen(u)} / ${yen(l)}</span>${meter(u, l)}<small class="mem">${g.cats.map(id => esc(mnCat('out', id).name)).join('・') || 'カテゴリーが選ばれていません'}${daysLeft && r > 0 ? ` ・ 1日 <b class="num">${yen(Math.floor(r / daysLeft))}</b>` : r < 0 ? ` ・ <b class="neg">${yen(-r)} 超え</b>` : ''}</small></div>`; }).join('')}</section>` : ''}
     ${cats.length ? `<section class="card"><h3>カテゴリーごと</h3>${cats.map(id => { const c = mnCat('out', id), u = by.get(id) || 0, l = B.cats[id]; return `<div class="mn-bc"><span class="t"><i style="background:${c.color}"></i>${esc(c.name)}</span><span class="num">${yen(u)} / ${yen(l)}</span>${meter(u, l)}</div>`; }).join('')}</section>` : ''}
     <button class="btn ghost" data-act="mnBudget" style="width:100%;margin-top:12px">${ico('pen')}予算を変える</button>`;
 }
@@ -5707,12 +5722,18 @@ function mnSetHTML() {
       <p class="note">記録は ひび手帳のバックアップ（設定 → バックアップ）にも入ります。</p></section>`;
 }
 /* sub-sheets: budget, fixed cost */
+let BGD = null; // budget being edited: { total, cats:{id:amt}, groups:[{id,name,amt,cats:[]}] }
 function mnBudgetSheet() {
-  const B = S.money.budget;
+  const B = BGD, out = mnCats('out');
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>予算</b><button class="r" data-act="mnBudgetSave">保存</button></div>
     <div class="fld"><label for="mnb-total">1か月の予算（支出の合計）</label><input class="inp num" id="mnb-total" type="number" inputmode="numeric" min="0" placeholder="例：60000" value="${B.total || ''}"></div>
-    <p class="fld-lb" style="font-size:12px;color:var(--ink-2);margin:4px 0 8px">カテゴリーごと（空欄なら決めない）</p>
-    <div class="mn-blist">${mnCats('out').map(c => `<label class="mn-brow"><span><i style="background:${c.color}"></i>${esc(c.name)}</span><input class="inp num" data-mnb="${c.id}" type="number" inputmode="numeric" min="0" placeholder="—" value="${B.cats[c.id] || ''}"></label>`).join('')}</div>`;
+    <h4 class="mn-bh">グループ<small>いくつかのカテゴリーをまとめて、ひとつの予算にします</small></h4>
+    ${B.groups.map(g => `<div class="mn-gcard" data-gid="${g.id}">
+      <div class="mn-grow"><input class="inp" data-gname="${g.id}" value="${esc(g.name)}" placeholder="例：食べもの" maxlength="30" aria-label="グループの名前"><input class="inp num" data-gamt="${g.id}" type="number" inputmode="numeric" min="0" placeholder="例：30000" value="${g.amt || ''}" aria-label="グループの予算"><button class="del" data-act="mnGroupDel" data-id="${g.id}" aria-label="グループを削除">${ico('trash')}</button></div>
+      <div class="mn-gchips">${out.map(c => `<button class="mn-gchip" style="--c:${c.color}" data-act="mnGroupCat" data-id="${g.id}" data-c="${c.id}" aria-pressed="${g.cats.includes(c.id)}">${esc(c.name)}</button>`).join('')}</div></div>`).join('')}
+    <button class="btn ghost" data-act="mnGroupAdd" style="width:100%;margin-bottom:14px">${ico('plus')}グループを作る</button>
+    <h4 class="mn-bh">カテゴリーごと<small>空欄なら決めません</small></h4>
+    <div class="mn-blist">${out.map(c => `<label class="mn-brow"><span><i style="background:${c.color}"></i>${esc(c.name)}</span><input class="inp num" data-mnb="${c.id}" type="number" inputmode="numeric" min="0" placeholder="—" value="${B.cats[c.id] || ''}"></label>`).join('')}</div>`;
 }
 let FXD = null;
 function mnFixedSheet() {
@@ -5849,6 +5870,9 @@ function mnInput(e) {
   else if (t.id === 'mn-date' && MNI && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) { MNI.date = t.value; const l = $('#mn-dlb'); if (l) l.textContent = mnDateLabel(t.value); }
   else if (t.dataset.mncat && e.type === 'change') { const c = mnCats(MNV.ck).find(x => x.id === t.dataset.mncat), v = t.value.trim().slice(0, 30); if (c && v) { c.name = v; save(); render(); } else t.value = c ? c.name : ''; }
   else if (t.dataset.csv && e.type === 'change' && CSV) { CSV.map[t.dataset.csv] = +t.value; rerenderKind('mncsv', mnCsvSheet); }
+  else if (BGD && t.id === 'mnb-total') BGD.total = Math.max(0, Math.round(+t.value || 0));
+  else if (BGD && t.dataset.mnb) { const v = Math.round(+t.value || 0); if (v > 0) BGD.cats[t.dataset.mnb] = v; else delete BGD.cats[t.dataset.mnb]; }
+  else if (BGD && (t.dataset.gname || t.dataset.gamt)) { const g = BGD.groups.find(x => x.id === (t.dataset.gname || t.dataset.gamt)); if (g) { if (t.dataset.gname) g.name = t.value.slice(0, 30); else g.amt = Math.max(0, Math.round(+t.value || 0)); } }
   else if (t.id === 'ac-name' && ACD) ACD.name = t.value;
   else if (t.id === 'ac-bal' && ACD) { const v = t.value.normalize('NFKC').replace(/[^\d-]/g, ''); ACD.bal = Math.round(+v) || 0; }
   else if (/^fx-/.test(t.id) && FXD) { const v = t.value; if (t.id === 'fx-amt') FXD.amt = Math.round(+v || 0); else if (t.id === 'fx-cat') FXD.cat = v; else if (t.id === 'fx-memo') FXD.memo = v; else if (t.id === 'fx-day') FXD.day = +v; else if (t.id === 'fx-from' && /^\d{4}-\d{2}$/.test(v)) FXD.from = v; }
@@ -5919,14 +5943,18 @@ Object.assign(ACT, {
     confirmIn(`「${c.name}」を削除しますか？${used.length ? `\nこのカテゴリーの記録 ${used.length}件は「その他」に移します。` : ''}`, '削除', () => {
       a.splice(a.indexOf(c), 1);
       if (used.length) { let o = a.find(x => x.name === 'その他'); if (!o) { o = { id: uid(), name: 'その他', color: '#9CA3AF' }; a.push(o); } used.forEach(e => { e.cat = o.id; }); S.money.fixed.filter(f => f.cat === c.id).forEach(f => { f.cat = o.id; }); }
-      delete S.money.budget.cats[c.id]; save(); rerenderMoney(); render();
+      delete S.money.budget.cats[c.id]; S.money.budget.groups.forEach(g => { g.cats = g.cats.filter(x => x !== c.id); }); save(); rerenderMoney(); render();
     });
   },
-  mnBudget: () => { const sh = openSheet(mnBudgetSheet()); sh.dataset.kind = 'mnbudget'; },
+  mnBudget: () => { BGD = JSON.parse(JSON.stringify(S.money.budget)); const sh = openSheet(mnBudgetSheet()); sh.dataset.kind = 'mnbudget'; },
+  mnGroupAdd: () => { BGD.groups.push({ id: uid(), name: '', amt: 0, cats: [] }); rerenderKind('mnbudget', mnBudgetSheet); const i = topSheet().querySelectorAll('[data-gname]'); if (i.length) i[i.length - 1].focus(); },
+  mnGroupDel: t => { BGD.groups = BGD.groups.filter(g => g.id !== t.dataset.id); rerenderKind('mnbudget', mnBudgetSheet); },
+  mnGroupCat: t => { const g = BGD.groups.find(x => x.id === t.dataset.id); if (!g) return; const c = t.dataset.c, on = !g.cats.includes(c); g.cats = on ? [...g.cats, c] : g.cats.filter(x => x !== c); t.setAttribute('aria-pressed', on); },
   mnBudgetSave: () => {
-    const sh = topSheet(), B = S.money.budget; B.total = Math.max(0, Math.round(+$('#mnb-total', sh).value || 0)); B.cats = {};
-    sh.querySelectorAll('[data-mnb]').forEach(i => { const v = Math.round(+i.value || 0); if (v > 0) B.cats[i.dataset.mnb] = v; });
-    save(); closeSheet(); rerenderMoney();
+    const B = BGD, bad = B.groups.find(g => g.amt > 0 && !g.cats.length);
+    if (bad) { toast(`「${bad.name || 'グループ'}」に入れるカテゴリーを選んでください`); return; }
+    B.groups = B.groups.filter(g => g.amt > 0 || g.cats.length).map(g => Object.assign(g, { name: g.name.trim() || 'グループ' }));
+    S.money.budget = B; save(); closeSheet(); rerenderMoney();
   },
   mnFixed: t => {
     const f = S.money.fixed.find(x => x.id === t.dataset.id);
@@ -6133,7 +6161,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v64';
+const APP_VER = 'hibi-v65';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
