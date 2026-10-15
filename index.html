@@ -2280,16 +2280,18 @@ let S;
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
 const okColor = c => typeof c === 'string' && (/^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\([\d.,\s%]+\)$/i.test(c) || /^var\(--[a-z0-9-]+\)$/i.test(c));
 const okImg = x => typeof x === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(x) ? x : '';
+const isYmdS = x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x);
+const S_TIMER_OK = t => isYmdS(t.d) && +t.startedAt > 0 && !(+t.accum < 0);
 const okId = x => (typeof x === 'string' || typeof x === 'number') && /^[\w-]{1,48}$/.test(String(x)) ? String(x) : uid();
 const asArr = x => Array.isArray(x) ? x.filter(v => v && typeof v === 'object') : [];
 const asObj = x => x && typeof x === 'object' && !Array.isArray(x) ? x : {};
-function normalizeState(d) {
+function normalizeState(d, imported) {
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('not a backup');
   const n = Object.assign(defaults(), d), dd = defaults();
   for (const k of ['events', 'entries', 'tasks', 'templates', 'jobs', 'todos', 'places', 'spots']) n[k] = asArr(n[k]);
   n.customFeelings = asArr(n.customFeelings).filter(c => typeof c.name === 'string').map(c => Object.assign(c, { color: okColor(c.color) ? c.color : '#C98A6E' }));
   n.customTags = Array.isArray(n.customTags) ? n.customTags.filter(t => typeof t === 'string') : [];
-  n.settings = Object.assign(dd.settings, asObj(d.settings)); if (!asObj(d.settings).locEntryAuto) n.settings.locEntry = true;
+  n.settings = Object.assign(dd.settings, asObj(d.settings)); if (!imported && !asObj(d.settings).locEntryAuto) n.settings.locEntry = true;
   n.school = Object.assign(dd.school, asObj(d.school));
   n.school.classes = asArr(n.school.classes); n.school.tasks = asArr(n.school.tasks);
   if (!Array.isArray(n.school.periods) || !n.school.periods.length || !n.school.periods.every(x => Array.isArray(x) && x.length === 2)) n.school.periods = dd.school.periods;
@@ -2297,16 +2299,24 @@ function normalizeState(d) {
     Object.assign(e, { id: okId(e.id), title: String(e.title ?? ''), color: okColor(e.color) ? e.color : COLORS[0], done: asObj(e.done), skip: asObj(e.skip) });
     if (e.route) { if (typeof e.route !== 'object' || !Array.isArray(e.route.steps)) delete e.route; else e.route.steps.forEach(x => { if (x && x.color && !okColor(x.color)) x.color = ''; }); }
     if (e.items && !Array.isArray(e.items)) delete e.items;
+    // a damaged or hand-edited backup must not break the timeline (or put markup into it)
+    const tm = x => typeof x === 'string' && /^\d\d:\d\d$/.test(x);
+    if (!tm(e.start)) e.start = '09:00'; if (!tm(e.end)) e.end = hhmm(Math.min(1439, toMin(e.start) + 60));
+    for (const k of ['endDate', 'until']) if (e[k] && !isYmdS(e[k])) delete e[k];
     return e;
-  });
+  }).filter(e => isYmdS(e.date));
+  if (n.timer) { const t = asObj(n.timer); n.timer = S_TIMER_OK(t) ? Object.assign(t, { id: okId(t.id), color: okColor(t.color) ? t.color : COLORS[0], title: String(t.title ?? ''), icon: IC[t.icon] ? t.icon : 'timer', planned: Math.max(1, +t.planned || 60), accum: +t.accum || 0 }) : null; }
+  if (n.settings.timer && Array.isArray(n.settings.timer.custom)) n.settings.timer.custom = n.settings.timer.custom.map(c => okColor(c) ? c : '#7b3cff');
   n.entries = n.entries.filter(e => typeof e.date === 'string').map(e => {
     Object.assign(e, { id: okId(e.id), feelings: Array.isArray(e.feelings) ? e.feelings.map(String) : [], tags: Array.isArray(e.tags) ? e.tags.map(String) : [], text: String(e.text ?? ''), photo: okImg(e.photo) });
     if (e.song) { if (typeof e.song !== 'object' || typeof e.song.name !== 'string') delete e.song; else { if (e.song.art && !/^https:\/\//.test(e.song.art)) delete e.song.art; if (e.song.artData && !okImg(e.song.artData)) delete e.song.artData; } }
+    if (typeof e.time !== 'string' || !/^\d\d:\d\d$/.test(e.time)) e.time = '';
     return e;
-  });
-  for (const k of ['tasks', 'todos', 'templates', 'jobs', 'spots']) for (const x of n[k]) { if ('id' in x) x.id = okId(x.id); if ('color' in x && !okColor(x.color)) x.color = COLORS[0]; }
+  }).filter(e => isYmdS(e.date));
+  const okTime = x => typeof x === 'string' && /^\d\d:\d\d$/.test(x);
+  for (const k of ['tasks', 'todos', 'templates', 'jobs', 'spots']) for (const x of n[k]) { if ('id' in x) x.id = okId(x.id); if ('color' in x && !okColor(x.color)) x.color = COLORS[0]; for (const f of ['due', 'start', 'date']) if (x[f] && !isYmdS(x[f]) && !okTime(x[f]) && typeof x[f] !== 'number') delete x[f]; if (x.time && !okTime(x.time)) delete x.time; }
   for (const c of n.school.classes) Object.assign(c, { id: okId(c.id), name: String(c.name ?? ''), color: okColor(c.color) ? c.color : COLORS[2], slots: asArr(c.slots) });
-  for (const x of n.school.tasks) x.id = okId(x.id);
+  for (const x of n.school.tasks) { x.id = okId(x.id); for (const f of ['due', 'start']) if (x[f] && !isYmdS(x[f]) && !/^\d\d:\d\d$/.test(x[f])) delete x[f]; if (x.time && !(typeof x.time === 'string' && /^\d\d:\d\d$/.test(x.time))) delete x.time; }
   n.money = normMoney(d.money);
   n.notes = normNotes(d.notes);
   n.habits = normHabits(d.habits);
@@ -2320,13 +2330,17 @@ function load() {
     try { S = normalizeState(JSON.parse(raw)); migrateSchool(); return; }
     catch (e) {
       // never overwrite data we could not read: keep the original text aside and start empty (no samples)
-      try { if (!localStorage.getItem(KEY + '.broken')) localStorage.setItem(KEY + '.broken', raw); } catch (e2) {}
+      // saving stays off (see save) so the original text in hibi.v1 itself is never replaced; copies go aside as well
+      try { const old = localStorage.getItem(KEY + '.broken'); if (old !== raw) localStorage.setItem(KEY + '.broken', raw); } catch (e2) {}
+      setTimeout(() => snapPut('読み込めなかったデータ', raw, 0, 0).catch(() => {}), 0);
       S = defaults(); migrateSchool(); loadFailed = true; return;
     }
   }
   S = defaults(); seed(); migrateSchool(); save(true);
 }
+let lfWarned = 0;
 function save(silent) {
+  if (loadFailed) { if (!silent && Date.now() - lfWarned > 8000) { lfWarned = Date.now(); toast('前のデータを読み込めなかったため、保存を止めています（設定 → バックアップ）'); } return false; }
   try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
   catch (e) { if (!silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください'); return false; }
 }
@@ -2347,12 +2361,18 @@ function holidays(y) {
   const add = (m, d, n) => h.set(`${y}-${pad(m)}-${pad(d)}`, n);
   const nthMon = (m, n) => { const f = new Date(y, m - 1, 1); return iso(new Date(y, m - 1, 1 + (8 - f.getDay()) % 7 + 7 * (n - 1))); };
   const k = Math.floor((y - 1980) / 4);
-  add(1, 1, '元日'); h.set(nthMon(1, 2), '成人の日'); add(2, 11, '建国記念の日'); add(2, 23, '天皇誕生日');
+  add(1, 1, '元日'); h.set(nthMon(1, 2), '成人の日'); add(2, 11, '建国記念の日');
+  if (y >= 2020) add(2, 23, '天皇誕生日'); else if (y <= 2018) add(12, 23, '天皇誕生日');
   add(3, Math.floor(20.8431 + 0.242194 * (y - 1980) - k), '春分の日');
   add(4, 29, '昭和の日'); add(5, 3, '憲法記念日'); add(5, 4, 'みどりの日'); add(5, 5, 'こどもの日');
-  h.set(nthMon(7, 3), '海の日'); add(8, 11, '山の日'); h.set(nthMon(9, 3), '敬老の日');
+  // 2020・2021年は東京オリンピックで海の日・スポーツの日・山の日が移動
+  if (y === 2020) { add(7, 23, '海の日'); add(7, 24, 'スポーツの日'); add(8, 10, '山の日'); }
+  else if (y === 2021) { add(7, 22, '海の日'); add(7, 23, 'スポーツの日'); add(8, 8, '山の日'); }
+  else { h.set(nthMon(7, 3), '海の日'); if (y >= 2016) add(8, 11, '山の日'); }
+  if (y === 2019) { add(5, 1, '天皇の即位の日'); add(10, 22, '即位礼正殿の儀'); }
+  h.set(nthMon(9, 3), '敬老の日');
   add(9, Math.floor(23.2488 + 0.242194 * (y - 1980) - k), '秋分の日');
-  h.set(nthMon(10, 2), 'スポーツの日'); add(11, 3, '文化の日'); add(11, 23, '勤労感謝の日');
+  if (y !== 2020 && y !== 2021) h.set(nthMon(10, 2), y >= 2020 ? 'スポーツの日' : '体育の日'); add(11, 3, '文化の日'); add(11, 23, '勤労感謝の日');
   for (const d of [...h.keys()]) { const mid = addDays(d, 1); if (h.has(addDays(d, 2)) && !h.has(mid) && wd(mid) !== 0) h.set(mid, '国民の休日'); }
   for (const d of [...h.keys()].sort()) if (wd(d) === 0) { let n = addDays(d, 1); while (h.has(n)) n = addDays(n, 1); h.set(n, '振替休日'); }
   return (holCache[y] = h);
@@ -3942,7 +3962,7 @@ function todaySheet() {
   return `<div class="sh-bar"><span></span><b>今日</b><button class="r" data-act="close">閉じる</button></div>
   <div class="td-hello"><span class="script">Today</span><h2>${hello}${name ? `、${esc(name)}` : ''}</h2><small class="num">${jpDate(T)}${holName(T) ? `・${esc(holName(T))}` : ''}</small></div>
   ${wx}${nx}
-  ${all.length ? `<div class="tlist"><h3>終日</h3>${all.map(o => `<div class="trow" style="--c:${o.ev.color}"><span class="t">終日</span><i></i><span>${esc(o.ev.title)}</span></div>`).join('')}</div>` : ''}
+  ${all.length ? `<div class="tlist"><h3>終日</h3>${all.map(o => `<div class="trow" style="--c:${o.ev.color}"><span class="t num">${o.ev.allDay ? '終日' : o.date === T ? `${hm(o.ev.start)}〜` : o.end === T ? `〜${hm(o.ev.end)}` : '終日'}</span><i></i><span>${esc(o.ev.title)}${!o.ev.allDay && o.end > o.date ? `<small class="num"> ${md(o.date)}〜${md(o.end)}</small>` : ''}</span></div>`).join('')}</div>` : ''}
   <div class="tlist"><h3>今日の予定 ${timed.length}件</h3>${rows || '<p class="empty" style="padding:6px 0 10px">今日は時間の決まった予定はありません</p>'}</div>
   ${hbTodayRows()}
   ${tds.length ? `<div class="td-g" style="margin-bottom:12px"><p class="td-gl">今日・明日までのやること<span class="num">${tds.length}</span></p>${tds.map(x => { const [l, cl] = dueLabel(x.due); return `<div class="td-row" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="完了にする">${ico('check')}</button><span class="td-main"><b>${esc(x.title)}</b></span><span class="td-due ${cl}">${l}</span></div>`; }).join('')}</div>` : ''}
@@ -4575,15 +4595,17 @@ function closeStory(now) {
 
 /* ================= backups: daily on-device snapshot + a reminder to save a file ================= */
 const standalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
-function snapDB() { return new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const r = indexedDB.open('hibi-snaps', 1); r.onupgradeneeded = () => r.result.createObjectStore('snaps', { keyPath: 'day' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+function snapDB() { return new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const r = indexedDB.open('hibi-snaps', 1); r.onupgradeneeded = () => r.result.createObjectStore('snaps', { keyPath: 'day' }); r.onsuccess = () => { const db = r.result; db.onversionchange = () => db.close(); res(db); }; r.onerror = () => rej(r.error); }); }
 let snapCache = [];
-async function snapPut(note, json = JSON.stringify(S), ev = S.events.length, en = S.entries.length) {
+async function snapPut(note, json = JSON.stringify(S), ev = S.events.length, en = S.entries.length, late2 = false) {
   const db = await snapDB(), tx = db.transaction('snaps', 'readwrite'), os = tx.objectStore('snaps'), T = todayISO();
-  os.put({ day: note ? `${T}#${Date.now()}` : T, at: Date.now(), json, ev, en, note: note || '' });
-  const keys = os.getAllKeys(); keys.onsuccess = () => { const k = keys.result.slice().sort(); for (const old of k.slice(0, Math.max(0, k.length - 7))) os.delete(old); };
-  await new Promise((r, j) => { tx.oncomplete = r; tx.onerror = () => j(tx.error); });
+  os.put({ day: note ? `${T}#${Date.now()}` : late2 ? `${T}~late` : T, at: Date.now(), json, ev, en, note: note || (late2 ? '夜の控え' : '') });
+  // daily copies (7) and copies taken before a restore or an import (3) are kept separately, so one never pushes out the other
+  const keys = os.getAllKeys(); keys.onsuccess = () => { const all = keys.result.slice().sort(), day = all.filter(k => !k.includes('#')), noted = all.filter(k => k.includes('#'));
+    for (const old of [...day.slice(0, Math.max(0, day.length - 9)), ...noted.slice(0, Math.max(0, noted.length - 3))]) os.delete(old); };
+  await new Promise((r, j) => { tx.oncomplete = () => { db.close(); r(); }; tx.onerror = () => { db.close(); j(tx.error); }; });
 }
-async function snapList() { try { const db = await snapDB(); return await new Promise(r => { const q = db.transaction('snaps').objectStore('snaps').getAll(); q.onsuccess = () => r(q.result.sort((a, b) => b.day.localeCompare(a.day))); q.onerror = () => r([]); }); } catch (e) { return []; } }
+async function snapList() { try { const db = await snapDB(); return await new Promise(r => { const q = db.transaction('snaps').objectStore('snaps').getAll(); q.onsuccess = () => { db.close(); r(q.result.sort((a, b) => b.day.localeCompare(a.day))); }; q.onerror = () => { db.close(); r([]); }; }); } catch (e) { return []; } }
 function snapRows() { return snapCache.length ? snapCache.map(x => `<div class="snap-row"><span>${md(x.day.slice(0, 10))}(${WD[wd(x.day.slice(0, 10))]}) ${hmOf(x.at)}${x.note ? `・${esc(x.note)}` : ''}<br><small>予定 ${x.ev}件・日記 ${x.en}件</small></span><button data-act="snapRestore" data-day="${x.day}">この控えに戻す</button></div>`).join('') : '<p class="note" style="margin:0">まだ控えはありません</p>'; }
 const refreshSnaps = () => snapList().then(l => { snapCache = l; const el = $('#snap-list'); if (el) el.innerHTML = snapRows(); });
 const bkAt = () => { const [h, m] = (S.settings.bkTime || '21:00').split(':').map(Number), d = new Date(); d.setHours(h || 0, m || 0, 0, 0); return d.getTime(); };
@@ -4596,7 +4618,7 @@ function checkBackup() {
   const T = todayISO();
   // one copy at the first open of the day, refreshed once more after the reminder time
   const late = Date.now() >= bkAt();
-  if (S.settings.lastSnap !== T || (late && S.settings.lastSnapLate !== T)) snapPut().then(() => { S.settings.lastSnap = T; if (late) S.settings.lastSnapLate = T; save(true); refreshSnaps(); }).catch(() => {});
+  if (!loadFailed && (S.settings.lastSnap !== T || (late && S.settings.lastSnapLate !== T))) snapPut(undefined, undefined, undefined, undefined, S.settings.lastSnap === T && late).then(() => { S.settings.lastSnap = T; if (late) S.settings.lastSnapLate = T; save(true); refreshSnaps(); }).catch(() => {});
   let bar = $('#bkbar');
   if (!bar) { bar = document.createElement('div'); bar.id = 'bkbar'; bar.className = 'bkbar'; bar.hidden = true; bar.innerHTML = `${ico('save')}<span><b>バックアップの時間です</b>「ファイル」に保存しておくと安心</span><button class="later" data-act="bkLater">あとで</button><button class="go" data-act="bkSave">保存</button>`; document.body.append(bar); }
   bar.hidden = !bkDue();
@@ -4706,6 +4728,8 @@ function closeSheet() {
   const ov = stack.pop(); if (!ov) return;
   if (sgAudio) stopPreview();
   if (ov.firstElementChild.dataset.kind === 'wx') radarStop();
+  if (ov.firstElementChild.dataset.kind === 'timer') releaseWake();
+  if (ov.firstElementChild.dataset.kind === 'entry') dropDraft();
   if (ov.firstElementChild.dataset.kind === 'nk') nkReplace = null;
   if (ov.firstElementChild.dataset.kind === 'note') setTimeout(closeNote, 0);
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
@@ -4833,11 +4857,19 @@ function saveOccurrence(orig, occ, next, scope) {
     orig.skip = Object.assign({}, orig.skip, { [occ]: true });
     const one = cleanEv(next); one.id = uid(); one.repeat = 'none'; delete one.days; delete one.until; one.skip = {}; one.done = {};
     if (orig.done && orig.done[occ]) one.done[one.date] = true;
+    // only this day's timer minutes and packing go with it (otherwise the series' totals would count twice)
+    one.actual = (orig.actual || {})[occ] ? { [one.date]: orig.actual[occ] } : {};
+    one.packed = (orig.packed || {})[occ] ? { [one.date]: orig.packed[occ] } : {};
+    if (orig.countdown && next.countdown === orig.countdown) delete one.countdown;
+    if (S.timer && S.timer.id === orig.id && S.timer.d === occ) { S.timer.id = one.id; S.timer.d = one.date; }
     S.events.push(one);
   } else {
     const all = cleanEv(next);
-    if (next.date === occ) { const span = evSpan(all); all.date = orig.date; if (span) all.endDate = addDays(all.date, span); }
-    all.skip = orig.skip || {}; all.done = orig.done || {};
+    if (all.repeat === 'none') { all.skip = {}; all.done = (orig.done || {})[occ] ? { [all.date]: true } : {}; all.actual = (orig.actual || {})[occ] ? { [all.date]: orig.actual[occ] } : {}; }
+    else {
+      if (next.date === occ) { const span = evSpan(all); all.date = orig.date; if (span) all.endDate = addDays(all.date, span); }
+      all.skip = orig.skip || {}; all.done = orig.done || {};
+    }
     S.events[S.events.findIndex(x => x.id === orig.id)] = all;
   }
 }
@@ -5055,7 +5087,7 @@ function pomoStep(t) {
   for (let i = 0; i < 50; i++) {
     if (p.ph === 'work') {
       if (t.paused) break; const wk = tElapsed() - p.base; if (wk < W) break;
-      const X = Date.now() - (wk - W); t.accum += X - t.startedAt; t.paused = true; p.ph = 'break'; p.at = X; p.n++; moved = true; last = ['break', X];
+      const X = Math.max(t.startedAt, Date.now() - (wk - W)); t.accum += X - t.startedAt; t.paused = true; p.ph = 'break'; p.at = X; p.n++; moved = true; last = ['break', X];
     } else {
       const Y = p.at + pomoBreakMs(p.n); if (Date.now() < Y) break;
       t.startedAt = Y; t.paused = false; p.ph = 'work'; p.base = t.accum; moved = true; last = ['work', Y];
@@ -5165,8 +5197,10 @@ function tick() {
 function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
 function openTimer() {
   const sh = openSheet(timerHTML(), 'fs'); sh.dataset.kind = 'timer'; ensureTick();
-  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {}
+  wakeReq();
 }
+function wakeReq() { if (wakeLock && !wakeLock.released) return; try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.timer && stack.some(o => o.firstElementChild.dataset.kind === 'timer')) wakeReq(); });
 const releaseWake = () => { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; };
 
 /* ---- あとで (inbox) ---- */
@@ -5240,6 +5274,23 @@ function pickHTML() {
 
 /* ---- entry editor ---- */
 let enDraft = null, enStep = 'feel';
+const DRAFT_KEY = 'hibi.draft';
+function keepDraft() {
+  const sh = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'entry'); if (!sh || !enDraft) return;
+  try { syncEntry(); } catch (e) {}
+  const d = JSON.parse(JSON.stringify(enDraft)); if (!(d.text || '').trim() && !(d.feelings || []).length) return;
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e) { try { delete d.photo; localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e2) {} }
+}
+const dropDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
+function flushOnHide() { if (typeof noteSaveT !== 'undefined' && noteSaveT) { clearTimeout(noteSaveT); noteSaveT = 0; save(true); } keepDraft(); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); });
+window.addEventListener('pagehide', flushOnHide);
+// a diary that was being written when iPhone closed the app comes back
+function offerDraft() {
+  let x = null; try { x = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+  if (!x || !x.d || Date.now() - x.at > 3 * 864e5) { if (x) dropDraft(); return; }
+  setTimeout(() => toast(`書きかけの日記があります（${md(x.d.date)}）`, '続きを書く', () => { dropDraft(); openEntry(x.d.id || null, x.d.date); Object.assign(enDraft, x.d); enStep = 'write'; rerenderEntry(false); }), 2600);
+}
 function openEntry(id, date, prompt) {
   const en = id ? S.entries.find(e => e.id === id) : null;
   enDraft = en ? JSON.parse(JSON.stringify(en)) : { id: null, date: date || todayISO(), time: nowHM(), feelings: [], tags: [], text: '', photo: null };
@@ -5247,7 +5298,7 @@ function openEntry(id, date, prompt) {
   enStep = en ? 'write' : 'feel'; sgResults = [];
   if (enDraft.song && !enDraft.song.preview) enrichSong(enDraft.song);
   else if (enDraft.song && enDraft.song.dz) freshPreview(enDraft.song);
-  openSheet(entryForm(), 'full');
+  const sh = openSheet(entryForm(), 'full'); sh.dataset.kind = 'entry';
 }
 function entryForm() {
   const e = enDraft;
@@ -5342,7 +5393,7 @@ function runSearch() {
   const ens = S.entries.filter(e => (!sf.feel || e.feelings.includes(sf.feel)) && (!sf.tag || e.tags.includes(sf.tag)) && (!q || (e.text + ' ' + e.tags.join(' ') + ' ' + e.feelings.join(' ') + (e.song ? ' ' + e.song.name + ' ' + e.song.artist : '')).toLowerCase().includes(q))).sort((a, b) => b.date.localeCompare(a.date));
   const nts = filt || !q ? [] : S.notes.filter(x => (x.title + '\n' + noteText(x)).toLowerCase().includes(q)).sort((a, b) => b.u - a.u);
   const n = evs.length + ens.length + nts.length;
-  box.innerHTML = n ? `<p class="res-count">${n}件</p>` + evs.map(e => `<button data-act="goEvent" data-d="${e.date}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(e.date)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`).join('') +
+  box.innerHTML = n ? `<p class="res-count">${n}件</p>` + evs.map(e => { const dd = e.repeat && e.repeat !== 'none' ? (nextOcc(e, todayISO()) || [e.date])[0] : e.date; return `<button data-act="goEvent" data-d="${dd}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(dd)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`; }).join('') +
     nts.map(x => `<button data-act="openNote" data-id="${x.id}" style="--c:var(--accent)"><i></i><span>${x.icon ? x.icon + ' ' : ''}${esc(noteName(x))}<small>メモ ・ ${noteWhen(x.u)}</small></span></button>`).join('') +
     ens.map(e => `<button data-act="goEntry" data-id="${e.id}" style="--c:${e.feelings[0] ? feelInfo(e.feelings[0]).color : 'var(--ink-3)'}"><i></i><span>${esc(e.text.slice(0, 60) || e.feelings.join('・'))}<small>${jpDate(e.date)}${e.feelings.length ? '・' + esc(e.feelings.join('・')) : ''}</small></span></button>`).join('') : '<p class="empty">見つかりませんでした</p>';
 }
@@ -5498,11 +5549,12 @@ function importData(txt) {
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
       const prev = S; let next;
-      try { next = normalizeState(JSON.parse(JSON.stringify(d))); next.settings.lastSnap = prev.settings.lastSnap; } catch (e) { toast('バックアップの中身が壊れているようで、読み込めませんでした'); return; }
+      try { next = normalizeState(JSON.parse(JSON.stringify(d)), true); next.settings.lastSnap = prev.settings.lastSnap; next.settings.lock = prev.settings.lock; } catch (e) { toast('バックアップの中身が壊れているようで、読み込めませんでした'); return; }
       snapPut('復元する前').then(refreshSnaps).catch(() => {}); // the data being replaced stays restorable for a while
       S = next;
       try { migrateSchool(); render(); } catch (e) { S = prev; render(); toast('このバックアップは読み込めませんでした（中身が壊れているようです）。いまのデータはそのままです'); return; }
-      if (!save()) { S = prev; render(); return; }
+      const wasFailed = loadFailed; loadFailed = false;
+      if (!save()) { S = prev; loadFailed = wasFailed; render(); return; }
       applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
@@ -5542,7 +5594,7 @@ const ACT = {
   packT: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; const it = (ev.items || [])[+t.dataset.i]; if (!it) return; togglePacked(ev, t.dataset.d, it); save(); render(); },
   evShow: t => { syncEvent(); const k = t.dataset.k; if (k !== 'cal' && multiDay(evDraft)) { toast('日をまたぐ予定は、カレンダーにだけ表示します'); return; } evDraft.routine = k === 'tl'; if (k === 'cal') evDraft.calOnly = true; else delete evDraft.calOnly; rerenderEvent(); },
   evX: t => { syncEvent(); const k = '_x' + t.dataset.k; evDraft[k] = !evDraft[k]; rerenderEvent(); },
-  evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); rerenderEvent(); },
+  evDoneT: () => { const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev) return; const d = e._occ || e.date; ev.done = Object.assign({}, ev.done); if (ev.done[d]) delete ev.done[d]; else ev.done[d] = true; save(); render(); syncEvent(); e.done = JSON.parse(JSON.stringify(ev.done)); rerenderEvent(); },
   tkColor: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.color = t.dataset.c; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
   tkIcon: t => { const d = pickMode === 'ev' ? evDraft : tkDraft; d.icon = t.dataset.k; d._iconSet = true; topSheet().innerHTML = pickHTML(); if (tkHost) { const y = tkHost.scrollTop; tkHost.innerHTML = pickMode === 'ev' ? eventForm() : tkHTML(); tkHost.scrollTop = y; } },
   tkDoneT: () => { syncTk(); tkDraft.done = !tkDraft.done; rerenderTk(); },
@@ -5801,7 +5853,7 @@ const ACT = {
     const hr = hh && S.habits.run && S.habits.run.id === hh.id && S.habits.run.d === t.d;
     if (hh && !ev.habit && hr) { S.habits.run.b += min * 60; save(); toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
     else if (hh && !ev.habit) { if (hbSet(hh.id, t.d, hbVal(hh, t.d) + min * 60)) hbCheer(hh, t.d); else toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
-    else toast(`${dur(min)}の集中を記録しました`);
+    else toast(ev ? `${dur(min)}の集中を記録しました` : '予定が見つからなかったため、記録できませんでした');
     render(); tick();
   },
   tmCancel: () => confirmIn('タイマーを止めて、記録せずに終わりますか？', '記録せずに終了', () => { S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); }, 'タイマーを続ける'),
@@ -5905,6 +5957,7 @@ const ACT = {
     done();
   },
   delEvent: () => confirmIn(`「${evDraft.title}」を削除します。${evDraft.repeat !== 'none' ? '繰り返しのすべての回が消えます。' : ''}`, '削除する', () => {
+    if (S.timer && S.timer.id === evDraft.id) { S.timer = null; releaseWake(); tick(); }
     S.events = S.events.filter(e => e.id !== evDraft.id); save(); while (stack.length) closeSheet(); render(); toast('予定を削除しました');
   }),
   // entry editor
@@ -5942,7 +5995,7 @@ const ACT = {
   exportBroken: () => { let raw = ''; try { raw = localStorage.getItem(KEY + '.broken') || ''; } catch (e) {} if (!raw) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' })); a.download = `hibi-unreadable-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
   resetAll: () => confirmIn('予定・日記・設定をすべて削除します。元に戻せません。', 'すべて削除', () => {
     try { for (const k of [WX_KEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(k); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {}
-    snapCache = []; S = defaults(); migrateSchool(); save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
+    snapCache = []; S = defaults(); migrateSchool(); loadFailed = false; save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
   }),
 };
 let noClickUntil = 0;
@@ -5960,7 +6013,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
   else if (t.id === 'set-hol') { S.settings.holidays = t.checked; save(); render(); }
   else if (t.id === 'tk-date' || t.id === 'tk-start') { syncTk(); if (topSheet() && topSheet().dataset.kind === 'task') refreshLive(tkHTML()); }
-  else if (t.id === 'ev-date' || t.id === 'ev-sdate') { syncEvent(); const e = evDraft; if (t.value) e.date = t.value; if (e.endDate && e.endDate < e.date) e.endDate = e.allDay ? e.date : ''; refreshEventLive(); }
+  else if (t.id === 'ev-date' || t.id === 'ev-sdate') { syncEvent(); const e = evDraft; if (t.value && !e.id && e.repeat === 'weekly' && Array.isArray(e.days) && e.days.length === 1 && e.days[0] === wd(e.date)) e.days = [wd(t.value)]; if (t.value) e.date = t.value; if (e.endDate && e.endDate < e.date) e.endDate = e.allDay ? e.date : ''; refreshEventLive(); }
   else if (['ev-start', 'ev-end', 'ev-end-date'].includes(t.id)) { syncEvent(); refreshEventLive(); }
   else if (t.id === 'ev-until') { syncEvent(); rerenderEvent(); }
   else if (t.id === 'tm-motion') tmApply({ motion: t.checked });
@@ -6001,7 +6054,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'ics-file' && t.files && t.files[0]) { const fr = new FileReader(); fr.onload = () => importICS(String(fr.result)); fr.readAsText(t.files[0]); t.value = ''; }
   else if (t.id === 'set-name') { S.settings.name = t.value.trim(); save(); render(); }
   else if (t.id === 'en-photo' && t.files && t.files[0]) { syncEntry(); try { enDraft.photo = await resizeImage(t.files[0]); rerenderEntry(); } catch (err) { toast(err.message); } }
-  else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); }
+  else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); t.value = ''; }
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'q') runSearch();
@@ -6060,7 +6113,7 @@ function normMoney(m) {
     const a = asArr(cats[k]).filter(c => typeof c.name === 'string' && c.name.trim()).map(c => ({ id: okId(c.id), name: c.name.trim().slice(0, 30), color: okColor(c.color) ? c.color : MN_COLORS[0] }));
     out.cats[k] = a.length ? a : dd.cats[k];
   }
-  out.entries = asArr(m.entries).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Number.isFinite(+e.amt)).map(e => {
+  out.entries = asArr(m.entries).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date) && realYmd(...e.date.split('-')) && Number.isFinite(+e.amt)).map(e => {
     const x = { id: okId(e.id), k: e.k === 'in' ? 'in' : 'out', amt: Math.round(Math.abs(+e.amt)), cat: okId(e.cat), memo: String(e.memo ?? '').slice(0, 80), date: e.date, ts: +e.ts || 0 };
     if (e.fx) x.fx = okId(e.fx); return x;
   });
@@ -6121,12 +6174,12 @@ function mnApplyFixed() {
 function mnEval(s) {
   const tk = String(s).match(/\d+|[+\-×÷]/g) || []; let total = 0, term = null, sign = 1, op = null;
   for (const x of tk) {
-    if (/\d/.test(x)) { const v = +x; term = term === null ? v : op === '×' ? term * v : op === '÷' ? (v ? term / v : term) : v; op = null; }
+    if (/\d/.test(x)) { const v = +x; if (op === '÷' && !v) return NaN; term = term === null ? v : op === '×' ? term * v : op === '÷' ? term / v : v; op = null; }
     else if (x === '×' || x === '÷') op = x;
     else { if (term !== null) total += sign * term; term = null; op = null; sign = x === '-' ? -1 : 1; }
   }
   if (term !== null) total += sign * term;
-  return Math.round(total);
+  return Math.abs(total) >= 1e10 ? NaN : Math.round(total); // 0で割る・100億円以上は計算できない
 }
 
 let MNI = null; // input form: { k, expr, cat:{out,in}, memo, date, id }
@@ -6147,7 +6200,7 @@ function mnSheet() {
 const mnHasOp = s => /[+\-×÷]/.test(s);
 function mnAmtInner() {
   const s = MNI.expr, v = mnHasOp(s) ? mnEval(s) : +s;
-  return `${mnHasOp(s) ? `<small class="num">${esc(s.replace(/-/g, '−'))} =</small>` : ''}<b class="num">${s ? yenS(v) : '<span class="ph">¥0</span>'}</b>`;
+  return `${mnHasOp(s) ? `<small class="num">${esc(s.replace(/-/g, '−'))} =</small>` : ''}<b class="num">${s ? (Number.isNaN(v) ? '—' : yenS(v)) : '<span class="ph">¥0</span>'}</b>`;
 }
 function mnDateLabel(d) { const T = todayISO(); return `${md(d)}(${WD[wd(d)]})${d === T ? ' 今日' : d === addDays(T, -1) ? ' 昨日' : ''}`; }
 function mnMemoSugg() {
@@ -6327,7 +6380,7 @@ function csvParse(text) {
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
-    if (ch === '"' && !cell) q = true;
+    if (ch === '"' && !cell.trim()) { q = true; cell = ''; }
     else if (ch === sep) { row.push(cell); cell = ''; }
     else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); cell = ''; if (row.some(c => c.trim())) rows.push(row.map(c => c.trim())); row = []; }
     else cell += ch;
@@ -6335,11 +6388,12 @@ function csvParse(text) {
   row.push(cell); if (row.some(c => c.trim())) rows.push(row.map(c => c.trim()));
   return rows;
 }
+const realYmd = (y, m, d) => { const t = new Date(+y, +m - 1, +d); return t.getFullYear() === +y && t.getMonth() === +m - 1 && t.getDate() === +d ? `${y}-${pad(+m)}-${pad(+d)}` : ''; };
 function csvDate(s) {
   const t = String(s || '').normalize('NFKC').trim(); let m;
-  if ((m = /^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/.exec(t))) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
-  if ((m = /^(\d{4})(\d{2})(\d{2})$/.exec(t))) return `${m[1]}-${m[2]}-${m[3]}`;
-  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t))) return `${m[3]}-${pad(+m[1])}-${pad(+m[2])}`;
+  if ((m = /^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/.exec(t))) return realYmd(m[1], m[2], m[3]);
+  if ((m = /^(\d{4})(\d{2})(\d{2})$/.exec(t))) return realYmd(m[1], m[2], m[3]);
+  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t))) return realYmd(m[3], m[1], m[2]);
   return '';
 }
 function csvAmt(s) {
@@ -6402,6 +6456,8 @@ function mnCsvSheet() {
 }
 async function mnCsvFile(file) {
   const buf = await file.arrayBuffer(); let text;
+  const b0 = new Uint8Array(buf.slice(0, 2));
+  if (b0[0] === 0xFF && b0[1] === 0xFE) text = new TextDecoder('utf-16le').decode(buf); else if (b0[0] === 0xFE && b0[1] === 0xFF) text = new TextDecoder('utf-16be').decode(buf); else
   try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { try { text = new TextDecoder('shift_jis').decode(buf); } catch (e2) { text = new TextDecoder().decode(buf); } }
   const rows = csvParse(text.replace(/^﻿/, ''));
   if (rows.length < 1) { toast('CSVを読み取れませんでした'); return; }
@@ -6426,7 +6482,7 @@ function mnCsvImport() {
   rerenderMoney(); render(); toast(`${n}件を取り込みました${dup ? `（すでにある${dup}件は飛ばしました）` : ''}`);
 }
 async function mnExport() {
-  const q = s => /[",\n]/.test(s) ? `"${String(s).replace(/"/g, '""')}"` : s;
+  const q = s => { s = String(s ?? ''); if (/^[=+\-@\t\r]/.test(s) && !/^-?\d/.test(s)) s = "'" + s; return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const lines = [['日付', '収支', 'カテゴリー', '金額', 'メモ'].join(',')].concat([...S.money.entries].sort((a, b) => a.date.localeCompare(b.date)).map(e => [e.date.replace(/-/g, '/'), e.k === 'in' ? '収入' : '支出', q(mnCat(e.k, e.cat).name), e.amt, q(e.memo)].join(',')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' }), file = new File([blob], `hibi-kakeibo-${todayISO()}.csv`, { type: 'text/csv' });
   try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -6467,7 +6523,7 @@ Object.assign(ACT, {
     const v = t.dataset.v; let s = MNI.expr;
     if (v === 'C') s = '';
     else if (v === 'bs') s = s.slice(0, -1);
-    else if (v === '=') { const r = mnEval(s); s = r > 0 ? String(r) : ''; }
+    else if (v === '=') { const r = mnEval(s); if (Number.isNaN(r)) { toast(/÷0/.test(s) ? '0では割れません' : '金額が大きすぎます'); return; } s = r > 0 ? String(r) : ''; }
     else if (/^[+\-×÷]$/.test(v)) { if (!s) return; s = /[+\-×÷]$/.test(s) ? s.slice(0, -1) + v : s + v; }
     else { const tail = (s.match(/\d+$/) || [''])[0]; if (tail.length >= 9) return; if (tail === '0') s = s.slice(0, -1); if (!tail && v === '00') return; s += v; }
     MNI.expr = s; mnRefreshAmt();
@@ -6476,6 +6532,7 @@ Object.assign(ACT, {
   mnDay: t => { MNI.date = addDays(MNI.date, +t.dataset.n); const i = $('#mn-date'), l = $('#mn-dlb'); if (i) i.value = MNI.date; if (l) l.textContent = mnDateLabel(MNI.date); },
   mnSave: () => {
     const I = MNI, amt = mnEval(I.expr), cat = I.cat[I.k] || (mnCats(I.k)[0] || {}).id;
+    if (Number.isNaN(amt)) { toast(/÷0/.test(I.expr) ? '0では割れません' : '金額が大きすぎます'); return; }
     if (!(amt > 0)) { toast('金額を入れてください'); return; }
     if (I.id) {
       const e = S.money.entries.find(x => x.id === I.id), old = e && Object.assign({}, e);
@@ -6509,10 +6566,10 @@ Object.assign(ACT, {
   mnCatDel: t => {
     const k = MNV.ck, a = mnCats(k), c = a.find(x => x.id === t.dataset.id); if (!c) return;
     if (a.length <= 1) { toast('カテゴリーは1つ以上必要です'); return; }
-    const used = S.money.entries.filter(e => e.k === k && e.cat === c.id);
+    const used = S.money.entries.filter(e => e.k === k && e.cat === c.id), fx = S.money.fixed.filter(f => f.cat === c.id);
     confirmIn(`「${c.name}」を削除しますか？${used.length ? `\nこのカテゴリーの記録 ${used.length}件は「その他」に移します。` : ''}`, '削除', () => {
       a.splice(a.indexOf(c), 1);
-      if (used.length) { let o = a.find(x => x.name === 'その他'); if (!o) { o = { id: uid(), name: 'その他', color: '#9CA3AF' }; a.push(o); } used.forEach(e => { e.cat = o.id; }); S.money.fixed.filter(f => f.cat === c.id).forEach(f => { f.cat = o.id; }); }
+      if (used.length || fx.length) { let o = a.find(x => x.name === 'その他'); if (!o) { o = { id: uid(), name: 'その他', color: '#9CA3AF' }; a.push(o); } used.forEach(e => { e.cat = o.id; }); fx.forEach(f => { f.cat = o.id; }); S.money.fixed.filter(f => f.cat === c.id).forEach(f => { f.cat = o.id; }); }
       delete S.money.budget.cats[c.id]; S.money.budget.groups.forEach(g => { g.cats = g.cats.filter(x => x !== c.id); }); save(); rerenderMoney(); render();
     });
   },
@@ -6557,7 +6614,7 @@ Object.assign(ACT, {
   mnCsvGo: () => mnCsvImport(),
   mnExport: () => { if (!S.money.entries.length) { toast('書き出す記録がありません'); return; } mnExport(); },
   mnReset: () => confirmIn('家計簿の記録をすべて削除しますか？（カテゴリー・予算・固定費の設定は残ります）', 'すべて削除', () => {
-    snapPut('家計簿をリセットする前').catch(() => {}); S.money.entries = []; S.money.fixed.forEach(f => { f.done = {}; f.from = todayISO().slice(0, 7); }); save(); rerenderMoney(); render(); toast('家計簿の記録を削除しました');
+    snapPut('家計簿をリセットする前').catch(() => {}); S.money.entries = []; const T0 = todayISO(), ym0 = T0.slice(0, 7), [y0, m0] = ym0.split('-').map(Number); S.money.fixed.forEach(f => { f.from = ym0; f.done = `${ym0}-${pad(Math.min(f.day, new Date(y0, m0, 0).getDate()))}` <= T0 ? { [ym0]: 'reset' } : {}; }); save(); rerenderMoney(); render(); toast('家計簿の記録を削除しました');
   }),
 });
 
@@ -7343,7 +7400,7 @@ function normNotes(a) {
 let IBV = 'tasks', NQ = '', NOTE = null, noteSaveT = 0;
 const noteById = id => S.notes.find(n => n.id === id);
 const noteText = n => n.blocks.filter(b => b.t !== 'hr').map(b => b.x).join('\n');
-const noteEmpty = n => !n.title.trim() && !n.blocks.some(b => b.x.trim() || b.t === 'hr');
+const noteEmpty = n => !n.icon && !n.pin && !n.title.trim() && !n.blocks.some(b => b.x.trim() || b.t === 'hr');
 function noteName(n) { return n.title.trim() || (n.blocks.find(b => b.x.trim()) || {}).x?.split('\n')[0].slice(0, 40) || '新規メモ'; }
 function notePreview(n) {
   const lines = n.blocks.filter(b => b.t !== 'hr' && b.x.trim()).map(b => b.x.replace(/\n+/g, ' '));
@@ -7578,7 +7635,8 @@ const T0 = todayISO(); st.sel = st.day = T0; st.calMonth = T0.slice(0, 8) + '01'
 applyTheme(); if (lockOn()) showLock('unlock');
 try { render(); } catch (e) { console.error(e); main.innerHTML = `<p class="empty">画面を表示できませんでした。データは消えていません。<br>設定 → バックアップ から書き出して、もう一度読み込んでみてください。</p><div style="text-align:center"><button class="btn primary" data-act="settings">設定を開く</button></div>`; }
 ensureTick();
-if (loadFailed) setTimeout(() => toast('保存されていたデータを読み込めませんでした。元のデータは別に保管してあります（設定 → バックアップ）'), 2400);
+offerDraft();
+if (loadFailed) setTimeout(() => toast('保存されていたデータを読み込めませんでした。元のデータを守るため保存を止めています。設定 → バックアップ から戻してください'), 2400);
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
 function openToday() { const sh = openSheet(todaySheet(), 'full'); sh.dataset.kind = 'today'; }
@@ -7587,10 +7645,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v79';
+const APP_VER = 'hibi-v80';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.0';
-const HIBI_CHANGES = ['灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.5.1';
+const HIBI_CHANGES = ['総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
