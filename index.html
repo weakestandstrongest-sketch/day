@@ -1513,8 +1513,13 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .month.z0 .day .dn{font-size:15px;width:27px;height:27px;line-height:27px}
 .month .cdots{pointer-events:none;display:flex;justify-content:center;gap:2px;padding-top:2px}
 .month .cdots i{width:5px;height:5px;border-radius:50%}
-.month.z2 .bar{font-size:11.5px}
-.month.z2 .bar small{font-size:9.5px;color:var(--ink-2);margin-right:3px}
+.month.z2,.dow.z2{margin-left:-11px;margin-right:-11px} /* tall view: use the full width */
+.month.z2 .week{row-gap:3px;padding-bottom:12px}
+.month.z2 .day .dn{font-size:18px;width:32px;height:32px;line-height:32px;margin-top:2px}
+.month.z2 .bar{height:36px;font-size:11.5px;line-height:15px;padding:3px 2px 0 4px;margin:0 1.5px;white-space:normal}
+.month.z2 .bar .bt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;max-height:30px;overflow-wrap:anywhere;word-break:break-all}
+.month.z2 .bar.cl{margin-left:0}.month.z2 .bar.cr{margin-right:0}
+.month.z2 .mny{font-size:10px;line-height:12px}
 .month .bar,.month .mny,.month .more,.month .cdots{opacity:var(--pzf,1)}
 .month.zfade .bar,.month.zfade .mny,.month.zfade .more,.month.zfade .cdots{animation:zFade .34s ease .06s both}
 .pz-ghost .day.sel{box-shadow:none}
@@ -2125,7 +2130,7 @@ function viewCal() {
       const c0 = diffDays(ws, g.ss) + 1, c1 = diffDays(ws, g.se) + 2;
       if (L >= MAXL) { for (let k = c0 - 1; k < c1 - 1; k++) hidden[k]++; if (!Z) for (let k = c0 - 1; k < c1 - 1; k++) (dots[k] = dots[k] || []).push(g.c); continue; }
       const cls = (g.all ? 'all' : 'timed') + (g.s < g.ss ? ' cl' : '') + (g.e > g.se ? ' cr' : '');
-      bars += `<div class="bar ${cls}" style="grid-column:${c0}/${c1};grid-row:${L + 2};--c:${g.c}">${Z === 2 && !g.all && g.t ? `<small class="num">${hm(g.t)}</small>` : ''}${esc(g.title)}</div>`;
+      bars += `<div class="bar ${cls}" style="grid-column:${c0}/${c1};grid-row:${L + 2};--c:${g.c}">${Z === 2 ? `<span class="bt">${esc(g.title)}</span>` : esc(g.title)}</div>`;
     }
     let days = ''; const NL = Z === 2 ? Math.max(3, Math.min(MAXL, lanes.length)) : MAXL; // tall view: as many rows as this week needs
     for (let i = 0; i < 7; i++) {
@@ -2137,7 +2142,7 @@ function viewCal() {
       const mo_ = mBy && mBy.get(d);
       if (mo_) { bars += `<div class="mny" style="grid-column:${i + 1};grid-row:${Z ? NL + 3 : 3}">${mo_.i ? `<i class="inc">${mo_.i.toLocaleString()}</i>` : ''}${mo_.o ? `<i>${mo_.o.toLocaleString()}</i>` : ''}</div>`; }
     }
-    weeks += `<div class="week" style="grid-template-rows:${Z ? `32px repeat(${NL},19px) 15px${off ? ' auto' : ''}` : `31px 12px${off ? ' auto' : ''}`}">${days}${bars}</div>`;
+    weeks += `<div class="week" style="grid-template-rows:${Z ? `${Z === 2 ? 36 : 32}px repeat(${NL},${Z === 2 ? 36 : 19}px) 15px${off ? ' auto' : ''}` : `31px 12px${off ? ' auto' : ''}`}">${days}${bars}</div>`;
   }
   return `
   <div class="cal-head">
@@ -2152,7 +2157,7 @@ function viewCal() {
     </div>
   </div>
   ${cdRow()}
-  <div class="dow">${dowHead('')}</div>
+  <div class="dow${Z === 2 ? ' z2' : ''}">${dowHead('')}</div>
   <div class="month z${Z}" id="monthGrid" data-swipe="month">${weeks}</div>
   ${todoJump()}
   ${mnCard()}
@@ -6122,7 +6127,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v62';
+const APP_VER = 'hibi-v63';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
