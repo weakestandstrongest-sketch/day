@@ -1525,7 +1525,8 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .pz-ghost .day.sel{box-shadow:none}
 @keyframes zFade{from{opacity:0}}
 .pay-card.mn-card>span:nth-child(2){flex:1;min-width:0}
-.pay-card.mn-card>.mn-ic{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
+.pay-card.mn-card>.mn-ic{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--accent);box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 35%,transparent)}
+.pay-card.mn-card>.mn-ic .ico{color:#fff}
 .mn-card .mn-ic .ico{width:22px;height:22px}
 .mn-card .pay-meta .inc{font-weight:700}
 .mn-dd{margin-top:10px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:6px 12px 8px}
@@ -5781,10 +5782,13 @@ function csvGuess(rows) {
 }
 function csvRows() {
   const { body, map } = CSV, has = name => S.money.cats.in.some(c => c.name === name);
+  // one amount column (or 支出 and 収入 pointing at the same column) with minus signs: minus = 支出, plus = 収入
+  const one = map.out >= 0 && map.out === map.inc ? map.out : map.amt, split = (map.out >= 0 || map.inc >= 0) && map.out !== map.inc;
+  const signed = one >= 0 && body.some(r => (csvAmt(r[one]) || 0) < 0);
   return body.map(r => {
     const g = i => i >= 0 ? (r[i] || '') : '', date = csvDate(g(map.date)); let k = '', amt = null;
-    if (map.out >= 0 || map.inc >= 0) { const o = csvAmt(g(map.out)), n = csvAmt(g(map.inc)); if (n) { k = 'in'; amt = Math.abs(n); } else if (o) { k = 'out'; amt = Math.abs(o); } }
-    else { const a = csvAmt(g(map.amt)); if (a !== null) { amt = Math.abs(a); if (a < 0) k = 'out'; } }
+    if (split) { const o = csvAmt(g(map.out)), n = csvAmt(g(map.inc)); if (n) { k = 'in'; amt = Math.abs(n); } else if (o) { k = 'out'; amt = Math.abs(o); } }
+    else { const a = csvAmt(g(one)); if (a !== null) { amt = Math.abs(a); if (signed) k = a < 0 ? 'out' : 'in'; } }
     const kk = csvKind(g(map.kind)); if (kk) k = kk;
     const cat = g(map.cat).slice(0, 30) || 'その他';
     if (!k) k = has(cat) && !S.money.cats.out.some(c => c.name === cat) ? 'in' : 'out';
@@ -5798,7 +5802,7 @@ function mnCsvSheet() {
   return `<div class="sh-bar"><button class="l" data-act="close">やめる</button><b>CSVの取り込み</b><span></span></div>
     <p class="note" style="margin:0 0 10px">${esc(CSV.name)} ・ ${CSV.body.length}行。どの列が何かを確かめてください（自動で選んであります）。</p>
     <section class="card" style="margin-top:0"><div class="mn-maps">${sel('date', '日付')}${sel('amt', '金額')}${sel('out', '支出の金額')}${sel('inc', '収入の金額')}${sel('kind', '支出／収入の区別')}${sel('cat', 'カテゴリー')}${sel('memo', 'メモ')}</div>
-      <p class="note">金額の列が「支出」「収入」に分かれているときは、それぞれを選びます。区別の列がなければ、マイナスの金額や収入のカテゴリー名から判断します。</p></section>
+      <p class="note">金額の列が「支出」「収入」に分かれているときは、それぞれを選びます。金額が1つの列で、マイナスがついているときは「マイナス＝支出、プラス＝収入」として読みます。区別の列も符号もなければ、収入のカテゴリー名から判断します。</p></section>
     <section class="card"><h3>読み取り結果<span class="sub num">支出 ${nOut}件・収入 ${ok.length - nOut}件${rows.length - ok.length ? `・読めない行 ${rows.length - ok.length}件` : ''}</span></h3>
       <div class="mn-list">${rows.slice(0, 8).map(r => r.err ? `<div class="mn-item err"><span class="t">${esc(r.err)}</span></div>` : `<div class="mn-item"><span class="t"><small class="d num">${md(r.date)}</small>${esc(r.cat)}${r.memo ? `<small>（${esc(r.memo)}）</small>` : ''}</span><b class="num${r.k === 'in' ? ' inc' : ''}">${r.k === 'in' ? '+' : ''}${yen(r.amt)}</b></div>`).join('')}</div>
       ${newCats.size ? `<p class="note">新しく作るカテゴリー：${[...newCats].slice(0, 20).map(esc).join('・')}${newCats.size > 20 ? ' ほか' : ''}</p>` : ''}</section>
@@ -5815,14 +5819,16 @@ async function mnCsvFile(file) {
 }
 function mnCsvImport() {
   const rows = csvRows().filter(r => !r.err), M = S.money, key = e => `${e.k}|${e.date}|${e.amt}|${mnCat(e.k, e.cat).name}|${e.memo}`;
-  const have = new Set(M.entries.map(key)); let n = 0, dup = 0;
+  const have = new Map(); for (const e of M.entries) have.set(key(e), (have.get(key(e)) || 0) + 1);
+  let n = 0, dup = 0;
   const before = JSON.stringify(S); snapPut('家計簿のCSVを取り込む前', before).catch(() => {});
   for (const r of rows) {
     let c = M.cats[r.k].find(x => x.name === r.cat);
     if (!c) { c = { id: uid(), name: r.cat, color: MN_COLORS[(M.cats[r.k].length) % MN_COLORS.length] }; M.cats[r.k].push(c); }
     const e = { id: uid(), k: r.k, amt: r.amt, cat: c.id, memo: r.memo, date: r.date, ts: 0 };
-    if (have.has(key(e))) { dup++; continue; }
-    have.add(key(e)); M.entries.push(e); n++;
+    const c0 = have.get(key(e)) || 0;
+    if (c0) { have.set(key(e), c0 - 1); dup++; continue; }
+    M.entries.push(e); n++;
   }
   if (!save()) { S = normalizeState(JSON.parse(before)); return; }
   closeSheet(); const last = rows.map(r => r.date).sort().pop(); MNV.tab = 'list'; if (last) MNV.ym = mnYmOf(last);
@@ -6127,7 +6133,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v63';
+const APP_VER = 'hibi-v64';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
