@@ -1716,6 +1716,7 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .nt-icon.none .ico{width:14px;height:14px}
 .nt-title{width:100%;border:0;background:transparent;resize:none;font-size:27px;font-weight:700;line-height:1.3;color:var(--ink);padding:0;overflow:hidden;outline:none;font-family:inherit}
 .nt-title::placeholder{color:var(--ink-3)}
+.sheet.nt textarea:focus,.sheet.nt textarea:focus-visible,.sheet.nt input:focus,.sheet.nt input:focus-visible,.nt-icon:focus,.nt-icon:focus-visible,.nb-hrb:focus,.nb-hrb:focus-visible,.nt-tail:focus,.nt-tail:focus-visible{outline:none;box-shadow:none} /* a page to write on: no input boxes */
 .nt-meta{font-size:12px;color:var(--ink-3);margin:6px 0 14px}
 .nb{display:flex;align-items:flex-start;gap:6px;position:relative}
 .nb-tx{flex:1;min-width:0;border:0;background:transparent;resize:none;outline:none;color:var(--ink);font-family:inherit;font-size:16px;line-height:1.65;padding:3px 0;overflow:hidden}
@@ -6446,7 +6447,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v68';
+const APP_VER = 'hibi-v69';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
