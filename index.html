@@ -1029,6 +1029,9 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 @keyframes obPulse{50%{transform:scale(1.08);box-shadow:0 14px 40px rgba(46,197,240,.55),inset 0 -4px 8px rgba(0,0,0,.35)}}
 .nk-wrap.fail .ob-big{display:none}
 .bb-ico{width:26px;height:26px;display:block;color:var(--ink)}
+.ng-ico{width:23px;height:23px;display:block;border-radius:6px;box-shadow:0 2px 6px rgba(20,48,79,.32)}
+.ng-big{width:64px;height:64px;display:block}.ng-big .ng-ico{width:100%;height:100%;border-radius:15px;box-shadow:0 8px 22px rgba(20,48,79,.3);animation:ngFloat 2.4s ease-in-out infinite}
+@keyframes ngFloat{50%{transform:translateY(-4px)}}
 .bb-ico .dl{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round}
 .bb-ico .b1,.bb-ico .b2,.bb-ico .b3{fill:var(--bg);stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 .bb-ico .b1,.bb-ico .b2{fill:#F2A93B;stroke:#F2A93B}
@@ -1038,7 +1041,7 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .bb-big .bb-ico .b1,.bb-big .bb-ico .b2,.bb-big .bb-ico .b3{fill:var(--bg);stroke:currentColor;animation:bbRun 1.5s infinite}
 .bb-big .bb-ico .b2{animation-delay:.5s}.bb-big .bb-ico .b3{animation-delay:1s}
 @keyframes bbRun{0%,30%{fill:#F2A93B;stroke:#F2A93B}40%,100%{fill:var(--bg);stroke:currentColor}}
-.nk-wrap.fail .bb-big{display:none}
+.nk-wrap.fail .bb-big,.nk-wrap.fail .ng-big{display:none}
 .nk-empty{padding:24px 6px;text-align:center;font-size:14px;line-height:1.8;color:var(--ink-2)}
 .rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
 .rt-sum .od{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;flex-wrap:wrap}
@@ -1671,7 +1674,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [] });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -2115,7 +2118,7 @@ function viewJournal() {
   if (!dates.length) list = `<p class="empty">まだ日記がありません。<br>右下の＋から、今日の気持ちを書いてみましょう。</p>`;
   return `
   <div class="j-head"><div class="ttl"><h1>日記</h1><span class="script">diary</span></div>
-    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="nagi" aria-label="凪（ニュース）を開く">${NAGI_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
   ${quickMood(T)}
@@ -3029,6 +3032,29 @@ function bbWatch(wrap) {
   f.addEventListener('load', () => { clearTimeout(t); setTimeout(() => { wrap.classList.remove('fail'); wrap.classList.add('ready'); }, 250); }, { once: true });
 }
 function openBaseball() { const sh = openSheet(bbSheet(), 'full nk'); sh.dataset.kind = 'baseball'; const w = $('.bb-wrap', sh); if (w) bbWatch(w); }
+
+/* ---- 凪（ニュース）inside ひび手帳 (GitHub Pages on the same github.io site; shown once its page has loaded) ---- */
+// the app's own icon in miniature: 凪 (Noto Serif JP glyph) on a deep-blue tile
+const NAGI_SVG = '<svg class="ng-ico" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="118" fill="#1D3F66"/><path transform="translate(96 352) scale(0.32 -0.32)" fill="#f6f4ef" d="M304 534V28H183L191 -1H771C785 -1 795 4 798 15C762 50 700 102 700 102L646 28H560V372H712C726 372 736 377 739 388C706 420 651 466 651 466L604 401H560V641C586 645 594 655 596 669L471 682V28H387V498C408 502 416 510 418 523ZM149 775V542C149 338 137 109 26 -77L39 -86C229 91 242 354 242 543V746H756C751 447 753 104 851 -22C879 -65 923 -96 961 -72C978 -60 976 -25 956 26L970 201L959 203C950 165 940 127 928 91C923 77 918 76 910 86C844 169 839 518 852 728C875 732 890 739 896 747L796 832L744 775H258L149 821Z"/><path d="M146 426h220" stroke="#f6f4ef" stroke-width="14" stroke-linecap="round" opacity=".5"/></svg>';
+const ngBase = () => { const u = (S.settings.nagi || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://'); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
+function ngSheet() {
+  const head = '<div class="sh-bar"><span></span><b>凪</b><button class="r" data-act="close">閉じる</button></div>', base = ngBase();
+  if (!base) return head + '<p class="nk-empty">設定 → ニュース（凪） に、凪のURLを入れてください。</p>';
+  return head + `<div class="nk-wrap ng-wrap"><iframe class="nk-frame ng-frame" src="${esc(base)}" title="凪"></iframe>
+    <div class="nk-load"><span class="ng-big">${NAGI_SVG}</span><b>凪を開いています…</b>
+      <span class="nk-fail"><b>凪を開けませんでした</b><small>通信が不安定か、URLが違うかもしれません。設定 → ニュース（凪） のURLを確かめてください。</small><button class="btn primary" data-act="ngRetry">もう一度開く</button></span></div></div>`;
+}
+function ngWatch(wrap) {
+  const f = $('.ng-frame', wrap); wrap.classList.remove('ready', 'fail');
+  const t = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 20000);
+  f.addEventListener('load', () => {
+    let ok = true;
+    // same github.io site: make sure it is really 凪 (a 404 page also "loads")
+    if (orbSameOrigin(f.src)) { try { const d = f.contentDocument; ok = !!d && /凪|Nagi/.test(d.title || ''); } catch (e) { ok = false; } }
+    clearTimeout(t); setTimeout(() => { wrap.classList.toggle('ready', ok); wrap.classList.toggle('fail', !ok); }, ok ? 200 : 0);
+  }, { once: true });
+}
+function openNagi() { const sh = openSheet(ngSheet(), 'full nk'); sh.dataset.kind = 'nagi'; const w = $('.ng-wrap', sh); if (w) ngWatch(w); }
 
 /* ---- Orb (the AI browser) inside ひび手帳 ---- */
 const orbBase = () => { const u = (S.settings.orb || '').trim(); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
@@ -4642,6 +4668,9 @@ function settingsHTML() {
   <div class="set-sec"><h4>野球速報</h4><div class="set-list">
     <p class="note" style="margin:0">日記の右上のダイヤモンド（塁）のボタンから、野球速報をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-baseball">野球速報のURL</label><input class="inp" id="set-baseball" type="url" value="${esc(s.baseball || '')}" placeholder="https://baseball.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
+  <div class="set-sec"><h4>ニュース（凪）</h4><div class="set-list">
+    <p class="note" style="margin:0">日記の右上の「凪」のボタンから、凪をひび手帳の中で開けます。</p>
+    <div class="fld" style="margin:0"><label for="set-nagi">凪のURL</label><input class="inp" id="set-nagi" type="url" value="${esc(s.nagi || '')}" placeholder="https://○○○.github.io/news/" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
     ${inFrame ? '' : `<div class="toggle"><span>保存のお知らせ<small>決めた時刻をすぎたら、iPhoneの「ファイル」に保存するよう知らせます</small></span></div>
@@ -5067,6 +5096,8 @@ const ACT = {
   mcDel: t => { MAIL.c.splice(+t.dataset.i, 1); rerenderMail(); },
   mailCommit: () => mailCommit(),
   baseball: () => openBaseball(),
+  nagi: () => openNagi(),
+  ngRetry: t => { const w = t.closest('.ng-wrap'), f = w && $('.ng-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); ngWatch(w); f.src = u.toString(); },
   bbRetry: t => { const w = t.closest('.bb-wrap'), f = w && $('.bb-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); bbWatch(w); f.src = u.toString(); },
   obRetry: t => { const w = t.closest('.ob-wrap'), f = w && $('.ob-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); orbWatch(w); f.src = u.toString(); },
   nkRetry: t => { const w = t.closest('.nk-wrap'), f = w && $('.nk-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); nkWatch(w); f.src = u.toString(); },
@@ -5200,6 +5231,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'set-norikae') { S.settings.norikae = t.value.trim(); save(); }
   else if (t.id === 'set-orb') { S.settings.orb = t.value.trim(); save(); }
   else if (t.id === 'set-baseball') { S.settings.baseball = t.value.trim(); save(); }
+  else if (t.id === 'set-nagi') { S.settings.nagi = t.value.trim(); save(); }
   else if (t.id === 'wx-rt') { radarStop(); radarShow(+t.value); }
   else if (t.id === 'bk-time' && t.value) { S.settings.bkTime = t.value; save(); checkBackup(); }
   else if (t.id === 'set-loc-entry' || t.id === 'set-loc-open') {
@@ -5352,7 +5384,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v56';
+const APP_VER = 'hibi-v57';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
