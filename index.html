@@ -81,8 +81,9 @@ svg{display:block}
 /* iOS large-title behaviour: a small blurred title bar fades in once the big title scrolls away */
 #topbar{position:absolute;top:0;left:0;right:0;z-index:6;height:46px;display:grid;place-items:center;font-size:16px;font-weight:700;
   background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);
-  border-bottom:.5px solid var(--glass-edge);opacity:0;pointer-events:none;transition:opacity .2s}
-#topbar.show{opacity:1}
+  border-bottom:.5px solid var(--glass-edge);opacity:0;pointer-events:none;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
+/* hidden for real while faded out: iPhone keeps applying the blur of an invisible bar, which smeared the big month number under it */
+#topbar.show{opacity:1;visibility:visible;transition:opacity .2s}
 #topbar span{transform:translateY(6px);transition:transform .25s}
 #topbar.show span{transform:none}
 /* page sits back while a sheet is open, like iOS card sheets */
@@ -7206,10 +7207,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v72';
+const APP_VER = 'hibi-v73';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.0.1';
-const HIBI_CHANGES = ['日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.0.2';
+const HIBI_CHANGES = ['カレンダーの上の大きな月の数字がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
