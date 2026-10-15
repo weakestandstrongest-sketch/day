@@ -321,6 +321,7 @@ svg{display:block}
 /* ---------- Sheets ---------- */
 .ov{position:fixed;inset:0;background:var(--overlay);z-index:20;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .22s}
 .ov.in{opacity:1}
+.ov:not(.in){pointer-events:none}
 .sheet{background:var(--bg);width:100%;max-width:560px;max-height:calc(100% - 24px - env(safe-area-inset-top,0px));border-radius:28px 28px 0 0;
   overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .42s cubic-bezier(.2,.9,.25,1)}
 .ov.in .sheet{transform:none}
@@ -4741,7 +4742,8 @@ let evDraft = null;
 function openEvent(id, date, preset) {
   const ev = id ? S.events.find(e => e.id === id) : null;
   evDraft = ev ? JSON.parse(JSON.stringify(ev)) : Object.assign({ id: null, title: '', date: date || todayISO(), endDate: '', allDay: false, start: nextSlot(), end: '', color: COLORS[0], icon: 'star', repeat: 'none', routine: false, memo: '', done: {} }, preset || {});
-  if (!evDraft.end) evDraft.end = hhmm(Math.min(1439, toMin(evDraft.start) + (evDraft._len || 60)));
+  if (!/^\d\d:\d\d$/.test(evDraft.start || '')) evDraft.start = nextSlot(); // 終日の予定などは時刻を持たないことがある
+  if (!/^\d\d:\d\d$/.test(evDraft.end || '')) evDraft.end = hhmm(Math.min(1439, toMin(evDraft.start) + (evDraft._len || 60)));
   if (ev && ev.repeat && ev.repeat !== 'none' && date) {
     evDraft._occ = date; evDraft._seriesDate = ev.date; evDraft.date = date;
     if (evSpan(ev)) evDraft.endDate = addDays(date, evSpan(ev));
@@ -5796,7 +5798,9 @@ const ACT = {
     // the same practice as a 灯 timer habit (same name, or the plan 灯 made): add the minutes there too
     const nk2 = x => String(x || '').replace(/[\s　]/g, ''), hh = ev && hbAct().find(h => h.kind === 'time' && (ev.habit === h.id || nk2(h.name) === nk2(ev.title)));
     S.timer = null; save(); releaseWake(); while (stack.length) closeSheet();
-    if (hh && !ev.habit) { if (hbSet(hh.id, t.d, hbVal(hh, t.d) + min * 60)) hbCheer(hh, t.d); else toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
+    const hr = hh && S.habits.run && S.habits.run.id === hh.id && S.habits.run.d === t.d;
+    if (hh && !ev.habit && hr) { S.habits.run.b += min * 60; save(); toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
+    else if (hh && !ev.habit) { if (hbSet(hh.id, t.d, hbVal(hh, t.d) + min * 60)) hbCheer(hh, t.d); else toast(`${dur(min)}の集中を記録しました（灯の「${hh.name}」にも入れました）`); }
     else toast(`${dur(min)}の集中を記録しました`);
     render(); tick();
   },
@@ -5946,7 +5950,7 @@ document.addEventListener('click', e => {
   if (Date.now() < noClickUntil) { e.preventDefault(); e.stopPropagation(); return; }
   const ow = e.target.closest('.sw-wrap.open');
   if (ow && !e.target.closest('.sw-del')) { closeSwipes(null); e.preventDefault(); return; }
-  const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+  const t = e.target.closest('[data-act]'); if (!t || t.disabled || t.closest('.ov:not(.in)')) return;
   const f = ACT[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
 });
 document.addEventListener('change', async e => {
@@ -6697,7 +6701,7 @@ function normHabits(x) {
   const log = {};
   for (const [d, o] of Object.entries(asObj(x.log))) {
     if (!isYmd(d)) continue; const r = {};
-    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); const m = typeof e.m === 'string' ? e.m.slice(0, 200) : ''; if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip || m)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; if (+e.s) r[id].s = +e.s; if (m) r[id].m = m; }
+    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); const m = typeof e.m === 'string' ? e.m.slice(0, 200) : ''; if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip || m)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; if (+e.s) r[id].s = +e.s; if (+e.l) r[id].l = +e.l; if (m) r[id].m = m; }
     if (Object.keys(r).length) log[d] = r;
   }
   const r = asObj(x.run), run = list.some(h => h.id === r.id) && +r.s && isYmd(r.d) ? { id: r.id, d: r.d, s: +r.s, b: +r.b || 0 } : null;
@@ -6713,9 +6717,11 @@ const hbAct = () => S.habits.list.filter(h => !h.arch);
 const hbE = (d, id) => (S.habits.log[d] || {})[id];
 function hbVal(h, d) {
   let v = (hbE(d, h.id) || {}).v || 0; const r = S.habits.run;
-  if (r && r.id === h.id && r.d === d) { v = r.b + Math.min(86400, (Date.now() - r.s) / 1000); if (r.b < h.goal) v = Math.min(v, h.goal); }
+  if (r && r.id === h.id && r.d === d) { v = r.b + Math.max(0, hbRunEnd(r) - r.s) / 1000; if (r.b < h.goal) v = Math.min(v, h.goal); }
   return v;
 }
+// a running timer only counts until the end of its own day (left running overnight or with the app closed)
+const hbRunEnd = r => Math.min(Date.now(), P(addDays(r.d, 1)).getTime());
 const hbDone = (h, d) => hbVal(h, d) >= h.goal;
 const hbSkip = (h, d) => !!(hbE(d, h.id) || {}).skip;
 // is this a day the habit is meant for (週◯回 habits can be done on any day)
@@ -6836,10 +6842,10 @@ function hbCelebrate(icon, title, sub, color, note, memo) {
 }
 function hbStart(id, d, at) {
   if (S.habits.run) hbStop();
-  const h = hbById(id); if (!h) return; pomoUnlock();
+  const h = hbById(id); if (!h || h.kind !== 'time') return; pomoUnlock();
   const bk = S.habits.brk, n = bk && bk.id === id ? bk.n : 0; S.habits.brk = null;
   const now = at || Date.now(), L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || (day[id] = { v: 0, t: 0 });
-  if (!e.s) e.s = now; // when today's practice began (for the timeline)
+  if (!e.s || !e.l || now - e.l > 40 * 60000) e.s = now; // when this stretch of practice began (for the timeline); short pauses and pomodoro breaks keep it
   S.habits.run = { id, d, s: now, b: hbVal(h, d) };
   if (h.pomo) S.habits.run.p = { n, base: S.habits.run.b };
   save(); hbTicker();
@@ -6850,14 +6856,17 @@ function hbPomoStep() {
   for (let i = 0; i < 50; i++) {
     const r = S.habits.run, k = S.habits.brk;
     if (r) {
-      const h = hbById(r.id); if (!h || !r.p) break;
-      const W = pomoSet().w * 60, v = hbVal(h, r.d); if (r.b < h.goal && v >= h.goal) break; // reaching the goal is handled by hbTick
-      if (v - r.p.base < W) break;
-      const X = r.s + (r.p.base + W - r.b) * 1000; S.habits.run = null;
-      hbSet(r.id, r.d, r.b + (X - r.s) / 1000); S.habits.brk = { id: r.id, d: r.d, at: X, n: r.p.n + 1 }; moved = true; last = ['break', X, h];
+      const h = hbById(r.id); if (!h || !r.p || h.kind !== 'time') break;
+      const workEnd = r.p.base + pomoSet().w * 60, raw = r.b + Math.max(0, hbRunEnd(r) - r.s) / 1000;
+      if (r.b < h.goal && h.goal <= workEnd) break; // the goal comes first: hbTick finishes it
+      if (raw < workEnd) break;
+      const X = r.s + (workEnd - r.b) * 1000; S.habits.run = null;
+      hbSet(r.id, r.d, workEnd); const e2 = hbE(r.d, r.id); if (e2) e2.l = X;
+      S.habits.brk = { id: r.id, d: r.d, at: X, n: r.p.n + 1 }; moved = true; last = ['break', X, h];
     } else if (k) {
       const Y = k.at + pomoBreakMs(k.n); if (Date.now() < Y) break;
-      if (k.d !== todayISO()) { S.habits.brk = null; moved = true; break; }
+      const kh = hbById(k.id);
+      if (k.d !== todayISO() || !kh || kh.kind !== 'time' || !kh.pomo) { S.habits.brk = null; moved = true; break; }
       hbStart(k.id, k.d, Y); moved = true; last = ['work', Y, hbById(k.id)];
     } else break;
   }
@@ -6870,8 +6879,9 @@ function hbStop(quiet) {
   const v = h ? hbVal(h, r.d) : 0; S.habits.run = null;
   if (h) {
     const e0 = hbE(r.d, r.id), began = (e0 && e0.s) || r.s, got = hbSet(r.id, r.d, v);
+    const endAt = r.b < h.goal && v >= h.goal ? r.s + (h.goal - r.b) * 1000 : hbRunEnd(r), e1 = hbE(r.d, r.id); if (e1) { e1.l = endAt; save(); }
     // finished with the timer: the practice goes onto the timeline as a done plan
-    if (got && !quiet && h.kind === 'time' && h.tl !== false) hbToTimeline(h, r.d, began, r.b < h.goal ? r.s + (h.goal - r.b) * 1000 : Date.now());
+    if (got && !quiet && h.kind === 'time' && h.tl !== false) hbToTimeline(h, r.d, began, endAt);
     if (got && !quiet) hbCheer(h, r.d);
   } else save();
   hbTicker();
@@ -7026,7 +7036,7 @@ function hbHeatHTML() {
     const n = hbStreak(h), tot = hbTotal(h), done = hbDone(h, T);
     return `<div class="hb-hc" style="--c:${h.color}" data-act="hbOpen" data-id="${h.id}" data-d="${T}">
       <div class="hb-hh"><span class="hb-em sm">${esc(h.emoji || '•')}</span><b>${esc(h.name)}</b>
-        ${n ? `<span class="hb-pill fl">${HB_FLAME}${n}</span>` : ''}<span class="hb-pill">${ico('check')}${tot}</span>${h.kind !== 'check' ? `<span class="hb-pill pl num">${h.kind === 'time' ? hbFmt(Math.floor(hbVal(h, T))) : Math.floor(hbVal(h, T))}/${hbGoalTx(h)}</span>` : ''}
+        ${n ? `<span class="hb-pill fl">${HB_FLAME}${n}</span>` : ''}<span class="hb-pill">${ico('check')}${tot}</span>${h.kind !== 'check' ? `<span class="hb-pill pl num">${h.kind === 'time' ? hbFmt(Math.floor(hbVal(h, T))) : Math.floor(hbVal(h, T))}/${esc(hbGoalTx(h))}</span>` : ''}
         <button class="hb-chk${done ? ' on' : ''}" data-act="hbTap" data-id="${h.id}" data-d="${T}" aria-label="${esc(h.name)}">${ico('check')}</button></div>
       ${hbHeatSVG(h, HBV.heat)}${(() => { const ms = hbMemos(h, 2); return ms.length ? `<div class="hb-lm">${ms.map(([x, m]) => `<p><span class="num">${md(x)}</span>${esc(m)}</p>`).join('')}</div>` : ''; })()}</div>`;
   }).join('');
@@ -7048,7 +7058,8 @@ function hbStatsHTML() {
       for (let ws = weekStart(from); ws <= T; ws = addDays(ws, 7)) {
         let c = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c && hbDone(h, d)) c++; }
         if (addDays(ws, 6) < h.c) continue;
-        tot += h.freq.n; done += Math.min(c, h.freq.n);
+        let inDays = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c) inDays++; }
+        const got = Math.min(c, h.freq.n); tot += Math.max(got, Math.round(h.freq.n * inDays / 7)); done += got;
       }
     }
     for (let d = from > h.c ? from : h.c, i = 0; d <= T && i < 400; d = addDays(d, 1), i++) {
@@ -7179,7 +7190,16 @@ function hbeSave() {
   if (X.ft === 'days' && !days.length) { toast('曜日をひとつ以上選んでください'); return; }
   const o = { name: X.name.trim(), emoji: X.emoji, color: X.color, kind: X.kind, goal: X.kind === 'count' ? X.cnt : X.kind === 'time' ? X.min * 60 : 1, unit: X.kind === 'count' ? X.unit : '', freq: { t: X.ft, days, n: X.n } };
   const h = X.id && hbById(X.id);
-  if (h) { Object.assign(h, o); if (S.habits.run && S.habits.run.id === h.id && h.kind !== 'time') S.habits.run = null; }
+  if (h) {
+    const oldKind = h.kind, oldGoal = h.goal;
+    if (oldKind !== o.kind) {
+      if (S.habits.run && S.habits.run.id === h.id) hbStop(true);
+      if (S.habits.brk && S.habits.brk.id === h.id) S.habits.brk = null;
+      // past values mean different things (seconds / times / done); keep each day's 'done' as it was
+      for (const day of Object.values(S.habits.log)) { const e = day[h.id]; if (!e) continue; const was = e.v >= oldGoal; e.v = was ? o.goal : 0; if (!was) e.t = 0; delete e.s; delete e.l; }
+    }
+    Object.assign(h, o); if (h.kind !== 'time') h.pomo = false;
+  }
   else S.habits.list.push(Object.assign({ id: uid(), c: todayISO(), arch: false }, o));
   save(); HBX = null; closeSheet(); hbRe(); render(); hbTicker();
 }
@@ -7219,8 +7239,8 @@ Object.assign(ACT, {
   },
   hbReset: () => {
     const h = hbById(HBD.id); if (!h) return; const d = HBD.d, prev = JSON.stringify(hbE(d, h.id) || null);
-    if (S.habits.run && S.habits.run.id === h.id) { S.habits.run = null; hbTicker(); }
-    if (S.habits.brk && S.habits.brk.id === h.id) { S.habits.brk = null; hbTicker(); }
+    if (S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d) { S.habits.run = null; hbTicker(); }
+    if (S.habits.brk && S.habits.brk.id === h.id && S.habits.brk.d === d) { S.habits.brk = null; hbTicker(); }
     if (S.habits.log[d]) { delete S.habits.log[d][h.id]; if (!Object.keys(S.habits.log[d]).length) delete S.habits.log[d]; }
     save(); hbRe(); render();
     if (prev !== 'null') toast('この日の記録を消しました', '元に戻す', () => { (S.habits.log[d] || (S.habits.log[d] = {}))[h.id] = JSON.parse(prev); save(); hbRe(); render(); });
@@ -7244,7 +7264,7 @@ Object.assign(ACT, {
   hbeDel: () => { const id = HBX && HBX.id; if (!id) return; hbDelete(id, true); },
 });
 function hbArchive(id) {
-  const h = hbById(id); if (!h) return; h.arch = true; if (S.habits.run && S.habits.run.id === id) S.habits.run = null; if (S.habits.brk && S.habits.brk.id === id) S.habits.brk = null; hbTicker();
+  const h = hbById(id); if (!h) return; if (S.habits.run && S.habits.run.id === id) hbStop(true); h.arch = true; if (S.habits.brk && S.habits.brk.id === id) S.habits.brk = null; hbTicker();
   save(); if (topSheet() && topSheet().dataset.kind === 'hbd') closeSheet(); hbRe(); render();
   toast(`${h.name} をアーカイブしました`, '元に戻す', () => { h.arch = false; save(); hbRe(); render(); });
 }
