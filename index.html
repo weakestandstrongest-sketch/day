@@ -2335,7 +2335,7 @@ async function attachWeather(e) {
 function entryCard(e) {
   return `<button class="entry" data-act="editEntry" data-id="${e.id}"><div style="min-width:0">
     ${e.feelings.length ? `<div class="feels">${e.feelings.map(f => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)}</span>`).join('')}</div>` : ''}
-    <p>${esc(e.text) || '<span style="color:var(--ink-3)">（本文なし）</span>'}</p>
+    ${e.text ? `<p>${esc(e.text)}</p>` : ''}
     ${e.song ? songMini(e.song) : ''}
     <div class="foot"><span class="num">${esc(e.time || '')}</span>${wxChip(e.weather)}${e.place ? `<span class="wx">${ico('pin')}${esc((spotAt(e.place) || {}).name || '場所')}</span>` : ''}${e.tags.map(t => `<span class="tg">#${esc(t)}</span>`).join('')}</div></div>
     ${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`;
@@ -2476,7 +2476,7 @@ function monthReport() {
     <div class="balance"><i style="width:${pc(p)}%;background:#EDA04B"></i><i style="width:${pc(z)}%;background:#B4C680"></i><i style="width:${pc(n)}%;background:#6C97C2"></i></div>
     <div class="legend"><span style="--c:#EDA04B"><i></i>前向き ${pc(p)}%</span><span style="--c:#B4C680"><i></i>ふつう ${pc(z)}%</span><span style="--c:#6C97C2"><i></i>沈んだ ${pc(n)}%</span></div>
     <div class="mini-chips">${top.map(([f, c]) => `<span style="--c:${feelInfo(f).color}"><i></i>${esc(f)} <span class="num">${c}</span></span>`).join('')}</div></section>
-  ${be ? `<section class="card"><h3>いちばんいい日</h3><button class="best" data-act="editEntry" data-id="${be.id}"><span class="d num">${P(best.d).getDate()}<small>日</small></span><span><b>${esc(be.feelings.join('・'))}</b><p>${esc(be.text) || '（本文なし）'}</p></span></button></section>` : ''}
+  ${be ? `<section class="card"><h3>いちばんいい日</h3><button class="best" data-act="editEntry" data-id="${be.id}"><span class="d num">${P(best.d).getDate()}<small>日</small></span><span><b>${esc(be.feelings.join('・'))}</b>${be.text ? `<p>${esc(be.text)}</p>` : ''}</span></button></section>` : ''}
   <section class="card"><h3>よく書いたこと</h3>${donut(es)}</section>
   ${wl.length ? `<section class="card"><h3>よく使った言葉</h3><div class="words">${wl.map(([w, c]) => `<span style="font-size:${(12 + (c / wmax) * 10).toFixed(1)}px">${esc(w)}</span>`).join('')}</div></section>` : ''}
   ${em.lines.length ? `<section class="card"><h3>予定と気分</h3><ul class="ins-lines">${em.lines.slice(0, 4).map(l => `<li>${esc(l)}</li>`).join('')}</ul></section>` : ''}
@@ -6161,7 +6161,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v65';
+const APP_VER = 'hibi-v66';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
