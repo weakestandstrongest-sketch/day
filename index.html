@@ -1978,6 +1978,14 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hbe-days .sun{color:var(--sun)}.hbe-days .sat{color:var(--sat)}
 .hbe-days button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .hbe-danger{display:flex;flex-direction:column;gap:10px;margin-top:28px}
+.ver-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ver-card img{width:48px;height:48px;border-radius:11px;flex:none}
+.ver-card div{display:flex;flex-direction:column}
+.ver-card b{font-size:16px}
+.ver-card span{font-size:13px;color:var(--ink-2)}
+.ver-log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px}
+.ver-log summary{cursor:pointer;font-weight:600}
+.ver-log ul{margin:8px 0 2px;padding-left:20px;color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -5127,6 +5135,7 @@ function runSearch() {
 }
 
 /* ---- settings ---- */
+const appBuild = () => +APP_VER.replace(/\D/g, '');
 const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
 function settingsHTML() {
   const s = S.settings;
@@ -5198,7 +5207,12 @@ function settingsHTML() {
     <button class="btn ghost" data-act="importText">貼り付けたバックアップから復元</button>
     ${hasSample() ? '<button class="btn ghost" data-act="clearSample">サンプルデータを消す</button>' : ''}
     <button class="btn danger" data-act="resetAll">すべてのデータを削除</button></div></div>
-  <p class="note">ひび手帳 — カレンダー・タイムライン・日記をひとつに。予定 ${S.events.length}件 / 日記 ${S.entries.length}件</p>`;
+  <div class="set-sec"><h4>ひび手帳について</h4><div class="set-list">
+    <div class="ver-card"><img src="icons/icon-180.png?v=3" alt="" onerror="this.remove()"><div><b>ひび手帳</b><span class="num">バージョン ${HIBI_VERSION}（${appBuild()}）</span></div></div>
+    ${!inFrame && location.protocol === 'https:' ? `<button class="btn" data-act="verCheck">${ico('repeat')}アップデートを確認</button>` : ''}
+    <details class="ver-log"><summary>このバージョンの主な変更</summary><ul>${HIBI_CHANGES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>
+    <p class="note" style="margin:0">バージョンの見かた：大きな機能がふえると真ん中の数字、なおしだけのときは右の数字が上がります。かっこの中は、更新のたびにふえる通し番号です。</p>
+    <p class="note" style="margin:0">予定 ${S.events.length}件 / 日記 ${S.entries.length}件</p></div></div>`;
 }
 function openSettings() { openSheet(settingsHTML(), 'full'); refreshSnaps(); }
 const rerenderSettings = () => { const sh = topSheet(); if (!sh) return; const y = sh.scrollTop; sh.innerHTML = settingsHTML(); sh.scrollTop = y; };
@@ -5622,6 +5636,7 @@ const ACT = {
   mcal: t => { st.mcal = Math.min(0, st.mcal + +t.dataset.n); render(); },
   search: () => openSearch(),
   settings: () => openSettings(),
+  verCheck: () => checkVersion(true),
   close: () => closeSheet(),
   clearSample: () => confirmIn('サンプルの予定と日記を削除します。あなたが追加したデータはそのまま残ります。', '削除する', () => {
     S.events = S.events.filter(e => !e.sample); S.entries = S.entries.filter(e => !e.sample); S.tasks = S.tasks.filter(e => !e.sample); S.templates = S.templates.filter(e => !e.sample); S.jobs = S.jobs.filter(e => !e.sample); S.school.classes = S.school.classes.filter(e => !e.sample); S.school.tasks = S.school.tasks.filter(e => !e.sample); save(); while (stack.length) closeSheet(); render(); toast('サンプルを削除しました');
@@ -7152,18 +7167,23 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v70';
+const APP_VER = 'hibi-v71';
+// the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
+const HIBI_VERSION = '2.0.0';
+const HIBI_CHANGES = ['習慣化アプリ「灯」（日記の右上の炎のボタン）', '設定でバージョンを確認できるように', '「あとで」の中にメモ（iOSのメモ・Notion風）', '家計簿とカレンダーの2本指での拡大・縮小'];
 let verChecked = Date.now();
-async function checkVersion() {
-  if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
+async function checkVersion(manual) {
+  if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
   try {
     const t = await (await fetch('sw.js?v=' + Date.now(), { cache: 'no-store' })).text(), v = (t.match(/CACHE = '([^']+)'/) || [])[1];
-    if (!v || v === APP_VER) return;
+    if (manual && !v) { toast('確認できませんでした。通信を確かめてください'); return; }
+    if (!v || v === APP_VER) { if (manual) toast(`最新のバージョンです（${HIBI_VERSION}）`); return; }
+    if (manual) { toast('新しいバージョンがあります', '更新', () => location.reload()); return; }
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) reg.update().catch(() => {});
     const busy = stack.length || CAM || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
     if (!busy) { location.reload(); return; }
     toast('新しいバージョンがあります', '更新', () => location.reload());
-  } catch (e) {}
+  } catch (e) { if (manual) toast('確認できませんでした。通信を確かめてください'); }
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 setInterval(() => { if (document.visibilityState === 'visible') checkVersion(); }, 30 * 60000);
