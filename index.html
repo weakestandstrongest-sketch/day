@@ -221,7 +221,8 @@ svg{display:block}
 .j-head{display:flex;align-items:center;justify-content:space-between;height:76px}
 .ttl{display:flex;align-items:baseline;gap:12px}
 .ttl h1{margin:0;font-size:26px;font-weight:700;white-space:nowrap}
-@media (max-width:389px){.j-head .ttl{gap:8px}.j-head .ttl .script{font-size:25px}}
+@media (max-width:440px){.j-head .head-icons .icon-btn{width:32px}.j-head .ttl{gap:8px}.j-head .ttl .script{font-size:26px}}
+@media (max-width:389px){.j-head .head-icons .icon-btn{width:31px}.j-head .ttl{gap:6px}.j-head .ttl .script{font-size:23px}}
 @media (max-width:339px){.j-head .ttl .script{display:none}}
 .brand{font-size:32px;font-weight:700;letter-spacing:.01em;line-height:1}
 .brand small{display:block;font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--ink-2);margin-top:4px}
@@ -1746,6 +1747,237 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .nt-icons button{aspect-ratio:1;border-radius:14px;background:var(--surface);font-size:28px;display:grid;place-items:center}
 .nt-icons button:first-child{font-size:13px;color:var(--ink-2)}
 .nt-icons button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+/* ---- 灯 (habits) ---- */
+.hb-ico{width:23px;height:23px;display:block;border-radius:6px;box-shadow:0 2px 6px rgba(238,106,58,.35)}
+.hb-btn{position:relative}
+.hb-btn.run::after{content:"";position:absolute;top:7px;right:4px;width:8px;height:8px;border-radius:50%;background:#EE6A3A;box-shadow:0 0 0 2px var(--bg);animation:hbPulse 1.6s ease-in-out infinite}
+@keyframes hbPulse{50%{opacity:.35}}
+.sheet.hb{position:relative;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.sheet.hb .sh-bar,.sheet.hbd .sh-bar.hb-bar{padding-left:16px;padding-right:16px}
+.hb-bar{grid-template-columns:auto 1fr auto}
+.sheet.hbd .hb-bar{padding-left:0;padding-right:0}
+.hb-round{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.hb-round .ico{width:22px;height:22px}
+.hb-round.add{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.hb-round.add .ico{stroke-width:2.4}
+.hb-ttl{justify-self:center;font-size:17px;font-weight:700;color:var(--ink);padding:6px 10px}
+.hb-tools{justify-self:end;display:flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.hb-tools button{width:42px;height:38px;display:grid;place-items:center;color:var(--ink);border-radius:999px}
+.hb-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px}
+.hb-pad{height:150px}
+.hb-foot{position:absolute;left:0;right:0;bottom:0;padding:0 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;pointer-events:none;
+  background:linear-gradient(to top,var(--bg) 35%,transparent)}
+.hb-foot>*{pointer-events:auto}
+.hb-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:5px;border-radius:999px;background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+.hb-tabs button{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10.5px;font-weight:600;color:var(--ink-2);padding:6px 0 5px;border-radius:999px}
+.hb-tabs button[aria-current="page"]{color:var(--accent);background:var(--glass-sel)}
+.hb-tabs .ico{width:22px;height:22px}
+.hb-mini{display:flex;align-items:center;gap:12px;padding:9px 10px 9px 14px;border-radius:22px;background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);cursor:pointer}
+.hb-mini .hb-tx{flex:1}
+.hb-mini-t{font-size:26px;font-weight:600;letter-spacing:.01em}
+.hb-week{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:2px -6px 12px;touch-action:pan-y}
+.hb-wd{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 9px;border-radius:999px;color:var(--ink-2)}
+.hb-wd .w{font-size:12px}
+.hb-wd .n{position:relative;width:40px;height:40px;display:grid;place-items:center}
+.hb-wd .n b{position:relative;font-size:15px;font-weight:600;color:var(--ink)}
+.hb-wd .n .hb-ring{position:absolute;inset:0;width:100%;height:100%}
+.hb-wd .hb-ring .tr{stroke:color-mix(in srgb,var(--ink-3) 35%,transparent)}
+.hb-wd .hb-ring .pg{stroke:var(--accent)}
+.hb-wd .hb-ring.full .tr{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
+.hb-wd.today .w,.hb-wd.today .n b{color:var(--accent)}
+.hb-wd.sel{background:var(--accent);color:var(--accent-ink)}
+.hb-wd.sel .w,.hb-wd.sel .n b{color:var(--accent-ink)}
+.hb-wd.sel .hb-ring .tr{stroke:rgba(255,255,255,.35)}
+.hb-wd.sel .hb-ring .pg{stroke:var(--accent-ink)}
+.hb-wd:disabled{opacity:.35}
+.hb-ring{display:block;overflow:visible}
+.hb-ring circle{fill:none}
+.hb-ring .pg{stroke-linecap:round;transition:stroke-dashoffset .5s cubic-bezier(.2,.9,.25,1)}
+.hb-sum{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-2);margin:4px 4px 8px;font-weight:600}
+.hb-sum b{color:var(--ink);font-size:14px}
+.hb-sum.off{margin-top:18px}
+.hb-list{display:flex;flex-direction:column;gap:10px}
+.hb-list.off{opacity:.62}
+.hb-card{position:relative;display:flex;align-items:center;gap:14px;min-height:78px;padding:12px 12px 12px 18px;border-radius:22px;cursor:pointer;overflow:hidden;isolation:isolate;
+  background:color-mix(in srgb,var(--c) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 38%,transparent);transition:background .3s,transform .15s}
+.hb-card:active{transform:scale(.985)}
+.hb-card.prog::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 34%,transparent) var(--p),transparent var(--p));transition:background .5s}
+.hb-card.done{background:var(--c);border-color:transparent;color:#fff}
+.hb-card.done .hb-tx small{color:rgba(255,255,255,.85)}
+.hb-card.skip{opacity:.6}
+.hb-em{flex:none;width:38px;font-size:30px;line-height:1;text-align:center}
+.hb-em.sm{width:30px;height:30px;font-size:17px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--c) 20%,transparent)}
+.hb-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.hb-tx b{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-tx small{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-st{position:absolute;top:6px;left:12px;display:flex;align-items:center;gap:1px;font-size:11.5px;font-weight:700;color:var(--c)}
+.hb-card .hb-st{top:5px;left:10px}
+.hb-card.done .hb-st{color:#fff}
+.hb-card:has(.hb-st) .hb-tx{padding-top:8px}
+.hb-flame{width:14px;height:14px;fill:currentColor}
+.hb-act{flex:none;position:relative;width:54px;height:54px;display:grid;place-items:center;border-radius:50%}
+.hb-act .hb-ring{position:absolute;inset:0;width:100%;height:100%}
+.hb-act .hb-ring .tr{stroke:color-mix(in srgb,var(--c) 30%,transparent)}
+.hb-act .hb-ring .pg{stroke:var(--c)}
+.hb-act i{position:relative;display:grid;place-items:center;color:var(--ink)}
+.hb-act .ico{width:24px;height:24px;stroke-width:2.4}
+.hb-play .ico{fill:currentColor;width:22px;height:22px;stroke-width:1.5;margin-left:3px}
+.hb-stop{width:18px;height:18px;border-radius:4px;background:var(--ink)}
+.hb-card .hb-stop{background:var(--c)}
+.hb-ok{width:48px;height:48px;border-radius:50%;background:#fff}
+.hb-card.done .hb-ok .ico{color:var(--c);stroke-width:2.8;width:28px;height:28px}
+.hb-act.sm{width:40px;height:40px}
+.hb-act.sm .hb-stop{width:14px;height:14px;background:var(--c)}
+.hb-empty{text-align:center;padding:26px 6px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.hb-empty b{font-size:17px}
+.hb-empty p{margin:0 0 8px;font-size:13.5px;color:var(--ink-2)}
+.hb-big{width:68px;height:68px;margin-bottom:6px}.hb-big .hb-ico{width:100%;height:100%;border-radius:16px;animation:ngFloat 2.4s ease-in-out infinite}
+.hb-tpls,.hbe-tpls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
+.hbe-tpls{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 14px;padding:2px 16px 4px;scrollbar-width:none}
+.hbe-tpls::-webkit-scrollbar{display:none}
+.hb-tpl{display:inline-flex;align-items:center;gap:6px;padding:9px 14px 9px 10px;border-radius:999px;font-size:14px;font-weight:600;background:color-mix(in srgb,var(--c) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 35%,transparent);white-space:nowrap}
+.hb-tpl span{font-size:18px}
+.hb-tpl small{font-size:11.5px;color:var(--ink-2);font-weight:500}
+.hb-tpl.sm{padding:7px 12px 7px 9px;font-size:13px}
+.hb-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 12px}
+.hb-row .seg button{font-size:13px;padding:6px 14px}
+.hb-cnt{font-size:13px;color:var(--ink-2);font-weight:600}
+.hb-hc{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px 14px;margin-bottom:12px;cursor:pointer}
+.hb-hh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hb-hh>b{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-pill{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:3px 8px 3px 6px;flex:none}
+.hb-pill .ico{width:13px;height:13px;stroke-width:3;color:var(--c)}
+.hb-pill.fl{color:#F0A04B}
+.hb-pill.pl{padding:3px 8px}
+.hb-chk{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid color-mix(in srgb,var(--c) 55%,transparent);display:grid;place-items:center;color:transparent}
+.hb-chk .ico{width:17px;height:17px;stroke-width:3}
+.hb-chk.on{background:var(--c);border-color:var(--c);color:#fff}
+.hb-heat{display:block;width:100%;height:auto}
+.hb-heat .t{stroke:var(--ink);stroke-width:1.2}
+.hb-arch{display:flex;flex-direction:column;gap:8px}
+.hb-ar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.hb-ar b{flex:1;font-size:14px}
+.hb-ar .btn{padding:6px 14px;font-size:13px}
+.hb-chips{display:flex;gap:10px;overflow-x:auto;margin:0 -16px 6px;padding:2px 16px 6px;scrollbar-width:none}
+.hb-chips::-webkit-scrollbar{display:none}
+.hb-chip{flex:none;width:92px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;border-radius:18px;background:var(--surface);border:2px solid transparent;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;--c:var(--accent)}
+.hb-chip span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c)}
+.hb-chip span .ico{stroke-width:2.6}
+.hb-chip.on{border-color:var(--c)}
+.hb-sec{font-size:13px;font-weight:700;color:var(--ink-2);margin:16px 4px 8px}
+.hb-card2{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px}
+.hb-big2{display:flex;align-items:center;gap:14px}
+.hb-big2 b{display:block;font-size:30px;line-height:1.1}
+.hb-big2 small{font-size:12.5px;color:var(--ink-2)}
+.hb-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--surface-2);flex:none}
+.hb-ic.g{color:#4CC46B}.hb-ic.f{color:#F0A04B}
+.hb-ic .hb-flame{width:24px;height:24px}
+.hb-bar2{height:10px;border-radius:5px;background:#F0A04B;overflow:hidden;margin:14px 0 8px}
+.hb-bar2 i{display:block;height:100%;background:#4CC46B;border-radius:5px}
+.hb-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink-2)}
+.hb-leg span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--k,#888)}
+.hb-leg .g{--k:#4CC46B}.hb-leg .o{--k:#F0A04B}
+.hb-kv{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.hb-kv b{color:var(--ink);font-size:16px}
+.hb-kv small{margin-left:auto;font-size:12px}
+.hb-hours{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;height:110px;border-bottom:1px solid var(--line)}
+.hb-hours i{display:block;border-radius:3px 3px 0 0;min-height:0}
+.hb-hx{display:grid;grid-template-columns:repeat(4,1fr) 0;font-size:11px;color:var(--ink-3);margin:4px 0 10px}
+.hb-wds{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.hb-wds i{display:flex;align-items:flex-end;height:80px;border-radius:8px;background:var(--surface-2);overflow:hidden}
+.hb-wds i b{display:block;width:100%;background:var(--accent);border-radius:8px 8px 0 0}
+.hb-wds span{display:block;font-size:12px;margin-top:4px}
+.hb-wds small{font-size:11px;color:var(--ink-2)}
+.hb-tbl{display:flex;flex-direction:column;gap:7px}
+.hb-tr{display:grid;grid-template-columns:minmax(0,1fr) repeat(7,24px);gap:6px;align-items:center}
+.hb-tr b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-tr.hd span{font-size:11px;color:var(--ink-2);text-align:center}
+.hb-tr .sun{color:var(--sun)}.hb-tr .sat{color:var(--sat)}
+.hb-tr i{width:24px;height:24px;border-radius:7px;background:color-mix(in srgb,var(--c) 16%,transparent)}
+.hb-tr i.on{background:var(--c)}
+.hb-tr i.part{background:color-mix(in srgb,var(--c) 50%,transparent)}
+.hb-tr i.pre{background:transparent}
+.hb-tr i.rest{background:transparent;border:1px dashed color-mix(in srgb,var(--c) 35%,transparent)}
+.hb-tr i.sk{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 25%,transparent) 0 3px,transparent 3px 6px)}
+/* one habit */
+.hbd{text-align:center;padding-bottom:24px}
+.hbd h2{display:flex;align-items:center;justify-content:center;gap:8px;font-size:24px;margin:2px 0 0}
+.hbd h2 span{font-size:30px}
+.hbd-sub{margin:2px 0 14px;font-size:13px;color:var(--ink-2)}
+.hbd-ring{position:relative;width:min(260px,70vw);aspect-ratio:1;margin:0 auto 18px}
+.hbd-ring .hb-ring{width:100%;height:100%}
+.hbd-ring .tr{stroke:color-mix(in srgb,var(--c) 22%,transparent)}
+.hbd-ring .pg{stroke:var(--c)}
+.hbd-ring.done .tr{fill:color-mix(in srgb,var(--c) 14%,transparent)}
+.hbd-ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hbd-ring .in b{font-size:84px;font-weight:300;line-height:1;letter-spacing:-.02em}
+.hbd-ring .in b.tm{font-size:56px}
+.hbd-ring .in small{font-size:14px;color:var(--ink-2);margin-top:6px}
+.hb-st.big{top:2px;left:auto;right:-6px;font-size:20px;color:#F0A04B;gap:2px}
+.hb-st.big .hb-flame{width:22px;height:22px}
+.hbd-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.hb-b{display:flex;align-items:center;justify-content:center;gap:6px;height:54px;border-radius:999px;font-size:16px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 16%,var(--surface))}
+.hb-b .ico{width:20px;height:20px;stroke-width:2.4}
+.hb-b.wide{grid-column:1/-1}
+.hb-b.pri{background:var(--c);color:#fff}
+.hb-b.pri .ico{fill:currentColor;stroke-width:1.5}
+.hb-b.pri .hb-stop{width:16px;height:16px;background:#fff}
+.hb-b[aria-pressed="true"]{background:var(--c);color:#fff}
+.hbd-cal{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 12px 12px;text-align:left}
+.hbd-mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.hbd-mh b{font-size:15px}
+.hbd-mh button{width:36px;height:36px;display:grid;place-items:center;color:var(--ink-2)}
+.hbd-mh button:disabled{opacity:.3}
+.hbd-dow,.hbd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.hbd-dow{font-size:11px;color:var(--ink-2);margin-bottom:5px}
+.hb-cd{aspect-ratio:1;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--ink-2);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.hb-cd.part{background:color-mix(in srgb,var(--c) calc(25% + var(--f) * 40%),transparent);color:var(--ink)}
+.hb-cd.on{background:var(--c);color:#fff}
+.hb-cd.rest{background:transparent;border:1px dashed color-mix(in srgb,var(--c) 30%,transparent)}
+.hb-cd.sk{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 25%,transparent) 0 4px,transparent 4px 8px)}
+.hb-cd.fut{background:transparent;color:var(--ink-3)}
+.hb-cd.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.hbd-foot{display:flex;gap:18px;justify-content:center;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.hbd-foot span{display:inline-flex;align-items:center;gap:4px}
+.hbd-foot .ico{width:16px;height:16px}
+.hbd-foot b{color:var(--ink);font-size:15px}
+.hbd-kvs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.hbd-kvs div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 4px}
+.hbd-kvs small{display:block;font-size:11.5px;color:var(--ink-2)}
+.hbd-kvs b{font-size:20px}
+.hbd-since{font-size:12px;color:var(--ink-3);margin:14px 0 0}
+/* editor */
+.hb-save{font-weight:700;color:var(--accent)}
+.hbe-top{display:flex;align-items:center;gap:12px;margin:4px 0 10px}
+.hbe-emo{flex:none;width:64px;height:64px;border-radius:20px;background:color-mix(in srgb,var(--c) 24%,var(--surface));border:2px solid var(--c);display:grid;place-items:center}
+.hbe-emo input{width:100%;height:100%;border:0;background:transparent;text-align:center;font-size:32px;padding:0;outline:none;caret-color:transparent}
+.hbe-name{flex:1;font-size:18px;font-weight:700}
+.hbe-emos{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.hbe-emos button{width:40px;height:40px;border-radius:12px;font-size:21px}
+.hbe-emos button[aria-pressed="true"]{background:var(--surface);box-shadow:inset 0 0 0 2px var(--accent)}
+.hbe-lb{font-size:13px;font-weight:700;color:var(--ink-2);margin:16px 2px 8px}
+.hbe-cols{display:flex;flex-wrap:wrap;gap:10px}
+.hbe-cols button{width:34px;height:34px;border-radius:50%;background:var(--c)}
+.hbe-cols button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--c)}
+.hbe-kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hbe-kinds button{display:flex;flex-direction:column;gap:2px;padding:12px 8px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);text-align:center}
+.hbe-kinds b{font-size:14.5px}
+.hbe-kinds small{font-size:11px;color:var(--ink-2)}
+.hbe-kinds button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.hbe-goal{display:flex;align-items:center;gap:8px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
+.hbe-goal>span:first-child{flex:1;font-size:14px;font-weight:600}
+.hbe-goal button{width:38px;height:38px;border-radius:50%;background:var(--surface-2);font-size:20px;font-weight:700;color:var(--accent)}
+.hbe-goal .inp{width:70px;text-align:center;padding:8px 4px;font-weight:700}
+.hbe-goal #hbe-unit{width:56px;font-weight:500}
+.hbe-goal>b{min-width:28px;text-align:center;font-size:18px}
+.hbe-goal .u{font-size:14px;color:var(--ink-2)}
+.hbe-freq{display:flex}
+.hbe-freq button{flex:1;font-size:13px;padding:7px 8px}
+.hbe-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.hbe-days button{aspect-ratio:1;border-radius:50%;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:14px}
+.hbe-days .sun{color:var(--sun)}.hbe-days .sat{color:var(--sat)}
+.hbe-days button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.hbe-danger{display:flex;flex-direction:column;gap:10px;margin-top:28px}
 </style>
 </head>
 <body>
@@ -1921,7 +2153,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [] });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], habits: { list: [], log: {}, run: null } });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -1956,6 +2188,7 @@ function normalizeState(d) {
   for (const x of n.school.tasks) x.id = okId(x.id);
   n.money = normMoney(d.money);
   n.notes = normNotes(d.notes);
+  n.habits = normHabits(d.habits);
   return n;
 }
 let loadFailed = false;
@@ -2372,7 +2605,7 @@ function viewJournal() {
   if (!dates.length) list = `<p class="empty">まだ日記がありません。<br>右下の＋から、今日の気持ちを書いてみましょう。</p>`;
   return `
   <div class="j-head"><div class="ttl"><h1>日記</h1><span class="script">diary</span></div>
-    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="nagi" aria-label="凪（ニュース）を開く">${NAGI_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="nagi" aria-label="凪（ニュース）を開く">${NAGI_SVG}</button><button class="icon-btn hb-btn${S.habits.run ? ' run' : ''}" data-act="habits" aria-label="灯（習慣）を開く">${HB_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
   ${quickMood(T)}
@@ -6188,6 +6421,478 @@ const endDrag = () => {
 main.addEventListener('touchend', endDrag);
 main.addEventListener('touchcancel', endDrag);
 
+/* ================= 灯 (habits): a Grit-style habit tracker inside ひび手帳 =================
+   habit: { id, name, emoji, color, kind: 'check' | 'count' | 'time', goal (回 / 秒), unit, freq: { t: 'daily' | 'days' | 'week', days: [0-6], n }, c: 始めた日, arch }
+   log:   { 'YYYY-MM-DD': { [habit id]: { v, t (ms when it reached the goal), skip } } }
+   run:   { id, d, s (start ms), b (value at start) } — a running timer keeps counting while ひび is closed */
+const HB_COLORS = ['#5BC4D1', '#F0A04B', '#E9707A', '#7DBE5A', '#9B7BDB', '#EE6FA4', '#3FB39A', '#6F86E0', '#E8B93C', '#B08B74'];
+const HB_EMOJI = ['☀️', '🧼', '💧', '🧘', '🏃', '📖', '🦷', '💊', '🥗', '🛏️', '🧹', '✍️', '🎹', '💤', '🚶', '🍎', '🧴', '📵', '🙏', '💪', '🎯', '📝', '🌱', '☕', '🐶', '🧠', '🎧', '🇬🇧'];
+const HB_TPL = [
+  { name: 'ベッドから出る', emoji: '☀️', color: '#F0A04B', kind: 'check' },
+  { name: '顔を洗う', emoji: '🧼', color: '#5BC4D1', kind: 'check' },
+  { name: '水を飲む', emoji: '💧', color: '#6F86E0', kind: 'count', goal: 8, unit: '杯' },
+  { name: 'ストレッチ', emoji: '🧘', color: '#3FB39A', kind: 'time', goal: 300 },
+  { name: '読書', emoji: '📖', color: '#9B7BDB', kind: 'time', goal: 1800 },
+  { name: '運動する', emoji: '🏃', color: '#EE6FA4', kind: 'check', freq: { t: 'week', days: [], n: 3 } },
+  { name: 'サプリを飲む', emoji: '💊', color: '#E8B93C', kind: 'check' },
+  { name: '日記を書く', emoji: '✍️', color: '#E9707A', kind: 'check' },
+];
+const HB_SVG = '<svg class="hb-ico" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="hbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC15A"/><stop offset="1" stop-color="#EE6A3A"/></linearGradient></defs><rect width="512" height="512" rx="118" fill="url(#hbg)"/><path fill="#fff" d="M262 92c14 62 92 104 92 192a98 98 0 0 1-196 0c0-44 20-72 44-92 4 32 18 52 36 62-6-60 4-118 24-162z"/></svg>';
+const HB_FLAME = '<svg class="hb-flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.4 2.5c.6 3 4.8 5 4.8 9.6a5.2 5.2 0 0 1-10.4 0c0-2.3 1.1-3.8 2.3-4.8.2 1.7 1 2.7 1.9 3.2-.3-3.1.3-5.9 1.4-8z"/></svg>';
+const isYmd = s => typeof s === 'string' && /^\d{4}-\d\d-\d\d$/.test(s);
+function normHabits(x) {
+  x = asObj(x);
+  const list = asArr(x.list).filter(h => typeof h.name === 'string').map(h => {
+    const kind = ['check', 'count', 'time'].includes(h.kind) ? h.kind : 'check', f = asObj(h.freq);
+    const days = (Array.isArray(f.days) ? f.days : []).map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6);
+    const t = f.t === 'week' ? 'week' : f.t === 'days' && days.length ? 'days' : 'daily';
+    return {
+      id: okId(h.id), name: h.name.slice(0, 60), emoji: typeof h.emoji === 'string' ? h.emoji.slice(0, 16) : '', color: okColor(h.color) ? h.color : HB_COLORS[0], kind,
+      goal: kind === 'check' ? 1 : Math.max(1, Math.min(kind === 'time' ? 86400 : 999, Math.round(+h.goal || (kind === 'time' ? 300 : 1)))),
+      unit: typeof h.unit === 'string' ? h.unit.slice(0, 8) : '', freq: { t, days: [...new Set(days)], n: Math.max(1, Math.min(7, Math.round(+f.n || 3))) },
+      c: isYmd(h.c) ? h.c : todayISO(), arch: !!h.arch,
+    };
+  });
+  const log = {};
+  for (const [d, o] of Object.entries(asObj(x.log))) {
+    if (!isYmd(d)) continue; const r = {};
+    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; }
+    if (Object.keys(r).length) log[d] = r;
+  }
+  const r = asObj(x.run), run = list.some(h => h.id === r.id) && +r.s && isYmd(r.d) ? { id: r.id, d: r.d, s: +r.s, b: +r.b || 0 } : null;
+  return { list, log, run };
+}
+
+/* ---- data helpers ---- */
+const hbById = id => S.habits.list.find(h => h.id === id);
+const hbAct = () => S.habits.list.filter(h => !h.arch);
+const hbE = (d, id) => (S.habits.log[d] || {})[id];
+function hbVal(h, d) {
+  let v = (hbE(d, h.id) || {}).v || 0; const r = S.habits.run;
+  if (r && r.id === h.id && r.d === d) { v = r.b + Math.min(86400, (Date.now() - r.s) / 1000); if (r.b < h.goal) v = Math.min(v, h.goal); }
+  return v;
+}
+const hbDone = (h, d) => hbVal(h, d) >= h.goal;
+const hbSkip = (h, d) => !!(hbE(d, h.id) || {}).skip;
+// is this a day the habit is meant for (週◯回 habits can be done on any day)
+const hbSched = (h, d) => d >= h.c && (h.freq.t !== 'days' || h.freq.days.includes(wd(d)));
+const hbWeekCnt = (h, ws) => { let n = 0; for (let i = 0; i < 7; i++) if (hbDone(h, addDays(ws, i))) n++; return n; };
+function hbStreak(h, upto = todayISO()) {
+  let n = 0;
+  if (h.freq.t === 'week') {
+    let ws = weekStart(upto);
+    if (hbWeekCnt(h, ws) >= h.freq.n) n++;
+    for (ws = addDays(ws, -7); addDays(ws, 6) >= h.c && hbWeekCnt(h, ws) >= h.freq.n; ws = addDays(ws, -7)) n++;
+    return n;
+  }
+  let d = hbDone(h, upto) ? upto : addDays(upto, -1); // today is still open
+  for (let i = 0; i < 4000 && d >= h.c; i++, d = addDays(d, -1)) {
+    if (!hbSched(h, d) || hbSkip(h, d)) continue;
+    if (hbDone(h, d)) n++; else break;
+  }
+  return n;
+}
+function hbBest(h) {
+  const T = todayISO(); let best = 0, cur = 0;
+  if (h.freq.t === 'week') {
+    for (let ws = weekStart(h.c); ws <= T; ws = addDays(ws, 7)) { if (hbWeekCnt(h, ws) >= h.freq.n) best = Math.max(best, ++cur); else if (addDays(ws, 6) < T) cur = 0; }
+    return best;
+  }
+  for (let d = h.c, i = 0; d <= T && i < 4000; d = addDays(d, 1), i++) {
+    if (!hbSched(h, d) || hbSkip(h, d)) continue;
+    if (hbDone(h, d)) best = Math.max(best, ++cur); else if (d < T) cur = 0;
+  }
+  return best;
+}
+const hbTotal = h => Object.values(S.habits.log).reduce((n, o) => n + (o[h.id] && o[h.id].v >= h.goal ? 1 : 0), 0);
+// share of the day's habits that are done (for the rings on the week strip)
+function hbDayFrac(d) {
+  let tot = 0, done = 0;
+  for (const h of hbAct()) {
+    if (d < h.c) continue; const ok = hbDone(h, d);
+    if (h.freq.t === 'week') { if (ok) { tot++; done++; } continue; }
+    if (!hbSched(h, d) || hbSkip(h, d)) continue; tot++; if (ok) done++;
+  }
+  return tot ? done / tot : -1;
+}
+const hbFmt = s => { s = Math.round(s); if (s < 60) return `${s}秒`; const m = Math.floor(s / 60), r = s % 60; if (m < 60) return r ? `${m}分${r}秒` : `${m}分`; return `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}`; };
+const hbClock = s => { s = Math.max(0, Math.floor(s)); const m = Math.floor(s / 60); return m >= 60 ? `${Math.floor(m / 60)}:${pad(m % 60)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`; };
+function hbFreqTx(h) {
+  const f = h.freq;
+  if (f.t === 'week') return `週${f.n}回`;
+  if (f.t !== 'days') return '毎日';
+  const k = [...f.days].sort().join('');
+  return k === '12345' ? '平日' : k === '06' ? '週末' : weekOrder().filter(w => f.days.includes(w)).map(w => WD[w]).join('・');
+}
+const hbGoalTx = h => h.kind === 'time' ? hbFmt(h.goal) : h.kind === 'count' ? `${h.goal}${h.unit || '回'}` : '';
+function hbSub(h, d) {
+  const v = hbVal(h, d); let s = hbFreqTx(h);
+  if (h.kind === 'count') s += `、${Math.floor(v)}/${h.goal}${h.unit || '回'}`;
+  if (h.kind === 'time') s += `、${hbFmt(Math.floor(v))}/${hbFmt(h.goal)}`;
+  if (h.freq.t === 'week') s += ` · 今週 ${hbWeekCnt(h, weekStart(d))}/${h.freq.n}`;
+  if (hbSkip(h, d)) s += ' · スキップ';
+  return s;
+}
+const hbClamp = f => Math.max(0, Math.min(1, f || 0));
+function hbRing(f, r, sw, cls = '', id = '') {
+  const C = 2 * Math.PI * r, z = r + sw / 2;
+  return `<svg class="hb-ring ${cls}" viewBox="0 0 ${z * 2} ${z * 2}" aria-hidden="true"><circle class="tr" cx="${z}" cy="${z}" r="${r}" stroke-width="${sw}"/><circle class="pg"${id ? ` id="${id}"` : ''} data-c="${C.toFixed(1)}" cx="${z}" cy="${z}" r="${r}" stroke-width="${sw}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - hbClamp(f))).toFixed(1)}" transform="rotate(-90 ${z} ${z})"/></svg>`;
+}
+
+/* ---- logging ---- */
+function hbSet(id, d, v) {
+  const h = hbById(id); if (!h) return false;
+  const L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || { v: 0, t: 0 }, was = e.v >= h.goal;
+  e.v = Math.max(0, h.kind === 'time' ? Math.round(v) : Math.floor(v)); delete e.skip;
+  if (e.v >= h.goal && !was) e.t = Date.now(); if (e.v < h.goal) e.t = 0;
+  if (e.v) day[id] = e; else delete day[id];
+  if (!Object.keys(day).length) delete L[d];
+  save(); return !was && e.v >= h.goal;
+}
+function hbCheer(h, d) {
+  const n = hbStreak(h, d > todayISO() ? todayISO() : d), u = h.freq.t === 'week' ? '週' : '日';
+  toast(`${h.emoji || '✓'} ${h.name} 達成！${n > 1 ? `　🔥 ${n}${u}連続` : ''}`);
+}
+function hbStart(id, d) {
+  if (S.habits.run) hbStop();
+  const h = hbById(id); if (!h) return;
+  S.habits.run = { id, d, s: Date.now(), b: hbVal(h, d) }; save(); hbTicker();
+}
+function hbStop(quiet) {
+  const r = S.habits.run; if (!r) return; const h = hbById(r.id);
+  const v = h ? hbVal(h, r.d) : 0; S.habits.run = null;
+  if (h) { const got = hbSet(r.id, r.d, v); if (got && !quiet) hbCheer(h, r.d); } else save();
+  hbTicker();
+}
+let hbT = null;
+function hbTicker() { clearInterval(hbT); hbT = S.habits.run ? setInterval(hbTick, 1000) : null; }
+function hbTick() {
+  const r = S.habits.run; if (!r) return hbTicker();
+  const h = hbById(r.id); if (!h) { S.habits.run = null; save(); return hbTicker(); }
+  const v = hbVal(h, r.d);
+  // the goal reached (or the day is over): stop by itself
+  if ((r.b < h.goal && v >= h.goal) || r.d !== todayISO()) { hbStop(); hbRe(); render(); return; }
+  if (document.hidden) return;
+  const sub = document.getElementById('hbs-' + h.id); if (sub) sub.textContent = hbSub(h, r.d);
+  for (const el of document.querySelectorAll(`[data-hbp="${h.id}"]`)) { const C = +el.dataset.c; el.style.strokeDashoffset = (C * (1 - hbClamp(v / h.goal))).toFixed(1); }
+  for (const el of document.querySelectorAll(`[data-hbw="${h.id}"]`)) el.style.setProperty('--p', (hbClamp(v / h.goal) * 100).toFixed(1) + '%');
+  const left = r.b < h.goal ? h.goal - v : v;
+  for (const el of document.querySelectorAll('.hb-mini-t')) el.textContent = hbClock(left);
+  const dv = $('#hbd-v'); if (dv && dv.dataset.id === h.id) dv.textContent = hbClock(v);
+}
+setTimeout(() => { if (S.habits && S.habits.run) { hbTicker(); hbTick(); } }, 0);
+
+/* ---- the 灯 screen ---- */
+const HBV = { tab: 'today', d: null, heat: 53, sp: 28, sh: '' };
+function hbRe() {
+  for (const ov of stack) {
+    const sh = ov.firstElementChild, k = sh.dataset.kind;
+    if (k === 'hb') { const sc = $('.hb-scroll', sh), y = sc ? sc.scrollTop : 0; sh.innerHTML = hbHTML(); const s2 = $('.hb-scroll', sh); if (s2) s2.scrollTop = y; }
+    else if (k === 'hbd') { const y = sh.scrollTop; sh.innerHTML = hbdHTML(); sh.scrollTop = y; }
+  }
+}
+function openHabits() { HBV.d = todayISO(); HBV.tab = 'today'; const sh = openSheet(hbHTML(), 'full hb'); sh.dataset.kind = 'hb'; }
+function hbHTML() {
+  const T = todayISO(), d = HBV.d || T;
+  const title = HBV.tab === 'today' ? (d === T ? '今日' : `${md(d)}(${WD[wd(d)]})`) : HBV.tab === 'heat' ? '積み重ね' : '統計';
+  const tabs = [['today', '習慣', 'check'], ['heat', '積み重ね', 'grid'], ['stats', '統計', 'wave']];
+  const r = S.habits.run, rh = r && hbById(r.id);
+  return `<div class="sh-bar hb-bar"><button class="hb-round" data-act="close" aria-label="閉じる">${ico('x')}</button>
+      <button class="hb-ttl" data-act="hbToday" ${HBV.tab === 'today' && d !== T ? '' : 'tabindex="-1"'}>${esc(title)}</button>
+      <button class="hb-round add" data-act="hbNew" aria-label="習慣を追加">${ico('plus')}</button></div>
+    <div class="hb-scroll">${HBV.tab === 'today' ? hbTodayHTML(d) : HBV.tab === 'heat' ? hbHeatHTML() : hbStatsHTML()}</div>
+    <div class="hb-foot">
+      ${rh ? `<div class="hb-mini" data-act="hbOpen" data-id="${rh.id}" data-d="${r.d}" style="--c:${rh.color}"><span class="hb-em">${esc(rh.emoji || '⏱')}</span><span class="hb-tx"><b>${esc(rh.name)}</b><small>${r.b < rh.goal ? '残り' : '記録中'}</small></span><b class="hb-mini-t num">${hbClock(r.b < rh.goal ? rh.goal - hbVal(rh, r.d) : hbVal(rh, r.d))}</b><button class="hb-act sm" data-act="hbTap" data-id="${rh.id}" data-d="${r.d}" aria-label="止める">${hbRing(hbVal(rh, r.d) / rh.goal, 15, 4)}<i class="hb-stop"></i></button></div>` : ''}
+      <nav class="hb-tabs">${tabs.map(([k, l, i]) => `<button data-act="hbTab" data-k="${k}" aria-current="${HBV.tab === k ? 'page' : 'false'}">${ico(i)}<span>${l}</span></button>`).join('')}</nav>
+    </div>`;
+}
+function hbWeekHTML(d) {
+  const T = todayISO(), ws = weekStart(d);
+  return `<div class="hb-week" role="group" aria-label="日付">${[0, 1, 2, 3, 4, 5, 6].map(i => {
+    const x = addDays(ws, i), f = x > T ? -1 : hbDayFrac(x);
+    return `<button class="hb-wd${x === d ? ' sel' : ''}${x === T ? ' today' : ''}" data-act="hbDay" data-d="${x}" ${x > T ? 'disabled' : ''}><span class="w">${WD[wd(x)]}</span><span class="n num">${f >= 0 ? hbRing(f, 16, 3.5, f >= 1 ? 'full' : '') : ''}<b>${P(x).getDate()}</b></span></button>`;
+  }).join('')}</div>`;
+}
+function hbCardHTML(h, d) {
+  const v = hbVal(h, d), done = v >= h.goal, f = hbClamp(v / h.goal), run = S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d, sk = hbSkip(h, d);
+  const n = hbStreak(h), u = h.freq.t === 'week' ? '週' : '';
+  const inner = done ? `<i class="hb-ok">${ico('check')}</i>` : h.kind === 'time' ? (run ? '<i class="hb-stop"></i>' : `<i class="hb-play">${ico('play')}</i>`) : `<i class="hb-plus">${ico('plus')}</i>`;
+  const lbl = done ? (h.kind === 'check' ? '取り消す' : '開く') : h.kind === 'time' ? (run ? '止める' : '始める') : h.kind === 'count' ? '1回ふやす' : 'できた';
+  return `<div class="hb-card${done ? ' done' : ''}${sk ? ' skip' : ''}${h.kind === 'time' && !done && v > 0 ? ' prog' : ''}" style="--c:${h.color};--p:${(f * 100).toFixed(1)}%" data-hbw="${h.id}" data-act="hbOpen" data-id="${h.id}" data-d="${d}">
+    ${n > 0 ? `<span class="hb-st">${HB_FLAME}${n}${u}</span>` : ''}
+    <span class="hb-em">${esc(h.emoji || '•')}</span>
+    <span class="hb-tx"><b>${esc(h.name)}</b><small id="hbs-${h.id}">${esc(hbSub(h, d))}</small></span>
+    <button class="hb-act" data-act="hbTap" data-id="${h.id}" data-d="${d}" aria-label="${esc(h.name)}を${lbl}">${done ? '' : hbRing(f, 22, 5).replace('class="pg"', `class="pg" data-hbp="${h.id}"`)}${inner}</button>
+  </div>`;
+}
+function hbTodayHTML(d) {
+  const act = hbAct().filter(h => d >= h.c || hbE(d, h.id));
+  if (!hbAct().length) return hbWeekHTML(d) + `<div class="hb-empty"><span class="hb-big">${HB_SVG}</span><b>小さな習慣を、毎日すこしずつ</b><p>できたらタップ。続いた日数が🔥でふえていきます。<br>まずはひとつ選んでみましょう。</p>
+    <div class="hb-tpls">${HB_TPL.map((t, i) => `<button class="hb-tpl" style="--c:${t.color}" data-act="hbTpl" data-i="${i}"><span>${t.emoji}</span>${esc(t.name)}${t.kind === 'time' ? `<small>${hbFmt(t.goal)}</small>` : t.kind === 'count' ? `<small>${t.goal}${t.unit}</small>` : ''}</button>`).join('')}</div>
+    <button class="btn primary" data-act="hbNew">${ico('plus')}自分でつくる</button></div><div class="hb-pad"></div>`;
+  const on = act.filter(h => hbSched(h, d)), off = act.filter(h => !hbSched(h, d));
+  const done = on.filter(h => hbDone(h, d)).length;
+  let s = hbWeekHTML(d);
+  s += `<div class="hb-sum"><span>${d === todayISO() ? '今日の習慣' : `${md(d)}の習慣`}</span><b class="num">${done}/${on.length}</b></div>`;
+  s += `<div class="hb-list">${on.map(h => hbCardHTML(h, d)).join('') || '<p class="empty">この日の習慣はありません</p>'}</div>`;
+  if (off.length) s += `<div class="hb-sum off"><span>この日はお休み</span></div><div class="hb-list off">${off.map(h => hbCardHTML(h, d)).join('')}</div>`;
+  return s + '<div class="hb-pad"></div>';
+}
+
+/* 積み重ね: a year of each habit as squares (GitHub-style) */
+function hbHeatSVG(h, weeks) {
+  const T = todayISO(), start = addDays(weekStart(T), -(weeks - 1) * 7), cs = 10, g = 2.4;
+  let r = '';
+  for (let w = 0; w < weeks; w++) for (let i = 0; i < 7; i++) {
+    const d = addDays(start, w * 7 + i); if (d > T) continue;
+    const v = (hbE(d, h.id) || {}).v || 0, f = hbClamp(v / h.goal), pre = d < h.c;
+    const op = f >= 1 ? 1 : f > 0 ? .3 + f * .45 : pre ? .06 : .16;
+    r += `<rect x="${(w * (cs + g)).toFixed(1)}" y="${(i * (cs + g)).toFixed(1)}" width="${cs}" height="${cs}" rx="2.4" fill="${h.color}" fill-opacity="${op}"${d === T ? ' class="t"' : ''}/>`;
+  }
+  return `<svg class="hb-heat" viewBox="0 0 ${(weeks * (cs + g) - g).toFixed(1)} ${(7 * (cs + g) - g).toFixed(1)}" aria-hidden="true">${r}</svg>`;
+}
+function hbHeatHTML() {
+  const T = todayISO(), act = hbAct(), arch = S.habits.list.filter(h => h.arch);
+  const segs = [[53, '1年'], [26, '半年'], [13, '3か月']];
+  let s = `<div class="hb-row"><div class="seg">${segs.map(([n, l]) => `<button data-act="hbHeatN" data-n="${n}" aria-pressed="${HBV.heat === n}">${l}</button>`).join('')}</div><span class="hb-cnt num">${act.filter(h => hbDone(h, T)).length}/${act.length}</span></div>`;
+  if (!act.length) s += `<p class="empty">習慣を追加すると、毎日の積み重ねがここに並びます。</p>`;
+  s += act.map(h => {
+    const n = hbStreak(h), tot = hbTotal(h), done = hbDone(h, T);
+    return `<div class="hb-hc" style="--c:${h.color}" data-act="hbOpen" data-id="${h.id}" data-d="${T}">
+      <div class="hb-hh"><span class="hb-em sm">${esc(h.emoji || '•')}</span><b>${esc(h.name)}</b>
+        ${n ? `<span class="hb-pill fl">${HB_FLAME}${n}</span>` : ''}<span class="hb-pill">${ico('check')}${tot}</span>${h.kind !== 'check' ? `<span class="hb-pill pl num">${h.kind === 'time' ? hbFmt(Math.floor(hbVal(h, T))) : Math.floor(hbVal(h, T))}/${hbGoalTx(h)}</span>` : ''}
+        <button class="hb-chk${done ? ' on' : ''}" data-act="hbTap" data-id="${h.id}" data-d="${T}" aria-label="${esc(h.name)}">${ico('check')}</button></div>
+      ${hbHeatSVG(h, HBV.heat)}</div>`;
+  }).join('');
+  if (arch.length) s += `<div class="hb-sum off"><span>アーカイブ</span></div><div class="hb-arch">${arch.map(h => `<div class="hb-ar"><span class="hb-em sm">${esc(h.emoji || '•')}</span><b>${esc(h.name)}</b><button class="btn ghost" data-act="hbUnarch" data-id="${h.id}">戻す</button></div>`).join('')}</div>`;
+  return s + '<div class="hb-pad"></div>';
+}
+
+/* 統計 */
+function hbStatsHTML() {
+  const T = todayISO(), act = hbAct(), all = !HBV.sh || !hbById(HBV.sh), hs = all ? act : [hbById(HBV.sh)];
+  const from = addDays(T, -(HBV.sp - 1));
+  let s = `<div class="hb-row"><div class="seg">${[[7, '7日'], [28, '28日'], [365, '1年']].map(([n, l]) => `<button data-act="hbSp" data-n="${n}" aria-pressed="${HBV.sp === n}">${l}</button>`).join('')}</div></div>
+    <div class="hb-chips"><button class="hb-chip${all ? ' on' : ''}" data-act="hbSh" data-id=""><span>${ico('check')}</span>すべて</button>${act.map(h => `<button class="hb-chip${HBV.sh === h.id ? ' on' : ''}" style="--c:${h.color}" data-act="hbSh" data-id="${h.id}"><span>${esc(h.emoji || '•')}</span>${esc(h.name)}</button>`).join('')}</div>`;
+  if (!act.length) return s + '<p class="empty">習慣を追加すると、ここに記録がまとまります。</p>';
+  // completion rate in the period
+  let tot = 0, done = 0; const hours = Array(24).fill(0), wdT = Array(7).fill(0), wdD = Array(7).fill(0);
+  for (const h of hs) {
+    if (h.freq.t === 'week') {
+      for (let ws = weekStart(from); ws <= T; ws = addDays(ws, 7)) {
+        let c = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c && hbDone(h, d)) c++; }
+        if (addDays(ws, 6) < h.c) continue;
+        const need = addDays(ws, 6) < T ? h.freq.n : Math.min(h.freq.n, c); tot += need; done += Math.min(c, h.freq.n);
+      }
+    }
+    for (let d = from > h.c ? from : h.c, i = 0; d <= T && i < 400; d = addDays(d, 1), i++) {
+      const e = hbE(d, h.id), ok = hbDone(h, d);
+      if (ok && e && e.t) hours[new Date(e.t).getHours()]++;
+      if (h.freq.t === 'week' || !hbSched(h, d) || hbSkip(h, d) || (d === T && !ok)) continue;
+      tot++; wdT[wd(d)]++; if (ok) { done++; wdD[wd(d)]++; }
+    }
+  }
+  const pct = tot ? Math.round(done / tot * 100) : 0;
+  s += `<div class="hb-sec">完了率</div><div class="hb-card2"><div class="hb-big2"><span class="hb-ic g">${ico('wave')}</span><div><b class="num">${pct}%</b><small>${tot}回中${done}回</small></div></div>
+    <div class="hb-bar2"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div><div class="hb-leg"><span class="g">完了 ${done}回</span><span class="o">未完了 ${tot - done}回</span></div></div>`;
+  // streaks
+  let cur = 0, best = 0, who = '';
+  if (all) { // days in a row with every habit of the day done
+    let d = T, i = 0; const okDay = x => { const f = hbDayFrac(x); return f >= 1 ? 1 : f < 0 ? 0 : -1; };
+    if (okDay(d) < 1) d = addDays(d, -1);
+    for (; i < 3660; d = addDays(d, -1), i++) { const k = okDay(d); if (k === 1) cur++; else if (k === 0 && act.some(h => h.c <= d)) continue; else break; }
+    for (const h of act) { const b = hbBest(h); if (b > best) { best = b; who = h.name; } }
+  } else { cur = hbStreak(hs[0]); best = hbBest(hs[0]); }
+  const u = !all && hs[0].freq.t === 'week' ? '週' : '日';
+  s += `<div class="hb-sec">連続記録</div><div class="hb-card2"><div class="hb-big2"><span class="hb-ic f">${HB_FLAME}</span><div><b class="num">${cur}${u}</b><small>${all ? 'すべての習慣ができた日の連続' : cur ? 'この調子で続けましょう' : '今日から始めましょう'}</small></div></div>
+    <div class="hb-kv"><span>最長</span><b class="num">${best}${u}</b>${all && who ? `<small>${esc(who)}</small>` : ''}</div>${!all ? `<div class="hb-kv"><span>合計</span><b class="num">${hbTotal(hs[0])}回</b></div>` : ''}</div>`;
+  // time of day
+  const B = [['朝', 5, 11, '#F0A04B'], ['午後', 11, 17, '#5AA8D8'], ['夕方', 17, 21, '#C056E0'], ['夜', 21, 29, '#6F7BE0']];
+  const band = h => B.find(b => (h >= b[1] && h < b[2]) || (h + 24 >= b[1] && h + 24 < b[2]));
+  const mx = Math.max(1, ...hours);
+  s += `<div class="hb-sec">習慣を完了する時間帯</div><div class="hb-card2"><div class="hb-hours">${hours.map((n, i) => `<i style="height:${n ? Math.max(6, n / mx * 100) : 0}%;background:${band(i)[3]}" title="${i}時 ${n}回"></i>`).join('')}</div>
+    <div class="hb-hx num"><span>0時</span><span>6時</span><span>12時</span><span>18時</span><span></span></div>
+    <div class="hb-leg">${B.map(b => `<span style="--k:${b[3]}">${b[0]} ${hours.reduce((n, x, i) => n + (band(i) === b ? x : 0), 0)}</span>`).join('')}</div></div>`;
+  // by weekday
+  if (wdT.some(Boolean)) s += `<div class="hb-sec">曜日ごとの完了率</div><div class="hb-card2"><div class="hb-wds">${weekOrder().map(w => { const p = wdT[w] ? wdD[w] / wdT[w] : 0; return `<div><i><b style="height:${p * 100}%"></b></i><span>${WD[w]}</span><small class="num">${wdT[w] ? Math.round(p * 100) + '%' : '-'}</small></div>`; }).join('')}</div></div>`;
+  // the last 7 days, habit by habit
+  if (all) {
+    const days = [...Array(7)].map((_, i) => addDays(T, i - 6));
+    s += `<div class="hb-sec">この7日間</div><div class="hb-card2 hb-tbl"><div class="hb-tr hd"><span></span>${days.map(d => `<span class="${wd(d) === 0 ? 'sun' : wd(d) === 6 ? 'sat' : ''}">${WD[wd(d)]}</span>`).join('')}</div>
+      ${act.map(h => `<div class="hb-tr" style="--c:${h.color}"><b>${esc(h.emoji || '')} ${esc(h.name)}</b>${days.map(d => { const f = d < h.c ? -1 : hbClamp(hbVal(h, d) / h.goal); return `<i class="${f >= 1 ? 'on' : f > 0 ? 'part' : f < 0 ? 'pre' : hbSkip(h, d) ? 'sk' : h.freq.t === 'days' && !hbSched(h, d) ? 'rest' : ''}"></i>`; }).join('')}</div>`).join('')}</div>`;
+  }
+  return s + '<div class="hb-pad"></div>';
+}
+
+/* ---- one habit: big ring, buttons, a month of days ---- */
+const HBD = { id: null, d: null, m: null };
+function openHabit(id, d) { HBD.id = id; HBD.d = d || todayISO(); HBD.m = HBD.d.slice(0, 7); const sh = openSheet(hbdHTML(), 'full hbd'); sh.dataset.kind = 'hbd'; }
+function hbdHTML() {
+  const h = hbById(HBD.id); if (!h) return '<div class="sh-bar"><span></span><b></b><button class="r" data-act="close">閉じる</button></div>';
+  const d = HBD.d, v = hbVal(h, d), done = v >= h.goal, n = hbStreak(h), T = todayISO();
+  const run = S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d;
+  const big = h.kind === 'time' ? `<b id="hbd-v" data-id="${h.id}" class="num tm">${hbClock(v)}</b><small>/ ${hbFmt(h.goal)}</small>` : h.kind === 'count' ? `<b class="num">${Math.floor(v)}</b><small>/ ${h.goal}${esc(h.unit || '回')}</small>` : `<b class="num">${done ? '✓' : '0'}</b><small>${done ? 'できた' : 'まだ'}</small>`;
+  const step = h.kind === 'time' ? 60 : 1, sl = h.kind === 'time' ? '1分' : '1';
+  const btns = `${h.kind === 'time' ? `<button class="hb-b wide pri" data-act="hbTap" data-id="${h.id}" data-d="${d}">${run ? '<i class="hb-stop"></i>止める' : `${ico('play')}${done ? 'もう少し続ける' : v > 0 ? '続きから' : 'はじめる'}`}</button>` : ''}
+    <button class="hb-b" data-act="hbAdd" data-n="${-step}" aria-label="${sl}へらす">− ${sl}</button><button class="hb-b" data-act="hbAdd" data-n="${h.kind === 'check' ? (done ? -1 : 1) : step}" aria-label="${sl}ふやす">${h.kind === 'check' ? (done ? '取り消す' : `${ico('check')}できた`) : `+ ${sl}`}</button>
+    <button class="hb-b" data-act="hbSkipT" aria-pressed="${hbSkip(h, d)}" aria-label="スキップ（連続記録は途切れません）"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zM13 6l7 6-7 6z" fill="currentColor"/></svg>${hbSkip(h, d) ? 'スキップ中' : 'スキップ'}</button>
+    <button class="hb-b" data-act="hbReset" aria-label="この日の記録を消す"><svg class="ico" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>リセット</button>`;
+  // month calendar
+  const m = HBD.m, F = P(m + '-01'), dim = new Date(F.getFullYear(), F.getMonth() + 1, 0).getDate(), lead = (F.getDay() - weekOrder()[0] + 7) % 7;
+  let cells = '', sch = 0, ok = 0, cnt = 0;
+  for (let i = 0; i < lead; i++) cells += '<span></span>';
+  for (let k = 1; k <= dim; k++) {
+    const x = `${m}-${pad(k)}`, f = hbClamp(((hbE(x, h.id) || {}).v || 0) / h.goal), fut = x > T, sc = hbSched(h, x) && !fut;
+    if (sc && !hbSkip(h, x) && h.freq.t !== 'week' && (x < T || f >= 1)) { sch++; if (f >= 1) ok++; }
+    if (f >= 1) cnt++;
+    cells += `<button class="hb-cd${f >= 1 ? ' on' : f > 0 ? ' part' : ''}${hbSkip(h, x) ? ' sk' : ''}${x === d ? ' sel' : ''}${fut || x < h.c ? ' fut' : ''}${!sc && !fut && x >= h.c ? ' rest' : ''}" data-act="hbdDay" data-d="${x}" ${fut ? 'disabled' : ''} style="--f:${f}">${k}</button>`;
+  }
+  const rate = h.freq.t === 'week' ? null : sch ? Math.round(ok / sch * 100) : 0;
+  return `<div class="sh-bar hb-bar"><button class="hb-round" data-act="close" aria-label="閉じる">${ico('x')}</button><span></span>
+      <span class="hb-tools"><button data-act="hbEdit" aria-label="編集">${ico('pen')}</button><button data-act="hbMore" aria-label="その他">${ico('more')}</button></span></div>
+    <div class="hbd" style="--c:${h.color}">
+      <h2><span>${esc(h.emoji || '')}</span>${esc(h.name)}</h2>
+      <p class="hbd-sub">${esc(hbFreqTx(h))}${d !== T ? ` · ${md(d)}(${WD[wd(d)]})の記録` : ''}</p>
+      <div class="hbd-ring${done ? ' done' : ''}">${hbRing(v / h.goal, 104, 22, '', '').replace('class="pg"', `class="pg" data-hbp="${h.id}"`)}<div class="in">${big}</div>${n ? `<span class="hb-st big">${HB_FLAME}${n}${h.freq.t === 'week' ? '週' : ''}</span>` : ''}</div>
+      <div class="hbd-btns">${btns}</div>
+      <div class="hbd-cal"><div class="hbd-mh"><button data-act="hbdMon" data-n="-1" aria-label="前の月">${ico('left')}</button><b>${F.getFullYear()}年${F.getMonth() + 1}月</b><button data-act="hbdMon" data-n="1" aria-label="次の月" ${m >= T.slice(0, 7) ? 'disabled' : ''}>${ico('right')}</button></div>
+        <div class="hbd-dow">${weekOrder().map(w => `<span>${WD[w]}</span>`).join('')}</div><div class="hbd-grid">${cells}</div>
+        <div class="hbd-foot">${rate !== null ? `<span>${ico('clock')}達成率 <b class="num">${rate}%</b></span>` : ''}<span>${ico('check')}<b class="num">${cnt}</b>日</span></div></div>
+      <div class="hbd-kvs"><div><small>連続</small><b class="num">${n}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>最長</small><b class="num">${hbBest(h)}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>合計</small><b class="num">${hbTotal(h)}回</b></div></div>
+      <p class="hbd-since">${md(h.c)}から${hbGoalTx(h) ? ` · 目標 ${esc(hbGoalTx(h))}` : ''}</p>
+    </div>`;
+}
+
+/* ---- editor ---- */
+let HBX = null;
+function openHabitEdit(id, tpl) {
+  const h = id && hbById(id), t = tpl || {};
+  HBX = h ? { id: h.id, name: h.name, emoji: h.emoji, color: h.color, kind: h.kind, cnt: h.kind === 'count' ? h.goal : 3, min: h.kind === 'time' ? Math.max(1, Math.round(h.goal / 60)) : 5, unit: h.unit, ft: h.freq.t, days: [...h.freq.days], n: h.freq.n }
+    : { id: null, name: t.name || '', emoji: t.emoji || HB_EMOJI[hbAct().length % HB_EMOJI.length], color: t.color || HB_COLORS[hbAct().length % HB_COLORS.length], kind: t.kind || 'check', cnt: t.kind === 'count' ? t.goal : 3, min: t.kind === 'time' ? Math.round(t.goal / 60) : 5, unit: t.unit || '', ft: (t.freq && t.freq.t) || 'daily', days: [1, 2, 3, 4, 5], n: (t.freq && t.freq.n) || 3 };
+  const sh = openSheet(hbeHTML(), 'full hbe'); sh.dataset.kind = 'hbe';
+  if (!h && !tpl) setTimeout(() => { const i = $('#hbe-name'); i && i.focus({ preventScroll: true }); }, 450);
+}
+function hbeSync() {
+  if (!HBX) return; const g = id => document.getElementById(id);
+  if (g('hbe-name')) HBX.name = g('hbe-name').value;
+  if (g('hbe-emoji')) HBX.emoji = [...g('hbe-emoji').value.trim()].slice(0, 4).join('');
+  if (g('hbe-cnt')) HBX.cnt = Math.max(1, Math.min(999, Math.round(+g('hbe-cnt').value || 1)));
+  if (g('hbe-min')) HBX.min = Math.max(1, Math.min(600, Math.round(+g('hbe-min').value || 1)));
+  if (g('hbe-unit')) HBX.unit = g('hbe-unit').value.trim().slice(0, 8);
+}
+const hbeRe = () => { hbeSync(); rerenderKind('hbe', hbeHTML); };
+function hbeHTML() {
+  const X = HBX, kinds = [['check', 'チェック', '1回できたらOK'], ['count', '回数', '水を8杯など'], ['time', '時間', 'タイマーで計る']];
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${X.id ? '習慣を編集' : '新しい習慣'}</b><button class="r hb-save" data-act="hbeSave">${X.id ? '保存' : '追加'}</button></div>
+    ${X.id ? '' : `<div class="hbe-tpls">${HB_TPL.map((t, i) => `<button class="hb-tpl sm" style="--c:${t.color}" data-act="hbeTpl" data-i="${i}"><span>${t.emoji}</span>${esc(t.name)}</button>`).join('')}</div>`}
+    <div class="hbe-top" style="--c:${X.color}"><label class="hbe-emo"><input id="hbe-emoji" value="${esc(X.emoji)}" aria-label="絵文字" autocomplete="off" maxlength="16"></label>
+      <input class="inp hbe-name" id="hbe-name" value="${esc(X.name)}" placeholder="例：ストレッチ" maxlength="60" aria-label="習慣の名前" enterkeyhint="done"></div>
+    <div class="hbe-emos">${HB_EMOJI.map(e => `<button data-act="hbeEmo" data-e="${e}" aria-pressed="${X.emoji === e}">${e}</button>`).join('')}</div>
+    <div class="hbe-lb">色</div><div class="hbe-cols">${HB_COLORS.map(c => `<button style="--c:${c}" data-act="hbeColor" data-c="${c}" aria-pressed="${X.color === c}" aria-label="色"></button>`).join('')}</div>
+    <div class="hbe-lb">記録のしかた</div><div class="hbe-kinds">${kinds.map(([k, l, s]) => `<button data-act="hbeKind" data-k="${k}" aria-pressed="${X.kind === k}"><b>${l}</b><small>${s}</small></button>`).join('')}</div>
+    ${X.kind === 'count' ? `<div class="hbe-goal"><span>1日の目標</span><button data-act="hbeStep" data-f="cnt" data-n="-1" aria-label="へらす">−</button><input class="inp num" id="hbe-cnt" type="number" inputmode="numeric" min="1" max="999" value="${X.cnt}"><input class="inp" id="hbe-unit" value="${esc(X.unit)}" placeholder="回" maxlength="8" aria-label="単位"><button data-act="hbeStep" data-f="cnt" data-n="1" aria-label="ふやす">＋</button></div>` : ''}
+    ${X.kind === 'time' ? `<div class="hbe-goal"><span>1日の目標</span><button data-act="hbeStep" data-f="min" data-n="-1" aria-label="へらす">−</button><input class="inp num" id="hbe-min" type="number" inputmode="numeric" min="1" max="600" value="${X.min}"><span class="u">分</span><button data-act="hbeStep" data-f="min" data-n="1" aria-label="ふやす">＋</button></div>` : ''}
+    <div class="hbe-lb">頻度</div><div class="seg hbe-freq">${[['daily', '毎日'], ['days', '曜日を選ぶ'], ['week', '週に何回']].map(([k, l]) => `<button data-act="hbeFreq" data-k="${k}" aria-pressed="${X.ft === k}">${l}</button>`).join('')}</div>
+    ${X.ft === 'days' ? `<div class="hbe-days">${weekOrder().map(w => `<button data-act="hbeDay" data-w="${w}" aria-pressed="${X.days.includes(w)}" class="${w === 0 ? 'sun' : w === 6 ? 'sat' : ''}">${WD[w]}</button>`).join('')}</div>` : ''}
+    ${X.ft === 'week' ? `<div class="hbe-goal"><span>1週間に</span><button data-act="hbeStep" data-f="n" data-n="-1" aria-label="へらす">−</button><b class="num">${X.n}</b><span class="u">回</span><button data-act="hbeStep" data-f="n" data-n="1" aria-label="ふやす">＋</button></div>` : ''}
+    ${X.id ? `<div class="hbe-danger"><button class="btn ghost" data-act="hbeArch">${ico('inbox')}アーカイブ（記録は残ります）</button><button class="btn danger" data-act="hbeDel">${ico('trash')}削除</button></div>` : ''}`;
+}
+function hbeSave() {
+  hbeSync(); const X = HBX; if (!X) return;
+  if (!X.name.trim()) { toast('名前を入れてください'); const i = $('#hbe-name'); i && i.focus(); return; }
+  const days = X.ft === 'days' ? X.days : [];
+  if (X.ft === 'days' && !days.length) { toast('曜日をひとつ以上選んでください'); return; }
+  const o = { name: X.name.trim(), emoji: X.emoji, color: X.color, kind: X.kind, goal: X.kind === 'count' ? X.cnt : X.kind === 'time' ? X.min * 60 : 1, unit: X.kind === 'count' ? X.unit : '', freq: { t: X.ft, days, n: X.n } };
+  const h = X.id && hbById(X.id);
+  if (h) { Object.assign(h, o); if (S.habits.run && S.habits.run.id === h.id && h.kind !== 'time') S.habits.run = null; }
+  else S.habits.list.push(Object.assign({ id: uid(), c: todayISO(), arch: false }, o));
+  save(); HBX = null; closeSheet(); hbRe(); render(); hbTicker();
+}
+function hbTap(id, d) {
+  const h = hbById(id); if (!h) return; d = d || todayISO();
+  const v = hbVal(h, d), done = v >= h.goal;
+  if (h.kind === 'time') {
+    const run = S.habits.run && S.habits.run.id === id && S.habits.run.d === d;
+    if (run) hbStop(); else if (done && (topSheet() || {dataset: {}}).dataset.kind !== 'hbd') return openHabit(id, d); else if (d !== todayISO()) return openHabit(id, d); else hbStart(id, d);
+  } else if (h.kind === 'check') { if (hbSet(id, d, done ? 0 : 1)) hbCheer(h, d); }
+  else { if (done) return openHabit(id, d); if (hbSet(id, d, v + 1)) hbCheer(h, d); }
+  hbRe(); render();
+}
+Object.assign(ACT, {
+  habits: () => openHabits(),
+  hbTab: t => { HBV.tab = t.dataset.k; hbRe(); const sc = $('.hb-scroll', topSheet()); if (sc) sc.scrollTop = 0; },
+  hbToday: () => { if (HBV.tab === 'today' && HBV.d !== todayISO()) { HBV.d = todayISO(); hbRe(); } },
+  hbDay: t => { HBV.d = t.dataset.d; hbRe(); },
+  hbNew: () => openHabitEdit(null),
+  hbTpl: t => { const x = HB_TPL[+t.dataset.i]; if (!x) return; S.habits.list.push(normHabits({ list: [Object.assign({ id: uid(), c: todayISO() }, JSON.parse(JSON.stringify(x)))] }).list[0]); save(); hbRe(); render(); toast(`${x.emoji} ${x.name} を追加しました`); },
+  hbOpen: t => openHabit(t.dataset.id, t.dataset.d),
+  hbTap: t => hbTap(t.dataset.id, t.dataset.d),
+  hbHeatN: t => { HBV.heat = +t.dataset.n; hbRe(); },
+  hbSp: t => { HBV.sp = +t.dataset.n; hbRe(); },
+  hbSh: t => { HBV.sh = t.dataset.id; hbRe(); },
+  hbUnarch: t => { const h = hbById(t.dataset.id); if (h) { h.arch = false; save(); hbRe(); } },
+  hbAdd: t => {
+    const h = hbById(HBD.id); if (!h) return; const d = HBD.d, n = +t.dataset.n;
+    if (S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d) hbStop(true);
+    if (hbSet(h.id, d, Math.max(0, hbVal(h, d) + n))) hbCheer(h, d); hbRe(); render();
+  },
+  hbSkipT: () => {
+    const h = hbById(HBD.id); if (!h) return; const d = HBD.d, L = S.habits.log, day = L[d] || (L[d] = {}), e = day[h.id] || (day[h.id] = { v: 0, t: 0 });
+    if (e.skip) { delete e.skip; if (!e.v) delete day[h.id]; } else { e.skip = true; toast('スキップしました。連続記録は途切れません'); }
+    if (!Object.keys(day).length) delete L[d]; save(); hbRe(); render();
+  },
+  hbReset: () => {
+    const h = hbById(HBD.id); if (!h) return; const d = HBD.d, prev = JSON.stringify(hbE(d, h.id) || null);
+    if (S.habits.run && S.habits.run.id === h.id) { S.habits.run = null; hbTicker(); }
+    if (S.habits.log[d]) { delete S.habits.log[d][h.id]; if (!Object.keys(S.habits.log[d]).length) delete S.habits.log[d]; }
+    save(); hbRe(); render();
+    if (prev !== 'null') toast('この日の記録を消しました', '元に戻す', () => { (S.habits.log[d] || (S.habits.log[d] = {}))[h.id] = JSON.parse(prev); save(); hbRe(); render(); });
+  },
+  hbdDay: t => { HBD.d = t.dataset.d; hbRe(); },
+  hbdMon: t => { const F = P(HBD.m + '-01'); F.setMonth(F.getMonth() + +t.dataset.n); HBD.m = iso(F).slice(0, 7); hbRe(); },
+  hbEdit: () => openHabitEdit(HBD.id),
+  hbMore: () => {
+    const h = hbById(HBD.id); if (!h) return;
+    choose(h.name, [['編集', () => openHabitEdit(h.id)], ['アーカイブ（記録は残ります）', () => hbArchive(h.id)], ['削除', () => hbDelete(h.id)]]);
+  },
+  hbeTpl: t => { const x = HB_TPL[+t.dataset.i]; if (!x) return; hbeSync(); Object.assign(HBX, { name: x.name, emoji: x.emoji, color: x.color, kind: x.kind, cnt: x.kind === 'count' ? x.goal : HBX.cnt, min: x.kind === 'time' ? Math.round(x.goal / 60) : HBX.min, unit: x.unit || '', ft: (x.freq && x.freq.t) || 'daily', n: (x.freq && x.freq.n) || HBX.n }); rerenderKind('hbe', hbeHTML); },
+  hbeEmo: t => { hbeSync(); HBX.emoji = t.dataset.e; rerenderKind('hbe', hbeHTML); },
+  hbeColor: t => { hbeSync(); HBX.color = t.dataset.c; rerenderKind('hbe', hbeHTML); },
+  hbeKind: t => { hbeSync(); HBX.kind = t.dataset.k; rerenderKind('hbe', hbeHTML); },
+  hbeFreq: t => { hbeSync(); HBX.ft = t.dataset.k; rerenderKind('hbe', hbeHTML); },
+  hbeDay: t => { hbeSync(); const w = +t.dataset.w, i = HBX.days.indexOf(w); if (i >= 0) HBX.days.splice(i, 1); else HBX.days.push(w); rerenderKind('hbe', hbeHTML); },
+  hbeStep: t => { hbeSync(); const f = t.dataset.f, lim = { cnt: 999, min: 600, n: 7 }[f]; HBX[f] = Math.max(1, Math.min(lim, HBX[f] + +t.dataset.n)); rerenderKind('hbe', hbeHTML); },
+  hbeSave: () => hbeSave(),
+  hbeArch: () => { const id = HBX && HBX.id; if (!id) return; HBX = null; closeSheet(); hbArchive(id); },
+  hbeDel: () => { const id = HBX && HBX.id; if (!id) return; hbDelete(id, true); },
+});
+function hbArchive(id) {
+  const h = hbById(id); if (!h) return; h.arch = true; if (S.habits.run && S.habits.run.id === id) { S.habits.run = null; hbTicker(); }
+  save(); if (topSheet() && topSheet().dataset.kind === 'hbd') closeSheet(); hbRe(); render();
+  toast(`${h.name} をアーカイブしました`, '元に戻す', () => { h.arch = false; save(); hbRe(); render(); });
+}
+function hbDelete(id, fromEdit) {
+  const h = hbById(id); if (!h) return;
+  confirmIn(`「${h.name}」と、その記録をすべて削除しますか？`, '削除', () => {
+    S.habits.list = S.habits.list.filter(x => x.id !== id);
+    for (const [d, o] of Object.entries(S.habits.log)) { delete o[id]; if (!Object.keys(o).length) delete S.habits.log[d]; }
+    if (S.habits.run && S.habits.run.id === id) { S.habits.run = null; hbTicker(); }
+    save(); HBX = null;
+    while (topSheet() && ['hbe', 'hbd'].includes(topSheet().dataset.kind)) closeSheet();
+    hbRe(); render(); toast('削除しました');
+  });
+}
+// swipe the week strip to move a week
+let hbSw = null;
+document.addEventListener('touchstart', e => { const w = e.target.closest('.hb-week'); hbSw = w ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!hbSw) return; const t = e.changedTouches[0], dx = t.clientX - hbSw.x, dy = t.clientY - hbSw.y; hbSw = null;
+  if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+  const T = todayISO(); let d = addDays(HBV.d || T, dx < 0 ? 7 : -7); if (d > T) d = T;
+  HBV.d = d; hbRe(); noClickUntil = Date.now() + 350;
+}, { passive: true });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hbe-name') { e.preventDefault(); e.target.blur(); } });
+
 /* ================= メモ (inside あとで) =================
    iOS メモ-style list (pinned, grouped by date, search) and a Notion-style page editor made of blocks:
    p 本文 / h1 h2 見出し / ul 箇条書き / ol 番号 / todo チェック / quote 引用 / hr 区切り線.
@@ -6447,7 +7152,7 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v69';
+const APP_VER = 'hibi-v70';
 let verChecked = Date.now();
 async function checkVersion() {
   if (inFrame || location.protocol !== 'https:' || Date.now() - verChecked < 60000) return; verChecked = Date.now();
