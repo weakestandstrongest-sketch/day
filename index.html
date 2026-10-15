@@ -1806,6 +1806,18 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .hb-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .hb-card.hb-lift{transition:none;z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.35)}
 .hb-hint{margin:14px 0 0;text-align:center;font-size:12px;color:var(--ink-3)}
+.hb-mini.brk{background:color-mix(in srgb,var(--c) 18%,var(--glass))}
+.hb-mini .hb-play .ico{fill:currentColor;width:18px;height:18px;margin-left:2px}
+.hb-x{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2)}
+.hb-x .ico{width:18px;height:18px}
+.hbd-pomo{margin-top:8px;text-align:left}
+.pomo-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+.pomo-row>span{flex:none;width:5em;font-size:13px;color:var(--ink-2);line-height:1.3}.pomo-row>span small{display:block;font-size:11px;color:var(--ink-3)}
+.pomo-row .chips{flex-wrap:wrap}
+.tm-pomo{margin-top:14px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25)}
+.tm-pomo.on{background:rgba(255,110,90,.35);border-color:rgba(255,150,130,.6)}
+.tm-fs.brk .tm-art{filter:blur(46px) saturate(60%) hue-rotate(90deg)}
+.tm-fs.brk #tm-sub{color:#bff5d0}
 #hb-cel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:rgba(0,0,0,.35);opacity:0;transition:opacity .3s;overflow:hidden}
 #hb-cel.on{opacity:1}
 .hb-conf i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:hbFall linear forwards}
@@ -5008,6 +5020,35 @@ function jobForm() {
   <div class="sheet-actions"><button class="btn primary" data-act="saveJob">保存する</button>${j.id ? '<button class="btn danger" data-act="delJob">このバイト先を削除</button>' : ''}</div>`;
 }
 
+/* ---- ポモドーロ: 25分集中 → 5分休憩 をくり返す (4回ごとに長い休憩). shared by the focus timer and 灯 ---- */
+const pomoSet = () => Object.assign({ w: 25, b: 5, lb: 15, every: 4 }, S.settings.pomo || {});
+const pomoBreakMs = n => { const p = pomoSet(); return (p.lb && p.every && n % p.every === 0 ? p.lb : p.b) * 60000; };
+let pomoAC = null;
+function pomoUnlock() { try { if (!pomoAC) { const A = window.AudioContext || window.webkitAudioContext; if (A) pomoAC = new A(); } if (pomoAC && pomoAC.state === 'suspended') pomoAC.resume(); } catch (e) {} }
+// a soft two-note chime (up = back to work, down = break); the phone also vibrates where it can
+function pomoChime(up) {
+  if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
+  try { const a = pomoAC; if (!a) return; const t0 = a.currentTime;
+    (up ? [660, 990] : [880, 587]).forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t0 + i * .22); g.gain.linearRampToValueAtTime(.25, t0 + i * .22 + .02); g.gain.exponentialRampToValueAtTime(.001, t0 + i * .22 + .6); o.connect(g).connect(a.destination); o.start(t0 + i * .22); o.stop(t0 + i * .22 + .65); });
+  } catch (e) {}
+}
+// the focus timer: move through work/break phases up to now (also catches up after the app was closed)
+function pomoStep(t) {
+  const p = t && t.pomo; if (!p) return false;
+  const W = pomoSet().w * 60000; let moved = false, last = null;
+  for (let i = 0; i < 50; i++) {
+    if (p.ph === 'work') {
+      if (t.paused) break; const wk = tElapsed() - p.base; if (wk < W) break;
+      const X = Date.now() - (wk - W); t.accum += X - t.startedAt; t.paused = true; p.ph = 'break'; p.at = X; p.n++; moved = true; last = ['break', X];
+    } else {
+      const Y = p.at + pomoBreakMs(p.n); if (Date.now() < Y) break;
+      t.startedAt = Y; t.paused = false; p.ph = 'work'; p.base = t.accum; moved = true; last = ['work', Y];
+    }
+  }
+  if (moved) { save(); if (Date.now() - last[1] < 8000) { pomoChime(last[0] === 'work'); toast(last[0] === 'work' ? '休憩おわり。集中にもどりましょう' : `${p.n}回目の集中おつかれさま。${Math.round(pomoBreakMs(p.n) / 60000)}分休憩しましょう`); } }
+  return moved;
+}
+
 /* ---- focus timer ---- */
 let timerInt = null, wakeLock = null;
 const tElapsed = () => { const t = S.timer; return t ? t.accum + (t.paused ? 0 : Date.now() - t.startedAt) : 0; };
@@ -5038,10 +5079,11 @@ function timerHTML() {
       ${big}
       <small id="tm-sub" class="num"></small>
       ${['ring', 'analog'].includes(f) ? '' : '<div class="tm-bar"><i id="tm-bar"></i></div>'}
+      <button class="tm-pomo${t.pomo ? ' on' : ''}" data-act="tmPomo" aria-pressed="${!!t.pomo}">🍅 ポモドーロ ${t.pomo ? `${pomoSet().w}分＋${pomoSet().b}分休憩` : 'オフ'}</button>
     </div>
     <div class="tm-ctrls">
       <button class="tm-c" data-act="tmCancel"><span class="cb">${ico('x')}</span>やめる</button>
-      <button class="tm-c main" data-act="tmPause"><span class="cb">${ico(t.paused ? 'play' : 'pause')}</span>${t.paused ? '再開' : '一時停止'}</button>
+      <button class="tm-c main" data-act="tmPause"><span class="cb">${ico(t.paused ? 'play' : 'pause')}</span>${t.pomo && t.pomo.ph === 'break' ? '休憩をおえる' : t.paused ? '再開' : '一時停止'}</button>
       <button class="tm-c" data-act="tmFinish"><span class="cb">${ico('check')}</span>記録する</button>
     </div>
   </div>`;
@@ -5055,7 +5097,16 @@ function tmSetHTML() {
   ${o.palette === 'custom' ? `<div class="fld"><span class="lb">カスタムの色（3色）</span><div class="cust">${o.custom.map((c, i) => `<label><input type="color" id="tmc-${i}" value="${c}" aria-label="色${i + 1}"><span class="num">${c}</span></label>`).join('')}</div></div>` : ''}
   <div class="fld"><span class="lb">数字の書体</span><div class="chips">${DIGITS.map(([k, l]) => chip(k, l, o.digits === k, 'tmSetDigits')).join('')}</div></div>
   <div class="fld"><span class="lb">大きく表示する時間</span><div class="chips">${chip('left', 'のこり時間', o.mode === 'left', 'tmSetMode')}${chip('elapsed', '経過時間', o.mode === 'elapsed', 'tmSetMode')}</div></div>
-  <label class="toggle"><span>背景を動かす<small>オフにすると止まった背景になります</small></span><input type="checkbox" id="tm-motion" ${o.motion ? 'checked' : ''}></label>`;
+  <label class="toggle"><span>背景を動かす<small>オフにすると止まった背景になります</small></span><input type="checkbox" id="tm-motion" ${o.motion ? 'checked' : ''}></label>
+  ${pomoSetHTML()}`;
+}
+function pomoSetHTML(inHabit) {
+  const p = pomoSet(), chip = (k, v, cur, l) => `<button class="chip" data-act="pomoSet" data-k="${k}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`;
+  return `<div class="fld" style="margin-top:18px"><span class="lb">🍅 ポモドーロの時間（集中タイマーと灯で共通）</span>
+    ${inHabit ? '' : '<p class="note" style="margin:0 0 8px">集中と休憩を自動でくり返します。タイマーの画面の「ポモドーロ」ボタンでオンにできます。</p>'}
+    <div class="pomo-row"><span>集中</span><div class="chips">${[15, 25, 45, 50].map(v => chip('w', v, p.w, v + '分')).join('')}</div></div>
+    <div class="pomo-row"><span>休憩</span><div class="chips">${[5, 10, 15].map(v => chip('b', v, p.b, v + '分')).join('')}</div></div>
+    <div class="pomo-row"><span>長い休憩<small>4回ごと</small></span><div class="chips">${[0, 15, 20, 30].map(v => chip('lb', v, p.lb, v ? v + '分' : 'なし')).join('')}</div></div></div>`;
 }
 function tmApply(change) {
   S.settings.timer = Object.assign(tset(), change); delete S.settings.timerFace; save();
@@ -5065,15 +5116,19 @@ function tmApply(change) {
 function tick() {
   const t = S.timer, chip = $('#timerChip');
   if (!t) { chip.hidden = true; clearInterval(timerInt); timerInt = null; return; }
-  const o = tset(), el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = left < 0;
-  const shown = o.mode === 'elapsed' ? el : Math.abs(left), sign = o.mode === 'elapsed' || !over ? '' : '+', txt = sign + mmss(shown);
+  if (pomoStep(t)) { const ts = stack.map(x => x.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) ts.innerHTML = timerHTML(); }
+  const pm = t.pomo, brk = pm && pm.ph === 'break', bLen = brk ? pomoBreakMs(pm.n) : 0, bLeft = brk ? pm.at + bLen - Date.now() : 0;
+  const o = tset(), el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = !brk && left < 0;
+  const shown = brk ? bLeft : o.mode === 'elapsed' ? el : Math.abs(left), sign = brk || o.mode === 'elapsed' || !over ? '' : '+', txt = sign + mmss(shown);
+  const fs = $('.tm-fs'); if (fs) fs.classList.toggle('brk', !!brk);
   chip.hidden = stack.some(x => x.firstElementChild.dataset.kind === 'timer');
   chip.style.setProperty('--c', t.color);
-  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${t.paused ? '一時停止' : (over && o.mode !== 'elapsed' ? '+' : '') + mmss(Math.abs(left))}</span>`;
+  chip.innerHTML = `<i></i><span>${esc(t.title)}</span><span class="num">${brk ? '休憩 ' + mmss(bLeft) : t.paused ? '一時停止' : (over && o.mode !== 'elapsed' ? '+' : '') + mmss(Math.abs(left))}</span>`;
   const sub = $('#tm-sub'); if (!sub) return;
   const n = new Date();
   $('#tm-now').textContent = `${n.getMonth() + 1}月${n.getDate()}日(${WD[n.getDay()]}) ${n.getHours()}:${pad(n.getMinutes())}`;
-  sub.textContent = `${t.paused ? '一時停止中・' : ''}${o.mode === 'elapsed' ? `のこり ${over ? '0:00' : mmss(left)}` : `経過 ${mmss(el)}`}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
+  const pw = pm && !brk ? `🍅 ${pm.n + 1}回目 のこり ${mmss(pomoSet().w * 60000 - (el - pm.base))}・` : '';
+  sub.textContent = brk ? `休憩中・${pm.n}回集中しました・合計 ${mmss(el)}` : `${pw}${t.paused ? '一時停止中・' : ''}${o.mode === 'elapsed' ? `のこり ${over ? '0:00' : mmss(left)}` : `経過 ${mmss(el)}`}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
   sub.classList.toggle('over', over);
   const time = $('#tm-time'); if (time) time.textContent = txt;
   const a = $('#tm-a');
@@ -5085,11 +5140,11 @@ function tick() {
     const bp = $('#tm-bp'); if (bp) { bp.textContent = pad((bv - dir + 60) % 60); $('#tm-bn').textContent = pad((bv + dir + 60) % 60); }
     const cards = $('#tm-cards'); if (cards) cards.classList.toggle('over', over && o.mode !== 'elapsed');
   }
-  const frac = Math.min(1, el / plan);
+  const frac = brk ? Math.min(1, 1 - bLeft / bLen) : Math.min(1, el / plan);
   const bar = $('#tm-bar'); if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
   const ring = $('#tm-ring'); if (ring) ring.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - frac)).toFixed(1);
   const hand = $('#tm-hand'); if (hand) hand.setAttribute('transform', `rotate(${(frac * 360).toFixed(1)} 110 110)`);
-  if (!t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
+  if (!brk && !t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
 }
 function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
 function openTimer() {
@@ -5702,7 +5757,7 @@ const ACT = {
   startTimer: () => {
     syncEvent(); const e = evDraft, ev = S.events.find(x => x.id === e.id); if (!ev || ev.allDay) return;
     const d = e._occ || ev.date;
-    const go = () => { S.timer = { id: ev.id, d, title: ev.title, color: ev.color, icon: ev.icon, planned: evLen(ev), startedAt: Date.now(), accum: 0, paused: false }; save(); while (stack.length) closeSheet(); render(); openTimer(); };
+    const go = () => { pomoUnlock(); S.timer = { id: ev.id, d, title: ev.title, color: ev.color, icon: ev.icon, planned: evLen(ev), startedAt: Date.now(), accum: 0, paused: false, pomo: S.settings.pomoOn ? { ph: 'work', base: 0, n: 0, at: 0 } : null }; save(); while (stack.length) closeSheet(); render(); openTimer(); };
     if (S.timer && S.timer.id === ev.id) { while (stack.length) closeSheet(); openTimer(); }
     else if (S.timer) confirmIn(`「${S.timer.title}」のタイマーを記録せずに止めて、こちらを始めます。`, '始める', go);
     else go();
@@ -5710,10 +5765,17 @@ const ACT = {
   openTimer: () => { if (S.timer) openTimer(); },
   tmSet: () => { const sh = openSheet(tmSetHTML(), 'pick'); sh.dataset.kind = 'tmset'; },
   tmSetFace: t => tmApply({ face: t.dataset.k }),
+  pomoSet: t => { S.settings.pomo = Object.assign(pomoSet(), { [t.dataset.k]: +t.dataset.v }); save(); tmApply({}); hbRe(); },
   tmSetPal: t => tmApply({ palette: t.dataset.k }),
   tmSetDigits: t => tmApply({ digits: t.dataset.k }),
   tmSetMode: t => tmApply({ mode: t.dataset.k }),
-  tmPause: () => { const t = S.timer; if (!t) return; if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
+  tmPomo: () => {
+    const t = S.timer; if (!t) return; pomoUnlock();
+    if (t.pomo) { if (t.pomo.ph === 'break') { t.startedAt = Date.now(); t.paused = false; } t.pomo = null; S.settings.pomoOn = false; }
+    else { t.pomo = { ph: 'work', base: tElapsed(), n: 0, at: 0 }; if (t.paused) { t.startedAt = Date.now(); t.paused = false; } S.settings.pomoOn = true; }
+    save(); rerenderKind('timer', timerHTML); tick();
+  },
+  tmPause: () => { const t = S.timer; if (!t) return; pomoUnlock(); if (t.pomo && t.pomo.ph === 'break') { t.startedAt = Date.now(); t.paused = false; t.pomo.ph = 'work'; t.pomo.base = t.accum; save(); rerenderKind('timer', timerHTML); tick(); return; } if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
   tmFinish: () => {
     const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
     if (ev) { ev.actual = Object.assign({}, ev.actual, { [t.d]: ((ev.actual || {})[t.d] || 0) + min }); ev.done = Object.assign({}, ev.done, { [t.d]: true }); }
@@ -6615,7 +6677,7 @@ function normHabits(x) {
       id: okId(h.id), name: h.name.slice(0, 60), emoji: typeof h.emoji === 'string' ? h.emoji.slice(0, 16) : '', color: okColor(h.color) ? h.color : HB_COLORS[0], kind,
       goal: kind === 'check' ? 1 : Math.max(1, Math.min(kind === 'time' ? 86400 : 999, Math.round(+h.goal || (kind === 'time' ? 300 : 1)))),
       unit: typeof h.unit === 'string' ? h.unit.slice(0, 8) : '', freq: { t, days: [...new Set(days)], n: Math.max(1, Math.min(7, Math.round(+f.n || 3))) },
-      c: isYmd(h.c) ? h.c : todayISO(), arch: !!h.arch, tl: h.tl !== false,
+      c: isYmd(h.c) ? h.c : todayISO(), arch: !!h.arch, tl: h.tl !== false, pomo: !!h.pomo,
     };
   });
   const log = {};
@@ -6625,8 +6687,10 @@ function normHabits(x) {
     if (Object.keys(r).length) log[d] = r;
   }
   const r = asObj(x.run), run = list.some(h => h.id === r.id) && +r.s && isYmd(r.d) ? { id: r.id, d: r.d, s: +r.s, b: +r.b || 0 } : null;
+  if (run && r.p) run.p = { n: Math.max(0, Math.round(+asObj(r.p).n || 0)), base: +asObj(r.p).base || 0 };
+  const k = asObj(x.brk), brk = !run && list.some(h => h.id === k.id) && +k.at && isYmd(k.d) ? { id: k.id, d: k.d, at: +k.at, n: Math.max(1, Math.round(+k.n || 1)) } : null;
   const seen = {}; for (const [k, v] of Object.entries(asObj(x.seen))) if (/^[\w:-]{1,80}$/.test(k) && v) seen[k] = 1;
-  return { list, log, run, seen };
+  return { list, log, run, brk, seen };
 }
 
 /* ---- data helpers ---- */
@@ -6697,6 +6761,9 @@ function hbSub(h, d) {
   if (h.kind === 'time') s += `、${hbFmt(Math.floor(v))}/${hbFmt(h.goal)}`;
   if (h.freq.t === 'week') s += ` · 今週 ${hbWeekCnt(h, weekStart(d))}/${h.freq.n}`;
   if (hbSkip(h, d)) s += ' · スキップ';
+  const k = S.habits.brk, r = S.habits.run;
+  if (k && k.id === h.id && k.d === d) s += ` · 休憩中 のこり${hbClock(hbBrkLeft() / 1000)}`;
+  else if (r && r.p && r.id === h.id && r.d === d) s += ` · 🍅${r.p.n + 1}回目`;
   return s;
 }
 const hbClamp = f => Math.max(0, Math.min(1, f || 0));
@@ -6741,13 +6808,37 @@ function hbCelebrate(icon, title, sub, color, note) {
   const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 350); };
   el.addEventListener('click', close); setTimeout(close, 3400);
 }
-function hbStart(id, d) {
+function hbStart(id, d, at) {
   if (S.habits.run) hbStop();
-  const h = hbById(id); if (!h) return;
-  const now = Date.now(), L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || (day[id] = { v: 0, t: 0 });
+  const h = hbById(id); if (!h) return; pomoUnlock();
+  const bk = S.habits.brk, n = bk && bk.id === id ? bk.n : 0; S.habits.brk = null;
+  const now = at || Date.now(), L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || (day[id] = { v: 0, t: 0 });
   if (!e.s) e.s = now; // when today's practice began (for the timeline)
-  S.habits.run = { id, d, s: now, b: hbVal(h, d) }; save(); hbTicker();
+  S.habits.run = { id, d, s: now, b: hbVal(h, d) };
+  if (h.pomo) S.habits.run.p = { n, base: S.habits.run.b };
+  save(); hbTicker();
 }
+// 灯 with ポモドーロ: after each work block the timer rests, then starts again by itself (also catches up after the app was closed)
+function hbPomoStep() {
+  let moved = false, last = null;
+  for (let i = 0; i < 50; i++) {
+    const r = S.habits.run, k = S.habits.brk;
+    if (r) {
+      const h = hbById(r.id); if (!h || !r.p) break;
+      const W = pomoSet().w * 60, v = hbVal(h, r.d); if (r.b < h.goal && v >= h.goal) break; // reaching the goal is handled by hbTick
+      if (v - r.p.base < W) break;
+      const X = r.s + (r.p.base + W - r.b) * 1000; S.habits.run = null;
+      hbSet(r.id, r.d, r.b + (X - r.s) / 1000); S.habits.brk = { id: r.id, d: r.d, at: X, n: r.p.n + 1 }; moved = true; last = ['break', X, h];
+    } else if (k) {
+      const Y = k.at + pomoBreakMs(k.n); if (Date.now() < Y) break;
+      if (k.d !== todayISO()) { S.habits.brk = null; moved = true; break; }
+      hbStart(k.id, k.d, Y); moved = true; last = ['work', Y, hbById(k.id)];
+    } else break;
+  }
+  if (moved) { save(); if (last && Date.now() - last[1] < 8000) { pomoChime(last[0] === 'work'); toast(last[0] === 'work' ? `休憩おわり。「${last[2].name}」を再開しました` : `🍅 ${S.habits.brk.n}回目の集中おつかれさま。${Math.round(pomoBreakMs(S.habits.brk.n) / 60000)}分休憩しましょう`); } }
+  return moved;
+}
+const hbBrkLeft = () => { const k = S.habits.brk; return k ? k.at + pomoBreakMs(k.n) - Date.now() : 0; };
 function hbStop(quiet) {
   const r = S.habits.run; if (!r) return; const h = hbById(r.id);
   const v = h ? hbVal(h, r.d) : 0; S.habits.run = null;
@@ -6771,8 +6862,16 @@ function hbToTimeline(h, d, from, to) {
 }
 let hbTlNote = '';
 let hbT = null;
-function hbTicker() { clearInterval(hbT); hbT = S.habits.run ? setInterval(hbTick, 1000) : null; }
+function hbTicker() { clearInterval(hbT); hbT = S.habits.run || S.habits.brk ? setInterval(hbTick, 1000) : null; }
 function hbTick() {
+  if (hbPomoStep()) { hbRe(); render(); hbTicker(); }
+  const k = S.habits.brk;
+  if (!S.habits.run && k) {
+    if (document.hidden) return; const left = hbBrkLeft(), kh = hbById(k.id);
+    for (const el of document.querySelectorAll('.hb-mini-t')) el.textContent = hbClock(left / 1000);
+    const sub = kh && document.getElementById('hbs-' + kh.id); if (sub) sub.textContent = hbSub(kh, k.d);
+    return;
+  }
   const r = S.habits.run; if (!r) return hbTicker();
   const h = hbById(r.id); if (!h) { S.habits.run = null; save(); return hbTicker(); }
   const v = hbVal(h, r.d);
@@ -6786,7 +6885,7 @@ function hbTick() {
   for (const el of document.querySelectorAll('.hb-mini-t')) el.textContent = hbClock(left);
   const dv = $('#hbd-v'); if (dv && dv.dataset.id === h.id) dv.textContent = hbClock(v);
 }
-setTimeout(() => { if (S.habits && S.habits.run) { hbTicker(); hbTick(); } }, 0);
+setTimeout(() => { if (S.habits && (S.habits.run || S.habits.brk)) { hbTicker(); hbTick(); } }, 0);
 
 /* ---- 灯 on the timeline (a row of rings) and on the today screen ---- */
 function hbStripHTML(d) {
@@ -6818,13 +6917,14 @@ function hbHTML() {
   const T = todayISO(), d = HBV.d || T;
   const title = HBV.tab === 'today' ? (d === T ? '今日' : `${md(d)}(${WD[wd(d)]})`) : HBV.tab === 'heat' ? '積み重ね' : '統計';
   const tabs = [['today', '習慣', 'check'], ['heat', '積み重ね', 'grid'], ['stats', '統計', 'wave']];
-  const r = S.habits.run, rh = r && hbById(r.id);
+  const r = S.habits.run, rh = r && hbById(r.id), kb = S.habits.brk, kh = !rh && kb && hbById(kb.id);
   return `<div class="sh-bar hb-bar"><button class="hb-round" data-act="close" aria-label="閉じる">${ico('x')}</button>
       <button class="hb-ttl" data-act="hbToday" ${HBV.tab === 'today' && d !== T ? '' : 'tabindex="-1"'}>${esc(title)}</button>
       <button class="hb-round add" data-act="hbNew" aria-label="習慣を追加">${ico('plus')}</button></div>
     <div class="hb-scroll">${HBV.tab === 'today' ? hbTodayHTML(d) : HBV.tab === 'heat' ? hbHeatHTML() : hbStatsHTML()}</div>
     <div class="hb-foot">
       ${rh ? `<div class="hb-mini" data-act="hbOpen" data-id="${rh.id}" data-d="${r.d}" style="--c:${rh.color}"><span class="hb-em">${esc(rh.emoji || '⏱')}</span><span class="hb-tx"><b>${esc(rh.name)}</b><small>${r.b < rh.goal ? '残り' : '記録中'}</small></span><b class="hb-mini-t num">${hbClock(r.b < rh.goal ? rh.goal - hbVal(rh, r.d) : hbVal(rh, r.d))}</b><button class="hb-act sm" data-act="hbTap" data-id="${rh.id}" data-d="${r.d}" aria-label="止める">${hbRing(hbVal(rh, r.d) / rh.goal, 15, 4)}<i class="hb-stop"></i></button></div>` : ''}
+      ${kh ? `<div class="hb-mini brk" data-act="hbOpen" data-id="${kh.id}" data-d="${kb.d}" style="--c:${kh.color}"><span class="hb-em">☕</span><span class="hb-tx"><b>休憩中</b><small>${esc(kh.emoji || '')} ${esc(kh.name)} · 🍅${kb.n}回</small></span><b class="hb-mini-t num">${hbClock(hbBrkLeft() / 1000)}</b><button class="hb-act sm" data-act="hbTap" data-id="${kh.id}" data-d="${kb.d}" aria-label="休憩をおえて再開"><i class="hb-play">${ico('play')}</i></button><button class="hb-x" data-act="hbBrkEnd" aria-label="ポモドーロをおわる">${ico('x')}</button></div>` : ''}
       <nav class="hb-tabs">${tabs.map(([k, l, i]) => `<button data-act="hbTab" data-k="${k}" aria-current="${HBV.tab === k ? 'page' : 'false'}">${ico(i)}<span>${l}</span></button>`).join('')}</nav>
     </div>`;
 }
@@ -6976,7 +7076,7 @@ function hbdHTML() {
   const run = S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d;
   const big = h.kind === 'time' ? `<b id="hbd-v" data-id="${h.id}" class="num tm">${hbClock(v)}</b><small>/ ${hbFmt(h.goal)}</small>` : h.kind === 'count' ? `<b class="num">${Math.floor(v)}</b><small>/ ${h.goal}${esc(h.unit || '回')}</small>` : `<b class="num">${done ? '✓' : '0'}</b><small>${done ? 'できた' : 'まだ'}</small>`;
   const step = h.kind === 'time' ? 60 : 1, sl = h.kind === 'time' ? '1分' : '1';
-  const btns = `${h.kind === 'time' ? `<button class="hb-b wide pri" data-act="hbTap" data-id="${h.id}" data-d="${d}">${run ? '<i class="hb-stop"></i>止める' : `${ico('play')}${done ? 'もう少し続ける' : v > 0 ? '続きから' : 'はじめる'}`}</button>` : ''}
+  const btns = `${h.kind === 'time' ? `<button class="hb-b wide pri" data-act="hbTap" data-id="${h.id}" data-d="${d}">${run ? '<i class="hb-stop"></i>止める' : S.habits.brk && S.habits.brk.id === h.id ? `${ico('play')}休憩をおえて再開` : `${ico('play')}${done ? 'もう少し続ける' : v > 0 ? '続きから' : 'はじめる'}`}</button>` : ''}
     <button class="hb-b" data-act="hbAdd" data-n="${-step}" aria-label="${sl}へらす">− ${sl}</button><button class="hb-b" data-act="hbAdd" data-n="${h.kind === 'check' ? (done ? -1 : 1) : step}" aria-label="${sl}ふやす">${h.kind === 'check' ? (done ? '取り消す' : `${ico('check')}できた`) : `+ ${sl}`}</button>
     <button class="hb-b" data-act="hbSkipT" aria-pressed="${hbSkip(h, d)}" aria-label="スキップ（連続記録は途切れません）"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zM13 6l7 6-7 6z" fill="currentColor"/></svg>${hbSkip(h, d) ? 'スキップ中' : 'スキップ'}</button>
     <button class="hb-b" data-act="hbReset" aria-label="この日の記録を消す"><svg class="ico" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>リセット</button>`;
@@ -7004,6 +7104,7 @@ function hbdHTML() {
       <div class="hbd-kvs"><div><small>連続</small><b class="num">${n}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>最長</small><b class="num">${hbBest(h)}${h.freq.t === 'week' ? '週' : '日'}</b></div><div><small>合計</small><b class="num">${hbTotal(h)}回</b></div></div>
       <p class="hbd-sec">バッジ <span class="num">${hbBadges(h).filter(b => b.got).length}/${hbBadges(h).length}</span></p>
       <div class="hb-badges">${hbBadges(h).map(b => `<div class="hb-bd${b.got ? ' got' : ''}"><i>${b.ic}</i>${esc(b.lbl)}${!b.got && b.left > 0 ? `<small>あと${b.left}${b.k[0] === 's' ? (h.freq.t === 'week' ? '週' : '日') : '回'}</small>` : ''}</div>`).join('')}</div>
+      ${h.kind === 'time' ? `<label class="toggle hbd-sw"><span>🍅 ポモドーロで計る<small>${pomoSet().w}分集中したら${pomoSet().b}分休憩、をくり返します</small></span><input type="checkbox" id="hbd-pomo" ${h.pomo ? 'checked' : ''}></label>${h.pomo ? `<div class="hbd-pomo">${pomoSetHTML(true)}</div>` : ''}` : ''}
       ${h.kind === 'time' ? `<label class="toggle hbd-sw"><span>終わったらタイムラインに記録<small>タイマーで目標までやりきると、その時間を予定として残します</small></span><input type="checkbox" id="hbd-tl" ${h.tl !== false ? 'checked' : ''}></label>` : ''}
       <p class="hbd-since">${md(h.c)}から${hbGoalTx(h) ? ` · 目標 ${esc(hbGoalTx(h))}` : ''}</p>
     </div>`;
@@ -7073,6 +7174,7 @@ Object.assign(ACT, {
   hbTpl: t => { const x = HB_TPL[+t.dataset.i]; if (!x) return; S.habits.list.push(normHabits({ list: [Object.assign({ id: uid(), c: todayISO() }, JSON.parse(JSON.stringify(x)))] }).list[0]); save(); hbRe(); render(); toast(`${x.emoji} ${x.name} を追加しました`); },
   hbOpen: t => openHabit(t.dataset.id, t.dataset.d),
   hbTap: t => hbTap(t.dataset.id, t.dataset.d),
+  hbBrkEnd: () => { S.habits.brk = null; save(); hbTicker(); hbRe(); render(); toast('ポモドーロをおわりました'); },
   hbHeatN: t => { HBV.heat = +t.dataset.n; hbRe(); },
   hbSp: t => { HBV.sp = +t.dataset.n; hbRe(); },
   hbSh: t => { HBV.sh = t.dataset.id; hbRe(); },
@@ -7090,6 +7192,7 @@ Object.assign(ACT, {
   hbReset: () => {
     const h = hbById(HBD.id); if (!h) return; const d = HBD.d, prev = JSON.stringify(hbE(d, h.id) || null);
     if (S.habits.run && S.habits.run.id === h.id) { S.habits.run = null; hbTicker(); }
+    if (S.habits.brk && S.habits.brk.id === h.id) { S.habits.brk = null; hbTicker(); }
     if (S.habits.log[d]) { delete S.habits.log[d][h.id]; if (!Object.keys(S.habits.log[d]).length) delete S.habits.log[d]; }
     save(); hbRe(); render();
     if (prev !== 'null') toast('この日の記録を消しました', '元に戻す', () => { (S.habits.log[d] || (S.habits.log[d] = {}))[h.id] = JSON.parse(prev); save(); hbRe(); render(); });
@@ -7113,7 +7216,7 @@ Object.assign(ACT, {
   hbeDel: () => { const id = HBX && HBX.id; if (!id) return; hbDelete(id, true); },
 });
 function hbArchive(id) {
-  const h = hbById(id); if (!h) return; h.arch = true; if (S.habits.run && S.habits.run.id === id) { S.habits.run = null; hbTicker(); }
+  const h = hbById(id); if (!h) return; h.arch = true; if (S.habits.run && S.habits.run.id === id) S.habits.run = null; if (S.habits.brk && S.habits.brk.id === id) S.habits.brk = null; hbTicker();
   save(); if (topSheet() && topSheet().dataset.kind === 'hbd') closeSheet(); hbRe(); render();
   toast(`${h.name} をアーカイブしました`, '元に戻す', () => { h.arch = false; save(); hbRe(); render(); });
 }
@@ -7122,7 +7225,8 @@ function hbDelete(id, fromEdit) {
   confirmIn(`「${h.name}」と、その記録をすべて削除しますか？`, '削除', () => {
     S.habits.list = S.habits.list.filter(x => x.id !== id);
     for (const [d, o] of Object.entries(S.habits.log)) { delete o[id]; if (!Object.keys(o).length) delete S.habits.log[d]; }
-    if (S.habits.run && S.habits.run.id === id) { S.habits.run = null; hbTicker(); }
+    if (S.habits.run && S.habits.run.id === id) S.habits.run = null;
+    if (S.habits.brk && S.habits.brk.id === id) S.habits.brk = null; hbTicker();
     save(); HBX = null;
     while (topSheet() && ['hbe', 'hbd'].includes(topSheet().dataset.kind)) closeSheet();
     hbRe(); render(); toast('削除しました');
@@ -7170,7 +7274,7 @@ document.addEventListener('touchend', e => {
   const T = todayISO(); let d = addDays(HBV.d || T, dx < 0 ? 7 : -7); if (d > T) d = T;
   HBV.d = d; hbRe(); noClickUntil = Date.now() + 350;
 }, { passive: true });
-document.addEventListener('change', e => { if (e.target.id === 'hbd-tl') { const h = hbById(HBD.id); if (h) { h.tl = e.target.checked; save(); } } });
+document.addEventListener('change', e => { if (e.target.id === 'hbd-tl') { const h = hbById(HBD.id); if (h) { h.tl = e.target.checked; save(); } } else if (e.target.id === 'hbd-pomo') { const h = hbById(HBD.id); if (h) { h.pomo = e.target.checked; const r = S.habits.run; if (r && r.id === h.id) { if (h.pomo) r.p = { n: 0, base: hbVal(h, r.d) }; else delete r.p; } if (!h.pomo && S.habits.brk && S.habits.brk.id === h.id) S.habits.brk = null; save(); hbRe(); hbTicker(); } } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hbe-name') { e.preventDefault(); e.target.blur(); } });
 
 /* ================= メモ (inside あとで) =================
@@ -7432,10 +7536,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v77';
+const APP_VER = 'hibi-v78';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.3.0';
-const HIBI_CHANGES = ['灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.4.0';
+const HIBI_CHANGES = ['ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
