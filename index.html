@@ -2771,9 +2771,10 @@ function quickMood(d) {
   <div class="quick-row">${QUICK.map(f => `<button class="qb" data-act="quickMood" data-f="${f}" data-d="${d}"><i style="--c:${feelInfo(f).color};border-radius:${blob(f)}"></i>${f}</button>`).join('')}</div></div>`;
 }
 function memories(T) {
-  const k = T.slice(5); if (k === '02-29') return '';
-  return S.entries.filter(e => e.date < T && e.date.slice(5) === k).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3).map(e =>
-    `<button class="memory" data-act="editEntry" data-id="${e.id}"><span style="min-width:0"><span class="script">On this day</span><b>${+T.slice(0, 4) - +e.date.slice(0, 4)}年前の今日</b><p>${esc(e.text || e.feelings.join('・'))}</p></span>${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`).join('');
+  // 2/29 の日記は、うるう年でない年は 2/28 に出す
+  const k = T.slice(5), leap = y => new Date(y, 1, 29).getDate() === 29, ks = k === '02-28' && !leap(+T.slice(0, 4)) ? ['02-28', '02-29'] : [k];
+  return S.entries.filter(e => e.date < T && ks.includes(e.date.slice(5))).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3).map(e =>
+    `<button class="memory" data-act="editEntry" data-id="${e.id}"><span style="min-width:0"><span class="script">On this day</span><b>${+T.slice(0, 4) - +e.date.slice(0, 4)}年前の今日</b>${e.text || e.feelings.length ? `<p>${esc(e.text || e.feelings.join('・'))}</p>` : ''}</span>${e.photo ? `<img src="${e.photo}" alt="">` : ''}</button>`).join('');
 }
 function wxInfo(c) {
   if (c === 0) return ['sun', '晴れ']; if (c <= 2) return ['sun', '晴れ時々くもり']; if (c === 3) return ['cloud', 'くもり'];
@@ -4506,7 +4507,7 @@ function memoryReels() {
   const T = todayISO(), all = photoEntries(), out = [], used = new Set();
   const add = (label, a, b) => { const list = all.filter(e => e.date >= a && e.date <= b); if (list.length) { out.push({ label, list }); list.forEach(e => used.add(e.id)); } };
   add('今週', addDays(T, -6), T); add('先週', addDays(T, -13), addDays(T, -7));
-  for (const [mo, label] of [[1, '1か月前'], [3, '3か月前'], [6, '半年前'], [12, '1年前の今ごろ'], [24, '2年前の今ごろ']]) { const d = P(T); d.setMonth(d.getMonth() - mo); const c = iso(d); add(label, addDays(c, -3), addDays(c, 3)); }
+  for (const [mo, label] of [[1, '1か月前'], [3, '3か月前'], [6, '半年前'], [12, '1年前の今ごろ'], [24, '2年前の今ごろ']]) { const d = P(T), day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() - mo); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); const c = iso(d); add(label, addDays(c, -3), addDays(c, 3)); } // 3/31 の1か月前は 2/28（3/3 にずれない）
   // then whole months, newest first
   const byM = {}; for (const e of all) (byM[e.date.slice(0, 7)] = byM[e.date.slice(0, 7)] || []).push(e);
   for (const ym of Object.keys(byM).sort().reverse()) out.push({ label: `${+ym.slice(0, 4) === P(T).getFullYear() ? '' : ym.slice(0, 4) + '年'}${+ym.slice(5)}月`, list: byM[ym] });
@@ -4599,7 +4600,8 @@ function storyClick(ev) {
   if (k === 'play') { story.playing = !story.playing; story.elapsed = 0; if (story.playing && story.idx >= story.list.length - 1 && story.list.length > 1) story.idx = 0; stRender(); return; }
   if (k === 'dice') {
     const all = photoEntries(); if (all.length < 2) { toast('写真がもっと増えると、ランダムに思い出を出せます'); return; }
-    let j; do { j = Math.floor(Math.random() * all.length); } while (all[j].id === e.id);
+    const others = all.filter(x => x !== e && x.id !== e.id); if (!others.length) { toast('写真がもっと増えると、ランダムに思い出を出せます'); return; }
+    const pick = others[Math.floor(Math.random() * others.length)], j = all.indexOf(pick);
     stopPreview(); Object.assign(story, { list: all, idx: j, title: 'ランダム', elapsed: 0, song: false, dates: false }); stRender(); return;
   }
   if (k === 'share') {
@@ -6018,7 +6020,9 @@ const ACT = {
     if (e.song) { out.song = e.song; delete out.song.noPreview; }
     const i = S.entries.findIndex(x => x.id === out.id); const prev = i >= 0 ? S.entries[i] : null;
     if (i >= 0) S.entries[i] = out; else S.entries.push(out);
-    if (!save()) { if (prev) S.entries[i] = prev; else S.entries.pop(); return; }
+    // the draft copy (with its photo) takes space too: drop it first, put it back if saving still fails
+    let dr = null; try { dr = localStorage.getItem(DRAFT_KEY); } catch (er) {} dropDraft();
+    if (!save()) { if (prev) S.entries[i] = prev; else S.entries.pop(); if (dr) try { localStorage.setItem(DRAFT_KEY, dr); } catch (er) {} return; }
     closeSheet(); render(); toast('日記を保存しました'); attachWeather(out); attachPlace(out);
   },
   delEntry: () => confirmIn('この日記を削除します。', '削除する', () => { S.entries = S.entries.filter(e => e.id !== enDraft.id); save(); closeSheet(); render(); toast('日記を削除しました'); }),
@@ -6095,7 +6099,12 @@ document.addEventListener('change', async e => {
   }
   else if (t.id === 'ics-file' && t.files && t.files[0]) { const fr = new FileReader(); fr.onload = () => importICS(String(fr.result)); fr.readAsText(t.files[0]); t.value = ''; }
   else if (t.id === 'set-name') { S.settings.name = t.value.trim(); save(); render(); }
-  else if (t.id === 'en-photo' && t.files && t.files[0]) { syncEntry(); try { enDraft.photo = await resizeImage(t.files[0]); rerenderEntry(); } catch (err) { toast(err.message); } }
+  else if (t.id === 'en-photo' && t.files && t.files[0]) {
+    // a big photo takes a moment to shrink: if the editor was closed (キャンセル) meanwhile, drop the result instead of writing into another sheet
+    syncEntry(); const d = enDraft, sh = topSheet();
+    try { const ph = await resizeImage(t.files[0]); if (enDraft === d && topSheet() === sh && sh && sh.dataset.kind === 'entry') { d.photo = ph; rerenderEntry(); } }
+    catch (err) { if (enDraft === d) toast(err.message); }
+  }
   else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); t.value = ''; }
 });
 document.addEventListener('input', e => {
@@ -6117,7 +6126,7 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && stack.length) closeSheet();
+  if (e.key === 'Escape') { if (story) closeStory(); else if (stack.length) closeSheet(); }
   if (e.key !== 'Enter' || e.isComposing) return;
   if (e.target.id === 'ev-item') { e.preventDefault(); ACT.evItemAdd(); return; }
   if (e.target.id === 'td-title') { e.preventDefault(); e.target.blur(); return; }
@@ -7702,10 +7711,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v85';
+const APP_VER = 'hibi-v86';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.6';
-const HIBI_CHANGES = ['メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.5.7';
+const HIBI_CHANGES = ['メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
