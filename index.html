@@ -3427,7 +3427,15 @@ function songField(e) {
 }
 
 /* ================= transit: search in のりかえ, add the route to the timeline ================= */
-const nkBase = () => { const u = (S.settings.norikae || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://').replace(/\/+$/, ''); return /^https?:\/\/[^\s/]+/.test(u) ? u : ''; };
+const nkBase = () => {
+  let u = (S.settings.norikae || '').trim(); if (!u) return '';
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u; // 「norikae.〜.workers.dev」のように https:// を省いても使えるように
+  try {
+    const x = new URL(u); if (!/^https?:$/.test(x.protocol)) return '';
+    if (x.protocol === 'http:' && !/^(localhost|127\.|10\.|192\.168\.)/.test(x.hostname)) x.protocol = 'https:';
+    return (x.origin + x.pathname).replace(/\/+$/, ''); // ?〜 や #〜 が付いていても落とす
+  } catch (e) { return ''; }
+};
 function nkSheet(q) {
   const head = '<div class="sh-bar"><span></span><b>乗換案内</b><button class="r" data-act="close">閉じる</button></div>', base = nkBase();
   if (!base) return head + '<p class="nk-empty">設定 → 乗換案内 に、のりかえのURLを入れてください。</p>';
@@ -3797,7 +3805,8 @@ function nkWatch(wrap) {
   nkTimer = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 15000);
 }
 let nkReplace = null; // set while 「のりかえで調べ直す」 is open: the route event a newly added route replaces
-function openNorikae(q, replaceId) { nkReplace = replaceId || null; const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; const w = $('.nk-wrap', sh); if (w) nkWatch(w); }
+let nkReplaceDate = ''; // the occurrence of a repeating route event that 「調べ直す」 was opened from
+function openNorikae(q, replaceId, replaceDate) { nkReplace = replaceId || null; nkReplaceDate = replaceDate || ''; const sh = openSheet(nkSheet(q), 'full nk'); sh.dataset.kind = 'nk'; const w = $('.nk-wrap', sh); if (w) nkWatch(w); }
 window.addEventListener('message', e => {
   const base = nkBase(); if (!base || !e.data) return;
   try { if (e.origin !== new URL(base).origin) return; } catch (err) { return; }
@@ -3809,11 +3818,18 @@ window.addEventListener('message', e => {
   if (e.data.type !== 'hibi:addRoute') return;
   const r = e.data.route; if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || !/^\d{1,2}:\d{2}$/.test(r.dep || '') || !/^\d{1,2}:\d{2}$/.test(r.arr || '')) { toast('この経路は予定にできませんでした'); return; }
   const clean = x => String(x == null ? '' : x).slice(0, 120);
-  const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
+  const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: r.transfers != null && r.transfers !== '' && Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
     steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: okColor(x.color) ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
   const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: nkMemo(route), done: {}, route };
   const old = nkReplace && S.events.find(x => x.id === nkReplace);
-  if (old) { for (const k of ['color', 'icon', 'items', 'packed', 'countdown', 'dest', 'from']) if (old[k] !== undefined) ev[k] = old[k]; if (old.memo && old.memo !== nkMemo(old.route)) ev.memo = old.memo; S.events = S.events.filter(x => x.id !== old.id); }
+  if (old) {
+    for (const k of ['color', 'icon', 'items', 'packed', 'countdown', 'dest', 'from']) if (old[k] !== undefined) ev[k] = old[k];
+    if (old.memo && old.memo !== nkMemo(old.route)) ev.memo = old.memo;
+    if (old.route && old.title && old.title !== `${old.route.from} → ${old.route.to}`) ev.title = old.title; // 自分で付けた名前（「通学」など）は残す
+    // 繰り返しの予定は、その日の回だけ新しい経路にする（ほかの週や完了の記録は消さない）
+    if (old.repeat && old.repeat !== 'none') { const d = nkReplaceDate || ev.date; old.skip = { ...(old.skip || {}), [d]: true }; }
+    else S.events = S.events.filter(x => x.id !== old.id);
+  }
   nkReplace = null;
   S.events.push(ev); save();
   while (stack.length) closeSheet();
@@ -3843,7 +3859,8 @@ let LV = (() => { try { return JSON.parse(localStorage.getItem(LV_KEY) || '{}');
 const lvBusy = new Set();
 const lvFrom = ev => (ev.from || S.settings.homeStation || '').trim();
 const lvKey = (ev, d) => [ev.id, d, ev.start, lvFrom(ev), (ev.dest || '').trim(), +S.settings.leaveMargin || 0].join('|');
-const lvArrBy = ev => hhmm(Math.max(0, toMin(ev.start) - (+S.settings.leaveMargin || 0)));
+// 着きたい時刻（予定の何分前）。0 時台の予定で前の日にまたがるときは、前の日の夜で調べる
+const lvAt = (ev, d) => { const m = toMin(ev.start) - (+S.settings.leaveMargin || 0); return m >= 0 ? { date: d, time: hhmm(m) } : { date: addDays(d, -1), time: hhmm(m + 1440) }; };
 function lvSave() { const T = todayISO(); for (const k of Object.keys(LV)) if (k.split('|')[1] < addDays(T, -1)) delete LV[k]; try { localStorage.setItem(LV_KEY, JSON.stringify(LV)); } catch (e) {} }
 function leaveGet(ev, d, cb) {
   const from = lvFrom(ev), to = (ev.dest || '').trim(), base = nkBase();
@@ -3852,20 +3869,22 @@ function leaveGet(ev, d, cb) {
   if (c && Date.now() - c.at < (d === todayISO() ? 30 : 360) * 60000) return c;
   if (!lvBusy.has(k)) {
     lvBusy.add(k);
-    fetchJSON(`${base}/api/search?` + new URLSearchParams({ from, to, date: d, time: lvArrBy(ev), type: 'arr' }), 15000)
+    fetchJSON(`${base}/api/search?` + new URLSearchParams({ from, to, ...lvAt(ev, d), type: 'arr' }), 15000)
       .then(j => { const r = (j.routes || [])[0]; LV[k] = r ? { at: Date.now(), dep: r.summary.dep, arr: r.summary.arr, fare: r.summary.fare, transfers: r.summary.transfers, line: ((r.steps || []).find(x => x.kind === 'access' && !x.walk) || {}).line || '' } : { at: Date.now(), err: 'notfound', msg: j.error || '' }; })
       .catch(() => { LV[k] = { at: Date.now() - 25 * 60000, err: 'net' }; })
       .finally(() => { lvBusy.delete(k); lvSave(); if (cb) cb(); });
   }
   return c || { loading: true };
 }
-const lvLeave = r => hhmm(((toMin(r.dep) - (+S.settings.leaveWalk || 0)) % 1440 + 1440) % 1440);
+// 家を出る時刻（予定の日の 0 時からの分。前の日なら負）
+const lvLeaveMin = (r, ev) => { const dep = toMin(r.dep); return (dep > toMin(ev.start) ? dep - 1440 : dep) - (+S.settings.leaveWalk || 0); };
+const lvLeave = (r, ev) => { const m = lvLeaveMin(r, ev); return (m < 0 ? '前日' : '') + hhmm((m % 1440 + 1440) % 1440); };
 function leaveRow(ev, d) {
   const r = leaveGet(ev, d, () => { if (st.tab === 'day' && st.day === d && !stack.length) render(); });
   const a = `data-act="leaveOpen" data-id="${ev.id}" data-d="${d}"`;
   if (r.loading) return `<button class="tl-leave" ${a}>${ico('train')}<span>${esc(ev.dest)}までの電車を調べています…</span></button>`;
   if (r.err) return r.err === 'from' ? `<button class="tl-leave err" data-act="settings">${ico('train')}<span>設定で「家の最寄り駅」を入れると、出発時刻が出ます</span></button>` : r.err === 'base' ? '' : `<button class="tl-leave err" ${a}>${ico('train')}<span>${r.err === 'net' ? '電車を調べられませんでした（通信を確認）' : `${esc(lvFrom(ev))} → ${esc(ev.dest)} の電車が見つかりませんでした`}</span></button>`;
-  const leave = lvLeave(r), past = d === todayISO() && toMin(nowHM()) > toMin(leave) && toMin(nowHM()) < toMin(ev.start);
+  const leave = lvLeave(r, ev), lm = lvLeaveMin(r, ev), now = toMin(nowHM()), past = (d === todayISO() && now > lm && now < toMin(ev.start)) || (lm < 0 && d === addDays(todayISO(), 1) && now > lm + 1440);
   return `<button class="tl-leave${past ? ' past' : ''}" ${a}>${ico('train')}<span><b class="num">${leave}</b>に${S.settings.leaveWalk ? '家を' : ''}出れば間に合います<br><small class="num">${esc(lvFrom(ev))} ${esc(r.dep)}発 → ${esc(ev.dest)} ${esc(r.arr)}着${r.line ? `・${esc(r.line)}` : ''}</small></span></button>`;
 }
 function leaveInfoHTML(e, d) {
@@ -3874,7 +3893,7 @@ function leaveInfoHTML(e, d) {
   const r = leaveGet(live, d, () => { const sh = topSheet(); if (sh && evDraft && evDraft.id === live.id && $('#ev-dest', sh)) rerenderEvent(); });
   if (r.loading) return '<div class="ev-leave">電車を調べています…</div>';
   if (r.err) return r.err === 'base' ? '' : `<div class="ev-leave">${r.err === 'from' ? '出発駅か、設定の「家の最寄り駅」を入れてください' : '電車が見つかりませんでした。駅名を確認してください'}</div>`;
-  return `<div class="ev-leave"><b class="num">${lvLeave(r)}</b>に出れば、${esc(r.arr)}に${esc(e.dest)}に着きます<br><span class="num" style="color:var(--ink-2)">${esc(lvFrom(live))} ${esc(r.dep)}発${r.transfers != null ? `・乗換${r.transfers}回` : ''}${r.fare != null ? `・${r.fare.toLocaleString()}円` : ''}</span></div>`;
+  return `<div class="ev-leave"><b class="num">${lvLeave(r, live)}</b>に出れば、${esc(r.arr)}に${esc(e.dest)}に着きます<br><span class="num" style="color:var(--ink-2)">${esc(lvFrom(live))} ${esc(r.dep)}発${r.transfers != null ? `・乗換${r.transfers}回` : ''}${r.fare != null ? `・${r.fare.toLocaleString()}円` : ''}</span></div>`;
 }
 
 /* ================= to-do → timeline: block out time to work on it ================= */
@@ -3956,7 +3975,7 @@ function todaySheet() {
   if (c && S.settings.wxLoc) { const [ga, gb] = wxGrad(c.weather_code, c.is_day); wx = `<button class="tw" style="--wa:${ga};--wb:${gb}" data-act="weather">${ico(wxIcon(c.weather_code, c.is_day))}<b class="num">${Math.round(c.temperature_2m)}°</b><span>${wxLabel(c.weather_code)}<small class="num">最高 ${Math.round(D.temperature_2m_max[di])}° / 最低 ${Math.round(D.temperature_2m_min[di])}°・降水 ${D.precipitation_probability_max[di] ?? '-'}%</small></span></button>`; }
   let nx = '';
   if (next) { const ev = next.ev, mins = toMin(ev.start) - now, r = ev.dest && !ev.cls ? leaveGet(ev, T, () => rerenderKind('today', todaySheet)) : null;
-    nx = `<div class="tnext" style="--c:${ev.color}"><small>つぎの予定</small><b>${esc(ev.title)}</b><span class="num">${hm(ev.start)}〜${endLabel(ev)}</span> <span class="in num">あと${mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60 ? `${mins % 60}分` : ''}` : `${mins}分`}</span>${r && r.dep ? `<div style="margin-top:6px;font-size:13px">${ico('train')} <b class="num" style="display:inline;font-size:15px">${lvLeave(r)}</b>に出れば間に合います（${esc(r.dep)}発）</div>` : ''}</div>`; }
+    nx = `<div class="tnext" style="--c:${ev.color}"><small>つぎの予定</small><b>${esc(ev.title)}</b><span class="num">${hm(ev.start)}〜${endLabel(ev)}</span> <span class="in num">あと${mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60 ? `${mins % 60}分` : ''}` : `${mins}分`}</span>${r && r.dep ? `<div style="margin-top:6px;font-size:13px">${ico('train')} <b class="num" style="display:inline;font-size:15px">${lvLeave(r, ev)}</b>に出れば間に合います（${esc(r.dep)}発）</div>` : ''}</div>`; }
   const rows = timed.map(o => { const e2 = toMin(o.ev.start) + evLen(o.ev), dn = isDone(o.ev, T); return `<div class="trow${dn ? ' done' : ''}${toMin(o.ev.start) <= now && now < e2 ? ' now' : ''}" style="--c:${o.ev.color}"><span class="t num">${hm(o.ev.start)}</span><i></i><span>${esc(o.ev.title)}</span></div>`; }).join('');
   const tds = todoItems().filter(x => !x.done && x.due && x.due <= addDays(T, 1)).sort((a, b) => a.due.localeCompare(b.due));
   return `<div class="sh-bar"><span></span><b>今日</b><button class="r" data-act="close">閉じる</button></div>
@@ -5744,7 +5763,7 @@ const ACT = {
       <div class="qi"><span class="script">Today's Quote</span><h2>${esc(q[0])}</h2>${i[0] ? `<div class="yomi">${esc(i[0])}</div>` : ''}${q[1] ? `<span class="src">${esc(q[1])}</span>` : ''}
       ${i[1] ? `<div class="qi-box"><b>意味</b>${esc(i[1])}</div>` : ''}${i[2] ? `<div class="qi-box"><b>今日のひとこと</b>${esc(i[2])}</div>` : ''}</div>`);
   },
-  leaveOpen: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; openNorikae({ from: lvFrom(ev), to: ev.dest, date: t.dataset.d, time: lvArrBy(ev), type: 'arr' }); },
+  leaveOpen: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev) return; openNorikae({ from: lvFrom(ev), to: ev.dest, ...lvAt(ev, t.dataset.d), type: 'arr' }); },
   todoPlan: t => { closeSheet(); openPlan(t.dataset.k, t.dataset.id); },
   tpDay: t => { const i = $('#tp-date', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="tpDay"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
   tpDur: t => { syncPlan(); tpDraft.dur = +t.dataset.m; topSheet().querySelectorAll('[data-act="tpDur"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
@@ -5907,7 +5926,7 @@ const ACT = {
   obRetry: t => { const w = t.closest('.ob-wrap'), f = w && $('.ob-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); orbWatch(w); f.src = u.toString(); },
   nkRetry: t => { const w = t.closest('.nk-wrap'), f = w && $('.nk-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); nkWatch(w); f.src = u.toString(); },
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
-  nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id); },
+  nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id, t.dataset.d || ev.date); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
   editEntry: t => openEntry(t.dataset.id),
@@ -7646,10 +7665,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v81';
+const APP_VER = 'hibi-v82';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.2';
-const HIBI_CHANGES = ['バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.5.3';
+const HIBI_CHANGES = ['乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
