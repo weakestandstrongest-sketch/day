@@ -776,6 +776,11 @@ input.inp[type=date]::-webkit-date-and-time-value,input.inp[type=time]::-webkit-
 .alb-grid span{position:absolute;left:6px;bottom:4px;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .story{position:fixed;inset:0;z-index:30;background:#000;color:#fff;opacity:0;transform:scale(.97);transition:opacity .25s,transform .25s;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
 .story.in{opacity:1;transform:none}
+.st-tap{position:absolute;top:50%;z-index:4;width:52px;height:52px;margin-top:-26px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(0,0,0,.28);pointer-events:none;animation:stTap .45s ease both}
+.st-tap.l{left:14px}.st-tap.r{right:14px}.st-tap .ico{width:26px;height:26px}
+@keyframes stTap{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:none}100%{opacity:0}}
+.st-end{position:absolute;left:50%;top:50%;z-index:4;transform:translate(-50%,-50%);max-width:calc(100% - 140px);padding:10px 16px;border-radius:14px;background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:600;text-align:center;pointer-events:none;animation:stEnd 1.8s ease both}
+@keyframes stEnd{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
 .st-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:stIn .45s ease both}
 @keyframes stIn{from{opacity:.35;transform:scale(1.04)}}
 .st-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(0,0,0,.42),transparent 26%,transparent 50%,rgba(0,0,0,.62) 82%,rgba(0,0,0,.78))}
@@ -4610,9 +4615,19 @@ function storyClick(ev) {
     if (sg.preview && !sg.dz) play(); else (sg.dz ? freshPreview(sg) : enrichSong(sg)).then(play);
     return;
   }
-  if (k === 'dial' || ev.target.closest('.st-ctrl, .st-info, .st-head, .st-dates')) return;
+  if (k === 'dial' || ev.target.closest('.st-ctrl, .st-dates')) return; // taps on the diary text / date line (not their buttons) also move to the next photo
   if (story.dates) { story.dates = false; stRender(); return; }
-  storyGo(ev.clientX < innerWidth * 0.3 ? -1 : 1);
+  // left third = previous, the rest = next. Show which side was tapped, and stay on the last photo instead of closing
+  // (closing on one tap and going back on another looked random)
+  const back = ev.clientX < innerWidth * 0.3, n = story.list.length;
+  if (back && story.idx === 0) { stFlash('l', n > 1 ? '最初の写真です' : ''); return; }
+  if (!back && story.idx >= n - 1) { stFlash('r', n > 1 ? '最後の写真です。左はしを押すと前に戻ります' : ''); return; }
+  storyGo(back ? -1 : 1); stFlash(back ? 'l' : 'r');
+}
+function stFlash(side, msg) {
+  if (!story) return; const el = story.el;
+  const f = document.createElement('div'); f.className = `st-tap ${side}`; f.innerHTML = ico(side === 'l' ? 'left' : 'right'); el.append(f); setTimeout(() => f.remove(), 450);
+  if (msg) { const old = $('.st-end', el); if (old) old.remove(); const m = document.createElement('div'); m.className = 'st-end'; m.textContent = msg; el.append(m); setTimeout(() => m.remove(), 1800); }
 }
 function closeStory(now) {
   if (!story) return; const el = story.el; cancelAnimationFrame(story.raf); stopPreview(); story = null;
@@ -7687,10 +7702,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v84';
+const APP_VER = 'hibi-v85';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.5';
-const HIBI_CHANGES = ['灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.5.6';
+const HIBI_CHANGES = ['メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
