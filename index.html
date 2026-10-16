@@ -3726,11 +3726,19 @@ function bbSheet() {
     <div class="nk-load"><span class="bb-big">${BALL_SVG}</span><b>野球速報を開いています…</b>
       <span class="nk-fail"><b>野球速報を開けませんでした</b><small>通信が不安定か、URLが違うかもしれません。設定 → 野球速報 のURLを確かめてください。</small><button class="btn primary" data-act="bbRetry">もう一度開く</button></span></div></div>`;
 }
+// 野球速報は開けたら baseball:ready を送ってくる。読み込みが終わってもそれが来ない（URL違い・エラーのページ）ときは「開けませんでした」
 function bbWatch(wrap) {
   const f = $('.bb-frame', wrap); wrap.classList.remove('ready', 'fail');
-  const t = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 20000);
-  f.addEventListener('load', () => { clearTimeout(t); setTimeout(() => { wrap.classList.remove('fail'); wrap.classList.add('ready'); }, 250); }, { once: true });
+  let t = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 20000);
+  f.addEventListener('load', () => { clearTimeout(t); t = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 8000); }, { once: true });
+  wrap._bbDone = () => { clearTimeout(t); wrap.classList.remove('fail'); wrap.classList.add('ready'); };
 }
+window.addEventListener('message', e => {
+  if (!e.data || e.data.type !== 'baseball:ready') return;
+  const f = [...document.querySelectorAll('.bb-frame')].find(x => x.contentWindow === e.source); if (!f) return;
+  try { if (e.origin !== new URL(bbBase()).origin) return; } catch (err) { return; }
+  const w = f.parentElement; if (w && w._bbDone) setTimeout(w._bbDone, 150);
+});
 function openBaseball() { const sh = openSheet(bbSheet(), 'full nk'); sh.dataset.kind = 'baseball'; const w = $('.bb-wrap', sh); if (w) bbWatch(w); }
 
 /* ---- 凪（ニュース）inside ひび手帳 (GitHub Pages on the same github.io site; shown once its page has loaded) ---- */
@@ -3764,7 +3772,7 @@ window.addEventListener('message', e => {
 function openNagi() { const sh = openSheet(ngSheet(), 'full nk'); sh.dataset.kind = 'nagi'; const w = $('.ng-wrap', sh); if (w) ngWatch(w); }
 
 /* ---- Orb (the AI browser) inside ひび手帳 ---- */
-const orbBase = () => { const u = (S.settings.orb || '').trim(); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
+const orbBase = () => { const u = (S.settings.orb || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://'); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
 const orbSameOrigin = u => { try { return new URL(u).origin === location.origin; } catch (e) { return false; } };
 function orbSheet() {
   const head = '<div class="sh-bar"><span></span><b>Orb</b><button class="r" data-act="close">閉じる</button></div>', base = orbBase();
@@ -3795,7 +3803,6 @@ function orbWatch(wrap) {
 }
 function openOrb() {
   const base = orbBase();
-  if (base && orbSameOrigin(base)) try { localStorage.setItem('kumo.installHintDismissed', '1'); } catch (e) {} // no "add to Home Screen" banner inside ひび手帳
   const sh = openSheet(orbSheet(), 'full nk'); sh.dataset.kind = 'orb';
   const w = $('.ob-wrap', sh); if (w) orbWatch(w);
 }
@@ -5575,7 +5582,7 @@ function importData(txt) {
       try { migrateSchool(); render(); } catch (e) { S = prev; render(); toast('このバックアップは読み込めませんでした（中身が壊れているようです）。いまのデータはそのままです'); return; }
       const wasFailed = loadFailed; loadFailed = false;
       if (!save()) { S = prev; loadFailed = wasFailed; render(); return; }
-      applyTheme(); while (stack.length) closeSheet(); render(); toast('復元しました');
+      applyTheme(); while (stack.length) closeSheet(); render(); hbTicker(); hbTick(); toast('復元しました');
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
 }
@@ -6778,7 +6785,7 @@ function normHabits(x) {
   const log = {};
   for (const [d, o] of Object.entries(asObj(x.log))) {
     if (!isYmd(d)) continue; const r = {};
-    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); const m = typeof e.m === 'string' ? e.m.slice(0, 200) : ''; if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip || m)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; if (+e.s) r[id].s = +e.s; if (+e.l) r[id].l = +e.l; if (m) r[id].m = m; }
+    for (const [id, e0] of Object.entries(asObj(o))) { const e = asObj(e0), v = Math.max(0, +e.v || 0); const m = typeof e.m === 'string' ? e.m.slice(0, 200) : ''; if (!/^[\w-]{1,48}$/.test(id) || !(v || e.skip || m || +e.s)) continue; r[id] = { v, t: +e.t || 0 }; if (e.skip) r[id].skip = true; if (+e.s) r[id].s = +e.s; if (+e.l) r[id].l = +e.l; if (m) r[id].m = m; }
     if (Object.keys(r).length) log[d] = r;
   }
   const r = asObj(x.run), run = list.some(h => h.id === r.id) && +r.s && isYmd(r.d) ? { id: r.id, d: r.d, s: +r.s, b: +r.b || 0 } : null;
@@ -6801,6 +6808,7 @@ function hbVal(h, d) {
 const hbRunEnd = r => Math.min(Date.now(), P(addDays(r.d, 1)).getTime());
 const hbDone = (h, d) => hbVal(h, d) >= h.goal;
 const hbSkip = (h, d) => !!(hbE(d, h.id) || {}).skip;
+const hbRest = (h, d) => hbSkip(h, d) && !hbDone(h, d); // skipped and not done (a day both done and skipped counts as done)
 // is this a day the habit is meant for (週◯回 habits can be done on any day)
 const hbSched = (h, d) => d >= h.c && (h.freq.t !== 'days' || h.freq.days.includes(wd(d)));
 const hbWeekCnt = (h, ws) => { let n = 0; for (let i = 0; i < 7; i++) if (hbDone(h, addDays(ws, i))) n++; return n; };
@@ -6814,7 +6822,7 @@ function hbStreak(h, upto = todayISO()) {
   }
   let d = hbDone(h, upto) ? upto : addDays(upto, -1); // today is still open
   for (let i = 0; i < 4000 && d >= h.c; i++, d = addDays(d, -1)) {
-    if (!hbSched(h, d) || hbSkip(h, d)) continue;
+    if (!hbSched(h, d) || hbRest(h, d)) continue;
     if (hbDone(h, d)) n++; else break;
   }
   return n;
@@ -6826,7 +6834,7 @@ function hbBest(h) {
     return best;
   }
   for (let d = h.c, i = 0; d <= T && i < 4000; d = addDays(d, 1), i++) {
-    if (!hbSched(h, d) || hbSkip(h, d)) continue;
+    if (!hbSched(h, d) || hbRest(h, d)) continue;
     if (hbDone(h, d)) best = Math.max(best, ++cur); else if (d < T) cur = 0;
   }
   return best;
@@ -6838,7 +6846,7 @@ function hbDayFrac(d) {
   for (const h of hbAct()) {
     if (d < h.c) continue; const ok = hbDone(h, d);
     if (h.freq.t === 'week') { if (ok) { tot++; done++; } continue; }
-    if (!hbSched(h, d) || hbSkip(h, d)) continue; tot++; if (ok) done++;
+    if (!hbSched(h, d) || hbRest(h, d)) continue; tot++; if (ok) done++;
   }
   return tot ? done / tot : -1;
 }
@@ -6871,11 +6879,12 @@ function hbRing(f, r, sw, cls = '', id = '') {
 }
 
 /* ---- logging ---- */
-function hbSet(id, d, v) {
+function hbSet(id, d, v, at) { // at: when it was actually finished (a timer that ended while the app was closed)
   const h = hbById(id); if (!h) return false;
   const L = S.habits.log, day = L[d] || (L[d] = {}), e = day[id] || { v: 0, t: 0 }, was = e.v >= h.goal;
   e.v = Math.max(0, h.kind === 'time' ? Math.round(v) : Math.floor(v)); delete e.skip;
-  if (e.v >= h.goal && !was) e.t = Date.now(); if (e.v < h.goal) e.t = 0;
+  if (e.v >= h.goal && !was) e.t = at || Date.now(); if (e.v < h.goal) e.t = 0;
+  if (e.v && d < h.c) h.c = d; // a day logged before the habit was made: start the habit from there (so it counts in streaks)
   if (e.v || e.m) day[id] = e; else delete day[id];
   if (!Object.keys(day).length) delete L[d];
   save(); return !was && e.v >= h.goal;
@@ -6901,7 +6910,7 @@ function hbCheer(h, d) {
   const note = hbTlNote; hbTlNote = '';
   const once = k => { if (seen[k]) return false; seen[k] = 1; save(); return true; };
   const mf = () => hbMemoOpen(h.id, d);
-  if (HB_SM.includes(n) && once(`${h.id}:s${n}`)) return hbCelebrate('🔥', `${n}${u}連続！`, `${h.emoji || ''} ${h.name}`, h.color, note, mf);
+  if (HB_SM.includes(n) && once(`${h.id}:s${n}`)) { const both = HB_TM.includes(tot) && once(`${h.id}:t${tot}`); return hbCelebrate('🔥', `${n}${u}連続！`, `${h.emoji || ''} ${h.name}${both ? `・合計${tot}回も達成` : ''}`, h.color, note, mf); }
   if (HB_TM.includes(tot) && once(`${h.id}:t${tot}`)) return hbCelebrate('🏅', `合計${tot}回！`, `${h.emoji || ''} ${h.name}`, h.color, note, mf);
   if (d === T && hbDayFrac(T) >= 1 && hbAct().filter(x => hbSched(x, T) && x.freq.t !== 'week').length > 1 && once(`all:${T}`)) return hbCelebrate('🎉', '今日の習慣をぜんぶ達成！', 'おつかれさま。この調子で続けましょう', 'var(--accent)', note);
   toast(`${h.emoji || '✓'} ${h.name} 達成！${n > 1 ? `　🔥 ${n}${u}連続` : ''}${note ? '\n' + note : ''}`, 'メモ', () => hbMemoOpen(h.id, d));
@@ -6938,7 +6947,7 @@ function hbPomoStep() {
       if (r.b < h.goal && h.goal <= workEnd) break; // the goal comes first: hbTick finishes it
       if (raw < workEnd) break;
       const X = r.s + (workEnd - r.b) * 1000; S.habits.run = null;
-      hbSet(r.id, r.d, workEnd); const e2 = hbE(r.d, r.id); if (e2) e2.l = X;
+      hbSet(r.id, r.d, workEnd, X); const e2 = hbE(r.d, r.id); if (e2) e2.l = X;
       S.habits.brk = { id: r.id, d: r.d, at: X, n: r.p.n + 1 }; moved = true; last = ['break', X, h];
     } else if (k) {
       const Y = k.at + pomoBreakMs(k.n); if (Date.now() < Y) break;
@@ -6955,8 +6964,8 @@ function hbStop(quiet) {
   const r = S.habits.run; if (!r) return; const h = hbById(r.id);
   const v = h ? hbVal(h, r.d) : 0; S.habits.run = null;
   if (h) {
-    const e0 = hbE(r.d, r.id), began = (e0 && e0.s) || r.s, got = hbSet(r.id, r.d, v);
-    const endAt = r.b < h.goal && v >= h.goal ? r.s + (h.goal - r.b) * 1000 : hbRunEnd(r), e1 = hbE(r.d, r.id); if (e1) { e1.l = endAt; save(); }
+    const endAt = r.b < h.goal && v >= h.goal ? r.s + (h.goal - r.b) * 1000 : hbRunEnd(r);
+    const e0 = hbE(r.d, r.id), began = (e0 && e0.s) || r.s, got = hbSet(r.id, r.d, v, endAt), e1 = hbE(r.d, r.id); if (e1) { e1.l = endAt; save(); }
     // finished with the timer: the practice goes onto the timeline as a done plan
     if (got && !quiet && h.kind === 'time' && h.tl !== false) hbToTimeline(h, r.d, began, endAt);
     if (got && !quiet) hbCheer(h, r.d);
@@ -7021,7 +7030,14 @@ function hbRe() {
   for (const ov of stack) {
     const sh = ov.firstElementChild, k = sh.dataset.kind;
     if (k === 'hb') { const sc = $('.hb-scroll', sh), y = sc ? sc.scrollTop : 0; sh.innerHTML = hbHTML(); const s2 = $('.hb-scroll', sh); if (s2) s2.scrollTop = y; }
-    else if (k === 'hbd') { const y = sh.scrollTop; sh.innerHTML = hbdHTML(); sh.scrollTop = y; }
+    else if (k === 'hbd') {
+      // a redraw while typing a memo (timer reaching its goal, pomodoro switching) must not lose the text or the cursor
+      const ta = $('#hbd-m', sh), had = !!ta && document.activeElement === ta, val = ta ? ta.value : '', a = ta ? ta.selectionStart : 0, b = ta ? ta.selectionEnd : 0;
+      if (ta && val.trim() !== hbMemo(ta.dataset.id, ta.dataset.d)) { clearTimeout(hbMT); hbMemoSet(ta.dataset.id, ta.dataset.d, val); }
+      const y = sh.scrollTop; sh.innerHTML = hbdHTML(); sh.scrollTop = y;
+      const t2 = $('#hbd-m', sh);
+      if (ta && t2 && t2.dataset.id === ta.dataset.id && t2.dataset.d === ta.dataset.d) { t2.value = val; if (had) { t2.focus({ preventScroll: true }); try { t2.setSelectionRange(a, b); } catch (e) {} } }
+    }
     else if (k === 'today') { const y = sh.scrollTop; sh.innerHTML = todaySheet(); sh.scrollTop = y; }
   }
 }
@@ -7094,7 +7110,7 @@ function hbMonthCard(h) {
   for (let i = 0; i < lead; i++) cells += '<i class="e"></i>';
   for (let k = 1; k <= dim; k++) {
     const x = `${m}-${pad(k)}`, f = hbClamp(((hbE(x, h.id) || {}).v || 0) / h.goal), fut = x > T, pre = x < h.c;
-    if (!fut && !pre && hbSched(h, x) && !hbSkip(h, x) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; }
+    if (!fut && !pre && hbSched(h, x) && !(hbSkip(h, x) && f < 1) && !(x === T && f < 1) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; } // today still open: not missed yet
     if (f >= 1) cnt++;
     cells += `<i class="${f >= 1 ? 'on' : f > 0 ? 'part' : fut || pre ? 'fut' : ''}${x === T ? ' t' : ''}${hbMemo(h.id, x) ? ' m' : ''}">${k}</i>`;
   }
@@ -7133,16 +7149,17 @@ function hbStatsHTML() {
   for (const h of hs) {
     if (h.freq.t === 'week') {
       for (let ws = weekStart(from); ws <= T; ws = addDays(ws, 7)) {
-        let c = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c && hbDone(h, d)) c++; }
+        // count the whole week (also the days just before the window), so a week that was met counts as met
+        let c = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d <= T && d >= h.c && hbDone(h, d)) c++; }
         if (addDays(ws, 6) < h.c) continue;
-        let inDays = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d >= from && d <= T && d >= h.c) inDays++; }
+        let inDays = 0; for (let i = 0; i < 7; i++) { const d = addDays(ws, i); if (d <= T && d >= h.c) inDays++; }
         const got = Math.min(c, h.freq.n); tot += Math.max(got, Math.round(h.freq.n * inDays / 7)); done += got;
       }
     }
     for (let d = from > h.c ? from : h.c, i = 0; d <= T && i < 400; d = addDays(d, 1), i++) {
       const e = hbE(d, h.id), ok = hbDone(h, d);
       if (ok && e && e.t) hours[new Date(e.t).getHours()]++;
-      if (h.freq.t === 'week' || !hbSched(h, d) || hbSkip(h, d)) continue;
+      if (h.freq.t === 'week' || !hbSched(h, d) || hbRest(h, d)) continue;
       tot++; wdT[wd(d)]++; if (ok) { done++; wdD[wd(d)]++; }
     }
   }
@@ -7152,7 +7169,8 @@ function hbStatsHTML() {
   // streaks
   let cur = 0, best = 0, who = '';
   if (all) { // days in a row with every habit of the day done
-    let d = T, i = 0; const okDay = x => { const f = hbDayFrac(x); return f >= 1 ? 1 : f < 0 ? 0 : -1; };
+    // only the habits of that day count (週N回 habits don't make a day 'all done' or break it)
+    let d = T, i = 0; const okDay = x => { let tot = 0, dn = 0; for (const h of act) { if (x < h.c || h.freq.t === 'week' || !hbSched(h, x) || hbRest(h, x)) continue; tot++; if (hbDone(h, x)) dn++; } return !tot ? 0 : dn === tot ? 1 : -1; };
     if (okDay(d) < 1) d = addDays(d, -1);
     for (; i < 3660; d = addDays(d, -1), i++) { const k = okDay(d); if (k === 1) cur++; else if (k === 0 && act.some(h => h.c <= d)) continue; else break; }
     for (const h of act) { const b = hbBest(h); if (b > best) { best = b; who = h.name; } }
@@ -7190,7 +7208,7 @@ function hbdHTML() {
   const run = S.habits.run && S.habits.run.id === h.id && S.habits.run.d === d;
   const big = h.kind === 'time' ? `<b id="hbd-v" data-id="${h.id}" class="num tm">${hbClock(v)}</b><small>/ ${hbFmt(h.goal)}</small>` : h.kind === 'count' ? `<b class="num">${Math.floor(v)}</b><small>/ ${h.goal}${esc(h.unit || '回')}</small>` : `<b class="num">${done ? '✓' : '0'}</b><small>${done ? 'できた' : 'まだ'}</small>`;
   const step = h.kind === 'time' ? 60 : 1, sl = h.kind === 'time' ? '1分' : '1';
-  const btns = `${h.kind === 'time' ? `<button class="hb-b wide pri" data-act="hbTap" data-id="${h.id}" data-d="${d}">${run ? '<i class="hb-stop"></i>止める' : S.habits.brk && S.habits.brk.id === h.id ? `${ico('play')}休憩をおえて再開` : `${ico('play')}${done ? 'もう少し続ける' : v > 0 ? '続きから' : 'はじめる'}`}</button>` : ''}
+  const btns = `${h.kind === 'time' && (d === T || run) ? `<button class="hb-b wide pri" data-act="hbTap" data-id="${h.id}" data-d="${d}">${run ? '<i class="hb-stop"></i>止める' : S.habits.brk && S.habits.brk.id === h.id ? `${ico('play')}休憩をおえて再開` : `${ico('play')}${done ? 'もう少し続ける' : v > 0 ? '続きから' : 'はじめる'}`}</button>` : ''}
     <button class="hb-b" data-act="hbAdd" data-n="${-step}" aria-label="${sl}へらす">− ${sl}</button><button class="hb-b" data-act="hbAdd" data-n="${h.kind === 'check' ? (done ? -1 : 1) : step}" aria-label="${sl}ふやす">${h.kind === 'check' ? (done ? '取り消す' : `${ico('check')}できた`) : `+ ${sl}`}</button>
     <button class="hb-b" data-act="hbSkipT" aria-pressed="${hbSkip(h, d)}" aria-label="スキップ（連続記録は途切れません）"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zM13 6l7 6-7 6z" fill="currentColor"/></svg>${hbSkip(h, d) ? 'スキップ中' : 'スキップ'}</button>
     <button class="hb-b" data-act="hbReset" aria-label="この日の記録を消す"><svg class="ico" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>リセット</button>`;
@@ -7200,7 +7218,7 @@ function hbdHTML() {
   for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let k = 1; k <= dim; k++) {
     const x = `${m}-${pad(k)}`, f = hbClamp(((hbE(x, h.id) || {}).v || 0) / h.goal), fut = x > T, sc = hbSched(h, x) && !fut;
-    if (sc && !hbSkip(h, x) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; }
+    if (sc && !(hbSkip(h, x) && f < 1) && !(x === T && f < 1) && h.freq.t !== 'week') { sch++; if (f >= 1) ok++; } // today still open: not missed yet
     if (f >= 1) cnt++;
     cells += `<button class="hb-cd${f >= 1 ? ' on' : f > 0 ? ' part' : ''}${hbSkip(h, x) ? ' sk' : ''}${x === d ? ' sel' : ''}${fut || x < h.c ? ' fut' : ''}${!sc && !fut && x >= h.c ? ' rest' : ''}${hbMemo(h.id, x) ? ' m' : ''}" data-act="hbdDay" data-d="${x}" ${fut ? 'disabled' : ''} style="--f:${f}">${k}</button>`;
   }
@@ -7274,6 +7292,10 @@ function hbeSave() {
       if (S.habits.brk && S.habits.brk.id === h.id) S.habits.brk = null;
       // past values mean different things (seconds / times / done); keep each day's 'done' as it was
       for (const day of Object.values(S.habits.log)) { const e = day[h.id]; if (!e) continue; const was = e.v >= oldGoal; e.v = was ? o.goal : 0; if (!was) e.t = 0; delete e.s; delete e.l; }
+    } else if (oldGoal !== o.goal && o.kind !== 'check') {
+      // a new goal applies from today: past days stay done / not done as they were
+      const T = todayISO();
+      for (const [dd, day] of Object.entries(S.habits.log)) { const e = day[h.id]; if (!e || dd >= T) continue; const was = e.v >= oldGoal; if (was && e.v < o.goal) e.v = o.goal; else if (!was && e.v >= o.goal) e.v = o.goal - 1; }
     }
     Object.assign(h, o); if (h.kind !== 'time') h.pomo = false;
   }
@@ -7311,7 +7333,7 @@ Object.assign(ACT, {
   },
   hbSkipT: () => {
     const h = hbById(HBD.id); if (!h) return; const d = HBD.d, L = S.habits.log, day = L[d] || (L[d] = {}), e = day[h.id] || (day[h.id] = { v: 0, t: 0 });
-    if (e.skip) { delete e.skip; if (!e.v && !e.m) delete day[h.id]; } else { e.skip = true; toast('スキップしました。連続記録は途切れません'); }
+    if (e.skip) { delete e.skip; if (!e.v && !e.m) delete day[h.id]; } else { e.skip = true; if (d < h.c) h.c = d; toast('スキップしました。連続記録は途切れません'); }
     if (!Object.keys(day).length) delete L[d]; save(); hbRe(); render();
   },
   hbReset: () => {
@@ -7665,10 +7687,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v83';
+const APP_VER = 'hibi-v84';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.4';
-const HIBI_CHANGES = ['2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.5.5';
+const HIBI_CHANGES = ['灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
