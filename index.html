@@ -400,6 +400,7 @@ input.inp[type=date]::-webkit-date-and-time-value,input.inp[type=time]::-webkit-
 .sel-feels{display:flex;flex-wrap:wrap;gap:6px}
 .sel-feels button{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:13px;background:color-mix(in srgb,var(--c) 22%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 50%,transparent)}
 .sel-feels i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+img[src^="idb:"]{visibility:hidden}
 .photo-box{display:flex;gap:10px;align-items:center}
 .photo-box img{width:96px;height:96px;object-fit:cover;border-radius:12px}
 .file-btn{position:relative;overflow:hidden}
@@ -2284,7 +2285,7 @@ let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
 const okColor = c => typeof c === 'string' && (/^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\([\d.,\s%]+\)$/i.test(c) || /^var\(--[a-z0-9-]+\)$/i.test(c));
-const okImg = x => typeof x === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(x) ? x : '';
+const okImg = x => typeof x === 'string' && (/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(x) || /^idb:m[a-z0-9]{6,40}$/.test(x)) ? x : ''; // idb:… = a photo kept in IndexedDB (see medLoad)
 const isYmdS = x => typeof x === 'string' && /^\d{4}-\d\d-\d\d$/.test(x);
 const S_TIMER_OK = t => isYmdS(t.d) && +t.startedAt > 0 && !(+t.accum < 0);
 const okId = x => (typeof x === 'string' || typeof x === 'number') && /^[\w-]{1,48}$/.test(String(x)) ? String(x) : uid();
@@ -2346,8 +2347,67 @@ function load() {
 let lfWarned = 0;
 function save(silent) {
   if (loadFailed) { if (!silent && Date.now() - lfWarned > 8000) { lfWarned = Date.now(); toast('前のデータを読み込めなかったため、保存を止めています（設定 → バックアップ）'); } return false; }
-  try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
-  catch (e) { if (!silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください'); return false; }
+  try { localStorage.setItem(KEY, serialS()); if (medReady && medPending()) medSync(); return true; }
+  catch (e) { if (medReady && medPending()) medSync(); if (!silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください'); return false; }
+}
+
+/* ================= photos live in IndexedDB ('hibi-media'); hibi.v1 keeps only "idb:<key>" =================
+   localStorage holds about 5MB and a diary photo is 0.1–0.3MB as text: kept inside hibi.v1, a few dozen photos filled it
+   and then nothing (diary, plans, settings) could be saved. In memory S still holds the image itself, so drawing is unchanged;
+   only what is written to hibi.v1 (and the daily snapshots) carries the short reference. Backup files keep the images inline. */
+const MED_FIELDS = new Set(['photo', 'artData']);
+const medKey = new Map(), medData = new Map(); // image -> key stored in IndexedDB, key -> image
+let medOn = !!window.indexedDB, medReady = false, medBusy = Promise.resolve();
+const isRef = v => typeof v === 'string' && /^idb:m[a-z0-9]{6,40}$/.test(v);
+const isData = v => typeof v === 'string' && v.startsWith('data:image/');
+function medHash(x) { let a = 2166136261, b = 5381; for (let i = 0; i < x.length; i++) { const c = x.charCodeAt(i); a = Math.imul(a ^ c, 16777619); b = (Math.imul(b, 33) + c) | 0; } return 'm' + x.length.toString(36) + (a >>> 0).toString(36) + (b >>> 0).toString(36); }
+const medRep = (k, v) => (MED_FIELDS.has(k) && isData(v) && medKey.has(v) ? 'idb:' + medKey.get(v) : v);
+const serialS = (x = S) => JSON.stringify(x, medRep);
+function medEach(x, fn) { for (const e of (x && x.entries) || []) { fn(e, 'photo'); if (e.song) fn(e.song, 'artData'); } }
+function medResolve(x) { medEach(x, (o, f) => { if (isRef(o[f])) { const d = medData.get(o[f].slice(4)); if (d) o[f] = d; } }); }
+function medPending() { if (!medOn) return false; let n = false; medEach(S, (o, f) => { if (!n && isData(o[f]) && !medKey.has(o[f])) n = true; }); return n; }
+function medDB() { return new Promise((res, rej) => { const r = indexedDB.open('hibi-media', 1); r.onupgradeneeded = () => r.result.createObjectStore('m'); r.onsuccess = () => { const db = r.result; db.onversionchange = () => db.close(); res(db); }; r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked')); }); }
+// store images in IndexedDB (one batch at a time through medBusy, so two saves never race)
+function medPut(list) {
+  list = [...new Set(list.filter(v => isData(v) && !medKey.has(v)))];
+  if (!medOn || !list.length) return Promise.resolve(true);
+  const run = async () => {
+    list = list.filter(v => !medKey.has(v)); if (!list.length) return true;
+    try {
+      const db = await medDB(), tx = db.transaction('m', 'readwrite'), os = tx.objectStore('m'), keys = list.map(medHash);
+      list.forEach((v, i) => os.put(v, keys[i]));
+      await new Promise((r, j) => { tx.oncomplete = r; tx.onerror = () => j(tx.error); tx.onabort = () => j(tx.error); }); db.close();
+      list.forEach((v, i) => { medKey.set(v, keys[i]); medData.set(keys[i], v); });
+      return true;
+    } catch (e) { return false; } // the image simply stays inside hibi.v1, as before
+  };
+  return (medBusy = medBusy.then(run, run));
+}
+// move every image that is still inline into IndexedDB, then save once more so hibi.v1 shrinks
+function medSync() { const l = []; medEach(S, (o, f) => { if (isData(o[f]) && !medKey.has(o[f])) l.push(o[f]); }); return l.length ? medPut(l).then(ok => { if (ok) save(true); }) : Promise.resolve(); }
+async function medLoad() {
+  if (medOn) {
+    try {
+      const db = await medDB();
+      const all = await new Promise((res, rej) => { const out = [], c = db.transaction('m').objectStore('m').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { out.push([cur.key, cur.value]); cur.continue(); } else res(out); }; c.onerror = () => rej(c.error); });
+      db.close(); for (const [k, v] of all) { medData.set(k, v); medKey.set(v, k); }
+    } catch (e) { medOn = false; } // no IndexedDB (private browsing etc): photos stay inside hibi.v1 as before
+  }
+  medResolve(S); medReady = true;
+}
+// drop stored images nothing points at any more (not hibi.v1, not a snapshot, not the unsent draft)
+async function medGC() {
+  if (!medOn || !medReady || loadFailed) return;
+  try {
+    const used = new Set(), grab = t => { for (const m of String(t || '').matchAll(/idb:(m[a-z0-9]{6,40})/g)) used.add(m[1]); };
+    grab(serialS()); grab(localStorage.getItem(DRAFT_KEY)); for (const x of await snapList()) grab(x.json);
+    if (enDraft && isData(enDraft.photo) && medKey.has(enDraft.photo)) used.add(medKey.get(enDraft.photo));
+    const gone = [...medData.keys()].filter(k => !used.has(k)); if (!gone.length) return;
+    const db = await medDB(), tx = db.transaction('m', 'readwrite'), os = tx.objectStore('m');
+    gone.forEach(k => os.delete(k));
+    await new Promise(r => { tx.oncomplete = r; tx.onerror = r; tx.onabort = r; }); db.close();
+    gone.forEach(k => { const v = medData.get(k); medData.delete(k); if (v && medKey.get(v) === k) medKey.delete(v); });
+  } catch (e) {}
 }
 const st = { pxYear: new Date().getFullYear(), anim: null, tab: 'cal', calMonth: null, sel: null, day: null, jWeek: 0, range: 7, iWeek: 0, mcal: 0, jLimit: 14 };
 try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (['cal','day','journal','reflect'].includes(u.tab)) st.tab = u.tab; } catch (e) {}
@@ -3668,8 +3728,9 @@ function camShoot() {
   tick();
 }
 function camReview(show = true) { const r = $('.cam-review', CAM.el); if (show) $('img', r).src = CAM.shot.small; r.hidden = !show; CAM.el.classList.toggle('reviewing', show); }
-function camAddEntry(withWords) {
+async function camAddEntry(withWords) {
   const c = CAM, photo = c.shot && c.shot.small; if (!photo) return;
+  if (!withWords) { if (c.adding) return; c.adding = true; await medPut([photo]); c.adding = false; if (CAM !== c) return; }
   if (withWords) { closeCam(); openEntry(null, todayISO()); enDraft.photo = photo; rerenderEntry(false); return; }
   const out = { id: uid(), date: todayISO(), time: nowHM(), feelings: [], tags: [], text: '', photo };
   S.entries.push(out); if (!save()) { S.entries.pop(); return; }
@@ -4119,7 +4180,7 @@ function lockClick(ev) {
   if (k === 'cancel') { hideLock(); return; }
   if (k === 'forgot') { LKS.view = 'forgot'; lockRender(); return; }
   if (k === 'back') { LKS.view = 'pad'; lockRender(); return; }
-  if (k === 'erase') { try { for (const x of [KEY, WX_KEY, UIKEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(x); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {} location.reload(); }
+  if (k === 'erase') { try { for (const x of [KEY, WX_KEY, UIKEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(x); if (window.indexedDB) { indexedDB.deleteDatabase('hibi-snaps'); indexedDB.deleteDatabase('hibi-media'); } } catch (e) {} location.reload(); }
 }
 const lockOn = () => LK().on && LK().hash;
 document.addEventListener('visibilitychange', () => {
@@ -4640,7 +4701,7 @@ function closeStory(now) {
 const standalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 function snapDB() { return new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const r = indexedDB.open('hibi-snaps', 1); r.onupgradeneeded = () => r.result.createObjectStore('snaps', { keyPath: 'day' }); r.onsuccess = () => { const db = r.result; db.onversionchange = () => db.close(); res(db); }; r.onerror = () => rej(r.error); }); }
 let snapCache = [];
-async function snapPut(note, json = JSON.stringify(S), ev = S.events.length, en = S.entries.length, late2 = false) {
+async function snapPut(note, json = serialS(), ev = S.events.length, en = S.entries.length, late2 = false) {
   const db = await snapDB(), tx = db.transaction('snaps', 'readwrite'), os = tx.objectStore('snaps'), T = todayISO();
   os.put({ day: note ? `${T}#${Date.now()}` : late2 ? `${T}~late` : T, at: Date.now(), json, ev, en, note: note || (late2 ? '夜の控え' : '') });
   // daily copies (7) and copies taken before a restore or an import (3) are kept separately, so one never pushes out the other
@@ -4667,6 +4728,7 @@ function checkBackup() {
   bar.hidden = !bkDue();
 }
 function saveBackupFile() {
+  if (!medReady) { toast('写真を読み込んでいます。少しして、もう一度押してください'); return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' })); a.download = `hibi-backup-${todayISO()}.json`;
   document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   S.settings.lastBackup = Date.now(); save(true); const bar = $('#bkbar'); if (bar) bar.hidden = true;
@@ -5319,11 +5381,12 @@ function pickHTML() {
 /* ---- entry editor ---- */
 let enDraft = null, enStep = 'feel';
 const DRAFT_KEY = 'hibi.draft';
+let enSaving = false;
 function keepDraft() {
   const sh = stack.map(o => o.firstElementChild).find(x => x.dataset.kind === 'entry'); if (!sh || !enDraft) return;
   try { syncEntry(); } catch (e) {}
   const d = JSON.parse(JSON.stringify(enDraft)); if (!(d.text || '').trim() && !(d.feelings || []).length) return;
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e) { try { delete d.photo; localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e2) {} }
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d }, medRep)); } catch (e) { try { delete d.photo; localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e2) {} }
 }
 const dropDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
 function flushOnHide() { if (typeof noteSaveT !== 'undefined' && noteSaveT) { clearTimeout(noteSaveT); noteSaveT = 0; save(true); } keepDraft(); }
@@ -5333,7 +5396,7 @@ window.addEventListener('pagehide', flushOnHide);
 function offerDraft() {
   let x = null; try { x = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
   if (!x || !x.d || Date.now() - x.at > 3 * 864e5) { if (x) dropDraft(); return; }
-  setTimeout(() => toast(`書きかけの日記があります（${md(x.d.date)}）`, '続きを書く', () => { dropDraft(); openEntry(x.d.id || null, x.d.date); Object.assign(enDraft, x.d); enStep = 'write'; rerenderEntry(false); }), 2600);
+  setTimeout(() => toast(`書きかけの日記があります（${md(x.d.date)}）`, '続きを書く', () => { dropDraft(); if (isRef(x.d.photo)) x.d.photo = medData.get(x.d.photo.slice(4)) || null; openEntry(x.d.id || null, x.d.date); Object.assign(enDraft, x.d); enStep = 'write'; rerenderEntry(false); }), 2600);
 }
 function openEntry(id, date, prompt) {
   const en = id ? S.entries.find(e => e.id === id) : null;
@@ -5591,12 +5654,13 @@ function importData(txt) {
   try {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
-    confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', () => {
+    confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件で、いまのデータを置き換えます。`, '復元する', async () => {
       const prev = S; let next;
       try { next = normalizeState(JSON.parse(JSON.stringify(d)), true); next.settings.lastSnap = prev.settings.lastSnap; next.settings.lock = prev.settings.lock; } catch (e) { toast('バックアップの中身が壊れているようで、読み込めませんでした'); return; }
       snapPut('復元する前').then(refreshSnaps).catch(() => {}); // the data being replaced stays restorable for a while
-      S = next;
+      S = next; medResolve(S);
       try { migrateSchool(); render(); } catch (e) { S = prev; render(); toast('このバックアップは読み込めませんでした（中身が壊れているようです）。いまのデータはそのままです'); return; }
+      await medSync(); // photos in the backup go to IndexedDB first, so hibi.v1 stays small enough to save
       const wasFailed = loadFailed; loadFailed = false;
       if (!save()) { S = prev; loadFailed = wasFailed; render(); return; }
       applyTheme(); while (stack.length) closeSheet(); render(); hbTicker(); hbTick(); toast('復元しました');
@@ -6011,8 +6075,11 @@ const ACT = {
   tag: t => { syncEntry(); const g = t.dataset.t, a = enDraft.tags, i = a.indexOf(g); if (i >= 0) a.splice(i, 1); else a.push(g); rerenderEntry(); },
   addTag: () => { syncEntry(); const el = $('#ct-name', topSheet()), n = (el.value || '').trim().replace(/^#/, '').slice(0, 8); if (!n) return; if (!TAGS.includes(n) && !S.customTags.includes(n)) { S.customTags.push(n); save(); } if (!enDraft.tags.includes(n)) enDraft.tags.push(n); rerenderEntry(); },
   rmPhoto: () => { syncEntry(); enDraft.photo = null; rerenderEntry(); },
-  saveEntry: () => {
+  saveEntry: async () => {
+    if (enSaving) return;
     syncEntry(); const e = enDraft;
+    // the photo goes to IndexedDB first, so hibi.v1 only gets its short reference
+    if (isData(e.photo) && !medKey.has(e.photo)) { enSaving = true; try { await medPut([e.photo]); } finally { enSaving = false; } if (enDraft !== e) return; }
     if (!e.text.trim() && !e.feelings.length && !e.photo && !e.song) { toast('気持ちを選ぶか、ひとこと書いてください'); return; }
     const out = { id: e.id || uid(), date: e.date, time: e.time, feelings: e.feelings, tags: e.tags, text: e.text.trim(), photo: e.photo };
     if (e.weather) out.weather = e.weather;
@@ -6032,15 +6099,16 @@ const ACT = {
   // settings
   theme: t => { S.settings.theme = t.dataset.k; save(); applyTheme(); topSheet().querySelectorAll('[data-act="theme"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === t.dataset.k)); },
   exportCopy: t => {
+    if (!medReady) { toast('写真を読み込んでいます。少しして、もう一度押してください'); return; }
     const txt = backupJSON();
     const fallback = () => { const ta = $('#imp-text'); if (ta) { ta.value = txt; ta.focus(); ta.select(); } toast('下の欄を全選択してコピーしてください'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast('バックアップをコピーしました。メモアプリなどに貼り付けて保管してください'), fallback); else fallback();
   },
-  exportFile: () => { S.settings.lastBackup = Date.now(); save(true); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' })); a.download = `hibi-backup-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
+  exportFile: () => { if (!medReady) { toast('写真を読み込んでいます。少しして、もう一度押してください'); return; } S.settings.lastBackup = Date.now(); save(true); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupJSON()], { type: 'application/json' })); a.download = `hibi-backup-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
   importText: () => { const v = ($('#imp-text') || {}).value || ''; if (!v.trim()) { toast('バックアップを貼り付けてください'); return; } importData(v); },
   exportBroken: () => { let raw = ''; try { raw = localStorage.getItem(KEY + '.broken') || ''; } catch (e) {} if (!raw) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' })); a.download = `hibi-unreadable-${todayISO()}.json`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
   resetAll: () => confirmIn('予定・日記・設定をすべて削除します。元に戻せません。', 'すべて削除', () => {
-    try { for (const k of [WX_KEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(k); if (window.indexedDB) indexedDB.deleteDatabase('hibi-snaps'); } catch (e) {}
+    try { for (const k of [WX_KEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(k); if (window.indexedDB) { indexedDB.deleteDatabase('hibi-snaps'); indexedDB.deleteDatabase('hibi-media'); } } catch (e) {}
     snapCache = []; S = defaults(); migrateSchool(); loadFailed = false; save(); applyTheme(); while (stack.length) closeSheet(); render(); toast('すべてのデータを削除しました');
   }),
 };
@@ -6102,7 +6170,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'en-photo' && t.files && t.files[0]) {
     // a big photo takes a moment to shrink: if the editor was closed (キャンセル) meanwhile, drop the result instead of writing into another sheet
     syncEntry(); const d = enDraft, sh = topSheet();
-    try { const ph = await resizeImage(t.files[0]); if (enDraft === d && topSheet() === sh && sh && sh.dataset.kind === 'entry') { d.photo = ph; rerenderEntry(); } }
+    try { const ph = await resizeImage(t.files[0]); if (enDraft === d && topSheet() === sh && sh && sh.dataset.kind === 'entry') { d.photo = ph; rerenderEntry(); medPut([ph]); } }
     catch (err) { if (enDraft === d) toast(err.message); }
   }
   else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); t.value = ''; }
@@ -6519,7 +6587,7 @@ function mnCsvImport() {
   const rows = csvRows().filter(r => !r.err), M = S.money, key = e => `${e.k}|${e.date}|${e.amt}|${mnCat(e.k, e.cat).name}|${e.memo}`;
   const have = new Map(); for (const e of M.entries) have.set(key(e), (have.get(key(e)) || 0) + 1);
   let n = 0, dup = 0;
-  const before = JSON.stringify(S); snapPut('家計簿のCSVを取り込む前', before).catch(() => {});
+  const before = serialS(); snapPut('家計簿のCSVを取り込む前', before).catch(() => {});
   for (const r of rows) {
     let c = M.cats[r.k].find(x => x.name === r.cat);
     if (!c) { c = { id: uid(), name: r.cat, color: MN_COLORS[(M.cats[r.k].length) % MN_COLORS.length] }; M.cats[r.k].push(c); }
@@ -7702,6 +7770,10 @@ applyTheme(); if (lockOn()) showLock('unlock');
 try { render(); } catch (e) { console.error(e); main.innerHTML = `<p class="empty">画面を表示できませんでした。データは消えていません。<br>設定 → バックアップ から書き出して、もう一度読み込んでみてください。</p><div style="text-align:center"><button class="btn primary" data-act="settings">設定を開く</button></div>`; }
 ensureTick();
 offerDraft();
+medLoad().then(() => {
+  if (S.entries.some(e => e.photo || (e.song && e.song.artData))) { try { render(); for (const ov of stack) { const sh = ov.firstElementChild; if (sh.dataset.kind === 'today') sh.innerHTML = todaySheet(); } } catch (e) {} }
+  if (!loadFailed) medSync().then(() => setTimeout(medGC, 8000));
+});
 if (loadFailed) setTimeout(() => toast('保存されていたデータを読み込めませんでした。元のデータを守るため保存を止めています。設定 → バックアップ から戻してください'), 2400);
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
@@ -7711,10 +7783,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v86';
+const APP_VER = 'hibi-v87';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.5.7';
-const HIBI_CHANGES = ['メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.6.0';
+const HIBI_CHANGES = ['日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
