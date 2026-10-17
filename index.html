@@ -2420,7 +2420,8 @@ const medRep = (k, v) => (MED_FIELDS.has(k) && isData(v) && medKey.has(v) ? 'idb
 const serialS = (x = S) => JSON.stringify(x, medRep);
 function medEach(x, fn) { for (const e of (x && x.entries) || []) { fn(e, 'photo'); if (e.song) fn(e.song, 'artData'); } }
 function medResolve() {} // photos stay references in memory; the image is filled in when it is on screen
-function medCacheSet(k, v) { medCache.delete(k); medCache.set(k, v); while (medCache.size > 60) medCache.delete(medCache.keys().next().value); }
+let medCacheLen = 0; // keep about 40M characters of recently shown images (a sharp photo is about 1M)
+function medCacheSet(k, v) { if (medCache.has(k)) medCacheLen -= medCache.get(k).length; medCache.delete(k); medCache.set(k, v); medCacheLen += v.length; while ((medCacheLen > 4e7 || medCache.size > 200) && medCache.size > 1) { const [ok, ov] = medCache.entries().next().value; medCache.delete(ok); medCacheLen -= ov.length; } }
 // stored new images become references in memory too (so they are not kept twice)
 function medShrink() { medEach(S, (o, f) => { if (isData(o[f]) && medKey.has(o[f])) { const k = medKey.get(o[f]); medCacheSet(k, o[f]); o[f] = 'idb:' + k; } }); }
 function medPending() { if (!medOn) return false; let n = false; medEach(S, (o, f) => { if (!n && isData(o[f]) && !medKey.has(o[f])) n = true; }); return n; }
@@ -2432,6 +2433,22 @@ function medGet(ref) {
   if (medFull && medFull.has(k)) return Promise.resolve(medFull.get(k));
   if (!medOn) return Promise.resolve(null);
   return medDB().then(db => new Promise(res => { const q = db.transaction('m').objectStore('m').get(k); q.onsuccess = () => { db.close(); const v = q.result || null; if (v) medCacheSet(k, v); res(v); }; q.onerror = () => { db.close(); res(null); }; })).catch(() => null);
+}
+const shrinkData = (src, max, q) => new Promise(res => { const i = new Image(); i.onload = () => { const k = max / Math.max(i.width, i.height); if (k >= 0.9) return res(null); const c = document.createElement('canvas'); c.width = Math.round(i.width * k); c.height = Math.round(i.height * k); const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(i, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', q)); }; i.onerror = () => res(null); i.src = src; });
+function medIdb(k) { return medDB().then(db => new Promise(res => { const q = db.transaction('m').objectStore('m').get(k); q.onsuccess = () => { db.close(); res(q.result || null); }; q.onerror = () => { db.close(); res(null); }; })).catch(() => null); }
+async function medGetSmall(ref) {
+  const k = ref.slice(4), sk = k + 's';
+  if (medCache.has(sk)) return medCache.get(sk);
+  if (!medOn) return medGet(ref);
+  let t = medKeys.has(sk) ? await medIdb(sk) : null;
+  if (t === '=') return medGet(ref);
+  if (!t) {
+    const full = await medGet(ref); if (!full) return null;
+    t = await shrinkData(full, 720, 0.82);
+    try { const db = await medDB(), tx = db.transaction('m', 'readwrite'); tx.objectStore('m').put(t || '=', sk); await new Promise(r => { tx.oncomplete = r; tx.onerror = r; tx.onabort = r; }); db.close(); medKeys.add(sk); } catch (e) {}
+    if (!t) return full;
+  }
+  medCacheSet(sk, t); return t;
 }
 // store images in IndexedDB (one batch at a time through medBusy, so two saves never race)
 function medPut(list) {
@@ -2484,7 +2501,12 @@ function medWatch(img) {
   if (!io) { io = new IntersectionObserver(es => { for (const en of es) if (en.isIntersecting) { io.unobserve(en.target); medFill(en.target); } }, { root, rootMargin: '900px' }); if (root) medIOs.set(root, io); else medIOdoc = io; }
   io.observe(img);
 }
-function medFill(img) { const r = img.getAttribute('src'); if (!isRef(r)) return; medGet(r).then(v => { if (v && img.getAttribute('src') === r) img.src = v; }); }
+// a small frame (album tile, list, reel) gets the small copy; the photo screen and the editor get the sharp photo
+function medFill(img) {
+  const r = img.getAttribute('src'); if (!isRef(r)) return;
+  const b = img.getBoundingClientRect(), small = b.width > 0 && Math.max(b.width, b.height) * (window.devicePixelRatio || 2) <= 800;
+  (small ? medGetSmall(r) : medGet(r)).then(v => { if (v && img.getAttribute('src') === r) img.src = v; });
+}
 function medOne(img) { const r = img.getAttribute('src'); if (!isRef(r)) return; const k = r.slice(4); if (medCache.has(k)) img.src = medCache.get(k); else medWatch(img); }
 function medScan(n) { if (n.tagName === 'IMG') medOne(n); else if (n.querySelectorAll) n.querySelectorAll('img[src^="idb:"]').forEach(medOne); }
 new MutationObserver(ms => { for (const m of ms) { if (m.type === 'attributes') medScan(m.target); else for (const n of m.addedNodes) if (n.nodeType === 1) medScan(n); } })
@@ -2497,7 +2519,7 @@ async function medGC() {
     grab(serialS()); grab(localStorage.getItem(DRAFT_KEY)); for (const x of await snapList()) grab(x.json);
     if (enDraft) { if (isRef(enDraft.photo)) used.add(enDraft.photo.slice(4)); if (isData(enDraft.photo) && medKey.has(enDraft.photo)) used.add(medKey.get(enDraft.photo)); }
     for (const k of medKey.values()) used.add(k); // stored during this visit: may still be in an open editor
-    const gone = [...medKeys].filter(k => !used.has(k)); if (!gone.length) return;
+    const gone = [...medKeys].filter(k => !used.has(k) && !(k.endsWith('s') && used.has(k.slice(0, -1)))); if (!gone.length) return;
     const db = await medDB(), tx = db.transaction('m', 'readwrite'), os = tx.objectStore('m');
     gone.forEach(k => os.delete(k));
     await new Promise(r => { tx.oncomplete = r; tx.onerror = r; tx.onabort = r; }); db.close();
@@ -3814,9 +3836,9 @@ function camShoot() {
   const go = () => {
     const full = camCanvas(4096); if (!full) return;
     const fl = $('.cam-flash', c.el); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
-    const sm = document.createElement('canvas'), k = Math.min(1, 720 / Math.max(full.width, full.height)); sm.width = Math.round(full.width * k); sm.height = Math.round(full.height * k);
-    sm.getContext('2d').drawImage(full, 0, 0, sm.width, sm.height);
-    c.shot = { small: sm.toDataURL('image/jpeg', 0.85), full };
+    const sm = document.createElement('canvas'), k = Math.min(1, PHOTO_MAX / Math.max(full.width, full.height)); sm.width = Math.round(full.width * k); sm.height = Math.round(full.height * k);
+    const sg2 = sm.getContext('2d'); sg2.imageSmoothingQuality = 'high'; sg2.drawImage(full, 0, 0, sm.width, sm.height);
+    c.shot = { small: sm.toDataURL('image/jpeg', PHOTO_Q), full };
     camSync(); setTimeout(camReview, 260);
   };
   if (!c.timer) return go();
@@ -5542,10 +5564,12 @@ function syncEntry() {
   const sn = g('sg-name'), sa = g('sg-artist'); if (sn !== null) enDraft._sg = { n: sn, a: sa || '' };
 }
 function rerenderEntry(keepScroll = true) { const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = entryForm(); sh.scrollTop = keepScroll ? y : 0; }
+const PHOTO_MAX = 2048, PHOTO_Q = 0.85;
 function resizeImage(file) {
   return new Promise((res, rej) => {
     const url = URL.createObjectURL(file), img = new Image();
-    img.onload = () => { const max = 720, k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.7)); };
+    // 2048px / 85%: sharp on a full iPhone screen (it was 720px / 70% while photos had to fit in the 5MB storage)
+    img.onload = () => { const max = PHOTO_MAX, k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', PHOTO_Q)); };
     img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('画像を読み込めませんでした')); };
     img.src = url;
   });
@@ -7886,10 +7910,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v88';
+const APP_VER = 'hibi-v89';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.7.0';
-const HIBI_CHANGES = ['日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.7.1';
+const HIBI_CHANGES = ['日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
