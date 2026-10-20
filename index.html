@@ -1059,14 +1059,19 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .rta-list{display:flex;flex-direction:column;gap:8px;margin:8px 0}
 .rta-row{display:block;width:100%;text-align:left;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;border:2px solid transparent}
 .rta-row.now{border-color:var(--accent)}
-.rta-row:disabled{opacity:.45}
+.rta-row.ng{opacity:.5}
 .rta-row .tt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:17px}
 .rta-row .tt .ico{width:14px;height:14px;color:var(--ink-3)}
 .rta-row .tt em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
 .rta-row .tt em.late{color:var(--sun)}.rta-row .tt em.early{color:var(--pay)}.rta-row .tt em.ng{color:var(--ink-3)}
 .rta-row.now .tt em{background:var(--accent);color:#fff}
 .rta-row .ln{font-size:13.5px;margin-top:4px}
-.rta-row .mt{font-size:12px;color:var(--ink-2);margin-top:2px}
+.rta-row .mt{font-size:12px;color:var(--ink-2);margin-top:2px;display:flex;align-items:center;gap:8px}
+.rta-row .mt .go{margin-left:auto;display:inline-flex;align-items:center;color:var(--accent);font-weight:600;flex:none}
+.rta-row .mt .go .ico{width:13px;height:13px}
+.rt-sum .rta-diff{font-weight:700}.rt-sum .rta-diff.late{color:var(--sun)}.rt-sum .rta-diff.early{color:var(--pay)}
+.rt-steps .keep{opacity:.45}
+.rt-chg{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
 .rta-more{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:10px;font-size:13.5px;color:var(--accent);font-weight:600}
 .rta-more .ico{width:15px;height:15px}
 .rta-ld{text-align:center;color:var(--ink-2);font-size:13px;padding:10px}
@@ -4068,13 +4073,18 @@ function nkPlaceRoute(r, replaceId, replaceDate, note) {
   toast(note || (old ? `経路を ${md(ev.date)} ${hm(ev.start)}〜 に差し替えました` : `${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`));
 }
 const nkMemo = r => r ? [r.duration, r.transfers != null ? `乗換${r.transfers}回` : '', r.fare != null ? `${r.fareNote === '目安' ? '約' : ''}${r.fare.toLocaleString()}円` : ''].filter(Boolean).join('・') : '';
+// the stations and trains of a route, top to bottom (tag(x, i) adds something after a station's name; cls(x, i) a class)
+function rtStepsHTML(all, tag = () => '', cls = () => '') {
+  const sts = all.filter(x => x.k === 's');
+  return all.map((x, i) => x.k === 's'
+    ? `<li class="st${x === sts[0] ? ' first' : x === sts[sts.length - 1] ? ' last' : ''}${cls(x, i)}"><span class="t num">${x.arr ? `<span>${esc(x.arr)}着</span>` : ''}${x.dep ? `<b>${esc(x.dep)}発</b>` : ''}</span><span class="mk"></span><span class="nm">${esc(x.name)}${tag(x, i)}</span></li>`
+    : `<li class="ac${x.walk ? ' walk' : ''}${cls(x, i)}" style="${x.color ? `--c:${x.color}` : ''}"><span class="t"></span><span class="mk"></span><div class="bd"><div class="ln">${esc(x.line)}${x.dest ? ` <span style="font-weight:500;color:var(--ink-2)">${esc(x.dest)}</span>` : ''}</div>${[x.platform, x.stops].filter(Boolean).map(esc).join(' ・ ')}${x.stopList && x.stopList.length ? `<details><summary>途中の駅を見る</summary><ul style="list-style:none;padding:0;margin:4px 0 0">${x.stopList.map(y => `<li><span class="num" style="width:40px">${esc(y.time)}</span><span>${esc(y.name)}</span></li>`).join('')}</ul></details>` : ''}</div></li>`).join('');
+}
 function routeSheet(ev, d) {
-  const r = ev.route, sts = r.steps.filter(x => x.k === 's');
+  const r = ev.route;
   const TAGC = { 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' };
   const canAlt = !!nkBase() && !inFrame;
-  const steps = r.steps.map((x, i) => x.k === 's'
-    ? `<li class="st${x === sts[0] ? ' first' : x === sts[sts.length - 1] ? ' last' : ''}"><span class="t num">${x.arr ? `<span>${esc(x.arr)}着</span>` : ''}${x.dep ? `<b>${esc(x.dep)}発</b>` : ''}</span><span class="mk"></span><span class="nm">${esc(x.name)}${canAlt && x.dep && r.steps[i + 1] && r.steps[i + 1].k === 'a' && !r.steps[i + 1].walk ? `<button class="rt-alt" data-act="rtAlt" data-id="${ev.id}" data-d="${d || ev.date}" data-i="${i}">別の電車${ico('right')}</button>` : ''}</span></li>`
-    : `<li class="ac${x.walk ? ' walk' : ''}" style="${x.color ? `--c:${x.color}` : ''}"><span class="t"></span><span class="mk"></span><div class="bd"><div class="ln">${esc(x.line)}${x.dest ? ` <span style="font-weight:500;color:var(--ink-2)">${esc(x.dest)}</span>` : ''}</div>${[x.platform, x.stops].filter(Boolean).map(esc).join(' ・ ')}${x.stopList && x.stopList.length ? `<details><summary>途中の駅を見る</summary><ul style="list-style:none;padding:0;margin:4px 0 0">${x.stopList.map(y => `<li><span class="num" style="width:40px">${esc(y.time)}</span><span>${esc(y.name)}</span></li>`).join('')}</ul></details>` : ''}</div></li>`).join('');
+  const steps = rtStepsHTML(r.steps, (x, i) => canAlt && x.dep && r.steps[i + 1] && r.steps[i + 1].k === 'a' && !r.steps[i + 1].walk ? `<button class="rt-alt" data-act="rtAlt" data-id="${ev.id}" data-d="${d || ev.date}" data-i="${i}">別の電車${ico('right')}</button>` : '');
   return `<div class="sh-bar"><span></span><b>経路</b><button class="r" data-act="close">閉じる</button></div>
   <div class="rt-sum"><div class="od">${esc(r.from)}${ico('right')}${esc(r.to)}</div><div class="tm num">${hm(ev.start)} → ${hm(ev.end)}</div>
     <div class="mt num"><span>${jpDate(d || ev.date)}</span>${r.duration ? `<span>${esc(r.duration)}</span>` : ''}${r.transfers != null ? `<span>乗換 ${r.transfers}回</span>` : ''}${r.fare != null ? `<span>${r.fareNote === '目安' ? '約' : ''}${r.fare.toLocaleString()}円</span>` : ''}${r.via ? `<span>${esc(r.via)} 経由</span>` : ''}</div>
@@ -4114,17 +4124,17 @@ async function rtAltLoad(mins) {
   }));
   if (RTA !== A) return; A.loading -= todo.length; rtAltRe();
 }
-function rtAltRe() { const sh = topSheet(); if (sh && sh.dataset.kind === 'rtalt' && RTA) { const y = sh.scrollTop; sh.innerHTML = rtAltHTML(); sh.scrollTop = y; } }
+function rtAltRe() { const ov = stack.find(o => o.firstElementChild.dataset.kind === 'rtalt'), sh = ov && ov.firstElementChild; if (sh && RTA) { const y = sh.scrollTop; sh.innerHTML = rtAltHTML(); sh.scrollTop = y; } }
 function rtAltHTML() {
   const A = RTA, rows = [...A.list.values()].sort((a, b) => a.dep - b.dep || a.arr - b.arr), clock = m => hhmm(((m % 1440) + 1440) % 1440);
   const cur = A.st.dep, curArr = A.oldArr;
   const list = rows.map((x, n) => {
     const s = x.ro.summary || {}, lines = x.ro.steps.filter(y => y.kind === 'access' && !y.walk).map(y => y.line), diff = x.arr - curArr;
     const late = A.minDep != null && x.dep < A.minDep, now = clock(x.dep) === cur && diff === 0;
-    return `<button class="rta-row${now ? ' now' : ''}" data-act="rtAltPick" data-n="${n}" ${late ? 'disabled' : ''}>
+    return `<button class="rta-row${now ? ' now' : ''}${late ? ' ng' : ''}" data-act="rtAltPick" data-n="${n}">
       <div class="tt num"><b>${clock(x.dep)}発</b><span>${ico('right')}</span><b>${clock(x.arr)}着</b>${now ? '<em>いまの電車</em>' : late ? '<em class="ng">乗り換えに間に合いません</em>' : `<em class="${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分`}</em>`}</div>
       <div class="ln">${lines.map(esc).join(' → ') || '徒歩'}</div>
-      <div class="mt num">${[s.duration, s.transfers != null ? `乗換${s.transfers}回` : '', s.fare != null ? `${s.fare.toLocaleString()}円` : ''].filter(Boolean).map(esc).join('・')}</div></button>`;
+      <div class="mt num"><span>${[s.duration, s.transfers != null ? `乗換${s.transfers}回` : '', s.fare != null ? `${s.fare.toLocaleString()}円` : ''].filter(Boolean).map(esc).join('・')}</span><span class="go">経路${ico('right')}</span></div></button>`;
   }).join('');
   A.rows = rows;
   return `<div class="sh-bar"><button class="l" data-act="close">戻る</button><b>別の電車</b><span></span></div>
@@ -4133,19 +4143,32 @@ function rtAltHTML() {
   <div class="rta-list">${list || (A.loading ? '' : `<p class="empty">${esc(A.err || '電車が見つかりませんでした')}</p>`)}${A.loading ? '<p class="rta-ld">電車を調べています…</p>' : ''}</div>
   <button class="rta-more" data-act="rtAltMore" data-n="1">${ico('down')}もっと後の電車</button>
   ${A.err && list ? `<p class="note" style="text-align:center">${esc(A.err)}</p>` : ''}
-  <p class="note" style="text-align:center">選ぶと、${esc(A.st.name)}から先がその電車の経路に変わります（それより前はそのまま）。</p>`;
+  <p class="note" style="text-align:center">押すと、その電車にしたときの経路が見られます。${esc(A.st.name)}から先だけが変わります（それより前はそのまま）。</p>`;
 }
-function rtAltApply(x) {
+// the whole route if that train is taken: the steps before the station stay, the rest comes from the search
+function rtAltRoute(x) {
   const A = RTA, ev = A.ev, r = ev.route, clock = m => hhmm(((m % 1440) + 1440) % 1440);
   const tail = x.ro.steps.map(rtFromApi), head = r.steps.slice(0, A.i).map(s => ({ ...s }));
   const here = { ...r.steps[A.i], dep: clock(x.dep) };
   const steps = [...head, here, ...tail.slice(1)], first = steps[0], start = A.i === 0 ? clock(x.dep) : (first.dep || ev.start);
   const mins = x.arr - rtMin(start, A.base), s = x.ro.summary || {};
   const trains = steps.filter(y => y.k === 'a' && !y.walk).length;
-  nkPlaceRoute({ from: r.from, to: r.to, via: r.via, date: A.d, dep: start, arr: clock(x.arr),
+  return { from: r.from, to: r.to, via: r.via, date: A.d, dep: start, arr: clock(x.arr),
     duration: A.i === 0 ? s.duration || '' : (mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60 ? (mins % 60) + '分' : ''}` : `${mins}分`),
-    transfers: Math.max(0, trains - 1), fare: A.i === 0 ? s.fare : null, fareNote: A.i === 0 ? s.fareNote || '' : '', tags: [], steps },
-  ev.id, A.d, `${A.st.name} ${clock(x.dep)}発に変えました（到着 ${clock(x.arr)}）`);
+    transfers: Math.max(0, trains - 1), fare: A.i === 0 ? s.fare : null, fareNote: A.i === 0 ? s.fareNote || '' : '', tags: [], steps };
+}
+function rtAltDetailHTML(x) {
+  const A = RTA, ro = rtAltRoute(x), clock = m => hhmm(((m % 1440) + 1440) % 1440), diff = x.arr - A.oldArr;
+  const late = A.minDep != null && x.dep < A.minDep, now = clock(x.dep) === A.st.dep && diff === 0;
+  return `<div class="sh-bar"><button class="l" data-act="close">戻る</button><b>${esc(clock(x.dep))}発の経路</b><span></span></div>
+  <div class="rt-sum"><div class="od">${esc(ro.from)}${ico('right')}${esc(ro.to)}</div><div class="tm num">${esc(ro.dep)} → ${esc(ro.arr)}</div>
+    <div class="mt num"><span class="rta-diff ${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${now ? 'いまの電車' : diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分（いまは ${esc(clock(A.oldArr))}着）`}</span>${ro.duration ? `<span>${esc(ro.duration)}</span>` : ''}<span>乗換 ${ro.transfers}回</span>${ro.fare != null ? `<span>${ro.fareNote === '目安' ? '約' : ''}${ro.fare.toLocaleString()}円</span>` : ''}</div></div>
+  <ol class="rt-steps">${rtStepsHTML(ro.steps, (s, i) => i === A.i && A.i > 0 ? '<span class="rt-chg">ここから変わる</span>' : '', (s, i) => i < A.i ? ' keep' : '')}</ol>
+  <div class="rt-acts">${now ? '<p class="note" style="text-align:center">いま予定に入っている電車です。</p>' : late ? `<p class="note" style="text-align:center">${esc(A.st.arr)}に着くので、この電車には乗り換えられません。</p>` : '<button class="btn primary" data-act="rtAltUse">この電車にする</button>'}<button class="btn" data-act="close">ほかの電車を見る</button></div>`;
+}
+function rtAltApply(x) {
+  const A = RTA, clock = m => hhmm(((m % 1440) + 1440) % 1440);
+  nkPlaceRoute(rtAltRoute(x), A.ev.id, A.d, `${A.st.name} ${clock(x.dep)}発に変えました（到着 ${clock(x.arr)}）`);
   RTA = null;
 }
 
@@ -6245,11 +6268,8 @@ const ACT = {
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
   rtAlt: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; openRtAlt(ev, t.dataset.d || ev.date, +t.dataset.i); },
   rtAltMore: t => { const A = RTA; if (!A) return; const ms = [...A.asked]; rtAltLoad(+t.dataset.n < 0 ? [Math.min(...ms) - 30, Math.min(...ms) - 60] : [Math.max(...ms) + 30, Math.max(...ms) + 60]); },
-  rtAltPick: t => {
-    const A = RTA, x = A && A.rows[+t.dataset.n]; if (!x) return;
-    const clock = m => hhmm(((m % 1440) + 1440) % 1440), diff = x.arr - A.oldArr;
-    confirmIn(`${A.st.name} ${clock(x.dep)}発 にします。\n到着 ${clock(A.oldArr)} → ${clock(x.arr)}${diff ? `（${diff > 0 ? '+' : '−'}${Math.abs(diff)}分）` : '（同じ）'}`, 'この電車にする', () => rtAltApply(x));
-  },
+  rtAltPick: t => { const A = RTA, x = A && A.rows[+t.dataset.n]; if (!x) return; A.pick = x; const sh = openSheet(rtAltDetailHTML(x), 'full'); sh.dataset.kind = 'rtaltd'; },
+  rtAltUse: () => { const A = RTA; if (A && A.pick) rtAltApply(A.pick); },
   nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id, t.dataset.d || ev.date); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
@@ -8078,10 +8098,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v92';
+const APP_VER = 'hibi-v93';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.8.2';
-const HIBI_CHANGES = ['開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.9.0';
+const HIBI_CHANGES = ['「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
