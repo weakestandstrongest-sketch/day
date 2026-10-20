@@ -1074,6 +1074,13 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .rt-chg{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
 .rta-more{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:10px;font-size:13.5px;color:var(--accent);font-weight:600}
 .rta-more .ico{width:15px;height:15px}
+.rta-opt{display:flex;align-items:center;gap:8px;margin:2px 2px 0;font-size:13px;color:var(--ink-2)}
+.rta-opt button{display:inline-flex;align-items:center;gap:3px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-2)}
+.rta-opt button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rta-opt .ico{width:14px;height:14px}
+.rta-row .tt .rt-tags{margin:0 0 0 2px;gap:4px}
+.rta-row .tt .rt-tags span{padding:2px 8px;font-size:11px}
+.rt-sum .od .rt-tags{margin:0 0 0 4px}
 .rta-ld{text-align:center;color:var(--ink-2);font-size:13px;padding:10px}
 .rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
 .rt-sum .od{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;flex-wrap:wrap}
@@ -4096,6 +4103,9 @@ function routeSheet(ev, d) {
 
 /* ---- 別の電車: change the train from one station of a saved route on, and see how the arrival changes ---- */
 let RTA = null;
+// 新幹線・有料特急を使うか（のりかえの設定と同じ。この画面で選んだものを覚えておく）
+const RTA_KEY = 'hibi.rtalt';
+const rtaOpt = () => { try { return { shin: true, ex: true, ...JSON.parse(localStorage.getItem(RTA_KEY) || '{}') }; } catch (e) { return { shin: true, ex: true }; } };
 const rtMin = (t, base) => { const m = toMin(t); return base != null && m < base - 180 ? m + 1440 : m; }; // after midnight counts as the next day
 function rtFromApi(st) { return st.kind === 'station' ? { k: 's', name: st.name, arr: st.arr || '', dep: st.dep || '' } : { k: 'a', line: st.line || '', dest: st.destination || '', color: st.color || '', walk: !!st.walk, platform: st.platform || '', stops: st.stops || '', stopList: (st.stopList || []).map(y => ({ time: y.time, name: y.name })) }; }
 function openRtAlt(ev, d, i) {
@@ -4103,7 +4113,7 @@ function openRtAlt(ev, d, i) {
   const base = toMin(r.steps[0].dep || ev.start), stDep = rtMin(st.dep, base);
   // getting off a train here: only trains after the arrival (and a minute to change) can be caught
   const prevA = r.steps[i - 1], minDep = i > 0 && st.arr && prevA && prevA.k === 'a' && !prevA.walk ? rtMin(st.arr, base) + 1 : null;
-  RTA = { ev, d, i, st, dest, base, stDep, minDep, oldArr: rtMin(dest.arr, base), list: new Map(), asked: new Set(), loading: 0, err: '' };
+  RTA = { ev, d, i, st, dest, base, stDep, minDep, oldArr: rtMin(dest.arr, base), list: new Map(), asked: new Set(), loading: 0, err: '', opt: rtaOpt(), gen: 0 };
   const sh = openSheet(rtAltHTML(), 'full'); sh.dataset.kind = 'rtalt';
   rtAltLoad([stDep - 30, stDep, stDep + 30]);
 }
@@ -4111,34 +4121,45 @@ async function rtAltLoad(mins) {
   const A = RTA, base = nkBase(); if (!A || !base) return;
   const todo = mins.filter(m => !A.asked.has(m)); if (!todo.length) return;
   todo.forEach(m => A.asked.add(m)); A.loading += todo.length; A.err = ''; rtAltRe();
+  const gen = A.gen;
   await Promise.all(todo.map(async m => {
     const day = m >= 1440 ? addDays(A.d, 1) : m < 0 ? addDays(A.d, -1) : A.d, t = hhmm(((m % 1440) + 1440) % 1440);
     try {
-      const j = await fetchJSON(`${base}/api/search?` + new URLSearchParams({ from: A.st.name, to: A.dest.name, date: day, time: t, type: 'dep' }), 15000);
+      const j = await fetchJSON(`${base}/api/search?` + new URLSearchParams({ from: A.st.name, to: A.dest.name, date: day, time: t, type: 'dep', shin: A.opt.shin ? '1' : '0', ex: A.opt.ex ? '1' : '0' }), 15000);
+      if (A.gen !== gen) return; // the switches changed meanwhile
       for (const ro of j.routes || []) {
         const s0 = ro.steps && ro.steps[0], last = ro.steps && ro.steps[ro.steps.length - 1]; if (!s0 || !s0.dep || !last || !last.arr) continue;
         const dep = rtMin(s0.dep, A.base), arr = rtMin(last.arr, A.base), key = ro.steps.filter(x => x.kind === 'access').map(x => x.line).join('|') + dep + '-' + arr;
         if (!A.list.has(key)) A.list.set(key, { ro, dep, arr: arr < dep ? arr + 1440 : arr });
       }
-    } catch (e) { A.err = '電車を調べられませんでした（通信を確認してください）'; }
+    } catch (e) { if (A.gen === gen) A.err = '電車を調べられませんでした（通信を確認してください）'; }
   }));
-  if (RTA !== A) return; A.loading -= todo.length; rtAltRe();
+  if (RTA !== A || A.gen !== gen) return; A.loading -= todo.length; rtAltRe();
+}
+function rtAltTags(rows) {
+  const ok = rows.filter(x => !(RTA.minDep != null && x.dep < RTA.minDep)), tr = x => (x.ro.summary || {}).transfers, fare = x => (x.ro.summary || {}).fare;
+  const best = f => { const v = ok.map(f).filter(y => y != null); if (!v.length) return null; const m = Math.min(...v); return v.every(y => y === m) ? null : m; }; // a tag every train shares says nothing
+  const a = best(x => x.arr), c = best(fare), t = best(tr);
+  for (const x of rows) x.tags = ok.includes(x) ? [a != null && x.arr === a && '早', c != null && fare(x) === c && '安', t != null && tr(x) === t && '楽'].filter(Boolean) : [];
 }
 function rtAltRe() { const ov = stack.find(o => o.firstElementChild.dataset.kind === 'rtalt'), sh = ov && ov.firstElementChild; if (sh && RTA) { const y = sh.scrollTop; sh.innerHTML = rtAltHTML(); sh.scrollTop = y; } }
 function rtAltHTML() {
   const A = RTA, rows = [...A.list.values()].sort((a, b) => a.dep - b.dep || a.arr - b.arr), clock = m => hhmm(((m % 1440) + 1440) % 1440);
   const cur = A.st.dep, curArr = A.oldArr;
+  rtAltTags(rows);
+  const TAGC = { 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' };
   const list = rows.map((x, n) => {
     const s = x.ro.summary || {}, lines = x.ro.steps.filter(y => y.kind === 'access' && !y.walk).map(y => y.line), diff = x.arr - curArr;
     const late = A.minDep != null && x.dep < A.minDep, now = clock(x.dep) === cur && diff === 0;
     return `<button class="rta-row${now ? ' now' : ''}${late ? ' ng' : ''}" data-act="rtAltPick" data-n="${n}">
-      <div class="tt num"><b>${clock(x.dep)}発</b><span>${ico('right')}</span><b>${clock(x.arr)}着</b>${now ? '<em>いまの電車</em>' : late ? '<em class="ng">乗り換えに間に合いません</em>' : `<em class="${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分`}</em>`}</div>
+      <div class="tt num"><b>${clock(x.dep)}発</b><span>${ico('right')}</span><b>${clock(x.arr)}着</b>${x.tags.length ? `<span class="rt-tags">${x.tags.map(t => `<span style="--c:${TAGC[t]}">${t}</span>`).join('')}</span>` : ''}${now ? '<em>いまの電車</em>' : late ? '<em class="ng">乗り換えに間に合いません</em>' : `<em class="${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分`}</em>`}</div>
       <div class="ln">${lines.map(esc).join(' → ') || '徒歩'}</div>
       <div class="mt num"><span>${[s.duration, s.transfers != null ? `乗換${s.transfers}回` : '', s.fare != null ? `${s.fare.toLocaleString()}円` : ''].filter(Boolean).map(esc).join('・')}</span><span class="go">経路${ico('right')}</span></div></button>`;
   }).join('');
   A.rows = rows;
   return `<div class="sh-bar"><button class="l" data-act="close">戻る</button><b>別の電車</b><span></span></div>
   <div class="rt-sum"><div class="od">${esc(A.st.name)}${ico('right')}${esc(A.dest.name)}</div><div class="mt num"><span>いまは ${esc(cur)}発 → ${esc(clock(curArr))}着</span>${A.minDep != null ? `<span>${esc(A.st.arr)}着なので、それより後の電車</span>` : ''}</div></div>
+  <div class="rta-opt"><span>使う</span>${[['shin', '新幹線'], ['ex', '有料特急']].map(([k, l]) => `<button class="${A.opt[k] ? 'on' : ''}" data-act="rtAltOpt" data-k="${k}" aria-pressed="${A.opt[k]}">${A.opt[k] ? ico('check') : ''}${l}</button>`).join('')}</div>
   <button class="rta-more" data-act="rtAltMore" data-n="-1">${ico('up')}もっと前の電車</button>
   <div class="rta-list">${list || (A.loading ? '' : `<p class="empty">${esc(A.err || '電車が見つかりませんでした')}</p>`)}${A.loading ? '<p class="rta-ld">電車を調べています…</p>' : ''}</div>
   <button class="rta-more" data-act="rtAltMore" data-n="1">${ico('down')}もっと後の電車</button>
@@ -4161,7 +4182,7 @@ function rtAltDetailHTML(x) {
   const A = RTA, ro = rtAltRoute(x), clock = m => hhmm(((m % 1440) + 1440) % 1440), diff = x.arr - A.oldArr;
   const late = A.minDep != null && x.dep < A.minDep, now = clock(x.dep) === A.st.dep && diff === 0;
   return `<div class="sh-bar"><button class="l" data-act="close">戻る</button><b>${esc(clock(x.dep))}発の経路</b><span></span></div>
-  <div class="rt-sum"><div class="od">${esc(ro.from)}${ico('right')}${esc(ro.to)}</div><div class="tm num">${esc(ro.dep)} → ${esc(ro.arr)}</div>
+  <div class="rt-sum"><div class="od">${esc(ro.from)}${ico('right')}${esc(ro.to)}${(x.tags || []).length ? `<span class="rt-tags">${x.tags.map(t => `<span style="--c:${{ 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' }[t]}">${t}</span>`).join('')}</span>` : ''}</div><div class="tm num">${esc(ro.dep)} → ${esc(ro.arr)}</div>
     <div class="mt num"><span class="rta-diff ${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${now ? 'いまの電車' : diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分（いまは ${esc(clock(A.oldArr))}着）`}</span>${ro.duration ? `<span>${esc(ro.duration)}</span>` : ''}<span>乗換 ${ro.transfers}回</span>${ro.fare != null ? `<span>${ro.fareNote === '目安' ? '約' : ''}${ro.fare.toLocaleString()}円</span>` : ''}</div></div>
   <ol class="rt-steps">${rtStepsHTML(ro.steps, (s, i) => i === A.i && A.i > 0 ? '<span class="rt-chg">ここから変わる</span>' : '', (s, i) => i < A.i ? ' keep' : '')}</ol>
   <div class="rt-acts">${now ? '<p class="note" style="text-align:center">いま予定に入っている電車です。</p>' : late ? `<p class="note" style="text-align:center">${esc(A.st.arr)}に着くので、この電車には乗り換えられません。</p>` : '<button class="btn primary" data-act="rtAltUse">この電車にする</button>'}<button class="btn" data-act="close">ほかの電車を見る</button></div>`;
@@ -6269,6 +6290,12 @@ const ACT = {
   rtAlt: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; openRtAlt(ev, t.dataset.d || ev.date, +t.dataset.i); },
   rtAltMore: t => { const A = RTA; if (!A) return; const ms = [...A.asked]; rtAltLoad(+t.dataset.n < 0 ? [Math.min(...ms) - 30, Math.min(...ms) - 60] : [Math.max(...ms) + 30, Math.max(...ms) + 60]); },
   rtAltPick: t => { const A = RTA, x = A && A.rows[+t.dataset.n]; if (!x) return; A.pick = x; const sh = openSheet(rtAltDetailHTML(x), 'full'); sh.dataset.kind = 'rtaltd'; },
+  rtAltOpt: t => {
+    const A = RTA; if (!A) return; A.opt = { ...A.opt, [t.dataset.k]: !A.opt[t.dataset.k] };
+    try { localStorage.setItem(RTA_KEY, JSON.stringify(A.opt)); } catch (e) {}
+    A.gen++; A.list = new Map(); A.asked = new Set(); A.loading = 0; A.err = '';
+    rtAltLoad([A.stDep - 30, A.stDep, A.stDep + 30]);
+  },
   rtAltUse: () => { const A = RTA; if (A && A.pick) rtAltApply(A.pick); },
   nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id, t.dataset.d || ev.date); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
@@ -8098,10 +8125,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v93';
+const APP_VER = 'hibi-v94';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.9.0';
-const HIBI_CHANGES = ['「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.10.0';
+const HIBI_CHANGES = ['「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
