@@ -1004,6 +1004,12 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .td-main small>span:not(.td-cls){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .td-cls{display:inline-flex;align-items:center;gap:4px;color:var(--c);font-weight:700}
 .td-cls::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.ex-sec{margin-top:16px}.ex-sec h3{font-size:14px;margin:0 2px 8px}
+.ex-cls{display:flex;align-items:stretch;gap:8px;margin-bottom:8px}
+.ex-main{flex:1;min-width:0;text-align:left;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px 10px 16px;position:relative}
+.ex-main::before{content:"";position:absolute;left:6px;top:10px;bottom:10px;width:4px;border-radius:2px;background:var(--c)}
+.ex-main b{display:block;font-size:15px}.ex-main small{display:block;font-size:12px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-hw{display:inline-flex;align-items:center;gap:2px;padding:0 12px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-size:13px;font-weight:700;color:var(--accent);flex:none}.ex-hw .ico{width:14px;height:14px}
 .td-rep{display:inline-flex;align-items:center;gap:2px;color:var(--ink-2)}.td-rep .ico{width:12px;height:12px}
 .td-prog{display:block;height:4px;border-radius:2px;background:var(--surface-2);margin-top:6px;overflow:hidden;max-width:220px}
 .td-prog b{display:block;height:100%;border-radius:2px;background:var(--c)}
@@ -5532,8 +5538,26 @@ function ttView() {
   const brk = cur ? cur.breaks.map(b => `${esc(b.name)} ${md(b.start)}〜${md(b.end)}`).join('・') : '';
   return chips + `<div class="tt" style="grid-template-columns:30px repeat(${days.length},minmax(0,1fr))">${g}</div>
   ${other ? `<button class="btn ghost" style="width:100%;margin-top:10px" data-act="termCopy" data-from="${other.id}">${ico('list')}「${esc(other.name)}」の時間割をコピー</button>` : ''}
+  ${exClsView(mine)}
   ${cur ? `<div class="term-info"><span><b>${esc(cur.name)}</b>　${termRange(cur)}${brk ? `<br>休み：${brk}` : ''}</span><button data-act="termEdit" data-id="${cur.id}">期間・休み</button></div>` : ''}
   <p class="note">空いているマスを押すと授業を追加できます。授業は学期の期間中だけタイムラインに入り、休みの間や祝日は出ません。タイムラインの授業をタップすると、その回だけ休講にしたり、別の日に振り替えたりできます。</p>`;
+}
+// 集中講義・オンデマンド (and any class that has lost its periods): not in the grid, listed under it
+const CLS_KIND = { intensive: '集中講義', ondemand: 'オンデマンド' };
+// periods of one day as "1〜3・5限"
+const perRange = ps => { ps = [...new Set(ps)].sort((a, b) => a - b); const out = []; for (let i = 0; i < ps.length; i++) { let j = i; while (ps[j + 1] === ps[j] + 1) j++; out.push(j > i ? `${ps[i] + 1}〜${ps[j] + 1}` : `${ps[i] + 1}`); i = j; } return out.join('・') + '限'; };
+function exClsView(mine) {
+  const T = todayISO(), list = mine.filter(c => c.kind || !c.slots.length);
+  const info = c => {
+    const days = c.kind === 'intensive' ? [...new Set(c.extra.map(x => x.d))].sort() : [], next = days.find(d => d >= T);
+    const hw = S.school.tasks.filter(x => x.classId === c.id && !x.done).sort((a, b) => a.due.localeCompare(b.due));
+    return [CLS_KIND[c.kind] || '時限なし', c.kind === 'intensive' ? (next ? `次は ${md(next)}(${WD[wd(next)]})` : days.length ? '授業は終わりました' : '授業の日は未定') : '',
+      hw.length ? `課題 ${hw.length}件・〆${md(hw[0].due)}` : '課題なし'].filter(Boolean).join('・');
+  };
+  return `<section class="ex-sec"><h3>集中講義・オンデマンド</h3>
+    ${list.map(c => `<div class="ex-cls" style="--c:${c.color}"><button class="ex-main" data-act="openClass" data-id="${c.id}"><b>${esc(c.name)}</b><small class="num">${esc(info(c))}</small></button><button class="ex-hw" data-act="clsHw" data-id="${c.id}">${ico('plus')}課題</button></div>`).join('')
+      || '<p class="note" style="margin:0 0 10px">時間割にない授業（決まった日にまとめてある集中講義や、動画を見て課題を出すだけのオンデマンド授業）をここに追加できます。課題の締め切りはカレンダーに「〆」で出ます。</p>'}
+    <div class="row2"><button class="btn ghost" data-act="newClassK" data-k="intensive">${ico('plus')}集中講義</button><button class="btn ghost" data-act="newClassK" data-k="ondemand">${ico('plus')}オンデマンド</button></div></section>`;
 }
 function termView() {
   const sc = S.school, T = todayISO(), list = sc.terms.slice().sort((a, b) => (a.start || '').localeCompare(b.start || ''));
@@ -5582,7 +5606,7 @@ function clsOccSheet() {
   const o = coDraft, c = clsById(o.cid); if (!c) return '';
   const sc = S.school, key = `${o.d}#${o.p}`, per = sc.periods[o.p] || ['', ''], ex = o.x && c.extra.find(e => e.id === o.x);
   const off = !ex && !!c.off[key], moved = off && c.extra.find(e => e.from === key);
-  const st_ = ex ? (ex.from ? `振替授業（もとは ${occLabel(ex.from)}）` : '補講') : off ? (moved ? `休講 → ${occLabel(`${moved.d}#${moved.p}`)}に振替` : '休講') : '';
+  const st_ = ex ? (ex.from ? `振替授業（もとは ${occLabel(ex.from)}）` : c.kind === 'intensive' ? '集中講義' : '補講') : off ? (moved ? `休講 → ${occLabel(`${moved.d}#${moved.p}`)}に振替` : '休講') : '';
   const mvD = ex ? ex.d : addDays(o.d, 7), mvP = ex ? ex.p : o.p;
   const form = o.mv ? `<div class="co-mv"><div class="row2"><input class="inp" type="date" id="co-d" value="${mvD}" aria-label="振り替える日"><select class="inp" id="co-p" aria-label="時限">${sc.periods.map((pp, i) => `<option value="${i}" ${i === mvP ? 'selected' : ''}>${i + 1}限 ${hm(pp[0])}〜</option>`).join('')}</select></div>
     <button class="btn primary" data-act="coMove">${ex ? 'この日に変える' : 'この日に振り替える'}</button></div>` : '';
@@ -5590,7 +5614,7 @@ function clsOccSheet() {
   <div class="co-head" style="--c:${c.color}"><span class="ic">${ico('school')}</span><span><b>${esc(c.name)}</b><small class="num">${md(o.d)}(${WD[wd(o.d)]}) ${o.p + 1}限 ${hm(per[0])}–${hm(per[1])}${c.room ? `・${esc(c.room)}` : ''}</small></span></div>
   ${st_ ? `<p class="co-st${off ? ' off' : ''}">${esc(st_)}</p>` : ''}
   <div class="sheet-actions">
-    ${ex ? `<button class="btn" data-act="coMoveForm">${ico('today')}日にち・時限を変える</button><button class="btn" data-act="coUnmove">${ex.from ? '振り替えをやめる（元の日に戻す）' : 'この補講を消す'}</button>`
+    ${ex ? `<button class="btn" data-act="coMoveForm">${ico('today')}日にち・時限を変える</button><button class="btn" data-act="coUnmove">${ex.from ? '振り替えをやめる（元の日に戻す）' : c.kind === 'intensive' ? 'この時限の授業を消す' : 'この補講を消す'}</button>`
       : off ? `<button class="btn primary" data-act="coRestore">休講を取り消す</button>${moved ? '' : `<button class="btn" data-act="coMoveForm">${ico('today')}振替日を決める</button>`}`
       : `<button class="btn" data-act="coCancel">${ico('x')}この回を休講にする</button><button class="btn" data-act="coMoveForm">${ico('today')}別の日に振り替える</button>`}
     ${form}
@@ -5621,24 +5645,32 @@ function schSetView() {
     <div class="row2"><button class="btn ghost" data-act="perAdd">時限を追加</button><button class="btn ghost" data-act="perDel" ${sc.periods.length <= 1 ? 'disabled' : ''}>最後の時限を消す</button></div></div>`;
 }
 const rerenderKind = (kind, html) => { const sh = topSheet(); if (sh && sh.dataset.kind === kind) { const y = sh.scrollTop; sh.innerHTML = html(); sh.scrollTop = y; } };
-function openClass(id, w, p) {
+function openClass(id, w, p, kind) {
   const c = id && clsById(id);
   const cur = curTerm();
-  clDraft = c ? JSON.parse(JSON.stringify(c)) : { id: null, name: '', room: '', teacher: '', color: COLORS[2], slots: w !== undefined ? [{ w: +w, p: +p }] : [], maxAbsent: 4, att: {}, memo: '', term: cur ? cur.id : '', off: {}, extra: [] };
+  clDraft = c ? JSON.parse(JSON.stringify(c)) : { id: null, name: '', room: '', teacher: '', color: COLORS[2], slots: w !== undefined ? [{ w: +w, p: +p }] : [], maxAbsent: 4, att: {}, memo: '', term: cur ? cur.id : '', off: {}, extra: [], ...(CLS_KIND[kind] ? { kind } : {}) };
   openSheet(classForm(), 'full');
   if (!c) setTimeout(() => { const t = $('#cl-name'); t && t.focus({ preventScroll: true }); }, 450);
 }
 function classForm() {
   const c = clDraft, sc = S.school, days = sc.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
+  const kind = CLS_KIND[c.kind] ? c.kind : '', perOpts = sc.periods.map((pp, p) => `<option value="${p}">${p + 1}限 ${hm(pp[0])}〜</option>`).join('');
+  const when = kind === 'intensive'
+    ? `<div class="fld"><span class="lb">授業の日</span><div class="slot-list">${[...new Set(c.extra.map(x => x.d))].sort().map(d => `<span class="num">${md(d)}(${WD[wd(d)]}) ${perRange(c.extra.filter(x => x.d === d).map(x => x.p))}<button data-act="clExDelDay" data-d="${d}" aria-label="この日を外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">まだ決まっていません（あとからでも追加できます）</small>'}</div>
+      <div class="slot-add"><input class="inp" type="date" id="cl-xd" aria-label="授業の日"><select class="inp" id="cl-xp" aria-label="時限"><option value="all">1日中</option>${perOpts}</select><button data-act="clExAdd">追加</button></div>
+      <p class="note" style="margin:6px 0 0">追加した日は、時間割の授業と同じようにタイムラインに入ります。</p></div>`
+    : kind === 'ondemand' ? '<p class="note">オンデマンド授業は時間割やタイムラインには出ません。課題（動画の視聴期限、レポートなど）を締め切りつきで追加すると、カレンダーに「〆」で出ます。</p>'
+    : `<div class="fld"><span class="lb">曜日・時限</span><div class="slot-list">${c.slots.map((sl, i) => `<span>${WD[sl.w]}曜 ${sl.p + 1}限<button data-act="clSlotDel" data-i="${i}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">まだ決まっていません</small>'}</div>
+    <div class="slot-add"><select class="inp" id="cl-w" aria-label="曜日">${days.map(w => `<option value="${w}">${WD[w]}曜</option>`).join('')}</select><select class="inp" id="cl-p" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clSlotAdd">追加</button></div></div>
+  <div class="fld"><span class="lb">振替・補講</span><div class="slot-list">${c.extra.slice().sort((a, b) => a.d.localeCompare(b.d)).map(x => `<span class="num">${md(x.d)}(${WD[wd(x.d)]}) ${x.p + 1}限${x.from ? '<small>振替</small>' : '<small>補講</small>'}<button data-act="clExDel" data-id="${x.id}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">ありません</small>'}</div>
+    <div class="slot-add"><input class="inp" type="date" id="cl-xd" aria-label="補講の日"><select class="inp" id="cl-xp" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clExAdd">追加</button></div></div>`;
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>${c.id ? '授業を編集' : '授業を追加'}</b><button class="r" data-act="saveClass">保存</button></div>
   <div class="fld"><input class="inp title" id="cl-name" placeholder="授業名" value="${esc(c.name)}" maxlength="40" autocomplete="off"></div>
+  <div class="fld"><span class="lb">種類</span><div class="seg" style="display:flex">${[['', '時間割の授業'], ['intensive', '集中講義'], ['ondemand', 'オンデマンド']].map(([k, l]) => `<button style="flex:1" data-act="clKind" data-k="${k}" aria-pressed="${kind === k}">${l}</button>`).join('')}</div></div>
   <div class="row2"><div class="fld"><label for="cl-room">教室</label><input class="inp" id="cl-room" value="${esc(c.room)}" maxlength="20"></div><div class="fld"><label for="cl-teacher">先生</label><input class="inp" id="cl-teacher" value="${esc(c.teacher)}" maxlength="20"></div></div>
   <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(k => `<button class="sw" style="--c:${k}" data-act="clColor" data-c="${k}" aria-pressed="${c.color === k}" aria-label="色">${ico('check')}</button>`).join('')}</div></div>
-  <div class="fld"><span class="lb">曜日・時限</span><div class="slot-list">${c.slots.map((sl, i) => `<span>${WD[sl.w]}曜 ${sl.p + 1}限<button data-act="clSlotDel" data-i="${i}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">まだ決まっていません</small>'}</div>
-    <div class="slot-add"><select class="inp" id="cl-w" aria-label="曜日">${days.map(w => `<option value="${w}">${WD[w]}曜</option>`).join('')}</select><select class="inp" id="cl-p" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clSlotAdd">追加</button></div></div>
+  ${when}
   ${sc.terms.length > 1 ? `<div class="fld"><label for="cl-term">学期</label><select class="inp" id="cl-term">${sc.terms.map(t => `<option value="${t.id}" ${t.id === c.term ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>` : ''}
-  <div class="fld"><span class="lb">振替・補講</span><div class="slot-list">${c.extra.slice().sort((a, b) => a.d.localeCompare(b.d)).map(x => `<span class="num">${md(x.d)}(${WD[wd(x.d)]}) ${x.p + 1}限${x.from ? '<small>振替</small>' : '<small>補講</small>'}<button data-act="clExDel" data-id="${x.id}" aria-label="外す">${ico('x')}</button></span>`).join('') || '<small style="color:var(--ink-2)">ありません</small>'}</div>
-    <div class="slot-add"><input class="inp" type="date" id="cl-xd" aria-label="補講の日"><select class="inp" id="cl-xp" aria-label="時限">${sc.periods.map((_, p) => `<option value="${p}">${p + 1}限</option>`).join('')}</select><button data-act="clExAdd">追加</button></div></div>
   <div class="fld"><label for="cl-memo">メモ</label><textarea class="inp" id="cl-memo" rows="2" style="min-height:64px">${esc(c.memo)}</textarea></div>
   <div class="sheet-actions"><button class="btn primary" data-act="saveClass">保存する</button>${c.id ? '<button class="btn danger" data-act="delClass">この授業を削除</button>' : ''}</div>`;
 }
@@ -6296,16 +6328,27 @@ const ACT = {
     afterSchool(`${md(d)}(${WD[wd(d)]}) ${p + 1}限に振り替えました`);
   },
   coUnmove: () => { const o = coDraft, c = clsById(o.cid), ex = c.extra.find(e => e.id === o.x); if (!ex) return; c.extra = c.extra.filter(e => e !== ex); if (ex.from) delete c.off[ex.from]; afterSchool(ex.from ? '振り替えをやめて、元の日に戻しました' : '補講を消しました'); },
-  clExAdd: () => { syncClass(); const sh = topSheet(), d = $('#cl-xd', sh).value, p = +$('#cl-xp', sh).value; if (!d) { toast('日付を選んでください'); return; } clDraft.extra.push({ id: uid(), d, p }); rerenderClass(); },
+  clExAdd: () => {
+    syncClass(); const sh = topSheet(), d = $('#cl-xd', sh).value, pv = $('#cl-xp', sh).value; if (!d) { toast('日付を選んでください'); return; }
+    for (const p of pv === 'all' ? S.school.periods.map((_, i) => i) : [+pv]) if (!clDraft.extra.some(x => x.d === d && x.p === p && !x.from)) clDraft.extra.push({ id: uid(), d, p });
+    rerenderClass();
+  },
   clExDel: t => { syncClass(); const x = clDraft.extra.find(e => e.id === t.dataset.id); clDraft.extra = clDraft.extra.filter(e => e !== x); if (x && x.from) delete clDraft.off[x.from]; rerenderClass(); },
   openClass: t => openClass(t.dataset.id),
   clColor: t => { syncClass(); clDraft.color = t.dataset.c; rerenderClass(); },
   clSlotAdd: () => { syncClass(); const sh = topSheet(), w = +$('#cl-w', sh).value, p = +$('#cl-p', sh).value; if (!clDraft.slots.some(x => x.w === w && x.p === p)) clDraft.slots.push({ w, p }); rerenderClass(); },
   clSlotDel: t => { syncClass(); clDraft.slots.splice(+t.dataset.i, 1); rerenderClass(); },
+  clExDelDay: t => { syncClass(); clDraft.extra = clDraft.extra.filter(x => x.d !== t.dataset.d || x.from); rerenderClass(); },
+  clKind: t => { syncClass(); if (t.dataset.k) clDraft.kind = t.dataset.k; else delete clDraft.kind; rerenderClass(); },
+  newClassK: t => openClass(null, undefined, undefined, t.dataset.k),
+  // an assignment for this class: the to-do form with the class already chosen
+  clsHw: t => { openTodo('t', null); tdDraft.classId = t.dataset.id; tdDraft.due = addDays(todayISO(), 7); const sh = topSheet(); sh.innerHTML = todoForm(); },
   saveClass: () => {
     syncClass(); const c = clDraft; c.name = c.name.trim();
     if (!c.name) { toast('授業名を入力してください'); return; }
-    if (!c.slots.length) { toast('曜日と時限を追加してください'); return; }
+    if (!CLS_KIND[c.kind]) delete c.kind;
+    if (c.kind) { c.slots = []; c.off = {}; if (c.kind === 'ondemand') c.extra = []; } // not in the grid: no weekly periods
+    else if (!c.slots.length) { toast('曜日と時限を追加してください'); return; }
     if (!S.school.terms.length) { S.school.terms.push({ id: uid(), name: fyName(todayISO()), start: '', end: '', breaks: [] }); c.term = S.school.terms[0].id; }
     if (!S.school.terms.some(t => t.id === c.term)) c.term = (curTerm() || S.school.terms[0]).id;
     const taken = S.school.classes.find(x => x.id !== c.id && x.term === c.term && x.slots.some(a => c.slots.some(b => a.w === b.w && a.p === b.p)));
@@ -8399,10 +8442,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v97';
+const APP_VER = 'hibi-v98';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.12.0';
-const HIBI_CHANGES = ['やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.13.0';
+const HIBI_CHANGES = ['大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
