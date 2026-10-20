@@ -1054,6 +1054,22 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 @keyframes bbRun{0%,30%{fill:#F2A93B;stroke:#F2A93B}40%,100%{fill:var(--bg);stroke:currentColor}}
 .nk-wrap.fail .bb-big,.nk-wrap.fail .ng-big{display:none}
 .nk-empty{padding:24px 6px;text-align:center;font-size:14px;line-height:1.8;color:var(--ink-2)}
+.rt-alt{display:inline-flex;align-items:center;gap:1px;margin-left:8px;padding:3px 6px 3px 9px;border-radius:99px;border:1px solid var(--line);background:var(--bg);font-size:11.5px;font-weight:600;color:var(--accent);vertical-align:1px}
+.rt-alt .ico{width:12px;height:12px}
+.rta-list{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.rta-row{display:block;width:100%;text-align:left;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;border:2px solid transparent}
+.rta-row.now{border-color:var(--accent)}
+.rta-row:disabled{opacity:.45}
+.rta-row .tt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:17px}
+.rta-row .tt .ico{width:14px;height:14px;color:var(--ink-3)}
+.rta-row .tt em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.rta-row .tt em.late{color:var(--sun)}.rta-row .tt em.early{color:var(--pay)}.rta-row .tt em.ng{color:var(--ink-3)}
+.rta-row.now .tt em{background:var(--accent);color:#fff}
+.rta-row .ln{font-size:13.5px;margin-top:4px}
+.rta-row .mt{font-size:12px;color:var(--ink-2);margin-top:2px}
+.rta-more{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:10px;font-size:13.5px;color:var(--accent);font-weight:600}
+.rta-more .ico{width:15px;height:15px}
+.rta-ld{text-align:center;color:var(--ink-2);font-size:13px;padding:10px}
 .rt-sum{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
 .rt-sum .od{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;flex-wrap:wrap}
 .rt-sum .od .ico{width:18px;height:18px;color:var(--ink-3)}
@@ -1628,6 +1644,18 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-save{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
 .mn-save small{font-size:12px;color:var(--ink-2)}.mn-save>b{font-size:28px}
 .mn-bars{width:100%;margin-top:12px}
+.mn-gp{grid-template-columns:repeat(3,1fr)}
+.mn-gp button{padding:5px 0;font-size:12.5px}
+.mn-tcs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}
+.mn-tcs::-webkit-scrollbar{display:none}
+.mn-tcs button{flex:none;display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.mn-tcs button i{width:8px;height:8px;border-radius:50%}
+.mn-tcs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.mn-tbars{width:100%;display:block}
+.mn-tbars line{stroke:var(--line);stroke-width:1}
+.mn-tbars text{font-size:10px;fill:var(--ink-2)}.mn-tbars text.v{font-size:9.5px;fill:var(--ink)}.mn-tbars text.cur{font-weight:700;fill:var(--ink)}
+.mn-tab td.pos{color:var(--pay)}
+.mn-crow .mn-pct{min-width:44px;text-align:right}
 .mn-bars line{stroke:var(--line);stroke-width:1}
 .mn-bars text{font-size:9px;fill:var(--ink-2)}
 .mn-tab{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -2212,6 +2240,7 @@ const IC = {
   flip:'<path d="M4 9a8 8 0 0 1 14.3-3.3L20 8M20 4v4h-4M20 15a8 8 0 0 1-14.3 3.3L4 16M4 20v-4h4"/>',
   grid:'<path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>',
   down:'<path d="m6 9 6 6 6-6"/>',
+  up:'<path d="m18 15-6-6-6 6"/>',
   more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -4010,32 +4039,37 @@ window.addEventListener('message', e => {
   }
   if (e.data.type !== 'hibi:addRoute') return;
   const r = e.data.route; if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || !/^\d{1,2}:\d{2}$/.test(r.dep || '') || !/^\d{1,2}:\d{2}$/.test(r.arr || '')) { toast('この経路は予定にできませんでした'); return; }
+  nkPlaceRoute(r, nkReplace, nkReplaceDate); nkReplace = null;
+});
+// put a route (the のりかえ payload: from, to, date, dep, arr, steps…) on the timeline; replaceId: the route plan it takes the place of
+function nkPlaceRoute(r, replaceId, replaceDate, note) {
   const clean = x => String(x == null ? '' : x).slice(0, 120);
   const route = { from: clean(r.from), to: clean(r.to), via: clean(r.via), duration: clean(r.duration), transfers: r.transfers != null && r.transfers !== '' && Number.isFinite(+r.transfers) ? +r.transfers : null, fare: Number.isFinite(+r.fare) && r.fare != null ? +r.fare : null, fareNote: clean(r.fareNote), tags: (r.tags || []).slice(0, 4).map(clean),
     steps: (r.steps || []).slice(0, 60).map(x => x.k === 's' ? { k: 's', name: clean(x.name), arr: clean(x.arr), dep: clean(x.dep) } : { k: 'a', line: clean(x.line), dest: clean(x.dest), color: okColor(x.color) ? x.color : '', walk: !!x.walk, platform: clean(x.platform), stops: clean(x.stops), stopList: (x.stopList || []).slice(0, 80).map(y => ({ time: clean(y.time), name: clean(y.name) })) }) };
   const ev = { id: uid(), title: `${route.from} → ${route.to}`, date: r.date, endDate: '', allDay: false, start: r.dep.padStart(5, '0'), end: r.arr.padStart(5, '0'), color: '#4F8ED6', icon: 'train', repeat: 'none', routine: false, memo: nkMemo(route), done: {}, route };
-  const old = nkReplace && S.events.find(x => x.id === nkReplace);
+  const old = replaceId && S.events.find(x => x.id === replaceId);
   if (old) {
     for (const k of ['color', 'icon', 'items', 'packed', 'countdown', 'dest', 'from']) if (old[k] !== undefined) ev[k] = old[k];
     if (old.memo && old.memo !== nkMemo(old.route)) ev.memo = old.memo;
     if (old.route && old.title && old.title !== `${old.route.from} → ${old.route.to}`) ev.title = old.title; // 自分で付けた名前（「通学」など）は残す
     // 繰り返しの予定は、その日の回だけ新しい経路にする（ほかの週や完了の記録は消さない）
-    if (old.repeat && old.repeat !== 'none') { const d = nkReplaceDate || ev.date; old.skip = { ...(old.skip || {}), [d]: true }; }
+    if (old.repeat && old.repeat !== 'none') { const d = replaceDate || ev.date; old.skip = { ...(old.skip || {}), [d]: true }; }
     else S.events = S.events.filter(x => x.id !== old.id);
+    if (old.done && old.repeat === 'none') ev.done = old.done;
   }
-  nkReplace = null;
   S.events.push(ev); save();
   while (stack.length) closeSheet();
   st.day = ev.date; if (st.tab === 'cal') { st.sel = ev.date; st.calMonth = ev.date.slice(0, 8) + '01'; } else st.tab = 'day';
   saveUI(); main.dataset.tab = ''; render();
-  toast(old ? `経路を ${md(ev.date)} ${hm(ev.start)}〜 に差し替えました` : `${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`);
-});
+  toast(note || (old ? `経路を ${md(ev.date)} ${hm(ev.start)}〜 に差し替えました` : `${md(ev.date)} ${hm(ev.start)}〜 を予定に追加しました`));
+}
 const nkMemo = r => r ? [r.duration, r.transfers != null ? `乗換${r.transfers}回` : '', r.fare != null ? `${r.fareNote === '目安' ? '約' : ''}${r.fare.toLocaleString()}円` : ''].filter(Boolean).join('・') : '';
 function routeSheet(ev, d) {
   const r = ev.route, sts = r.steps.filter(x => x.k === 's');
   const TAGC = { 早: '#E9776F', 安: '#5BB07A', 楽: '#4AA3C8' };
+  const canAlt = !!nkBase() && !inFrame;
   const steps = r.steps.map((x, i) => x.k === 's'
-    ? `<li class="st${x === sts[0] ? ' first' : x === sts[sts.length - 1] ? ' last' : ''}"><span class="t num">${x.arr ? `<span>${esc(x.arr)}着</span>` : ''}${x.dep ? `<b>${esc(x.dep)}発</b>` : ''}</span><span class="mk"></span><span class="nm">${esc(x.name)}</span></li>`
+    ? `<li class="st${x === sts[0] ? ' first' : x === sts[sts.length - 1] ? ' last' : ''}"><span class="t num">${x.arr ? `<span>${esc(x.arr)}着</span>` : ''}${x.dep ? `<b>${esc(x.dep)}発</b>` : ''}</span><span class="mk"></span><span class="nm">${esc(x.name)}${canAlt && x.dep && r.steps[i + 1] && r.steps[i + 1].k === 'a' && !r.steps[i + 1].walk ? `<button class="rt-alt" data-act="rtAlt" data-id="${ev.id}" data-d="${d || ev.date}" data-i="${i}">別の電車${ico('right')}</button>` : ''}</span></li>`
     : `<li class="ac${x.walk ? ' walk' : ''}" style="${x.color ? `--c:${x.color}` : ''}"><span class="t"></span><span class="mk"></span><div class="bd"><div class="ln">${esc(x.line)}${x.dest ? ` <span style="font-weight:500;color:var(--ink-2)">${esc(x.dest)}</span>` : ''}</div>${[x.platform, x.stops].filter(Boolean).map(esc).join(' ・ ')}${x.stopList && x.stopList.length ? `<details><summary>途中の駅を見る</summary><ul style="list-style:none;padding:0;margin:4px 0 0">${x.stopList.map(y => `<li><span class="num" style="width:40px">${esc(y.time)}</span><span>${esc(y.name)}</span></li>`).join('')}</ul></details>` : ''}</div></li>`).join('');
   return `<div class="sh-bar"><span></span><b>経路</b><button class="r" data-act="close">閉じる</button></div>
   <div class="rt-sum"><div class="od">${esc(r.from)}${ico('right')}${esc(r.to)}</div><div class="tm num">${hm(ev.start)} → ${hm(ev.end)}</div>
@@ -4043,7 +4077,72 @@ function routeSheet(ev, d) {
     ${r.tags.length ? `<div class="rt-tags">${r.tags.map(t => `<span style="--c:${TAGC[t] || '#8B8FA8'}">${esc(t)}</span>`).join('')}</div>` : ''}</div>
   <ol class="rt-steps">${steps}</ol>
   <div class="rt-acts"><button class="btn primary" data-act="nkAgain" data-id="${ev.id}" data-d="${d || ev.date}">${ico('train')}のりかえで調べ直す</button><button class="btn" data-act="editEvent" data-id="${ev.id}" data-d="${d || ev.date}" data-edit="1">${ico('pen')}予定を編集</button></div>
-  <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。「調べ直す」から追加すると、この予定と入れ替わります。</p>`;
+  <p class="note" style="text-align:center">経路は追加したときの情報です。運行状況はのりかえで確認してください。「調べ直す」から追加すると、この予定と入れ替わります。${canAlt ? '<br>駅の「別の電車」から、そこから先の電車だけを変えられます。' : ''}</p>`;
+}
+
+/* ---- 別の電車: change the train from one station of a saved route on, and see how the arrival changes ---- */
+let RTA = null;
+const rtMin = (t, base) => { const m = toMin(t); return base != null && m < base - 180 ? m + 1440 : m; }; // after midnight counts as the next day
+function rtFromApi(st) { return st.kind === 'station' ? { k: 's', name: st.name, arr: st.arr || '', dep: st.dep || '' } : { k: 'a', line: st.line || '', dest: st.destination || '', color: st.color || '', walk: !!st.walk, platform: st.platform || '', stops: st.stops || '', stopList: (st.stopList || []).map(y => ({ time: y.time, name: y.name })) }; }
+function openRtAlt(ev, d, i) {
+  const r = ev.route, st = r.steps[i], dest = [...r.steps].reverse().find(x => x.k === 's');
+  const base = toMin(r.steps[0].dep || ev.start), stDep = rtMin(st.dep, base);
+  // getting off a train here: only trains after the arrival (and a minute to change) can be caught
+  const prevA = r.steps[i - 1], minDep = i > 0 && st.arr && prevA && prevA.k === 'a' && !prevA.walk ? rtMin(st.arr, base) + 1 : null;
+  RTA = { ev, d, i, st, dest, base, stDep, minDep, oldArr: rtMin(dest.arr, base), list: new Map(), asked: new Set(), loading: 0, err: '' };
+  const sh = openSheet(rtAltHTML(), 'full'); sh.dataset.kind = 'rtalt';
+  rtAltLoad([stDep - 30, stDep, stDep + 30]);
+}
+async function rtAltLoad(mins) {
+  const A = RTA, base = nkBase(); if (!A || !base) return;
+  const todo = mins.filter(m => !A.asked.has(m)); if (!todo.length) return;
+  todo.forEach(m => A.asked.add(m)); A.loading += todo.length; A.err = ''; rtAltRe();
+  await Promise.all(todo.map(async m => {
+    const day = m >= 1440 ? addDays(A.d, 1) : m < 0 ? addDays(A.d, -1) : A.d, t = hhmm(((m % 1440) + 1440) % 1440);
+    try {
+      const j = await fetchJSON(`${base}/api/search?` + new URLSearchParams({ from: A.st.name, to: A.dest.name, date: day, time: t, type: 'dep' }), 15000);
+      for (const ro of j.routes || []) {
+        const s0 = ro.steps && ro.steps[0], last = ro.steps && ro.steps[ro.steps.length - 1]; if (!s0 || !s0.dep || !last || !last.arr) continue;
+        const dep = rtMin(s0.dep, A.base), arr = rtMin(last.arr, A.base), key = ro.steps.filter(x => x.kind === 'access').map(x => x.line).join('|') + dep + '-' + arr;
+        if (!A.list.has(key)) A.list.set(key, { ro, dep, arr: arr < dep ? arr + 1440 : arr });
+      }
+    } catch (e) { A.err = '電車を調べられませんでした（通信を確認してください）'; }
+  }));
+  if (RTA !== A) return; A.loading -= todo.length; rtAltRe();
+}
+function rtAltRe() { const sh = topSheet(); if (sh && sh.dataset.kind === 'rtalt' && RTA) { const y = sh.scrollTop; sh.innerHTML = rtAltHTML(); sh.scrollTop = y; } }
+function rtAltHTML() {
+  const A = RTA, rows = [...A.list.values()].sort((a, b) => a.dep - b.dep || a.arr - b.arr), clock = m => hhmm(((m % 1440) + 1440) % 1440);
+  const cur = A.st.dep, curArr = A.oldArr;
+  const list = rows.map((x, n) => {
+    const s = x.ro.summary || {}, lines = x.ro.steps.filter(y => y.kind === 'access' && !y.walk).map(y => y.line), diff = x.arr - curArr;
+    const late = A.minDep != null && x.dep < A.minDep, now = clock(x.dep) === cur && diff === 0;
+    return `<button class="rta-row${now ? ' now' : ''}" data-act="rtAltPick" data-n="${n}" ${late ? 'disabled' : ''}>
+      <div class="tt num"><b>${clock(x.dep)}発</b><span>${ico('right')}</span><b>${clock(x.arr)}着</b>${now ? '<em>いまの電車</em>' : late ? '<em class="ng">乗り換えに間に合いません</em>' : `<em class="${diff > 0 ? 'late' : diff < 0 ? 'early' : ''}">${diff === 0 ? '到着は同じ' : `到着 ${diff > 0 ? '+' : '−'}${Math.abs(diff)}分`}</em>`}</div>
+      <div class="ln">${lines.map(esc).join(' → ') || '徒歩'}</div>
+      <div class="mt num">${[s.duration, s.transfers != null ? `乗換${s.transfers}回` : '', s.fare != null ? `${s.fare.toLocaleString()}円` : ''].filter(Boolean).map(esc).join('・')}</div></button>`;
+  }).join('');
+  A.rows = rows;
+  return `<div class="sh-bar"><button class="l" data-act="close">戻る</button><b>別の電車</b><span></span></div>
+  <div class="rt-sum"><div class="od">${esc(A.st.name)}${ico('right')}${esc(A.dest.name)}</div><div class="mt num"><span>いまは ${esc(cur)}発 → ${esc(clock(curArr))}着</span>${A.minDep != null ? `<span>${esc(A.st.arr)}着なので、それより後の電車</span>` : ''}</div></div>
+  <button class="rta-more" data-act="rtAltMore" data-n="-1">${ico('up')}もっと前の電車</button>
+  <div class="rta-list">${list || (A.loading ? '' : `<p class="empty">${esc(A.err || '電車が見つかりませんでした')}</p>`)}${A.loading ? '<p class="rta-ld">電車を調べています…</p>' : ''}</div>
+  <button class="rta-more" data-act="rtAltMore" data-n="1">${ico('down')}もっと後の電車</button>
+  ${A.err && list ? `<p class="note" style="text-align:center">${esc(A.err)}</p>` : ''}
+  <p class="note" style="text-align:center">選ぶと、${esc(A.st.name)}から先がその電車の経路に変わります（それより前はそのまま）。</p>`;
+}
+function rtAltApply(x) {
+  const A = RTA, ev = A.ev, r = ev.route, clock = m => hhmm(((m % 1440) + 1440) % 1440);
+  const tail = x.ro.steps.map(rtFromApi), head = r.steps.slice(0, A.i).map(s => ({ ...s }));
+  const here = { ...r.steps[A.i], dep: clock(x.dep) };
+  const steps = [...head, here, ...tail.slice(1)], first = steps[0], start = A.i === 0 ? clock(x.dep) : (first.dep || ev.start);
+  const mins = x.arr - rtMin(start, A.base), s = x.ro.summary || {};
+  const trains = steps.filter(y => y.k === 'a' && !y.walk).length;
+  nkPlaceRoute({ from: r.from, to: r.to, via: r.via, date: A.d, dep: start, arr: clock(x.arr),
+    duration: A.i === 0 ? s.duration || '' : (mins >= 60 ? `${Math.floor(mins / 60)}時間${mins % 60 ? (mins % 60) + '分' : ''}` : `${mins}分`),
+    transfers: Math.max(0, trains - 1), fare: A.i === 0 ? s.fare : null, fareNote: A.i === 0 ? s.fareNote || '' : '', tags: [], steps },
+  ev.id, A.d, `${A.st.name} ${clock(x.dep)}発に変えました（到着 ${clock(x.arr)}）`);
+  RTA = null;
 }
 
 /* ================= leave time: when to set off for a plan with a destination station ================= */
@@ -6140,6 +6239,13 @@ const ACT = {
   obRetry: t => { const w = t.closest('.ob-wrap'), f = w && $('.ob-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); orbWatch(w); f.src = u.toString(); },
   nkRetry: t => { const w = t.closest('.nk-wrap'), f = w && $('.nk-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); nkWatch(w); f.src = u.toString(); },
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
+  rtAlt: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; openRtAlt(ev, t.dataset.d || ev.date, +t.dataset.i); },
+  rtAltMore: t => { const A = RTA; if (!A) return; const ms = [...A.asked]; rtAltLoad(+t.dataset.n < 0 ? [Math.min(...ms) - 30, Math.min(...ms) - 60] : [Math.max(...ms) + 30, Math.max(...ms) + 60]); },
+  rtAltPick: t => {
+    const A = RTA, x = A && A.rows[+t.dataset.n]; if (!x) return;
+    const clock = m => hhmm(((m % 1440) + 1440) % 1440), diff = x.arr - A.oldArr;
+    confirmIn(`${A.st.name} ${clock(x.dep)}発 にします。\n到着 ${clock(A.oldArr)} → ${clock(x.arr)}${diff ? `（${diff > 0 ? '+' : '−'}${Math.abs(diff)}分）` : '（同じ）'}`, 'この電車にする', () => rtAltApply(x));
+  },
   nkAgain: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; closeSheet(); openNorikae({ from: ev.route.from, to: ev.route.to, via: ev.route.via, date: t.dataset.d || ev.date, time: ev.start }, ev.id, t.dataset.d || ev.date); },
   toggleDone: t => { const ev = S.events.find(e => e.id === t.dataset.id); if (!ev) return; ev.done = ev.done || {}; if (ev.done[t.dataset.d]) delete ev.done[t.dataset.d]; else ev.done[t.dataset.d] = true; save(); render(); },
   newEntry: t => openEntry(null, t.dataset.d, t.dataset.prompt),
@@ -6428,7 +6534,7 @@ function mnEval(s) {
 }
 
 let MNI = null; // input form: { k, expr, cat:{out,in}, memo, date, id }
-const MNV = { tab: 'in', ym: '', g: 'out', open: null, ck: 'out', last: {} };
+const MNV = { tab: 'in', ym: '', g: 'out', gp: 'month', tc: '', open: null, ck: 'out', last: {} };
 const mnFresh = (date, k = 'out') => ({ k, expr: '', cat: { out: MNV.last.out || (mnCats('out')[0] || {}).id, in: MNV.last.in || (mnCats('in')[0] || {}).id }, memo: '', date: date || todayISO(), id: null });
 function openMoney(tab = 'in', date) {
   mnApplyFixed();
@@ -6506,9 +6612,14 @@ function mnDonut(parts, total, label) {
 }
 function mnGraphHTML() {
   const g = MNV.g, seg = [['out', '支出'], ['in', '収入'], ['save', '貯金額'], ['budget', '予算']];
-  const top = `<div class="mn-gseg">${seg.map(([k, l]) => `<button data-act="mnG" data-k="${k}" aria-pressed="${g === k}">${l}</button>`).join('')}</div>${g === 'save' ? '' : mnNav(MNV.ym)}`;
+  // 支出・収入: この月 / 月ごと（カテゴリー別に比べる） / 今年（カテゴリーごとの合計と割合）
+  const gp = g === 'in' || g === 'out' ? MNV.gp : 'month';
+  const per = g === 'in' || g === 'out' ? `<div class="mn-gseg mn-gp">${[['month', 'この月'], ['trend', '月ごと'], ['year', '今年']].map(([k, l]) => `<button data-act="mnGp" data-k="${k}" aria-pressed="${gp === k}">${l}</button>`).join('')}</div>` : '';
+  const top = `<div class="mn-gseg">${seg.map(([k, l]) => `<button data-act="mnG" data-k="${k}" aria-pressed="${g === k}">${l}</button>`).join('')}</div>${per}${g === 'save' ? '' : gp === 'year' ? mnYearNav(MNV.ym) : mnNav(MNV.ym)}`;
   if (g === 'save') return top + mnSaveHTML();
   if (g === 'budget') return top + mnBudgetHTML();
+  if (gp === 'trend') return top + mnTrendHTML(g);
+  if (gp === 'year') return top + mnYearHTML(g);
   const x = mnMonth(MNV.ym), list = x.list.filter(e => e.k === g), tot = g === 'in' ? x.i : x.o, by = new Map();
   for (const e of list) by.set(e.cat, (by.get(e.cat) || 0) + e.amt);
   const rows = [...by].map(([id, v]) => ({ c: mnCat(g, id), v })).sort((a, b) => b.v - a.v);
@@ -6519,6 +6630,45 @@ function mnGraphHTML() {
       ${MNV.open === r.c.id ? `<div class="mn-list in">${list.filter(e => e.cat === r.c.id).sort(mnSort).map(e => mnRow(e).replace('</span><b', `<small class="d num">${md(e.date)}</small></span><b`)).join('')}</div>` : ''}`).join('')
       || '<p class="empty" style="padding:8px">この月の記録はありません</p>'}
       ${zero.length && rows.length ? `<p class="note" style="margin:6px 2px 0">記録のないカテゴリー：${zero.map(c => esc(c.name)).join('・')}</p>` : ''}</section>`;
+}
+// 月ごと: the last 6 months side by side, all categories stacked, or one category with how it changed from the month before
+function mnTrendHTML(g) {
+  const months = Array.from({ length: 6 }, (_, i) => ymAdd(MNV.ym, i - 5));
+  const data = months.map(ym => { const x = mnMonth(ym), by = new Map(); for (const e of x.list) if (e.k === g) by.set(e.cat, (by.get(e.cat) || 0) + e.amt); return { ym, by }; });
+  const used = mnCats(g).filter(c => data.some(d => d.by.get(c.id)));
+  const tc = used.some(c => c.id === MNV.tc) ? MNV.tc : '';
+  const val = (d, id) => (id ? d.by.get(id) || 0 : [...d.by.values()].reduce((a, b) => a + b, 0));
+  const max = Math.max(1, ...data.map(d => val(d, tc)));
+  const W = 320, H = 170, B = 22, top = 14, bw = 30, step = (W - 20) / 6;
+  let bars = '';
+  data.forEach((d, i) => {
+    const x = 10 + step * i + (step - bw) / 2; let y = H - B;
+    const parts = tc ? [[mnCat(g, tc).color, d.by.get(tc) || 0]] : used.map(c => [c.color, d.by.get(c.id) || 0]);
+    for (const [color, v] of parts) { if (!v) continue; const h = v / max * (H - B - top); y -= h; bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw}" height="${Math.max(1, h).toFixed(1)}" rx="3" fill="${color}"/>`; }
+    const tot = val(d, tc);
+    if (tot) bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="v">${tot >= 10000 ? (tot / 10000).toFixed(tot >= 100000 ? 0 : 1) + '万' : Math.round(tot / 100) / 10 + '千'}</text>`;
+    bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle"${d.ym === MNV.ym ? ' class="cur"' : ''}>${+d.ym.slice(5)}月</text>`;
+  });
+  const chips = `<div class="mn-tcs"><button data-act="mnTc" data-id="" aria-pressed="${!tc}">すべて</button>${used.map(c => `<button data-act="mnTc" data-id="${c.id}" aria-pressed="${tc === c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('')}</div>`;
+  const rows = data.slice().reverse().map((d, i, a) => { const v = val(d, tc), prev = a[i + 1] ? val(a[i + 1], tc) : null, df = prev === null ? null : v - prev;
+    return `<tr${d.ym === MNV.ym ? ' class="cur"' : ''}><td>${d.ym.slice(0, 4)}年${+d.ym.slice(5)}月</td><td class="num">${yen(v)}</td><td class="num ${df > 0 ? (g === 'out' ? 'neg' : 'pos') : df < 0 ? (g === 'out' ? 'pos' : 'neg') : ''}">${df === null || (!v && !prev) ? '' : (df > 0 ? '+' : df < 0 ? '−' : '±') + yen(Math.abs(df))}</td></tr>`; }).join('');
+  const sum = data.reduce((a, d) => a + val(d, tc), 0), have = data.filter(d => val(d, tc)).length;
+  return `<section class="card">${used.length ? chips : ''}<svg class="mn-tbars" viewBox="0 0 ${W} ${H}" role="img" aria-label="月ごとの${g === 'in' ? '収入' : '支出'}">${`<line x1="6" y1="${H - B}" x2="${W - 6}" y2="${H - B}"/>`}${bars}</svg>
+      ${!used.length ? '<p class="empty" style="padding:8px">この6か月の記録はありません</p>' : `<p class="note" style="margin:4px 2px 10px">${tc ? esc(mnCat(g, tc).name) : '合計'}の6か月の平均 <b class="num">${yen(have ? sum / have : 0)}</b>（記録のある月）</p>
+      <table class="mn-tab"><tr><th>月</th><th>${tc ? esc(mnCat(g, tc).name) : '合計'}</th><th>前の月から</th></tr>${rows}</table>`}</section>`;
+}
+// 今年: each category's total so far this year and its share of the whole
+function mnYearNav(ym) { const y = +ym.slice(0, 4); return `<div class="rp-nav mn-nav"><button data-act="mnYear" data-n="-1" aria-label="前の年">${ico('left')}</button><div class="rp-title"><h2 class="num">${y}年</h2></div><button data-act="mnYear" data-n="1" aria-label="次の年">${ico('right')}</button></div>`; }
+function mnYearHTML(g) {
+  const y = MNV.ym.slice(0, 4), nowYm = mnYmOf(todayISO()), by = new Map(); let tot = 0, months = 0;
+  for (let m = 1; m <= 12; m++) { const ym = `${y}-${pad(m)}`; if (ym > nowYm) break; months++; for (const e of mnMonth(ym).list) if (e.k === g) { by.set(e.cat, (by.get(e.cat) || 0) + e.amt); tot += e.amt; } }
+  const rows = [...by].map(([id, v]) => ({ c: mnCat(g, id), v })).sort((a, b) => b.v - a.v);
+  return `<section class="card mn-chart">${mnDonut(rows.map(r => ({ color: r.c.color, v: r.v })), tot, `${y}年の${g === 'in' ? '収入' : '支出'}`)}
+      ${months ? `<p class="note" style="margin:8px 0 0;text-align:center">${months}か月分 ・ 1か月あたり <b class="num">${yen(tot / months)}</b></p>` : ''}</section>
+    <section class="card mn-crows">${rows.map(r => `<button class="mn-crow" data-act="mnTrendCat" data-id="${r.c.id}"><i style="background:${r.c.color}"></i><span class="t">${esc(r.c.name)}</span><small class="num mn-pct">${tot ? (r.v / tot * 100).toFixed(1) : 0}%</small><b class="num">${yen(r.v)}</b>${ico('right')}</button>
+      <span class="mn-cbar"><i style="width:${(r.v / (tot || 1) * 100).toFixed(1)}%;background:${r.c.color}"></i></span>`).join('')
+      || '<p class="empty" style="padding:8px">この年の記録はありません</p>'}
+      ${rows.length ? '<p class="note" style="margin:6px 2px 0">カテゴリーを押すと、月ごとの移り変わりを見られます</p>' : ''}</section>`;
 }
 const ACCT_QUICK = ['現金', '銀行', 'PayPay', '交通系IC', '楽天ペイ', 'd払い', 'au PAY'];
 function mnSaveHTML() {
@@ -6757,6 +6907,16 @@ function mnInput(e) {
 }
 document.addEventListener('input', mnInput); document.addEventListener('change', mnInput);
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'mn-memo') { e.preventDefault(); e.target.blur(); } });
+// a memo suggestion is taken when the finger lifts: while typing, the tap first closes the keyboard, the keypad comes back
+// and the chips move, so the click that follows would land somewhere else (the suggestion was never filled in)
+let mnChipDown = null;
+document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('.mn-chip[data-act="mnMemo"]'); mnChipDown = b ? { b, x: e.clientX, y: e.clientY } : null; }, true);
+document.addEventListener('pointerup', e => {
+  const d = mnChipDown; mnChipDown = null;
+  if (!d || !MNI || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) return; // a swipe through the chips is not a pick
+  e.preventDefault(); noClickUntil = Date.now() + 450;
+  ACT.mnMemo(d.b); const m = $('#mn-memo'); if (m && document.activeElement === m) m.blur();
+}, true);
 
 Object.assign(ACT, {
   money: t => openMoney('in', t.dataset.d),
@@ -6803,6 +6963,10 @@ Object.assign(ACT, {
   }),
   mnMonth: t => { MNV.ym = ymAdd(MNV.ym, +t.dataset.n); MNV.open = null; rerenderMoney(); },
   mnG: t => { MNV.g = t.dataset.k; MNV.open = null; rerenderMoney(); },
+  mnGp: t => { MNV.gp = t.dataset.k; MNV.open = null; rerenderMoney(); },
+  mnTc: t => { MNV.tc = t.dataset.id; rerenderMoney(); },
+  mnYear: t => { MNV.ym = ymAdd(MNV.ym, 12 * +t.dataset.n); rerenderMoney(); },
+  mnTrendCat: t => { MNV.gp = 'trend'; MNV.tc = t.dataset.id; MNV.ym = (() => { const now = mnYmOf(todayISO()); return MNV.ym.slice(0, 4) === now.slice(0, 4) ? now : `${MNV.ym.slice(0, 4)}-12`; })(); rerenderMoney(); topSheet().scrollTop = 0; },
   mnOpenCat: t => { MNV.open = MNV.open === t.dataset.id ? null : t.dataset.id; rerenderMoney(); },
   mnCk: t => { MNV.ck = t.dataset.k; rerenderMoney(); },
   mnCatColor: t => { const c = mnCats(MNV.ck).find(x => x.id === t.dataset.id); if (!c) return; c.color = MN_COLORS[(MN_COLORS.indexOf(c.color) + 1) % MN_COLORS.length]; save(); t.style.setProperty('--c', c.color); render(); },
@@ -7910,10 +8074,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v89';
+const APP_VER = 'hibi-v90';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.7.1';
-const HIBI_CHANGES = ['日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.8.0';
+const HIBI_CHANGES = ['経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', 日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
