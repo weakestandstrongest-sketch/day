@@ -1004,6 +1004,7 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .td-main small>span:not(.td-cls){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .td-cls{display:inline-flex;align-items:center;gap:4px;color:var(--c);font-weight:700}
 .td-cls::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.td-rep{display:inline-flex;align-items:center;gap:2px;color:var(--ink-2)}.td-rep .ico{width:12px;height:12px}
 .td-prog{display:block;height:4px;border-radius:2px;background:var(--surface-2);margin-top:6px;overflow:hidden;max-width:220px}
 .td-prog b{display:block;height:100%;border-radius:2px;background:var(--c)}
 .td-wait{color:var(--sat);font-weight:700}
@@ -4530,10 +4531,52 @@ function todaySheet() {
 /* ================= to-do: things with a deadline, school assignments included ================= */
 const TODO_C = '#E07F78';
 let tdShowDone = false, tdDraft = null;
+/* repeating to-dos (a weekly assignment etc): each time is its own item, and they share "ser" (the first one's id).
+   When the newest one is done, or its deadline has passed, the next one is made (the past ones are not filled in). */
+const TD_REP = { day: '毎日', week: '毎週', '2week': '2週間ごと', month: '毎月' };
+function tdStep(d, rep, day) {
+  if (rep !== 'month') return addDays(d, rep === 'day' ? 1 : rep === 'week' ? 7 : 14);
+  const [y, m] = d.split('-').map(Number), last = new Date(y, m + 1, 0).getDate(), dd = Math.min(day || +d.slice(8), last); // the 31st: the last day of short months
+  return `${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+}
+const tdAll = () => [...S.todos.map(x => [x, S.todos]), ...S.school.tasks.map(x => [x, S.school.tasks])];
+const tdSer = x => x.ser || x.id;
+const tdRepOk = x => !!(x.rep && TD_REP[x.rep] && x.due && isYmdS(x.due));
+// the newest one of x's series
+function tdLatest(x) { let b = x; for (const [y] of tdAll()) if (tdSer(y) === tdSer(x) && y.due > b.due) b = y; return b; }
+// the termination of a class's term, for "until the end of the term"
+const tdTermEnd = classId => { const c = classId && clsById(classId), t = c && S.school.terms.find(y => y.id === c.term); return (t && t.end) || S.school.termEnd || ''; };
+function todoRoll() {
+  const T = todayISO(), last = new Map();
+  for (const [x, l] of tdAll()) if (tdRepOk(x)) { const p = last.get(tdSer(x)); if (!p || x.due > p[0].due) last.set(tdSer(x), [x, l]); }
+  let n = 0;
+  for (const [x, l] of last.values()) {
+    if (!x.done && x.due >= T) continue;
+    let d = tdStep(x.due, x.rep, x.repDay), k = 0; while (d < T && k++ < 400) d = tdStep(d, x.rep, x.repDay);
+    if (x.repUntil && d > x.repUntil) continue;
+    const gap = x.start && isYmdS(x.start) ? diffDays(x.start, x.due) : null;
+    l.push({ id: uid(), title: x.title, start: gap != null ? addDays(d, -gap) : '', due: d, time: x.time || '', note: x.note || '', done: false, doneAt: 0, ...(x.classId ? { classId: x.classId } : {}),
+      rep: x.rep, repUntil: x.repUntil || '', ...(x.repDay ? { repDay: x.repDay } : {}), ser: tdSer(x), auto: 1 });
+    n++;
+  }
+  return n;
+}
+// back to not done: the next time it had made goes again (unless it was done or changed meanwhile)
+function tdUndo(x) {
+  x.done = false; x.doneAt = 0; if (!x.rep) return;
+  const gone = y => y !== x && y.auto && !y.done && tdSer(y) === tdSer(x) && y.due > x.due;
+  S.todos = S.todos.filter(y => !gone(y)); S.school.tasks = S.school.tasks.filter(y => !gone(y));
+}
+// deleting the newest one keeps the series going: the next one is made first
+function tdRemove(x) {
+  if (tdRepOk(x) && tdLatest(x) === x) { x.done = true; todoRoll(); }
+  S.todos = S.todos.filter(y => y !== x); S.school.tasks = S.school.tasks.filter(y => y !== x);
+}
+const tdRepTag = x => (x.rep && TD_REP[x.rep] ? `<span class="td-rep">${ico('repeat')}${TD_REP[x.rep]}</span>` : '');
 function todoItems() {
   const out = [];
-  for (const x of S.todos) out.push({ k: 't', id: x.id, title: x.title, start: x.start || '', due: x.due || '', time: x.time || '', done: !!x.done, doneAt: x.doneAt || 0, color: TODO_C, sub: '', note: x.note || '' });
-  for (const h of S.school.tasks) { const c = clsById(h.classId); out.push({ k: 'h', id: h.id, title: h.title, start: h.start || '', due: h.due || '', time: h.time || '', done: !!h.done, doneAt: h.doneAt || 0, color: c ? c.color : COLORS[4], sub: c ? c.name : '課題', note: h.note || '' }); }
+  for (const x of S.todos) out.push({ k: 't', id: x.id, rep: x.rep || '', title: x.title, start: x.start || '', due: x.due || '', time: x.time || '', done: !!x.done, doneAt: x.doneAt || 0, color: TODO_C, sub: '', note: x.note || '' });
+  for (const h of S.school.tasks) { const c = clsById(h.classId); out.push({ k: 'h', id: h.id, rep: h.rep || '', title: h.title, start: h.start || '', due: h.due || '', time: h.time || '', done: !!h.done, doneAt: h.doneAt || 0, color: c ? c.color : COLORS[4], sub: c ? c.name : '課題', note: h.note || '' }); }
   return out;
 }
 const todoOpen = () => todoItems().filter(x => !x.done);
@@ -4550,7 +4593,7 @@ function todoSection() {
   const groups = []; for (const x of open) { const [k, l] = grp(x); let g = groups.find(y => y.k === k); if (!g) groups.push(g = { k, l, list: [] }); g.list.push(x); }
   const prog = x => { if (!x.start || !x.due || x.done || x.start > T) return ''; const tot = diffDays(x.start, x.due) + 1, el = Math.min(tot, diffDays(x.start, T) + 1); return `<i class="td-prog" aria-label="期間の${Math.round(el / tot * 100)}%が過ぎました"><b style="width:${(el / tot * 100).toFixed(1)}%"></b></i>`; };
   const row = x => { const [lbl, cls] = x.due ? dueLabel(x.due) : ['', ''];
-    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${x.start && x.start > T && !x.done ? `<span class="td-wait num">${md(x.start)}から</span>` : ''}${x.due || x.start ? `<span class="num">${x.start ? `${md(x.start)}〜` : ''}${x.due ? `${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}` : ''}</span>` : ''}${plannedChip(x)}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small>${prog(x)}</button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
+    return `<div class="td-row${x.done ? ' done' : ''}" style="--c:${x.color}"><button class="td-chk" data-act="todoDone" data-k="${x.k}" data-id="${x.id}" aria-label="${x.done ? '未完了に戻す' : '完了にする'}">${ico('check')}</button><button class="td-main" data-act="todoEdit" data-k="${x.k}" data-id="${x.id}"><b>${esc(x.title)}</b><small>${x.k === 'h' ? `<span class="td-cls">${esc(x.sub)}</span>` : ''}${tdRepTag(x)}${x.start && x.start > T && !x.done ? `<span class="td-wait num">${md(x.start)}から</span>` : ''}${x.due || x.start ? `<span class="num">${x.start ? `${md(x.start)}〜` : ''}${x.due ? `${md(x.due)}(${WD[wd(x.due)]})${x.time ? ' ' + hm(x.time) + 'まで' : ''}` : ''}</span>` : ''}${plannedChip(x)}${x.note ? `<span>${esc(x.note.split('\n')[0])}</span>` : ''}</small>${prog(x)}</button>${x.due && !x.done ? `<span class="td-due ${cls}">${lbl}</span>` : '<span></span>'}</div>`; };
   return `<section class="todo" id="todo"><div class="td-head"><h2>やること<span class="script">To Do</span></h2><button class="td-add" data-act="todoNew">${ico('plus')}追加</button></div>
     ${open.length ? '<p class="td-hint">長押しすると、作業する時間を決めてタイムラインに入れられます</p>' : ''}
     ${groups.map(g => `<div class="td-g g-${g.k}"><p class="td-gl">${g.l}<span class="num">${g.list.length}</span></p>${g.list.map(row).join('')}</div>`).join('') || '<div class="td-g"><p class="empty" style="padding:14px 4px">やることはありません。<br>課題の提出や申し込みの締め切りを入れておきましょう。</p></div>'}
@@ -4564,6 +4607,9 @@ function todoForm() {
   <div class="fld"><label for="td-start">いつから（任意）</label><div class="until-row"><input class="inp" type="date" id="td-start" value="${d.start}">${d.start ? '<button data-act="todoStartClr">クリア</button>' : ''}</div><p class="note" style="margin:6px 0 0">課題が出た日や、取りかかる日。締め切りまでの期間がバーで出ます。</p></div>
   <div class="fld"><span class="lb">いつまで（締め切り）</span><div class="chips">${quick.map(([v, l]) => `<button class="chip" data-act="todoDue" data-d="${v}" aria-pressed="${d.due === v}">${l}</button>`).join('')}</div>
     <div class="row2" style="margin-top:10px"><div class="fld" style="margin:0"><label for="td-due">日付</label><input class="inp" type="date" id="td-due" value="${d.due}"></div><div class="fld" style="margin:0"><label for="td-time">時刻（任意）</label><input class="inp" type="time" id="td-time" value="${d.time}"></div></div></div>
+  <div class="fld"><span class="lb">くり返し</span><div class="chips">${[['', 'しない'], ...Object.entries(TD_REP)].map(([v, l]) => `<button class="chip" data-act="todoRep" data-k="${v}" aria-pressed="${(d.rep || '') === v}">${l}</button>`).join('')}</div>
+    ${d.rep ? `<div class="fld" style="margin:10px 0 0"><label for="td-until">いつまでくり返す（任意）</label><div class="until-row"><input class="inp" type="date" id="td-until" value="${d.repUntil || ''}">${tdTermEnd(d.classId) ? `<button data-act="todoUntilTerm">学期の終わり</button>` : ''}${d.repUntil ? '<button data-act="todoUntilClr">クリア</button>' : ''}</div></div>
+    <p class="note" style="margin:6px 0 0">${d.due ? `完了にすると、次の回（${md(tdStep(d.due, d.rep, +d.due.slice(8)))}締め切り）が出てきます。` : '締め切りの日を選ぶと、そこから' + TD_REP[d.rep] + 'くり返します。'}締め切りが過ぎたときも次の回が出ます。くり返しをやめるときは「しない」にして保存してください。</p>` : ''}</div>
   ${cls.length ? `<div class="fld"><label for="td-cls">授業の課題にする</label><select class="inp" id="td-cls"><option value="">しない</option>${cls.map(c => `<option value="${c.id}" ${d.classId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : ''}
   <div class="fld"><label for="td-note">メモ</label><textarea class="inp" id="td-note" rows="3" placeholder="提出方法、URL、ページ数など">${esc(d.note)}</textarea></div>
   <div class="sheet-actions"><button class="btn primary" data-act="todoSave">保存する</button>${d.id ? `<button class="btn" data-act="todoPlan" data-k="${d.k}" data-id="${d.id}">${ico('clock')}作業する時間を決める</button><button class="btn danger" data-act="todoDel">削除</button>` : ''}</div>`;
@@ -4572,11 +4618,13 @@ function syncTd() {
   const sh = topSheet(), v = id => { const el = $('#' + id, sh); return el ? el.value : null; };
   tdDraft.title = v('td-title') ?? tdDraft.title; tdDraft.due = v('td-due') ?? tdDraft.due; tdDraft.start = v('td-start') ?? tdDraft.start; tdDraft.time = v('td-time') ?? tdDraft.time; tdDraft.note = v('td-note') ?? tdDraft.note;
   const c = v('td-cls'); if (c !== null) tdDraft.classId = c;
+  const u = v('td-until'); if (u !== null) tdDraft.repUntil = u;
 }
 function openTodo(k, id) {
   const x = id && (k === 'h' ? S.school.tasks : S.todos).find(y => y.id === id);
   tdDraft = x ? { k, id, title: x.title, start: x.start || '', due: x.due || '', time: x.time || '', note: x.note || '', classId: k === 'h' ? x.classId || '' : '', done: !!x.done, doneAt: x.doneAt || 0 }
     : { k: 't', id: null, title: '', start: '', due: '', time: '', note: '', classId: '', done: false };
+  tdDraft.rep = x && x.rep && TD_REP[x.rep] ? x.rep : ''; tdDraft.repUntil = (x && x.repUntil) || '';
   const sh = openSheet(todoForm(), 'full'); sh.dataset.kind = 'todo';
   if (!x) setTimeout(() => { const el = $('#td-title'); el && el.focus({ preventScroll: true }); }, 450);
 }
@@ -5226,6 +5274,7 @@ function drawTlLinks() {
 addEventListener('resize', () => { if (st.tab === 'day') drawTlLinks(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (st.tab === 'day') drawTlLinks(); });
 function render() {
+  if (!dataPending && !loadFailed && todoRoll()) save(true);
   const keep = main.dataset.tab === st.tab ? main.scrollTop : 0;
   main.innerHTML = VIEWS[st.tab]();
   main.dataset.tab = st.tab; main.scrollTop = keep;
@@ -5552,10 +5601,11 @@ function openClsOcc(cid, d, p, x) { coDraft = { cid, d, p: +p, x: x || '' }; con
 const afterSchool = msg => { save(); while (stack.length && topSheet().dataset.kind !== 'school') closeSheet(); rerenderKind('school', schoolSheet); render(); if (msg) toast(msg); };
 function hwView() {
   const list = S.school.tasks.slice().sort((a, b) => a.due.localeCompare(b.due)), open = list.filter(x => !x.done), done = list.filter(x => x.done);
-  const row = x => { const c = clsById(x.classId), [l, k] = dueLabel(x.due); return `<div class="hw${x.done ? ' done' : ''}"><button class="chk${x.done ? ' on' : ''}" data-act="hwDone" data-id="${x.id}" aria-label="提出済みにする">${ico('check')}</button><span class="tt2">${esc(x.title)}<small>${c ? esc(c.name) + '・' : ''}${md(x.due)}(${WD[wd(x.due)]})まで</small></span>${x.done ? '<span></span>' : `<span class="due ${k}">${l}</span>`}<button class="del" data-act="hwDel" data-id="${x.id}" aria-label="削除">${ico('x')}</button></div>`; };
+  const row = x => { const c = clsById(x.classId), [l, k] = dueLabel(x.due); return `<div class="hw${x.done ? ' done' : ''}"><button class="chk${x.done ? ' on' : ''}" data-act="hwDone" data-id="${x.id}" aria-label="提出済みにする">${ico('check')}</button><span class="tt2">${esc(x.title)}<small>${c ? esc(c.name) + '・' : ''}${md(x.due)}(${WD[wd(x.due)]})まで${x.rep && TD_REP[x.rep] ? '・' + TD_REP[x.rep] : ''}</small></span>${x.done ? '<span></span>' : `<span class="due ${k}">${l}</span>`}<button class="del" data-act="hwDel" data-id="${x.id}" aria-label="削除">${ico('x')}</button></div>`; };
   return `<div class="hw-form"><input class="inp" id="hw-title" placeholder="課題（例：300文字レポート）" maxlength="60" autocomplete="off">
     <select class="inp" id="hw-class"><option value="">授業（なし）</option>${S.school.classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
     <input class="inp" type="date" id="hw-due" value="${addDays(todayISO(), 7)}">
+    <select class="inp" id="hw-rep" aria-label="くり返し"><option value="">くり返さない</option><option value="week">毎週（学期の終わりまで）</option><option value="2week">2週間ごと（学期の終わりまで）</option></select>
     <button class="btn primary" data-act="addHw">${ico('plus')}課題を追加</button></div>
   <div class="task-list">${open.map(row).join('') || '<p class="empty">出ている課題はありません</p>'}</div>
   ${done.length ? `<div class="task-list"><div class="routine-note"><span>提出済み ${done.length}件</span><button data-act="hwClear">提出済みを消す</button></div>${done.map(row).join('')}</div>` : ''}
@@ -6271,10 +6321,12 @@ const ACT = {
   addHw: () => {
     const sh = topSheet(), title = ($('#hw-title', sh).value || '').trim(), due = $('#hw-due', sh).value;
     if (!title) { toast('課題の名前を入力してください'); return; } if (!due) { toast('締め切りの日を選んでください'); return; }
-    S.school.tasks.push({ id: uid(), title, classId: $('#hw-class', sh).value, due, done: false }); save(); rerenderKind('school', schoolSheet); render(); toast('課題を追加しました');
+    const cls = $('#hw-class', sh).value, r = ($('#hw-rep', sh) || {}).value || '', end = tdTermEnd(cls);
+    S.school.tasks.push({ id: uid(), title, classId: cls, due, done: false, ...(r ? { rep: r, repUntil: end >= due ? end : '' } : {}) }); save(); rerenderKind('school', schoolSheet); render();
+    toast(r ? `課題を追加しました（${TD_REP[r]}${end >= due ? `・${md(end)}まで` : ''}）` : '課題を追加しました');
   },
-  hwDone: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) { x.done = !x.done; x.doneAt = x.done ? Date.now() : 0; save(); rerenderKind('school', schoolSheet); render(); } },
-  hwDel: t => { S.school.tasks = S.school.tasks.filter(h => h.id !== t.dataset.id); save(); rerenderKind('school', schoolSheet); render(); },
+  hwDone: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) { if (x.done) tdUndo(x); else { x.done = true; x.doneAt = Date.now(); } save(); render(); rerenderKind('school', schoolSheet); } },
+  hwDel: t => { const x = S.school.tasks.find(h => h.id === t.dataset.id); if (x) tdRemove(x); save(); render(); rerenderKind('school', schoolSheet); },
   hwClear: () => { S.school.tasks = S.school.tasks.filter(h => !h.done); save(); rerenderKind('school', schoolSheet); render(); },
   perAdd: () => { const ps = S.school.periods, last = ps[ps.length - 1], st0 = toMin(last[1]) + 10; ps.push([hhmm(Math.min(1380, st0)), hhmm(Math.min(1439, st0 + 90))]); save(); rerenderKind('school', schoolSheet); render(); },
   perDel: () => { const ps = S.school.periods; if (ps.length <= 1) return; const p = ps.length - 1, used = S.school.classes.filter(c => c.slots.some(x => x.p === p));
@@ -6347,19 +6399,34 @@ const ACT = {
   todoDue: t => { const i = $('#td-due', topSheet()); if (i) i.value = t.dataset.d; topSheet().querySelectorAll('[data-act="todoDue"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
   todoDone: t => {
     const list = t.dataset.k === 'h' ? S.school.tasks : S.todos, x = list.find(y => y.id === t.dataset.id); if (!x) return;
-    x.done = !x.done; x.doneAt = x.done ? Date.now() : 0; save(); render();
-    if (x.done) toast(`「${x.title}」を完了しました`, '取り消す', () => { x.done = false; x.doneAt = 0; save(); render(); });
+    if (x.done) { tdUndo(x); save(); render(); return; }
+    x.done = true; x.doneAt = Date.now(); save(); render(); // render makes the next time of a repeating one
+    const nx = x.rep ? tdLatest(x) : null;
+    toast(nx && nx !== x ? `「${x.title}」を完了しました。次は ${md(nx.due)}` : `「${x.title}」を完了しました`, '取り消す', () => { tdUndo(x); save(); render(); });
   },
+  todoRep: t => { syncTd(); tdDraft.rep = t.dataset.k; const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = todoForm(); sh.scrollTop = y; },
+  todoUntilTerm: () => { syncTd(); tdDraft.repUntil = tdTermEnd(tdDraft.classId); const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = todoForm(); sh.scrollTop = y; },
+  todoUntilClr: () => { syncTd(); tdDraft.repUntil = ''; const sh = topSheet(), y = sh.scrollTop; sh.innerHTML = todoForm(); sh.scrollTop = y; },
   todoSave: () => {
     syncTd(); const d = tdDraft, title = d.title.trim(); if (!title) { toast('やることを入力してください'); return; }
     if (d.classId && !d.due) { toast('課題にするときは、締め切りの日を選んでください'); return; }
     if (d.start && d.due && d.start > d.due) { toast('「いつから」は締め切りより前の日にしてください'); return; }
+    if (d.rep && !d.due) { toast('くり返すときは、締め切りの日を選んでください'); return; }
+    if (d.rep && d.repUntil && d.repUntil < d.due) { toast('「いつまでくり返す」は締め切りより後の日にしてください'); return; }
+    const old = d.id && (d.k === 'h' ? S.school.tasks : S.todos).find(y => y.id === d.id), ser = (old && old.ser) || d.id || null;
     const toH = !!d.classId, id = d.id || uid(), base = { id, title, start: d.start, due: d.due, time: d.time, note: d.note.trim(), done: d.done, doneAt: d.doneAt || 0 };
+    // the repetition belongs to the whole series: the other times take the same setting
+    const repOf = () => (d.rep ? { rep: d.rep, repUntil: d.repUntil || '', ...(d.rep === 'month' ? { repDay: +d.due.slice(8) } : {}) } : {});
+    Object.assign(base, repOf(), ser && ser !== id ? { ser } : {});
+    if (ser) for (const [y] of tdAll()) if (y.id !== id && tdSer(y) === ser) { delete y.rep; delete y.repUntil; delete y.repDay; Object.assign(y, repOf()); }
     if (d.id) { if (d.k === 'h') S.school.tasks = S.school.tasks.filter(y => y.id !== d.id); else S.todos = S.todos.filter(y => y.id !== d.id); }
     if (toH) S.school.tasks.push(Object.assign(base, { classId: d.classId })); else S.todos.push(base);
     save(); closeSheet(); rerenderKind('school', schoolSheet); render(); toast(d.id ? '保存しました' : 'やることを追加しました');
   },
-  todoDel: () => confirmIn(`「${tdDraft.title}」を削除します。`, '削除する', () => { if (tdDraft.k === 'h') S.school.tasks = S.school.tasks.filter(y => y.id !== tdDraft.id); else S.todos = S.todos.filter(y => y.id !== tdDraft.id); save(); closeSheet(); render(); toast('削除しました'); }),
+  todoDel: () => {
+    const x = (tdDraft.k === 'h' ? S.school.tasks : S.todos).find(y => y.id === tdDraft.id); if (!x) return;
+    confirmIn(`「${tdDraft.title}」を削除します。${tdRepOk(x) ? '\nくり返しの次の回は残ります（やめるときは「くり返し」を「しない」にして保存）。' : ''}`, '削除する', () => { tdRemove(x); save(); closeSheet(); render(); rerenderKind('school', schoolSheet); toast('削除しました'); });
+  },
   todoClear: () => confirmIn('完了したやること（課題をふくむ）を一覧から消します。', '消す', () => { S.todos = S.todos.filter(y => !y.done); S.school.tasks = S.school.tasks.filter(y => !y.done); save(); render(); }),
   lockSetup: () => showLock('setup', rerenderSettings),
   lockChange: () => showLock('verify', () => setTimeout(() => showLock('setup', rerenderSettings), 50)),
@@ -8332,10 +8399,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v96';
+const APP_VER = 'hibi-v97';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.11.1';
-const HIBI_CHANGES = ['「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.12.0';
+const HIBI_CHANGES = ['やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
