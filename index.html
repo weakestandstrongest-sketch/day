@@ -1042,10 +1042,10 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .nk-fail .btn{margin-top:6px;min-width:180px}
 .nk-wrap.fail .nk-fail{display:flex}
 .nk-wrap.fail .nk-load>b,.nk-wrap.fail .nk-spin{display:none}
-.orb-ico{width:22px;height:22px;border-radius:50%;display:block;background:radial-gradient(circle at 33% 27%,rgba(255,255,255,.95) 0 9%,rgba(255,255,255,0) 30%),radial-gradient(circle at 30% 68%,#4F7CFF,rgba(79,124,255,0) 72%),radial-gradient(circle at 74% 80%,#2EC5F0,rgba(46,197,240,0) 62%),#1D2447;box-shadow:0 2px 7px rgba(79,124,255,.4),inset 0 -2px 4px rgba(0,0,0,.35)}
-.ob-big{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 33% 27%,rgba(255,255,255,.95) 0 8%,rgba(255,255,255,0) 30%),radial-gradient(circle at 30% 68%,#4F7CFF,rgba(79,124,255,0) 72%),radial-gradient(circle at 74% 80%,#2EC5F0,rgba(46,197,240,0) 62%),#1D2447;box-shadow:0 10px 30px rgba(79,124,255,.45),inset 0 -4px 8px rgba(0,0,0,.35);animation:obPulse 1.6s ease-in-out infinite}
-@keyframes obPulse{50%{transform:scale(1.08);box-shadow:0 14px 40px rgba(46,197,240,.55),inset 0 -4px 8px rgba(0,0,0,.35)}}
-.nk-wrap.fail .ob-big{display:none}
+.as-ico{width:23px;height:23px;display:block;border-radius:6px}
+.as-big svg{width:64px;height:64px;border-radius:15px;display:block;animation:obPulse 1.8s ease-in-out infinite}
+.nk-wrap.fail .as-big{display:none}
+@keyframes obPulse{50%{transform:scale(1.08)}}
 .bb-ico{width:26px;height:26px;display:block;color:var(--ink)}
 .ng-ico{width:23px;height:23px;display:block;border-radius:6px;box-shadow:0 2px 6px rgba(20,48,79,.32)}
 .ng-big{width:64px;height:64px;display:block}.ng-big .ng-ico{width:100%;height:100%;border-radius:15px;box-shadow:0 8px 22px rgba(20,48,79,.3);animation:ngFloat 2.4s ease-in-out infinite}
@@ -1732,79 +1732,6 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .mn-map{display:grid;grid-template-columns:7.5em minmax(0,1fr);align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .mn-map .inp{min-height:40px;padding:6px 10px;font-size:15px}
 
-/* ---- メモ（あとで） ---- */
-.ib-seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px;margin:0 0 12px}
-.ib-seg button{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 0;border-radius:11px;font-size:14px;font-weight:600;color:var(--ink-2)}
-.ib-seg button .ico{width:16px;height:16px}
-.ib-seg button small{font-size:11px;background:var(--surface-2);border-radius:99px;padding:0 7px;color:var(--ink-2)}
-.ib-seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.ib-seg button[aria-selected="true"] small{background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent)}
-.nt-top{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-.nt-search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:42px;color:var(--ink-3)}
-.nt-search .ico{width:17px;height:17px;flex:none}
-.nt-search input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;padding:8px 0;color:var(--ink);outline:none}
-.nt-new{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);flex:none}
-.nt-new .ico{width:20px;height:20px}
-.nt-gh{display:flex;align-items:center;gap:5px;margin:16px 4px 6px;font-size:13px;font-weight:700;color:var(--ink-2)}
-.nt-gh .ico{width:14px;height:14px;color:var(--accent)}
-.nt-row{display:block;padding:0}
-.nt-main{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left;min-width:0}
-.nt-ic{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:20px;background:var(--surface-2);color:var(--ink-3)}
-.nt-ic .ico{width:18px;height:18px}
-.nt-tx{flex:1;min-width:0}
-.nt-tx b{display:block;font-size:15.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nt-tx small{display:block;font-size:12.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
-.nt-tx small .num{color:var(--ink);margin-right:8px;font-weight:600}
-.nt-tx small i{font-style:normal;color:var(--ink-3)}
-.nt-todo{flex:none;display:flex;align-items:center;gap:3px;font-size:11.5px;color:var(--ink-2);background:var(--surface-2);border-radius:99px;padding:3px 8px}
-.nt-todo .ico{width:12px;height:12px}.nt-todo.all{color:var(--pay)}
-.nt-empty{text-align:center;padding:40px 16px;color:var(--ink-2)}
-.nt-empty>.ico{width:40px;height:40px;color:var(--accent);opacity:.6}
-.nt-empty p{font-size:14px;line-height:1.8;margin:10px 0 18px}
-.sheet.nt{background:var(--surface)}
-.sheet.nt .sh-bar{background:var(--surface)}
-.nt-bar .l{display:flex;align-items:center;gap:2px;color:var(--accent);font-weight:600}
-.nt-bar .l .ico{width:20px;height:20px}
-.nt-acts{display:flex;gap:4px}
-.nt-acts button{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:var(--ink-2)}
-.nt-acts button .ico{width:20px;height:20px}
-.nt-acts button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.nt-page{padding:4px 6px 160px}
-.nt-icon{font-size:44px;line-height:1;padding:2px 0;margin:4px 0 2px}
-.nt-icon.none{font-size:13px;color:var(--ink-3);display:flex;align-items:center;gap:4px;padding:4px 0}
-.nt-icon.none .ico{width:14px;height:14px}
-.nt-title{width:100%;border:0;background:transparent;resize:none;font-size:27px;font-weight:700;line-height:1.3;color:var(--ink);padding:0;overflow:hidden;outline:none;font-family:inherit}
-.nt-title::placeholder{color:var(--ink-3)}
-.sheet.nt textarea:focus,.sheet.nt textarea:focus-visible,.sheet.nt input:focus,.sheet.nt input:focus-visible,.nt-icon:focus,.nt-icon:focus-visible,.nb-hrb:focus,.nb-hrb:focus-visible,.nt-tail:focus,.nt-tail:focus-visible{outline:none;box-shadow:none} /* a page to write on: no input boxes */
-.nt-meta{font-size:12px;color:var(--ink-3);margin:6px 0 14px}
-.nb{display:flex;align-items:flex-start;gap:6px;position:relative}
-.nb-tx{flex:1;min-width:0;border:0;background:transparent;resize:none;outline:none;color:var(--ink);font-family:inherit;font-size:16px;line-height:1.65;padding:3px 0;overflow:hidden}
-.nb-tx::placeholder{color:transparent}
-.nb-tx:focus::placeholder{color:var(--ink-3)}
-.nb-h1 .nb-tx{font-size:22px;font-weight:700;line-height:1.4;padding-top:12px}
-.nb-h2 .nb-tx{font-size:18.5px;font-weight:700;line-height:1.45;padding-top:8px}
-.nb-pre{flex:none;width:20px;text-align:center;font-size:16px;line-height:1.65;padding-top:3px;color:var(--ink-2)}
-.nb-ul .nb-pre{font-size:20px;line-height:1.3;color:var(--accent)}
-.nb-ol .nb-pre{font-size:14.5px;color:var(--accent);font-weight:700}
-.nb-chk{flex:none;width:22px;height:22px;margin:5px 2px 0 0;border-radius:7px;border:2px solid var(--ink-3);display:grid;place-items:center;color:transparent;transition:background .15s,border-color .15s}
-.nb-chk .ico{width:14px;height:14px;stroke-width:3}
-.nb-chk[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.nb-todo.done .nb-tx{color:var(--ink-3);text-decoration:line-through}
-.nb-quote{border-left:3px solid var(--accent);padding-left:12px;margin:4px 0}
-.nb-quote .nb-tx{color:var(--ink-2)}
-.nb-hrb{display:block;width:100%;padding:10px 0}.nb-hrb hr{border:0;border-top:1.5px solid var(--line);margin:0}
-.nt-tail{display:block;width:100%;height:120px}
-.nt-tools{position:fixed;left:0;right:0;bottom:0;z-index:6;display:none;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--line)}
-.sheet.nt.editing .nt-tools{display:flex}
-.nt-tools button{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;height:46px;border-radius:12px;color:var(--ink);touch-action:manipulation}
-.nt-tools button span{font-size:16px;font-weight:700;line-height:1.1}.nt-tools button span .ico{width:17px;height:17px}
-.nt-tools button small{font-size:9.5px;color:var(--ink-2);margin-top:2px}
-.nt-tools button:active{background:var(--surface-2)}
-.nt-tools .kb{margin-left:auto;color:var(--ink-2)}.nt-tools .kb .ico{width:20px;height:20px}
-.nt-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding-bottom:12px}
-.nt-icons button{aspect-ratio:1;border-radius:14px;background:var(--surface);font-size:28px;display:grid;place-items:center}
-.nt-icons button:first-child{font-size:13px;color:var(--ink-2)}
-.nt-icons button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
 /* ---- 灯 (habits) ---- */
 .hb-ico{width:23px;height:23px;display:block;border-radius:6px;box-shadow:0 2px 6px rgba(238,106,58,.35)}
 .hb-btn{position:relative}
@@ -2334,7 +2261,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', orb: 'https://weakestandstrongest-sketch.github.io/browser/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], habits: { list: [], log: {}, run: null, seen: {} } });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', asterism: 'https://weakestandstrongest-sketch.github.io/memo/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], habits: { list: [], log: {}, run: null, seen: {} } });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -2378,7 +2305,7 @@ function normalizeState(d, imported) {
   for (const c of n.school.classes) Object.assign(c, { id: okId(c.id), name: String(c.name ?? ''), color: okColor(c.color) ? c.color : COLORS[2], slots: asArr(c.slots) });
   for (const x of n.school.tasks) { x.id = okId(x.id); for (const f of ['due', 'start']) if (x[f] && !isYmdS(x[f]) && !/^\d\d:\d\d$/.test(x[f])) delete x[f]; if (x.time && !(typeof x.time === 'string' && /^\d\d:\d\d$/.test(x.time))) delete x.time; }
   n.money = normMoney(d.money);
-  n.notes = normNotes(d.notes);
+  n.notes = asArr(d.notes); // メモ was removed in 2.14.0: what was written is kept as it was
   n.habits = normHabits(d.habits);
   return n;
 }
@@ -2409,7 +2336,7 @@ function save(silent) {
   if (dataOn) dataPut(json, rev);
   let ok = false;
   // a full copy also goes to localStorage while it is small: it is written at once and lets the app open without waiting
-  // (localStorage is about 5MB, shared with 凪 and Orb on the same site; bigger data lives only in IndexedDB)
+  // (localStorage is about 5MB, shared with 凪 and Asterism on the same site; bigger data lives only in IndexedDB)
   if (!dataOn || json.length <= LS_MAX) { try { localStorage.setItem(KEY, json); localStorage.setItem(KEY + '.rev', String(rev)); ok = true; } catch (e) {} }
   if (!ok && dataOn) {
     // too big (or no room) for the local copy: drop it and leave a small marker, so an old copy can never be mistaken for the newest
@@ -2984,7 +2911,7 @@ function viewJournal() {
   if (!dates.length) list = `<p class="empty">まだ日記がありません。<br>右下の＋から、今日の気持ちを書いてみましょう。</p>`;
   return `
   <div class="j-head"><div class="ttl"><h1>日記</h1><span class="script">diary</span></div>
-    <div class="head-icons"><button class="icon-btn" data-act="orb" aria-label="Orb（ブラウザ）を開く"><span class="orb-ico"></span></button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="nagi" aria-label="凪（ニュース）を開く">${NAGI_SVG}</button><button class="icon-btn hb-btn${S.habits.run ? ' run' : ''}" data-act="habits" aria-label="灯（習慣）を開く">${HB_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="asterism" aria-label="Asterism（メモ）を開く">${AST_SVG}</button><button class="icon-btn" data-act="baseball" aria-label="野球速報を開く">${BALL_SVG}</button><button class="icon-btn" data-act="nagi" aria-label="凪（ニュース）を開く">${NAGI_SVG}</button><button class="icon-btn hb-btn${S.habits.run ? ' run' : ''}" data-act="habits" aria-label="灯（習慣）を開く">${HB_SVG}</button><button class="icon-btn" data-act="camera" aria-label="カメラ（シャッター音なし）">${ico('camera')}</button><button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="j-week"><div class="lbl"><button data-act="jWeek" data-n="-1" aria-label="前の週">${ico('left')}</button><span>${st.jWeek === 0 ? 'この7日間の投稿' : `${md(ws)} 〜 ${md(addDays(ws, 6))}`}</span><button data-act="jWeek" data-n="1" aria-label="次の週" ${st.jWeek >= 0 ? 'disabled style="opacity:.3"' : ''}>${ico('right')}</button></div>
     <div class="jw-grid" id="jwGrid" data-swipe="jweek">${wk}</div></div>
   ${quickMood(T)}
@@ -3998,7 +3925,7 @@ function ngWatch(wrap) {
   f.addEventListener('load', () => {
     let ok = true;
     // same github.io site: make sure it is really 凪 (a 404 page also "loads")
-    if (orbSameOrigin(f.src)) { try { const d = f.contentDocument; ok = !!d && /凪|Nagi/.test(d.title || ''); } catch (e) { ok = false; } }
+    if (sameOrigin(f.src)) { try { const d = f.contentDocument; ok = !!d && /凪|Nagi/.test(d.title || ''); } catch (e) { ok = false; } }
     clearTimeout(t); setTimeout(() => { wrap.classList.toggle('ready', ok); wrap.classList.toggle('fail', !ok); }, ok ? 200 : 0);
   }, { once: true });
 }
@@ -4011,41 +3938,31 @@ window.addEventListener('message', e => {
 });
 function openNagi() { const sh = openSheet(ngSheet(), 'full nk'); sh.dataset.kind = 'nagi'; const w = $('.ng-wrap', sh); if (w) ngWatch(w); }
 
-/* ---- Orb (the AI browser) inside ひび手帳 ---- */
-const orbBase = () => { const u = (S.settings.orb || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://'); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
-const orbSameOrigin = u => { try { return new URL(u).origin === location.origin; } catch (e) { return false; } };
-function orbSheet() {
-  const head = '<div class="sh-bar"><span></span><b>Orb</b><button class="r" data-act="close">閉じる</button></div>', base = orbBase();
-  if (!base) return head + '<p class="nk-empty">設定 → ブラウザ（Orb） に、OrbのURLを入れてください。</p>';
-  return head + `<div class="nk-wrap ob-wrap"><iframe class="nk-frame ob-frame" src="${esc(base)}" title="Orb" allow="clipboard-read; clipboard-write; geolocation"></iframe>
-    <div class="nk-load"><span class="ob-big"></span><b>Orbを開いています…</b>
-      <span class="nk-fail"><b>Orbを開けませんでした</b><small>Orbがまだ公開されていないか、URLが違うかもしれません。設定 → ブラウザ（Orb） のURLを確かめてください。</small><button class="btn primary" data-act="obRetry">もう一度開く</button></span></div></div>`;
+/* ---- Asterism (メモ) inside ひび手帳 ----
+   It is on the same github.io site, so it opens here as it is and keeps its memos in this app's storage.
+   It only ever touches its own "my-universe:" keys (its "erase everything" too), so ひび手帳's data is safe. */
+const sameOrigin = u => { try { return new URL(u).origin === location.origin; } catch (e) { return false; } };
+// the app's own icon in miniature: a star and its orbit on black
+const AST_SVG = '<svg class="as-ico" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#111"/><g transform="translate(50 50) scale(0.72)" fill="#fff"><ellipse rx="40" ry="12.5" transform="rotate(-24)" fill="none" stroke="#fff" stroke-width="3"/><path d="M0 -30C3 -7.5 7.5 -3 30 0C7.5 3 3 7.5 0 30C-3 7.5 -7.5 3 -30 0C-7.5 -3 -3 -7.5 0 -30Z"/><circle cx="31" cy="-19.6" r="4.6"/><circle cx="-32.6" cy="19.3" r="3.6"/></g></svg>';
+const asBase = () => { const u = (S.settings.asterism || '').trim().replace(/^http:\/\/(?!localhost|127\.0\.0\.1)/i, 'https://'); return /^https?:\/\/[^\s/]+/.test(u) ? u.replace(/\/?$/, '/') : ''; };
+function asSheet() {
+  const head = '<div class="sh-bar"><span></span><b>Asterism</b><button class="r" data-act="close">閉じる</button></div>', base = asBase();
+  if (!base) return head + '<p class="nk-empty">設定 → メモ（Asterism） に、AsterismのURLを入れてください。</p>';
+  return head + `<div class="nk-wrap as-wrap"><iframe class="nk-frame as-frame" src="${esc(base)}" title="Asterism" allow="clipboard-read; clipboard-write"></iframe>
+    <div class="nk-load"><span class="as-big">${AST_SVG}</span><b>Asterismを開いています…</b>
+      <span class="nk-fail"><b>Asterismを開けませんでした</b><small>通信が不安定か、URLが違うかもしれません。設定 → メモ（Asterism） のURLを確かめてください。</small><button class="btn primary" data-act="asRetry">もう一度開く</button></span></div></div>`;
 }
-// Orb is on the same github.io site, so its storage is shared with ひび手帳: its "erase everything" must only erase Orb's own keys
-function orbGuard(w) {
-  try {
-    const P = w.Storage.prototype, clear0 = P.clear;
-    if (P.clear.hibiSafe) return;
-    P.clear = function () { if (this !== w.localStorage) return clear0.call(this); Object.keys(this).filter(k => k.startsWith('kumo.')).forEach(k => this.removeItem(k)); };
-    P.clear.hibiSafe = true;
-  } catch (e) {}
-}
-function orbWatch(wrap) {
-  const f = $('.ob-frame', wrap); wrap.classList.remove('ready', 'fail');
+function asWatch(wrap) {
+  const f = $('.as-frame', wrap); wrap.classList.remove('ready', 'fail');
   const t = setTimeout(() => { if (!wrap.classList.contains('ready')) wrap.classList.add('fail'); }, 20000);
   f.addEventListener('load', () => {
     let ok = true;
-    if (orbSameOrigin(f.src)) {
-      try { const d = f.contentDocument; ok = !!d && d.title === 'Orb' && !!d.getElementById('app'); if (ok) orbGuard(f.contentWindow); } catch (e) { ok = false; }
-    }
-    clearTimeout(t); wrap.classList.toggle('ready', ok); wrap.classList.toggle('fail', !ok);
+    // same github.io site: make sure it is really Asterism (a 404 page also "loads")
+    if (sameOrigin(f.src)) { try { const d = f.contentDocument; ok = !!d && /Asterism/.test(d.title || ''); } catch (e) { ok = false; } }
+    clearTimeout(t); setTimeout(() => { wrap.classList.toggle('ready', ok); wrap.classList.toggle('fail', !ok); }, ok ? 200 : 0);
   }, { once: true });
 }
-function openOrb() {
-  const base = orbBase();
-  const sh = openSheet(orbSheet(), 'full nk'); sh.dataset.kind = 'orb';
-  const w = $('.ob-wrap', sh); if (w) orbWatch(w);
-}
+function openAsterism() { const sh = openSheet(asSheet(), 'full nk'); sh.dataset.kind = 'asterism'; const w = $('.as-wrap', sh); if (w) asWatch(w); }
 let nkTimer = 0;
 function nkWatch(wrap) {
   clearTimeout(nkTimer); wrap.classList.remove('ready', 'fail');
@@ -5358,7 +5275,6 @@ function closeSheet() {
   if (ov.firstElementChild.dataset.kind === 'timer') releaseWake();
   if (ov.firstElementChild.dataset.kind === 'entry') dropDraft();
   if (ov.firstElementChild.dataset.kind === 'nk') nkReplace = null;
-  if (ov.firstElementChild.dataset.kind === 'note') setTimeout(closeNote, 0);
   const sh = ov.firstElementChild; sh.style.transition = ''; sh.style.transform = '';
   ov.classList.remove('in'); setTimeout(() => ov.remove(), 400);
   if (!stack.length) { $('#app').classList.remove('behind'); setTimeout(fixScroll, 450); }
@@ -5866,9 +5782,7 @@ function taskSheet() {
   const open = S.tasks.filter(t => !t.done), done = S.tasks.filter(t => t.done);
   const row0 = t => `<div class="ib-row${t.done ? ' done' : ''}" style="--c:${t.color || COLORS[0]}"><button class="ib-main" data-act="tkEdit" data-id="${t.id}"><span class="ib-ic">${ico(t.icon || guessIcon(t.title))}</span><span class="ib-tt"><small class="num">${dur(t.dur || 30)}${t.subtasks && t.subtasks.length ? `・サブタスク ${t.subtasks.filter(x => x.done).length}/${t.subtasks.length}` : ''}</small>${esc(t.title)}</span></button>${t.done ? '<span></span>' : `<button class="ib-cal" data-act="tkSched" data-id="${t.id}" aria-label="日付を決める">${ico('today')}</button>`}<button class="chk${t.done ? ' on' : ''}" data-act="taskDone" data-id="${t.id}" aria-label="完了">${ico('check')}</button></div>`;
   const row = t => `<div class="sw-wrap"><button class="sw-del" data-act="taskDel" data-id="${t.id}" tabindex="-1" aria-label="削除"><span>${ico('trash')}削除</span></button>${row0(t)}</div>`;
-  const seg = `<div class="ib-seg" role="tablist"><button role="tab" data-act="ibView" data-k="tasks" aria-selected="${IBV !== 'notes'}">${ico('inbox')}あとで${open.length ? `<small class="num">${open.length}</small>` : ''}</button><button role="tab" data-act="ibView" data-k="notes" aria-selected="${IBV === 'notes'}">${ico('pen')}メモ${S.notes.length ? `<small class="num">${S.notes.length}</small>` : ''}</button></div>`;
-  if (IBV === 'notes') return `<div class="sh-bar"><span></span><b>メモ</b><button class="r" data-act="close">閉じる</button></div>${seg}${notesHTML()}`;
-  return `<div class="sh-bar"><span></span><b>あとで</b><button class="r" data-act="close">閉じる</button></div>${seg}
+  return `<div class="sh-bar"><span></span><b>あとで</b><button class="r" data-act="close">閉じる</button></div>
   <button class="btn primary ib-add" data-act="tkNew">${ico('plus')}あとでやることを追加</button>
   <div class="task-list">${open.map(row).join('') || '<p class="empty">いつかやりたいことを書き出しておきましょう。<br>日付を決めると、タイムラインに入ります。</p>'}</div>
   ${done.length ? `<div class="task-list"><div class="routine-note"><span>完了 ${done.length}件</span><button data-act="taskClear">完了したものを消す</button></div>${done.map(row).join('')}</div>` : ''}
@@ -5938,7 +5852,7 @@ function keepDraft() {
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d }, medRep)); } catch (e) { try { delete d.photo; localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), d })); } catch (e2) {} }
 }
 const dropDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} };
-function flushOnHide() { if (typeof noteSaveT !== 'undefined' && noteSaveT) { clearTimeout(noteSaveT); noteSaveT = 0; save(true); } keepDraft(); }
+function flushOnHide() { keepDraft(); }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); });
 window.addEventListener('pagehide', flushOnHide);
 // a diary that was being written when iPhone closed the app comes back
@@ -6049,10 +5963,8 @@ function runSearch() {
   if (!q && !filt) { box.innerHTML = '<p class="empty">キーワードを入力するか、気持ち・できごとを選んでください</p>'; return; }
   const evs = filt ? [] : S.events.filter(e => (e.title + ' ' + (e.memo || '')).toLowerCase().includes(q)).sort((a, b) => b.date.localeCompare(a.date));
   const ens = S.entries.filter(e => (!sf.feel || e.feelings.includes(sf.feel)) && (!sf.tag || e.tags.includes(sf.tag)) && (!q || (e.text + ' ' + e.tags.join(' ') + ' ' + e.feelings.join(' ') + (e.song ? ' ' + e.song.name + ' ' + e.song.artist : '')).toLowerCase().includes(q))).sort((a, b) => b.date.localeCompare(a.date));
-  const nts = filt || !q ? [] : S.notes.filter(x => (x.title + '\n' + noteText(x)).toLowerCase().includes(q)).sort((a, b) => b.u - a.u);
-  const n = evs.length + ens.length + nts.length;
+  const n = evs.length + ens.length;
   box.innerHTML = n ? `<p class="res-count">${n}件</p>` + evs.map(e => { const dd = e.repeat && e.repeat !== 'none' ? (nextOcc(e, todayISO()) || [e.date])[0] : e.date; return `<button data-act="goEvent" data-d="${dd}" style="--c:${e.color}"><i></i><span>${esc(e.title)}<small>${jpDate(dd)}${e.allDay ? ' 終日' : ' ' + hm(e.start)}${e.repeat !== 'none' ? '（繰り返し）' : ''}</small></span></button>`; }).join('') +
-    nts.map(x => `<button data-act="openNote" data-id="${x.id}" style="--c:var(--accent)"><i></i><span>${x.icon ? x.icon + ' ' : ''}${esc(noteName(x))}<small>メモ ・ ${noteWhen(x.u)}</small></span></button>`).join('') +
     ens.map(e => `<button data-act="goEntry" data-id="${e.id}" style="--c:${e.feelings[0] ? feelInfo(e.feelings[0]).color : 'var(--ink-3)'}"><i></i><span>${esc(e.text.slice(0, 60) || e.feelings.join('・'))}<small>${jpDate(e.date)}${e.feelings.length ? '・' + esc(e.feelings.join('・')) : ''}</small></span></button>`).join('') : '<p class="empty">見つかりませんでした</p>';
 }
 
@@ -6104,9 +6016,9 @@ function settingsHTML() {
   <div class="set-sec"><h4>乗換案内（のりかえ）</h4><div class="set-list">
     <p class="note" style="margin:0">タイムライン右上の電車のボタンから、のりかえで経路を調べて、そのまま予定に入れられます。</p>
     <div class="fld" style="margin:0"><label for="set-norikae">のりかえのURL</label><input class="inp" id="set-norikae" type="url" value="${esc(s.norikae || '')}" placeholder="https://norikae.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
-  <div class="set-sec"><h4>ブラウザ（Orb）</h4><div class="set-list">
-    <p class="note" style="margin:0">日記の右上の丸いボタンから、Orbをひび手帳の中で開けます。サイトはOrbと同じく、上に開くSafariの画面で表示されます。</p>
-    <div class="fld" style="margin:0"><label for="set-orb">OrbのURL</label><input class="inp" id="set-orb" type="url" value="${esc(s.orb || '')}" placeholder="https://○○○.github.io/browser/" autocapitalize="off" spellcheck="false"></div></div></div>
+  <div class="set-sec"><h4>メモ（Asterism）</h4><div class="set-list">
+    <p class="note" style="margin:0">日記の右上の星のボタンから、Asterismをひび手帳の中で開けます。ここで書いたメモは、ひび手帳の中に保存されます（ホーム画面に別に追加したAsterismとは別のデータです）。</p>
+    <div class="fld" style="margin:0"><label for="set-asterism">AsterismのURL</label><input class="inp" id="set-asterism" type="url" value="${esc(s.asterism || '')}" placeholder="https://○○○.github.io/memo/" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>野球速報</h4><div class="set-list">
     <p class="note" style="margin:0">日記の右上のダイヤモンド（塁）のボタンから、野球速報をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-baseball">野球速報のURL</label><input class="inp" id="set-baseball" type="url" value="${esc(s.baseball || '')}" placeholder="https://baseball.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
@@ -6573,7 +6485,7 @@ const ACT = {
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
-  orb: () => openOrb(),
+  asterism: () => openAsterism(),
   camera: () => openCam(),
   mailAdd: () => openMail(),
   mailPaste: async () => { const ta = $('#mail-text'); try { const t = await navigator.clipboard.readText(); if (t) { ta.value = t; MAIL.text = t; toast('貼り付けました'); } else toast('コピーした文章がありませんでした'); } catch (e) { ta.focus(); toast('欄を長押しして「ペースト」を選んでください'); } },
@@ -6592,7 +6504,7 @@ const ACT = {
   nagi: () => openNagi(),
   ngRetry: t => { const w = t.closest('.ng-wrap'), f = w && $('.ng-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); ngWatch(w); f.src = u.toString(); },
   bbRetry: t => { const w = t.closest('.bb-wrap'), f = w && $('.bb-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); bbWatch(w); f.src = u.toString(); },
-  obRetry: t => { const w = t.closest('.ob-wrap'), f = w && $('.ob-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); orbWatch(w); f.src = u.toString(); },
+  asRetry: t => { const w = t.closest('.as-wrap'), f = w && $('.as-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); asWatch(w); f.src = u.toString(); },
   nkRetry: t => { const w = t.closest('.nk-wrap'), f = w && $('.nk-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); nkWatch(w); f.src = u.toString(); },
   norikae: () => openNorikae(st.tab === 'cal' ? { date: st.sel } : null),
   rtAlt: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (!ev || !ev.route) return; openRtAlt(ev, t.dataset.d || ev.date, +t.dataset.i); },
@@ -6749,7 +6661,7 @@ document.addEventListener('change', async e => {
   else if (t.id === 'set-icsalarm') { S.settings.icsAlarm = +t.value; save(); }
   else if (t.id === 'set-icstodo' || t.id === 'set-icsclass') { S.settings[t.id === 'set-icstodo' ? 'icsTodo' : 'icsClass'] = t.checked; save(); }
   else if (t.id === 'set-norikae') { S.settings.norikae = t.value.trim(); save(); }
-  else if (t.id === 'set-orb') { S.settings.orb = t.value.trim(); save(); }
+  else if (t.id === 'set-asterism') { S.settings.asterism = t.value.trim(); save(); }
   else if (t.id === 'set-baseball') { S.settings.baseball = t.value.trim(); save(); }
   else if (t.id === 'set-nagi') { S.settings.nagi = t.value.trim(); save(); }
   else if (t.id === 'wx-rt') { radarStop(); radarShow(+t.value); }
@@ -8177,200 +8089,6 @@ document.addEventListener('focusout', e => { if (e.target.id !== 'hbd-m') return
 document.addEventListener('change', e => { if (e.target.id === 'hbd-tl') { const h = hbById(HBD.id); if (h) { h.tl = e.target.checked; save(); } } else if (e.target.id === 'hbd-pomo') { const h = hbById(HBD.id); if (h) { h.pomo = e.target.checked; const r = S.habits.run; if (r && r.id === h.id) { if (h.pomo) r.p = { n: 0, base: hbVal(h, r.d) }; else delete r.p; } if (!h.pomo && S.habits.brk && S.habits.brk.id === h.id) S.habits.brk = null; save(); hbRe(); hbTicker(); } } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'hbe-name') { e.preventDefault(); e.target.blur(); } });
 
-/* ================= メモ (inside あとで) =================
-   iOS メモ-style list (pinned, grouped by date, search) and a Notion-style page editor made of blocks:
-   p 本文 / h1 h2 見出し / ul 箇条書き / ol 番号 / todo チェック / quote 引用 / hr 区切り線.
-   note: { id, icon, title, blocks:[{ id, t, x, d }], pin, c (created), u (updated) } */
-const NB_TYPES = ['p', 'h1', 'h2', 'ul', 'ol', 'todo', 'quote', 'hr'];
-const NOTE_ICONS = ['', '📝', '💡', '📚', '🎵', '🍳', '🛒', '✈️', '🎓', '💼', '🏃', '🎮', '🎁', '💰', '❤️', '⭐', '📌', '🌱', '☕', '🗓'];
-function normNotes(a) {
-  return asArr(a).map(n => ({
-    id: okId(n.id), icon: NOTE_ICONS.includes(n.icon) ? n.icon : '', title: String(n.title ?? '').slice(0, 200), pin: !!n.pin, c: +n.c || Date.now(), u: +n.u || +n.c || Date.now(),
-    blocks: asArr(n.blocks).map(b => ({ id: okId(b.id), t: NB_TYPES.includes(b.t) ? b.t : 'p', x: String(b.x ?? '').slice(0, 20000), d: !!b.d })),
-  })).map(n => (n.blocks.length ? n : Object.assign(n, { blocks: [{ id: uid(), t: 'p', x: '', d: false }] })));
-}
-let IBV = 'tasks', NQ = '', NOTE = null, noteSaveT = 0;
-const noteById = id => S.notes.find(n => n.id === id);
-const noteText = n => n.blocks.filter(b => b.t !== 'hr').map(b => b.x).join('\n');
-const noteEmpty = n => !n.icon && !n.pin && !n.title.trim() && !n.blocks.some(b => b.x.trim() || b.t === 'hr');
-function noteName(n) { return n.title.trim() || (n.blocks.find(b => b.x.trim()) || {}).x?.split('\n')[0].slice(0, 40) || '新規メモ'; }
-function notePreview(n) {
-  const lines = n.blocks.filter(b => b.t !== 'hr' && b.x.trim()).map(b => b.x.replace(/\n+/g, ' '));
-  if (!n.title.trim()) lines.shift();
-  return lines.join(' ').slice(0, 80);
-}
-function noteWhen(ts) {
-  const d = new Date(ts), T = todayISO(), k = iso(d);
-  if (k === T) return `${d.getHours()}:${pad(d.getMinutes())}`;
-  if (k === addDays(T, -1)) return '昨日';
-  if (diffDays(k, T) < 7) return `${WD[d.getDay()]}曜日`;
-  return d.getFullYear() === new Date().getFullYear() ? `${d.getMonth() + 1}/${d.getDate()}` : `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-}
-function noteGroup(ts) {
-  const k = iso(new Date(ts)), T = todayISO(), dd = diffDays(k, T);
-  if (dd <= 0) return '今日'; if (dd === 1) return '昨日'; if (dd < 7) return '過去7日間'; if (dd < 30) return '過去30日間';
-  const d = new Date(ts); return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-}
-function noteRow(n) {
-  const todos = n.blocks.filter(b => b.t === 'todo'), dn = todos.filter(b => b.d).length;
-  return `<div class="sw-wrap"><button class="sw-del" data-act="noteDel" data-id="${n.id}" tabindex="-1" aria-label="削除"><span>${ico('trash')}削除</span></button>
-    <div class="ib-row nt-row"><button class="nt-main" data-act="noteOpen" data-id="${n.id}"><span class="nt-ic">${n.icon || ico('pen')}</span><span class="nt-tx"><b>${esc(noteName(n))}</b><small><span class="num">${noteWhen(n.u)}</span>${esc(notePreview(n)) || '<i>追加テキストなし</i>'}</small></span>${todos.length ? `<span class="nt-todo num${dn === todos.length ? ' all' : ''}">${ico('check')}${dn}/${todos.length}</span>` : ''}</button></div></div>`;
-}
-function notesHTML() {
-  const q = NQ.trim().toLowerCase(), list = [...S.notes].filter(n => !q || (n.title + '\n' + noteText(n)).toLowerCase().includes(q)).sort((a, b) => b.u - a.u);
-  const pins = list.filter(n => n.pin), rest = list.filter(n => !n.pin), groups = [];
-  for (const n of rest) { const g = noteGroup(n.u); if (!groups.length || groups[groups.length - 1][0] !== g) groups.push([g, []]); groups[groups.length - 1][1].push(n); }
-  return `<div class="nt-top"><label class="nt-search">${ico('search')}<input id="nt-q" type="search" placeholder="メモを検索" value="${esc(NQ)}" autocomplete="off" enterkeyhint="search"></label><button class="nt-new" data-act="noteNew" aria-label="新しいメモ">${ico('pen')}</button></div>
-    <div id="nt-list">${!S.notes.length ? `<div class="nt-empty">${ico('pen')}<p>思いついたこと、買うもの、授業のメモ、旅行の計画…<br>なんでも書いておけます。</p><button class="btn primary" data-act="noteNew">${ico('plus')}新しいメモ</button></div>`
-      : !list.length ? '<p class="empty">見つかりませんでした</p>'
-      : `${pins.length ? `<p class="nt-gh">${ico('pin')}ピン留め</p><div class="task-list">${pins.map(noteRow).join('')}</div>` : ''}${groups.map(([g, ns]) => `<p class="nt-gh">${g}</p><div class="task-list">${ns.map(noteRow).join('')}</div>`).join('')}
-        <p class="note" style="text-align:center">${S.notes.length}件のメモ ・ 左にスライドで削除</p>`}</div>`;
-}
-const refreshNoteList = () => { const l = $('#nt-list'); if (l) { const tmp = document.createElement('div'); tmp.innerHTML = notesHTML(); l.replaceWith(tmp.querySelector('#nt-list')); } };
-
-/* ---- the page editor ---- */
-function nbHTML(b, num) {
-  if (b.t === 'hr') return `<div class="nb nb-hr" data-bid="${b.id}"><button class="nb-hrb" data-act="nbHr" data-bid="${b.id}" aria-label="区切り線（タップで削除）"><hr></button></div>`;
-  const ph = { h1: '見出し1', h2: '見出し2', ul: 'リスト', ol: 'リスト', todo: 'やること', quote: '引用' }[b.t] || '';
-  const pre = b.t === 'ul' ? '<span class="nb-pre">•</span>' : b.t === 'ol' ? `<span class="nb-pre num">${num}.</span>` : b.t === 'todo' ? `<button class="nb-chk" data-act="nbChk" data-bid="${b.id}" aria-pressed="${b.d}" aria-label="完了">${ico('check')}</button>` : '';
-  return `<div class="nb nb-${b.t}${b.t === 'todo' && b.d ? ' done' : ''}" data-bid="${b.id}">${pre}<textarea class="nb-tx" data-bid="${b.id}" rows="1" placeholder="${ph}" enterkeyhint="enter">${esc(b.x)}</textarea></div>`;
-}
-function nbAll(n) { let k = 0; return n.blocks.map(b => { k = b.t === 'ol' ? k + 1 : 0; return nbHTML(b, k); }).join(''); }
-function noteSheet() {
-  const n = NOTE, d = new Date(n.u);
-  return `<div class="sh-bar nt-bar"><button class="l" data-act="close">${ico('left')}メモ</button><b></b><span class="r nt-acts"><button data-act="notePin" aria-pressed="${n.pin}" aria-label="ピン留め">${ico('pin')}</button><button data-act="noteMore" aria-label="そのほか">${ico('more')}</button></span></div>
-    <div class="nt-page">
-      <button class="nt-icon${n.icon ? '' : ' none'}" data-act="noteIcon">${n.icon || `${ico('plus')}アイコン`}</button>
-      <textarea id="nt-title" class="nt-title" rows="1" placeholder="タイトル" maxlength="200">${esc(n.title)}</textarea>
-      <p class="nt-meta num">${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours()}:${pad(d.getMinutes())}</p>
-      <div class="nt-blocks" id="nt-blocks">${nbAll(n)}</div>
-      <button class="nt-tail" data-act="nbTail" aria-label="下に書き足す"></button>
-    </div>
-    <div class="nt-tools" id="nt-tools" role="toolbar" aria-label="書式">
-      ${[['p', '本文', 'Aa'], ['h1', '見出し', 'H'], ['ul', '箇条書き', '•'], ['ol', '番号', '1.'], ['todo', 'チェック', ico('check')], ['quote', '引用', '❝'], ['hr', '区切り線', '—']].map(([t, l, g]) => `<button data-act="nbType" data-t="${t}" aria-label="${l}"><span>${g}</span><small>${l}</small></button>`).join('')}
-      <button class="kb" data-act="nbDone" aria-label="キーボードを閉じる">${ico('down')}</button>
-    </div>`;
-}
-const nbFit = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
-function noteFitAll() { const sh = topSheet(); if (!sh) return; sh.querySelectorAll('.nb-tx, #nt-title').forEach(nbFit); }
-function noteTouch() { NOTE.u = Date.now(); clearTimeout(noteSaveT); noteSaveT = setTimeout(() => save(), 400); }
-function openNote(id) {
-  NOTE = noteById(id); if (!NOTE) return;
-  const sh = openSheet(noteSheet(), 'full nt'); sh.dataset.kind = 'note';
-  requestAnimationFrame(noteFitAll);
-  if (noteEmpty(NOTE)) setTimeout(() => { const t = $('#nt-title'); if (t) t.focus(); }, 380);
-}
-function closeNote() {
-  if (!NOTE) return; clearTimeout(noteSaveT);
-  if (noteEmpty(NOTE)) S.notes = S.notes.filter(n => n !== NOTE); // nothing written: don't keep an empty page
-  NOTE = null; save(); rerenderKind('inbox', taskSheet);
-}
-const nbIdx = id => NOTE.blocks.findIndex(b => b.id === id);
-let nbFocus = null; // last block (id) the caret was in, for the toolbar
-function nbRedraw(focusId, caret) {
-  const box = $('#nt-blocks'); if (!box) return;
-  box.innerHTML = nbAll(NOTE); box.querySelectorAll('.nb-tx').forEach(nbFit);
-  if (focusId) { const el = box.querySelector(`.nb-tx[data-bid="${focusId}"]`); if (el) { el.focus({ preventScroll: false }); const c = caret === 'end' || caret == null ? el.value.length : caret; el.setSelectionRange(c, c); } }
-}
-// markdown-like shortcuts typed at the start of a block: "- " "・" "1. " "[] " "# " "## " "> " "---"
-const NB_SHORT = [[/^(-|・|\*)\s$/, 'ul'], [/^1[.)．]\s$/, 'ol'], [/^(\[\s?\]|［\s?］)\s$/, 'todo'], [/^#\s$/, 'h1'], [/^##\s$/, 'h2'], [/^>\s$/, 'quote'], [/^(---|ーーー)$/, 'hr']];
-function nbInput(el) {
-  const i = nbIdx(el.dataset.bid); if (i < 0) return; const b = NOTE.blocks[i];
-  if (b.t === 'p' || b.t === 'ul') {
-    const hit = NB_SHORT.find(([re]) => re.test(el.value));
-    if (hit && !(b.t === 'ul' && hit[1] === 'ul')) {
-      if (hit[1] === 'hr') { b.t = 'hr'; b.x = ''; const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.splice(i + 1, 0, nb); noteTouch(); nbRedraw(nb.id, 0); return; }
-      b.t = hit[1]; b.x = ''; noteTouch(); nbRedraw(b.id, 0); return;
-    }
-  }
-  b.x = el.value; nbFit(el); noteTouch();
-}
-function nbKey(e) {
-  const el = e.target; if (!el.classList || !el.classList.contains('nb-tx') || !NOTE) return;
-  if (e.isComposing || e.keyCode === 229) return; // 日本語の変換中は何もしない
-  const i = nbIdx(el.dataset.bid); if (i < 0) return; const b = NOTE.blocks[i];
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    const list = ['ul', 'ol', 'todo', 'quote'].includes(b.t);
-    if (list && !el.value) { b.t = 'p'; noteTouch(); nbRedraw(b.id, 0); return; } // empty list item + Enter = end the list
-    const a = el.selectionStart, rest = el.value.slice(el.selectionEnd);
-    b.x = el.value.slice(0, a);
-    const nb = { id: uid(), t: ['ul', 'ol', 'todo'].includes(b.t) ? b.t : 'p', x: rest, d: false };
-    NOTE.blocks.splice(i + 1, 0, nb); noteTouch(); nbRedraw(nb.id, 0);
-  } else if (e.key === 'Backspace' && el.selectionStart === 0 && el.selectionEnd === 0) {
-    if (b.t !== 'p') { e.preventDefault(); b.t = 'p'; noteTouch(); nbRedraw(b.id, 0); return; }
-    if (i === 0) { if (!el.value) { e.preventDefault(); const t = $('#nt-title'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } } return; }
-    e.preventDefault();
-    let j = i - 1; while (j >= 0 && NOTE.blocks[j].t === 'hr') j--;
-    if (NOTE.blocks[i - 1].t === 'hr') { NOTE.blocks.splice(i - 1, 1); noteTouch(); nbRedraw(b.id, 0); return; }
-    const prev = NOTE.blocks[j], at = prev.x.length; prev.x += b.x; NOTE.blocks.splice(i, 1); noteTouch(); nbRedraw(prev.id, at);
-  }
-}
-function nbSetType(t) {
-  if (!NOTE) return;
-  let i = nbFocus ? nbIdx(nbFocus) : -1; if (i < 0) i = NOTE.blocks.length - 1;
-  const b = NOTE.blocks[i];
-  if (t === 'hr') { const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.splice(i + 1, 0, { id: uid(), t: 'hr', x: '', d: false }, nb); noteTouch(); nbRedraw(nb.id, 0); return; }
-  if (t === 'h1' && b.t === 'h1') t = 'h2'; else if (t === 'h1' && b.t === 'h2') t = 'p'; // 見出し: tap again for smaller, then back to 本文
-  else if (b.t === t) t = 'p';
-  b.t = t; noteTouch(); nbRedraw(b.id, 'end');
-}
-// keep the format bar just above the iPhone keyboard
-function ntToolsPlace() {
-  const tb = $('#nt-tools'), vv = window.visualViewport; if (!tb) return;
-  const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-  tb.style.transform = kb ? `translateY(${-kb}px)` : '';
-}
-if (window.visualViewport) { visualViewport.addEventListener('resize', ntToolsPlace); visualViewport.addEventListener('scroll', ntToolsPlace); }
-document.addEventListener('focusin', e => {
-  const sh = e.target.closest && e.target.closest('.sheet.nt'); if (!sh) return;
-  if (e.target.classList.contains('nb-tx')) nbFocus = e.target.dataset.bid;
-  sh.classList.toggle('editing', e.target.classList.contains('nb-tx') || e.target.id === 'nt-title'); setTimeout(ntToolsPlace, 60);
-});
-document.addEventListener('focusout', e => { const sh = e.target.closest && e.target.closest('.sheet.nt'); if (sh) setTimeout(() => { if (!sh.contains(document.activeElement)) sh.classList.remove('editing'); }, 120); });
-document.addEventListener('pointerdown', e => { if (e.target.closest('#nt-tools button:not(.kb)')) e.preventDefault(); }); // tapping the bar keeps the keyboard up
-document.addEventListener('keydown', nbKey);
-document.addEventListener('input', e => {
-  const t = e.target;
-  if (t.id === 'nt-q') { NQ = t.value; refreshNoteList(); }
-  else if (t.id === 'nt-title' && NOTE) { NOTE.title = t.value.replace(/\n/g, ''); if (t.value.includes('\n')) { t.value = NOTE.title; const f = NOTE.blocks[0]; nbRedraw(f.id, 0); } nbFit(t); noteTouch(); }
-  else if (t.classList && t.classList.contains('nb-tx') && NOTE) nbInput(t);
-});
-
-Object.assign(ACT, {
-  ibView: t => { IBV = t.dataset.k; rerenderKind('inbox', taskSheet); },
-  noteNew: () => { const n = { id: uid(), icon: '', title: '', blocks: [{ id: uid(), t: 'p', x: '', d: false }], pin: false, c: Date.now(), u: Date.now() }; S.notes.push(n); openNote(n.id); },
-  noteOpen: t => openNote(t.dataset.id),
-  openNote: t => { IBV = 'notes'; const sh = openSheet(taskSheet(), 'full'); sh.dataset.kind = 'inbox'; openNote(t.dataset.id); },
-  noteDel: t => {
-    const i = S.notes.findIndex(n => n.id === t.dataset.id); if (i < 0) return; const [n] = S.notes.splice(i, 1);
-    if (!save()) { S.notes.splice(i, 0, n); return; }
-    rerenderKind('inbox', taskSheet); toast('メモを削除しました', '元に戻す', () => { S.notes.splice(i, 0, n); save(); rerenderKind('inbox', taskSheet); });
-  },
-  notePin: t => { NOTE.pin = !NOTE.pin; t.setAttribute('aria-pressed', NOTE.pin); save(); toast(NOTE.pin ? 'ピン留めしました' : 'ピン留めをやめました'); },
-  noteIcon: () => {
-    const sh = openSheet(`<div class="sh-bar"><span></span><b>アイコン</b><button class="r" data-act="close">閉じる</button></div><div class="nt-icons">${NOTE_ICONS.map(i => `<button data-act="noteIconSet" data-i="${i}" aria-pressed="${NOTE.icon === i}">${i || 'なし'}</button>`).join('')}</div>`); sh.dataset.kind = 'noteicon';
-  },
-  noteIconSet: t => { NOTE.icon = t.dataset.i; noteTouch(); closeSheet(); const b = topSheet() && $('.nt-icon', topSheet()); if (b) { b.className = `nt-icon${NOTE.icon ? '' : ' none'}`; b.innerHTML = NOTE.icon || `${ico('plus')}アイコン`; } },
-  noteMore: () => {
-    const n = NOTE;
-    choose(noteName(n), [
-      ['「あとで」にする', () => { S.tasks.push({ id: uid(), title: noteName(n).slice(0, 60), color: COLORS[2], icon: guessIcon(noteName(n)), dur: 30, subtasks: n.blocks.filter(b => b.t === 'todo').map(b => ({ t: b.x, done: b.d })), notes: noteText(n).slice(0, 2000), done: false }); save(); toast('「あとで」に追加しました'); }],
-      ['テキストをコピー', () => { const txt = [n.title, ...n.blocks.map(b => b.t === 'hr' ? '———' : (b.t === 'ul' ? '・' : b.t === 'todo' ? (b.d ? '☑ ' : '☐ ') : '') + b.x)].filter((x, i) => i || x).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('コピーしました'), () => toast('コピーできませんでした')); }],
-      ['このメモを削除', () => confirmIn('このメモを削除しますか？', '削除', () => { S.notes = S.notes.filter(x => x !== n); NOTE = null; save(); closeSheet(); rerenderKind('inbox', taskSheet); })],
-    ]);
-  },
-  nbChk: t => { const b = NOTE.blocks[nbIdx(t.dataset.bid)]; if (!b) return; b.d = !b.d; t.setAttribute('aria-pressed', b.d); t.closest('.nb').classList.toggle('done', b.d); noteTouch(); },
-  nbHr: t => choose('区切り線', [['削除', () => { const i = nbIdx(t.dataset.bid); if (i >= 0) { NOTE.blocks.splice(i, 1); if (!NOTE.blocks.length) NOTE.blocks.push({ id: uid(), t: 'p', x: '', d: false }); noteTouch(); nbRedraw(); } }]]),
-  nbType: t => nbSetType(t.dataset.t),
-  nbDone: () => { if (document.activeElement) document.activeElement.blur(); },
-  nbTail: () => { // tap below the last block: write on (a new line if the last one is not empty)
-    const last = NOTE.blocks[NOTE.blocks.length - 1];
-    if (last.t !== 'hr' && !last.x) { nbRedraw(last.id, 0); return; }
-    const nb = { id: uid(), t: 'p', x: '', d: false }; NOTE.blocks.push(nb); noteTouch(); nbRedraw(nb.id, 0);
-  },
-});
-
 /* あとで: swipe a row left to reveal 削除, or swipe all the way to delete (iOS style) */
 const SW_OPEN = 88;
 let sw = null;
@@ -8442,10 +8160,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v98';
+const APP_VER = 'hibi-v99';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.13.0';
-const HIBI_CHANGES = ['大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.14.0';
+const HIBI_CHANGES = ['日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
