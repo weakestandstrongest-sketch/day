@@ -708,6 +708,31 @@ img[src^="idb:"]{visibility:hidden}
 .mv-pin .ico{width:13px;height:13px}
 .mv-attr{position:absolute;right:8px;bottom:6px;font-size:9px;color:var(--ink-3);background:color-mix(in srgb,var(--surface) 70%,transparent);padding:1px 5px;border-radius:5px}
 .mv-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:13px;color:var(--ink-2);padding:20px;line-height:1.7}
+/* 軌跡をたどる */
+.rp-map{height:min(50vh,430px);touch-action:none}
+.rp-layer{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
+.rp-layer svg{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible}
+.rp-layer img.bt{position:absolute;width:128px;height:128px;max-width:none;animation:mvFade .5s ease both}
+.rp-map .rp-halo{fill:none;stroke:var(--surface);stroke-opacity:.8;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+.rp-map .rp-ln{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.rp-map .rp-ln.old{opacity:.5}
+.rp-map .rp-dot{stroke:#fff;stroke-width:2}
+.rp-map .rp-me{fill:var(--c);stroke:#fff;stroke-width:3}
+.rp-map .rp-ring{fill:var(--c);opacity:.28}
+.rp-layer .mv-pin{animation:mvFade .4s ease both}
+.rp-now{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding:12px 14px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow)}
+.rp-now i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.rp-now .dt{font-size:13px;color:var(--ink-2)}.rp-now b{display:block;font-size:17px;margin-top:1px}
+.rp-now .r{margin-left:auto;text-align:right;font-size:12px;color:var(--ink-2)}.rp-now .r b{font-size:18px;color:var(--ink)}
+.rp-bar{display:flex;align-items:center;gap:12px;margin:12px 2px 0}
+.rp-bar input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:28px}
+.rp-ctl{display:flex;align-items:center;gap:8px;margin:10px 0 0}
+.rp-play{width:54px;height:54px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none;box-shadow:var(--shadow)}
+.rp-play .ico{width:24px;height:24px}
+.rp-ctl .seg{flex:1;display:flex;min-width:0}.rp-ctl .seg button{flex:1;padding:0 4px;font-size:12.5px;white-space:nowrap}
+.rp-ctl .rbtn{width:42px;height:42px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.rp-ctl .rbtn .ico{width:20px;height:20px}
+.rp-range{margin:12px 0 0;display:flex;gap:6px;flex-wrap:wrap}
 .mv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
 .mv-stats div{background:var(--surface);border-radius:16px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
 .mv-stats b{display:block;font-size:22px}
@@ -3349,6 +3374,7 @@ function movesSheet() {
   <div class="mv-stats"><div><b class="num">${kmText(shown.reduce((a, x) => a + pathLen(x.stops), 0))}</b><span>km 移動</span></div><div><b class="num">${placeCount(stops)}</b><span>か所</span></div><div><b class="num">${shown.reduce((a, x) => a + x.pts.length, 0)}</b><span>回 記録</span></div></div>
   ${favSpot && !mvDay ? `<p class="mv-fav">いちばんよく行った場所 <b>${esc(favSpot.name)}</b>（${favTop[1]}日）</p>` : ''}
   ${inFrame ? '<p class="note" style="text-align:center">場所の記録は、GitHub Pages で開いたときに使えます。</p>' : `<button class="btn primary mv-rec" data-act="mvRecord">${ico('pin')}いまの場所を記録</button>`}
+  ${S.places.length >= 2 ? `<button class="btn mv-rec" style="margin-top:0" data-act="mvReplay">${ico('play')}今までの軌跡をゆっくりたどる</button>` : ''}
   ${list || `<p class="empty">${mvDay ? 'この日の記録はありません' : 'この週の記録はまだありません。<br>「いまの場所を記録」を押すか、設定 → 場所の記録 で<br>自動で記録するようにできます。'}</p>`}
   <p class="note">場所の記録はこの端末の中だけに保存されます。地図は指で動かしたり、2本指・ダブルタップ・＋－ボタンで拡大縮小できます（地図：地理院タイル）。場所をタップすると名前をつけられます。</p>`;
 }
@@ -3459,6 +3485,127 @@ function drawMoves() {
   drawMap($('#mv-map'), shown.filter(x => x.stops.length).map(x => ({ color: DAYC[x.i], pts: x.stops })), { now, empty: 'この週はまだ記録がありません' });
 }
 const rerenderMoves = () => { rerenderKind('moves', movesSheet); drawMoves(); };
+
+/* ---- 軌跡をたどる: every place ever recorded, in order, as a marker that travels along the paths on a map that follows it.
+   The map is drawn in world pixels around a movable origin (so big zoomed-in numbers never lose precision), tiles are added as the
+   camera reaches them, and the trail of each day is drawn as the marker goes. */
+const RP_SPEEDS = [['ゆっくり', 1], ['ふつう', 3], ['はやい', 10]], RP_RANGES = [['all', '全期間'], ['90', '直近3か月'], ['30', '直近1か月'], ['7', '直近1週間']];
+let RP = null;
+const rpEase = u => (u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+function rpBuild(range) {
+  const cut = range === 'all' ? '' : addDays(todayISO(), -(+range - 1)), days = [...new Set(S.places.map(p => iso(new Date(p.t))))].sort().filter(d => d >= cut);
+  const steps = [], dayOf = [];
+  days.forEach((d, di) => { for (const st of stopsOf(dayPts(d))) { steps.push({ d, di, lat: st.lat, lng: st.lng, from: st.from, to: st.to, spot: st.spot }); } });
+  // the timeline in "speed 1" milliseconds: stay at a stop, then travel to the next (a new day that starts in the same place: only a pause)
+  const segs = []; let t = 0;
+  steps.forEach((a, i) => {
+    segs.push({ k: 'stay', i, t0: t, t1: t += 1000 });
+    const b = steps[i + 1]; if (!b) return; const m = hav(a, b), cross = b.di !== a.di;
+    const dur = cross ? (m < 200 ? 700 : Math.min(4500, 1300 + Math.sqrt(m) * 12)) : Math.min(3800, 900 + Math.sqrt(m) * 16);
+    segs.push({ k: 'move', i, cross, still: cross && m < 200, t0: t, t1: t += dur });
+  });
+  const km = days.map(d => pathLen(steps.filter(x => x.d === d)));
+  return { days, steps, segs, total: t, km, places: placeCount(steps) };
+}
+function openReplay() {
+  const R = rpBuild('all'); if (R.steps.length < 2) { toast('たどれる記録が足りません（2か所以上の記録が必要です）'); return; }
+  RP = { range: 'all', R, speed: 0, pos: 0, playing: true, s: 0, z: 0, cx: 0, cy: 0, ox: 0, oy: 0, tiles: new Map(), pins: new Set(), doneDays: 0, raf: 0, last: 0, drag: false, tick: 0 };
+  const sh = openSheet(replaySheet(), 'full'); sh.dataset.kind = 'replay'; requestAnimationFrame(() => setTimeout(rpStart, 60));
+}
+function replaySheet() {
+  const x = RP;
+  return `<div class="sh-bar"><span></span><b>軌跡をたどる</b><button class="r" data-act="close">閉じる</button></div>
+  <div class="mv-map rp-map live" id="rp-map"></div>
+  <div class="rp-now" id="rp-now"></div>
+  <div class="rp-bar"><input type="range" id="rp-seek" min="0" max="${x.R.steps.length - 1}" step="1" value="0" aria-label="どこまで進めるか"></div>
+  <div class="rp-ctl"><button class="rp-play" data-act="rpPlay" id="rp-play" aria-label="再生・一時停止">${ico(x.playing ? 'pause' : 'play')}</button>
+    <div class="seg" role="group" aria-label="速さ">${RP_SPEEDS.map(([l], i) => `<button data-act="rpSpeed" data-i="${i}" aria-pressed="${x.speed === i}">${l}</button>`).join('')}</div>
+    <button class="rbtn" data-act="rpZoom" data-n="-1" aria-label="ひろく">－</button><button class="rbtn" data-act="rpZoom" data-n="1" aria-label="ちかく">＋</button></div>
+  <div class="rp-range">${RP_RANGES.map(([k, l]) => `<button class="chip" data-act="rpRange" data-k="${k}" aria-pressed="${x.range === k}">${l}</button>`).join('')}</div>
+  <div class="mv-stats"><div><b class="num">${x.R.days.length}</b><span>日分</span></div><div><b class="num">${x.R.places}</b><span>か所</span></div><div><b class="num">${kmText(x.R.km.reduce((a, b) => a + b, 0))}</b><span>km 移動</span></div></div>
+  <p class="note">記録した場所を、いちばん古い日から順に追います。地図は動く点を追いかけます。下の棒を動かすと、見たい時期から再生できます（地図：地理院タイル）。</p>`;
+}
+function rpStop() { if (RP) { cancelAnimationFrame(RP.raf); RP = null; } }
+// the whole map at a zoom: origin = the camera at that moment
+function rpZoomTo(z) {
+  const x = RP, box = $('#rp-map'); if (!box) return; x.z = Math.max(8, Math.min(18, z));
+  x.ox = wmx(x.cx0 ?? x.R.steps[0].lng, x.z); x.oy = wmy(x.cy0 ?? x.R.steps[0].lat, x.z); x.tiles.clear(); x.pins.clear(); x.doneDays = -1;
+  box.innerHTML = `<div class="rp-layer"><div class="rp-tiles"></div><svg aria-hidden="true"><g class="rp-done"></g><path class="rp-halo rp-chalo"/><path class="rp-ln rp-cur"/><g class="rp-dots"></g><circle class="rp-ring" r="16"/><circle class="rp-me" r="7"/></svg><div class="rp-pins"></div></div>${MAP_ATTR}`;
+  x.layer = $('.rp-layer', box); x.W = box.clientWidth; x.H = box.clientHeight;
+}
+const rpPx = (x, p) => [wmx(p.lng, x.z) - x.ox, wmy(p.lat, x.z) - x.oy];
+function rpStart() {
+  const x = RP, box = $('#rp-map'); if (!x || !box) return;
+  // first view: a zoom that suits how far apart the places are (a city: close; a trip: wider)
+  const st = x.R.steps, la = st.map(p => p.lat), lo = st.map(p => p.lng), span = Math.max(Math.max(...la) - Math.min(...la), (Math.max(...lo) - Math.min(...lo)) * Math.cos(la[0] * Math.PI / 180));
+  x.zoomWanted = span > 1.5 ? 11 : span > 0.4 ? 12 : span > 0.1 ? 13 : 15;
+  x.cx0 = st[0].lng; x.cy0 = st[0].lat; rpZoomTo(x.zoomWanted); x.cx = wmx(st[0].lng, x.z); x.cy = wmy(st[0].lat, x.z);
+  x.last = performance.now(); cancelAnimationFrame(x.raf); x.raf = requestAnimationFrame(rpFrame);
+}
+function rpSeg(x) { const g = x.R.segs; if (x.s >= g.length || x.pos < g[x.s].t0) x.s = Math.max(0, Math.min(x.s, g.length - 1)); while (x.s > 0 && x.pos < g[x.s].t0) x.s--; while (x.s < g.length - 1 && x.pos >= g[x.s].t1) x.s++; return g[x.s]; }
+function rpFrame(now) {
+  const x = RP; if (!x || !x.layer || !x.layer.isConnected) return;
+  const dt = Math.min(120, now - x.last); x.last = now;
+  if (x.playing && !x.drag) { x.pos = Math.min(x.R.total, x.pos + dt * RP_SPEEDS[x.speed][1]); if (x.pos >= x.R.total) { x.playing = false; const b = $('#rp-play'); if (b) b.innerHTML = ico('play'); } }
+  const sg = rpSeg(x), A = x.R.steps[sg.i], Bn = x.R.steps[sg.i + 1], u = sg.k === 'move' ? rpEase(Math.min(1, (x.pos - sg.t0) / (sg.t1 - sg.t0))) : 0;
+  const mk = sg.k === 'move' && Bn ? { lat: A.lat + (Bn.lat - A.lat) * u, lng: A.lng + (Bn.lng - A.lng) * u } : A;
+  const [mx, my] = rpPx(x, mk);
+  // the camera follows with an easing; far from the origin: move the origin (keeps the numbers small)
+  const tx = wmx(mk.lng, x.z), ty = wmy(mk.lat, x.z), k = 1 - Math.exp(-dt / (sg.k === 'move' && sg.cross ? 160 : 380));
+  x.cx += (tx - x.cx) * k; x.cy += (ty - x.cy) * k;
+  if (Math.abs(x.cx - x.ox) > 4000 || Math.abs(x.cy - x.oy) > 4000) { x.cx0 = unmx(x.cx, x.z); x.cy0 = unmy(x.cy, x.z); const cx = x.cx, cy = x.cy; rpZoomTo(x.z); x.cx = cx; x.cy = cy; return rpFrame2(); }
+  rpDraw(x, sg, A, Bn, mk, mx, my);
+  x.raf = requestAnimationFrame(rpFrame);
+}
+const rpFrame2 = () => { if (RP) { RP.last = performance.now(); RP.raf = requestAnimationFrame(rpFrame); } };
+function rpDraw(x, sg, A, Bn, mk, mx, my) {
+  const W = x.W, H = x.H, R = x.R, L = x.layer, sv = $('svg', L);
+  L.style.transform = `translate(${(W / 2 - (x.cx - x.ox)).toFixed(2)}px,${(H / 2 - (x.cy - x.oy)).toFixed(2)}px)`;
+  const day = sg.k === 'move' && sg.cross ? A.di + 1 : A.di; // days finished: their whole path stays drawn
+  if (x.doneDays !== day) {
+    const g = $('.rp-done', sv); let h = '';
+    for (let di = 0; di < day; di++) { const pts = R.steps.filter(p => p.di === di), c = DAYC[wd(R.days[di])]; h += rpPath(x, pts, c, true); }
+    g.innerHTML = h; x.doneDays = day;
+  }
+  const cur = $('.rp-cur', sv), halo = $('.rp-chalo', sv), me = $('.rp-me', sv), ring = $('.rp-ring', sv), dots = $('.rp-dots', sv);
+  const c = DAYC[wd(A.d)]; L.style.setProperty('--c', c);
+  if (day === A.di) {
+    const pts = R.steps.filter(p => p.di === day), upto = pts.indexOf(A), q = pts.slice(0, upto + 1).map(p => rpPx(x, p)); if (sg.k === 'move' && Bn && !sg.cross) q.push([mx, my]);
+    const d = q.length > 1 ? smoothD(q) : ''; cur.setAttribute('d', d); halo.setAttribute('d', d); cur.style.stroke = c;
+    dots.innerHTML = q.slice(0, sg.k === 'move' && !sg.cross ? -1 : undefined).map(([a, b]) => `<circle class="rp-dot" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="4.5" style="fill:${c}"/>`).join('');
+  } else { cur.setAttribute('d', ''); halo.setAttribute('d', ''); dots.innerHTML = ''; }
+  me.setAttribute('cx', mx.toFixed(1)); me.setAttribute('cy', my.toFixed(1)); ring.setAttribute('cx', mx.toFixed(1)); ring.setAttribute('cy', my.toFixed(1));
+  ring.setAttribute('r', (14 + 5 * Math.sin(performance.now() / 380)).toFixed(1));
+  // named places show up once visited; tiles are added where the view reaches
+  if (A.spot && !x.pins.has(A.spot.id)) { x.pins.add(A.spot.id); const [px, py] = rpPx(x, A); $('.rp-pins', L).insertAdjacentHTML('beforeend', `<span class="mv-pin" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px;--c:${c}"><span>${ico(A.spot.icon)}</span>${esc(A.spot.name)}</span>`); }
+  if (!x.tick || performance.now() - x.tick > 140) { x.tick = performance.now(); rpTiles(x); rpInfo(x, sg, A, Bn); }
+}
+function rpPath(x, pts, c, old) {
+  const q = pts.map(p => rpPx(x, p)), d = smoothD(q);
+  return (q.length > 1 ? `<path class="rp-halo" d="${d}"/><path class="rp-ln${old ? ' old' : ''}" d="${d}" style="stroke:${c}"/>` : '') + q.map(([a, b]) => `<circle class="rp-dot" cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="4" style="fill:${c};opacity:${old ? .55 : 1}"/>`).join('');
+}
+function rpTiles(x) {
+  const zz = Math.max(2, Math.min(18, x.z + 1)), sz = 128, n = 2 ** zz, dark = isDark(), box = $('.rp-tiles', x.layer); if (!box) return;
+  const wx0 = x.cx - x.W / 2 - sz, wy0 = x.cy - x.H / 2 - sz, wx1 = x.cx + x.W / 2 + sz, wy1 = x.cy + x.H / 2 + sz;
+  for (let tx = Math.floor(wx0 / sz); tx <= Math.floor(wx1 / sz); tx++) for (let ty = Math.floor(wy0 / sz); ty <= Math.floor(wy1 / sz); ty++) {
+    if (ty < 0 || ty >= n) continue; const key = tx + '/' + ty; if (x.tiles.has(key)) continue; const wx = ((tx % n) + n) % n;
+    const im = document.createElement('img'); im.className = 'bt' + (dark ? ' dk' : ''); im.alt = ''; im.draggable = false;
+    im.dataset.osm = `https://tile.openstreetmap.org/${zz}/${wx}/${ty}.png`; im.src = `https://cyberjapandata.gsi.go.jp/xyz/pale/${zz}/${wx}/${ty}.png`;
+    im.style.left = (tx * sz - x.ox).toFixed(1) + 'px'; im.style.top = (ty * sz - x.oy).toFixed(1) + 'px';
+    im.addEventListener('error', () => { if (im.dataset.osm) { im.src = im.dataset.osm; im.dataset.osm = ''; } else im.style.visibility = 'hidden'; });
+    box.append(im); x.tiles.set(key, im);
+  }
+  if (x.tiles.size > 90) for (const [key, im] of x.tiles) { const [tx, ty] = key.split('/').map(Number); if (Math.abs(tx * sz - (x.cx - x.W / 2)) > 1400 || Math.abs(ty * sz - (x.cy - x.H / 2)) > 1400) { im.remove(); x.tiles.delete(key); } }
+}
+function rpInfo(x, sg, A, Bn) {
+  const box = $('#rp-now'), seek = $('#rp-seek'); if (!box) return; const R = x.R, moving = sg.k === 'move' && Bn && !sg.still, goal = moving && !sg.cross ? Bn : A;
+  const name = s => (s.spot ? esc(s.spot.name) : '名前のない場所'), dayKm = kmText(R.km[A.di] || 0);
+  box.style.setProperty('--c', DAYC[wd(A.d)]);
+  box.innerHTML = `<i></i><span><span class="dt num">${md(A.d)}(${WD[wd(A.d)]}) ${hmOf(A.from)}${A.to - A.from >= 60000 ? ` 〜 ${hmOf(A.to)}` : ''}</span><b>${moving ? `${name(A)} → ${name(Bn)}` : name(A)}</b></span><span class="r"><b class="num">${sg.i + 1}</b> / ${R.steps.length}<br>この日 ${dayKm}km${A.to - A.from >= 60000 ? `・${stayText(A.to - A.from)}` : ''}</span>`;
+  if (seek && !x.drag) seek.value = sg.i;
+}
+function rpSeek(i) { const x = RP; if (!x) return; i = Math.max(0, Math.min(x.R.steps.length - 1, i)); const sg = x.R.segs.find(g => g.k === 'stay' && g.i === i); x.pos = sg.t0; x.s = x.R.segs.indexOf(sg); x.doneDays = -1; x.pins.clear(); $('.rp-pins', x.layer).innerHTML = ''; const st = x.R.steps[i]; x.cx = wmx(st.lng, x.z); x.cy = wmy(st.lat, x.z); x.tick = 0; }
+
 function spotSheet() {
   const s = spDraft;
   return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>この場所に名前をつける</b><button class="r" data-act="saveSpot">保存</button></div>
@@ -5447,6 +5594,7 @@ function closeSheet() {
   const ov = stack.pop(); if (!ov) return;
   if (sgAudio) stopPreview();
   if (ov.firstElementChild.dataset.kind === 'wx') radarStop();
+  if (ov.firstElementChild.dataset.kind === 'replay') rpStop();
   if (ov.firstElementChild.dataset.kind === 'timer') releaseWake();
   if (ov.firstElementChild.dataset.kind === 'entry') dropDraft();
   if (ov.firstElementChild.dataset.kind === 'nk') { nkReplace = null; setTimeout(() => extPull('norikae'), 900); }
@@ -6487,6 +6635,14 @@ const ACT = {
   pay: () => { payYM = st.calMonth.slice(0, 7); const sh = openSheet(paySheet(), 'full'); sh.dataset.kind = 'pay'; },
   moves: () => { mvWeek = 0; mvDay = null; const sh = openSheet(movesSheet(), 'full'); sh.dataset.kind = 'moves'; requestAnimationFrame(() => setTimeout(drawMoves, 60)); },
   mvWeek: t => { mvWeek = Math.min(0, mvWeek + +t.dataset.n); mvDay = null; rerenderMoves(); },
+  mvReplay: () => openReplay(),
+  rpPlay: () => { const x = RP; if (!x) return; if (!x.playing && x.pos >= x.R.total) rpSeek(0); x.playing = !x.playing; $('#rp-play').innerHTML = ico(x.playing ? 'pause' : 'play'); x.last = performance.now(); },
+  rpSpeed: t => { const x = RP; if (!x) return; x.speed = +t.dataset.i; topSheet().querySelectorAll('[data-act="rpSpeed"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
+  rpZoom: t => { const x = RP; if (!x) return; const z = Math.max(8, Math.min(17, x.z + +t.dataset.n)); if (z === x.z) return; const cx = unmx(x.cx, x.z), cy = unmy(x.cy, x.z); x.cx0 = cx; x.cy0 = cy; rpZoomTo(z); x.cx = wmx(cx, x.z); x.cy = wmy(cy, x.z); x.zoomWanted = z; x.tick = 0; },
+  rpRange: t => {
+    const x = RP; if (!x) return; const R = rpBuild(t.dataset.k); if (R.steps.length < 2) { toast('この期間は、たどれる記録が足りません'); return; }
+    x.range = t.dataset.k; x.R = R; x.pos = 0; x.s = 0; x.playing = true; const sh = topSheet(); sh.innerHTML = replaySheet(); requestAnimationFrame(() => setTimeout(rpStart, 40));
+  },
   mvDay: t => { mvDay = mvDay === t.dataset.d ? null : t.dataset.d; rerenderMoves(); },
   mvRecord: t => { t.disabled = true; recordPlace(0).then(() => { toast('いまの場所を記録しました'); mvWeek = 0; rerenderMoves(); }).catch(() => { t.disabled = false; toast('位置情報を使えませんでした。iPhoneの「設定 → Safari → 位置情報」を確認してください'); }); },
   mvStop: t => {
@@ -6874,7 +7030,10 @@ document.addEventListener('change', async e => {
   }
   else if (t.id === 'imp-file' && t.files && t.files[0]) { const r = new FileReader(); r.onload = () => importData(String(r.result)); r.readAsText(t.files[0]); t.value = ''; }
 });
+document.addEventListener('pointerdown', e => { if (RP && e.target.id === 'rp-seek') RP.drag = true; });
+document.addEventListener('pointerup', () => { if (RP && RP.drag) { RP.drag = false; RP.last = performance.now(); } });
 document.addEventListener('input', e => {
+  if (RP && e.target.id === 'rp-seek') { RP.drag = true; rpSeek(+e.target.value); const x = RP, sg = rpSeg(x); rpInfo(x, sg, x.R.steps[sg.i], x.R.steps[sg.i + 1]); rpTiles(x); }
   if (e.target.id === 'q') runSearch();
   else if (e.target.id === 'sg-name' || e.target.id === 'sg-artist') songQuery();
   else if (e.target.id === 'wx-rt') { radarStop(); radarShow(+e.target.value); }
@@ -8349,10 +8508,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v111';
+const APP_VER = 'hibi-v112';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.21.0';
-const HIBI_CHANGES = ['ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.22.0';
+const HIBI_CHANGES = ['Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
