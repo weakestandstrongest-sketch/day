@@ -415,26 +415,6 @@ img[src^="idb:"]{visibility:hidden}
 .set-sec{margin-top:18px}
 .set-sec h4{margin:0 0 8px;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:.06em}
 .set-list{display:flex;flex-direction:column;gap:8px}
-/* メールから追加 */
-.mail-ta{min-height:260px;font-size:15px;line-height:1.7}
-.mcard{background:var(--surface);border-radius:20px;padding:12px 14px 14px;margin-bottom:12px;box-shadow:var(--shadow);border-left:4px solid var(--c);display:flex;flex-direction:column;gap:8px;transition:opacity .2s}
-.mcard.off{opacity:.5}
-.mc-head{display:flex;align-items:center;gap:10px}
-.mc-head .seg button{font-size:12.5px;padding:5px 12px}
-.mc-on{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
-.mc-on input{width:20px;height:20px;accent-color:var(--accent);margin:0}
-.mc-del{width:30px;height:30px;display:grid;place-items:center;color:var(--ink-3);flex:none}
-.mc-del .ico{width:16px;height:16px}
-.mcard .inp{min-height:44px;padding:9px 12px;background:var(--surface-2)}
-.mcard .mc-title{font-size:17px;font-weight:700}
-.mcard .mc-ad{background:transparent;border:0;padding:0 2px;min-height:34px}
-.mcard .dt-grid{margin-top:0}
-.mc-src{margin:2px 2px 0;font-size:11.5px;color:var(--ink-3);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
-.mc-src::before{content:"メールより：";font-weight:700}
-.mc-addb{width:100%}
-.mc-f{position:relative;display:block}
-.mc-f>.ico{position:absolute;left:12px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:var(--c);pointer-events:none}
-.mc-f .inp{padding-left:38px;width:100%}
 /* silent camera */
 .cam{position:fixed;inset:0;z-index:75;background:#0B0B0F;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);opacity:0;transform:scale(1.03);transition:opacity .25s,transform .3s cubic-bezier(.2,.9,.25,1);-webkit-user-select:none;user-select:none;--fh:calc(100dvh - 300px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 .cam.in{opacity:1;transform:none}
@@ -2789,7 +2769,7 @@ function viewCal() {
     <div class="head-icons">
       <button class="icon-btn wx-btn" data-act="weather" aria-label="天気">${wxBtnInner()}</button>
       <button class="icon-btn" data-act="search" aria-label="検索">${ico('search')}</button>
-      <button class="icon-btn" data-act="mailAdd" aria-label="メールから予定を追加">${ico('mail')}</button>
+      ${!inFrame || chrHost ? `<button class="icon-btn" data-act="chronos" aria-label="${chrHost ? '刻に戻る' : '刻に切り替える'}">${CHR_SVG}</button>` : ''}
       <button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button>
       <button class="icon-btn" data-act="calPick" aria-label="月を選ぶ">${ico('today')}</button>
       <button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button>
@@ -3228,7 +3208,7 @@ function viewReflect() {
   for (let i = 0; i < (sunStart() ? wd(mfirst) : (wd(mfirst) + 6) % 7); i++) mc += '<span></span>';
   for (let d = mfirst; d <= mlast; d = addDays(d, 1)) { const m = dayMood(d); mc += `<span class="c"><i class="${m ? 'on' : ''}" style="${m ? `background:${m.color};` : ''}border-radius:${blob(d)}"></i><span class="num">${P(d).getDate()}</span></span>`; }
   return `
-  <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div>${!inFrame || chrHost ? `<div class="head-icons"><button class="icon-btn" data-act="chronos" aria-label="${chrHost ? '刻に戻る' : '刻に切り替える'}">${CHR_SVG}</button></div>` : ''}</div>
+  <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div></div>
   ${memoriesCard()}
   ${wrappedCard()}
   <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
@@ -3625,132 +3605,6 @@ function nkSheet(q) {
     <div class="nk-load"><span class="nk-spin">${ico('train')}</span><b>のりかえを開いています…</b>
       <span class="nk-fail"><b>のりかえを開けませんでした</b><small>通信が不安定か、のりかえが古い版のままかもしれません。</small><button class="btn primary" data-act="nkRetry">もう一度開く</button></span></div></div>`;
 }
-/* ================= メールから追加: pasted mail text → event / to-do suggestions, read on the device only ================= */
-/*MAILPARSE*/
-function parseMail(raw, T) {
-  const text = String(raw || '').normalize('NFKC').replace(/\r/g, '').replace(/[〜～∼]/g, '~');
-  const ty = +T.slice(0, 4), p2 = n => String(n).padStart(2, '0'), WDS = '日月火水木金土';
-  const mk = (y, m, d) => { if (!(m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null; const dt = new Date(y, m - 1, d); return dt.getMonth() === m - 1 ? `${y}-${p2(m)}-${p2(d)}` : null; };
-  const back = (s, n) => { const d = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; };
-  const wdOf = s => new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)).getDay();
-  const guessY = (m, d) => { let x = mk(ty, m, d); if (x && x < back(T, -60)) x = mk(ty + 1, m, d); return x; };
-  const byDayWd = (d, w) => { for (let k = -1; k < 4; k++) { const b = new Date(ty, +T.slice(5, 7) - 1 + k, d); if (b.getDate() !== d) continue; const x = `${b.getFullYear()}-${p2(b.getMonth() + 1)}-${p2(d)}`; if (b.getDay() === w && x >= back(T, -7)) return x; } return null; };
-  const reDate = /(?:(\d{4})\s*[年\/.\-]\s*)?(\d{1,2})\s*(?:月|\/)\s*(\d{1,2})\s*日?(?:\s*[(（]\s*[日月火水木金土](?:曜日?)?(?:・?祝)?\s*[)）])?|(?<![\d\/月])(\d{1,2})日\s*[(（]\s*([日月火水木金土])(?:曜日?)?\s*[)）]|(今日|本日|明日|あした|明後日|あさって)|(今週|来週|再来週)\s*の?\s*([日月火水木金土])曜日?/g;
-  const reTime = /(午前|午後|AM|PM|am|pm)?\s*(\d{1,2})\s*(?:[:：]\s*(\d{2})|時(?!間)\s*(?:(\d{1,2})\s*分|(半))?)|(正午)/g;
-  const toDate = m => {
-    if (m[2]) return m[1] ? mk(+m[1], +m[2], +m[3]) : guessY(+m[2], +m[3]);
-    if (m[4]) return byDayWd(+m[4], WDS.indexOf(m[5]));
-    if (m[6]) return back(T, { 今日: 0, 本日: 0, 明日: 1, あした: 1, 明後日: 2, あさって: 2 }[m[6]]);
-    if (m[7]) { const mon = back(T, -((wdOf(T) + 6) % 7)), w = WDS.indexOf(m[8]); return back(mon, { 今週: 0, 来週: 7, 再来週: 14 }[m[7]] + (w + 6) % 7); }
-    return null;
-  };
-  const times = seg => { const out = []; let m; reTime.lastIndex = 0; while ((m = reTime.exec(seg))) { let h, mi; if (m[6]) { h = 12; mi = 0; } else { h = +m[2]; mi = m[3] ? +m[3] : m[4] ? +m[4] : m[5] ? 30 : 0; const ap = (m[1] || '').toLowerCase(); if ((ap === '午後' || ap === 'pm') && h < 12) h += 12; if ((ap === '午前' || ap === 'am') && h === 12) h = 0; } if (h > 24 || mi > 59) continue; out.push({ t: `${p2(h % 24)}:${p2(mi)}`, i: m.index, j: m.index + m[0].length }); } return out; };
-  const span = (seg, ts) => {
-    if (!ts.length) return null; const a = ts[0], b = ts[1];
-    if (!(b && /^\s*(?:~|-|−|－|ー|から|より|to)\s*$/.test(seg.slice(a.j, b.i)))) return [a.t, null];
-    let e = b.t; if (+e.slice(0, 2) < 12 && +a.t.slice(0, 2) >= 12 && !/午前|am/i.test(seg.slice(b.i, b.j))) e = p2(+e.slice(0, 2) + 12) + e.slice(2); // 午後2時〜4時半
-    return [a.t, e];
-  };
-  const LBL = /^[\s・※■□●○◆◇★☆▶▷>＞\-*]*(?:日時|日程|開催日時?|開催日|日付|時間|期間|開始|予定日|実施日時?|集合時間)\s*[:：]?\s*/;
-  const place = ((text.match(/(?:^|\n)[\s・※■●◆*\-]*(?:場所|会場|開催場所|集合場所|集合|所在地|住所|教室|Location)\s*[:：]\s*(?![\d午前後])([^\n]+)/i) || [])[1] || (/zoom|teams|google meet|オンライン/i.test(text) ? (/zoom/i.test(text) ? 'オンライン（Zoom）' : 'オンライン') : '')).trim().slice(0, 60);
-  const belong = (((text.match(/(?:^|\n)[\s・※■●◆*\-]*(?:持ち物|持参物|持参するもの|お持ち物|必要なもの)\s*[:：]\s*([^\n]+)/) || [])[1]) || '').split(/[、,，・\/]|\s{2,}|\s+と\s+/).map(x => x.trim()).filter(Boolean).slice(0, 12);
-  const subj = ((text.match(/【([^】]{2,40})】/) || [])[1] || '').replace(/(のご案内|のお知らせ|について|のご連絡|ご案内|お知らせ|のお願い)$/, '').trim();
-  const KW = /[一-龠々ァ-ヶーA-Za-z0-9]{0,8}(?:面接|説明会|会議|ミーティング|打ち合わせ|打合せ|面談|セミナー|試験|テスト|授業|講義|イベント|飲み会|食事会|懇親会|交流会|歓迎会|送別会|新年会|忘年会|パーティー|予約|診察|ライブ|コンサート|発表会?|研修|インターン|オリエンテーション|ガイダンス|撮影|練習|試合|大会|合宿|旅行|遠足|見学会?|オープンキャンパス|健康診断|集合)/;
-  const first = (text.split('\n').map(x => x.trim()).find(Boolean) || '');
-  const head = first.length <= 24 && !reDate.test(first) && !/様|さん|殿|各位|ください|ます|です|[。:：]$/.test(first) ? first.replace(/^【|】$/g, '').replace(/(のご案内|のお知らせ|について|のご連絡|ご案内|お知らせ|のお願い)$/, '').trim() : ''; reDate.lastIndex = 0;
-  const kw = (text.match(KW) || [])[0] || '';
-  const pick = r => { const k = r.match(KW); return k && (r.length > 14 || /^[のはがにをへと]|[はがにを]\s/.test(r)) ? k[0] : r; }; // casual sentences: keep just 「飲み会」「練習」
-  const tidy = x => x.replace(/[(（]\s*[日月火水木金土](?:曜日?)?\s*[)）]/g, '').replace(LBL, '').replace(/^[\s・※■□●○◆◇★☆▶▷>＞\-*:：、。,.]+|[\s、。,.:：~\-]+$/g, '').replace(/\s{2,}/g, ' ').replace(/([^\x00-\x7f])\s+(?=[^\x00-\x7f])/g, '$1').trim();
-  const lines = text.split(/\n|。/), out = [];
-  for (let li = 0; li < lines.length; li++) {
-    const line = lines[li]; let m; const hits = []; reDate.lastIndex = 0;
-    while ((m = reDate.exec(line))) { const d = toDate(m); if (d) hits.push({ d, i: m.index, j: m.index + m[0].length }); }
-    for (let k = 0; k + 1 < hits.length; k++) if (/^\s*(?:~|-|−|－|から)\s*$/.test(line.slice(hits[k].j, hits[k + 1].i)) && hits[k + 1].d > hits[k].d) { hits[k].e = hits[k + 1].d; hits[k].j = hits[k + 1].j; hits.splice(k + 1, 1); }
-    hits.forEach((h, k) => {
-      let seg = line.slice(h.j, k + 1 < hits.length ? hits[k + 1].i : line.length), endDate = h.e || '';
-      const r = seg.match(/^\s*(?:~|-|−|－|から)\s*(?:(\d{1,2})\s*(?:月|\/)\s*)?(\d{1,2})\s*日?(?:\s*[(（][^)）]{1,4}[)）])?/);
-      if (r) { const e = r[1] ? guessY(+r[1], +r[2]) : mk(+h.d.slice(0, 4), +h.d.slice(5, 7), +r[2]); if (e && e > h.d) { endDate = e; seg = seg.slice(r[0].length); } }
-      let ts = times(seg), src = line;
-      if (!ts.length && li + 1 < lines.length && !reDate.test(lines[li + 1])) { reDate.lastIndex = 0; const nx = times(lines[li + 1]); if (nx.length) { ts = nx; seg = lines[li + 1]; src += '\n' + lines[li + 1]; } }
-      reDate.lastIndex = 0;
-      const sp = span(seg, ts), todo = /まで|締切|締め切り|〆切|期限|提出|必着|応募|申込|申し込み|回答|返信/.test(line) && !/から.*まで/.test(seg);
-      let rest = tidy((line.slice(0, h.i) + ' ' + seg).replace(reTime, ' ').replace(/(?:~|-|から|より)\s*$/, ''));
-      if (todo) { const cut = tidy(rest.replace(/までに|まで|締切|締め切り|〆切|期限|必着/g, '').replace(/^[はがにを]\s*/, '')); const tt = cut.length >= 4 ? cut : rest.length >= 2 ? rest : ''; out.push({ kind: 'todo', title: tt ? tt.slice(0, 40) : `${subj || head || kw || 'メール'}の締め切り`, date: h.d, start: sp ? sp[0] : '', src }); return; }
-      rest = pick(rest);
-      const title = rest.length >= 2 && !/^[\d\s:~\-]+$/.test(rest) ? rest.slice(0, 40) : (subj || head || kw || 'メールの予定');
-      const st = sp ? sp[0] : '', en = sp ? (sp[1] || (() => { const [hh, mm] = sp[0].split(':').map(Number), x = Math.min(23 * 60 + 59, hh * 60 + mm + 60); return `${p2(Math.floor(x / 60))}:${p2(x % 60)}`; })()) : '';
-      out.push({ kind: 'event', title, date: h.d, endDate, allDay: !st, start: st || '09:00', end: en || '10:00', place, items: belong.slice(), src });
-    });
-  }
-  const seen = new Set(), list = out.filter(c => { const k = c.kind + c.date + (c.allDay ? '' : c.start); if (seen.has(k)) return false; seen.add(k); return true; });
-  const evs = list.filter(c => c.kind === 'event').length; let n = 0;
-  for (const c of list) { c.on = c.kind === 'todo' || evs <= 3 || n++ === 0; c.note = ''; }
-  return list;
-}
-/*/MAILPARSE*/
-let MAIL = null;
-function mailSheet() {
-  const M = MAIL, T = todayISO();
-  if (M.step === 'paste') return `<div class="sh-bar"><button class="l" data-act="close">閉じる</button><b>メールから追加</b><span></span></div>
-    <textarea class="inp mail-ta" id="mail-text" placeholder="ここにメールの文章を貼り付けます。&#10;日付・時刻・場所・持ち物・締め切りを探して、予定ややることの案を作ります。">${esc(M.text)}</textarea>
-    <div class="sheet-actions" style="margin-top:12px"><button class="btn ghost" data-act="mailPaste">${ico('list')}コピーした文章を貼り付ける</button><button class="btn primary" data-act="mailParse">予定を読み取る</button></div>
-    <p class="note">メールの中身はこのiPhoneの中だけで読み取ります（どこにも送りません）。読み取った結果は、追加する前にすべて直せます。</p>`;
-  const card = (c, i) => {
-    const ev = c.kind === 'event', f = (k, extra = '') => `data-mf="${k}" data-i="${i}" ${extra}`;
-    return `<div class="mcard${c.on ? '' : ' off'}" style="--c:${ev ? COLORS[2] : TODO_C}">
-      <div class="mc-head"><span class="seg"><button data-act="mcKind" data-i="${i}" data-k="event" aria-pressed="${ev}">予定</button><button data-act="mcKind" data-i="${i}" data-k="todo" aria-pressed="${!ev}">やること</button></span>
-        <label class="mc-on"><input type="checkbox" ${f('on')} ${c.on ? 'checked' : ''}><span>追加する</span></label><button class="mc-del" data-act="mcDel" data-i="${i}" aria-label="この候補を消す">${ico('x')}</button></div>
-      <input class="inp mc-title" ${f('title')} value="${esc(c.title)}" placeholder="${ev ? '予定の名前' : 'やること'}" maxlength="60" autocomplete="off">
-      ${ev ? `<label class="toggle mc-ad"><span>終日</span><input type="checkbox" ${f('allDay')} ${c.allDay ? 'checked' : ''}></label>
-        <div class="dt-grid${c.allDay ? '' : ' t'}"><span class="dt-l">開始</span><input class="inp" type="date" ${f('date')} value="${c.date}" aria-label="開始日">${c.allDay ? '' : `<input class="inp" type="time" ${f('start')} value="${c.start}" aria-label="開始時刻">`}
-          <span class="dt-l">終了</span><input class="inp" type="date" ${f('endDate')} value="${c.endDate || c.date}" aria-label="終了日">${c.allDay ? '' : `<input class="inp" type="time" ${f('end')} value="${c.end}" aria-label="終了時刻">`}</div>
-        <label class="mc-f">${ico('pin')}<input class="inp" ${f('place')} value="${esc(c.place || '')}" placeholder="場所（なくてもOK）" maxlength="60" autocomplete="off" aria-label="場所"></label>
-        <label class="mc-f">${ico('bag')}<input class="inp" ${f('itemsText')} value="${esc((c.items || []).join('、'))}" placeholder="持ち物（「、」で区切る・なくてもOK）" maxlength="120" autocomplete="off" aria-label="持ち物"></label>`
-      : `<div class="dt-grid t"><span class="dt-l">締切</span><input class="inp" type="date" ${f('date')} value="${c.date}" aria-label="締め切りの日"><input class="inp" type="time" ${f('start')} value="${c.start || ''}" aria-label="締め切りの時刻（なくてもOK）"></div>
-        <label class="mc-f">${ico('pen')}<input class="inp" ${f('note')} value="${esc(c.note || '')}" placeholder="メモ（なくてもOK）" maxlength="120" autocomplete="off" aria-label="メモ"></label>`}
-      ${c.src ? `<p class="mc-src">${esc(c.src.trim().slice(0, 120))}</p>` : ''}</div>`;
-  };
-  return `<div class="sh-bar"><button class="l" data-act="mailBack">戻る</button><b>見つかった予定</b><button class="r" data-act="mailCommit">追加</button></div>
-    ${M.c.length ? '' : '<p class="empty" style="padding:14px 6px">日付が見つかりませんでした。下の「自分で追加」から入れられます。</p>'}
-    ${M.c.map(card).join('')}
-    <button class="btn ghost mc-addb" data-act="mailBlank">${ico('plus')}自分で追加</button>
-    <div class="sheet-actions"><button class="btn primary" id="mail-add" data-act="mailCommit">${mailCount()}</button></div>
-    <p class="note">名前・日時・場所・持ち物は、そのまま書き換えられます。「やること」に切り替えると締め切りとして入ります。チェックを外した候補は追加されません。</p>`;
-}
-const mailCount = () => { const n = MAIL.c.filter(c => c.on).length; return n ? `${n}件を追加` : '追加するものを選んでください'; };
-function openMail() { MAIL = { step: 'paste', text: '', c: [] }; const sh = openSheet(mailSheet(), 'full'); sh.dataset.kind = 'mail'; }
-const rerenderMail = () => rerenderKind('mail', mailSheet);
-function mailCommit() {
-  const list = MAIL.c.filter(c => c.on); if (!list.length) { toast('追加するものにチェックを入れてください'); return; }
-  for (const c of list) { if (!String(c.title || '').trim()) { toast('名前が空の候補があります'); return; } if (!c.date) { toast('日付が空の候補があります'); return; } }
-  const evs = [], tds = [];
-  for (const c of list) {
-    const title = c.title.trim();
-    if (c.kind === 'todo') { tds.push({ id: uid(), title, start: '', due: c.date, time: c.start || '', note: (c.note || '').trim(), done: false, doneAt: 0 }); continue; }
-    const multi = c.endDate && c.endDate > c.date, items = String(c.itemsText ?? (c.items || []).join('、')).split(/[、,，]/).map(x => x.trim()).filter(Boolean);
-    const ev = { id: uid(), title, date: c.date, endDate: c.allDay ? (multi ? c.endDate : c.date) : (multi ? c.endDate : ''), allDay: !!c.allDay, start: c.allDay ? '09:00' : (c.start || '09:00'), end: c.allDay ? '10:00' : (c.end || c.start || '10:00'), color: COLORS[2], icon: guessIcon(title), repeat: 'none', routine: false,
-      memo: [c.place ? `場所：${c.place}` : '', c.src ? `メールより：${c.src.trim().slice(0, 200)}` : ''].filter(Boolean).join('\n'), done: {} };
-    if (!c.allDay && multi) ev.calOnly = true;
-    if (!c.allDay && !multi && ev.end === ev.start) ev.end = hhmm((toMin(ev.start) + 60) % 1440);
-    if (items.length) ev.items = items.slice(0, 20);
-    evs.push(ev);
-  }
-  S.events.push(...evs); S.todos.push(...tds);
-  if (!save()) { S.events.splice(S.events.length - evs.length, evs.length); S.todos.splice(S.todos.length - tds.length, tds.length); return; }
-  while (stack.length) closeSheet(); if (evs[0]) { st.sel = st.day = evs[0].date; st.calMonth = evs[0].date.slice(0, 8) + '01'; } render();
-  toast([evs.length && `${evs.length}件の予定`, tds.length && `${tds.length}件のやること`].filter(Boolean).join('と') + 'を追加しました');
-}
-// edits in the review cards are kept as you type; only switching kind or 終日 redraws the sheet
-function mailField(e) {
-  const t = e.target; if (!MAIL || !t.dataset || t.dataset.mf === undefined) return;
-  const c = MAIL.c[+t.dataset.i]; if (!c) return; const k = t.dataset.mf;
-  if (k === 'on') { c.on = t.checked; t.closest('.mcard').classList.toggle('off', !c.on); const b = $('#mail-add'); if (b) b.textContent = mailCount(); return; }
-  if (k === 'allDay') { if (e.type !== 'change') return; c.allDay = t.checked; rerenderMail(); return; }
-  c[k] = t.value;
-  if (k === 'date' && c.endDate && c.endDate < c.date) c.endDate = '';
-}
-document.addEventListener('input', mailField); document.addEventListener('change', mailField);
-
 /* ================= silent camera: a frame of the live video is drawn onto a canvas, so there is no shutter sound ================= */
 const CAM_FILTERS = [['', 'ナチュラル', 'none'], ['film', 'フィルム', 'contrast(1.08) saturate(1.18) sepia(.12)'], ['warm', 'あたたか', 'saturate(1.12) sepia(.28) hue-rotate(-10deg) brightness(1.02)'], ['cool', 'クール', 'saturate(.92) hue-rotate(14deg) brightness(1.04) contrast(1.02)'], ['mono', 'モノクロ', 'grayscale(1) contrast(1.12)'], ['soft', 'ふんわり', 'brightness(1.08) contrast(.9) saturate(.88)']];
 const camCanFilter = (() => { let ok = null; return () => { if (ok === null) try { ok = 'filter' in document.createElement('canvas').getContext('2d'); } catch (e) { ok = false; } return ok; }; })();
@@ -6270,7 +6124,7 @@ function settingsHTML() {
     <p class="note" style="margin:0">日記の右上の星のボタンから、Asterismをひび手帳の中で開けます。ここで書いたメモは、ひび手帳の中に保存され、ひび手帳のバックアップ（ファイル・毎日の控え）にも一緒に入ります（凪・野球速報・乗換案内のデータも同じです）。ホーム画面に別に追加したAsterismとは別のデータです。</p>
     <div class="fld" style="margin:0"><label for="set-asterism">AsterismのURL</label><input class="inp" id="set-asterism" type="url" value="${esc(s.asterism || '')}" placeholder="https://○○○.github.io/memo/" autocapitalize="off" spellcheck="false"></div></div></div>
   ${!inFrame || chrHost ? `<div class="set-sec"><h4>刻（カレンダー）</h4><div class="set-list">
-    <p class="note" style="margin:0">ふりかえりの右上のボタンで、カレンダーアプリ「刻」に切り替えられます。切り替えるたびに、両方の予定を合わせます。予定ごとに出すかどうかは、予定の画面の「刻に出す」で決められます（ルーティンは、はじめは出しません）。<br>ホーム画面に別に追加した刻とは保存場所が別なので、予定はこのアプリの中で切り替えたときに行き来します。</p>
+    <p class="note" style="margin:0">カレンダーの右上の時計のボタンで、カレンダーアプリ「刻」に切り替えられます。切り替えるたびに、両方の予定を合わせます。予定ごとに出すかどうかは、予定の画面の「刻に出す」で決められます（ルーティンは、はじめは出しません）。<br>ホーム画面に別に追加した刻とは保存場所が別なので、予定はこのアプリの中で切り替えたときに行き来します。</p>
     <label class="toggle"><span>大学の授業も出す<small>時間割の授業を、学期ごとの毎週の予定として出します（休講・休み・祝日は除き、補講・振替・集中講義も出します）</small></span><input type="checkbox" id="set-chrcls" ${S.settings.chrClasses !== false ? 'checked' : ''}></label></div></div>` : ''}
   <div class="set-sec"><h4>野球速報</h4><div class="set-list">
     <p class="note" style="margin:0">日記の右上のダイヤモンド（塁）のボタンから、野球速報をひび手帳の中で開けます。</p>
@@ -6755,19 +6609,6 @@ const ACT = {
   asterism: () => openAsterism(),
   chronos: () => chrSwitch(),
   camera: () => openCam(),
-  mailAdd: () => openMail(),
-  mailPaste: async () => { const ta = $('#mail-text'); try { const t = await navigator.clipboard.readText(); if (t) { ta.value = t; MAIL.text = t; toast('貼り付けました'); } else toast('コピーした文章がありませんでした'); } catch (e) { ta.focus(); toast('欄を長押しして「ペースト」を選んでください'); } },
-  mailParse: () => { const v = ($('#mail-text') || {}).value || ''; MAIL.text = v; if (!v.trim()) { toast('メールの文章を貼り付けてください'); return; } MAIL.c = parseMail(v, todayISO()); MAIL.step = 'review'; rerenderMail(); topSheet().scrollTop = 0; },
-  mailBack: () => { MAIL.step = 'paste'; rerenderMail(); },
-  mailBlank: () => { MAIL.c.push({ kind: 'event', title: '', date: todayISO(), endDate: '', allDay: false, start: '10:00', end: '11:00', place: '', items: [], on: true, note: '' }); rerenderMail(); const t = [...topSheet().querySelectorAll('.mc-title')].pop(); if (t) setTimeout(() => t.focus(), 50); },
-  mcKind: t => {
-    const c = MAIL.c[+t.dataset.i]; if (!c || c.kind === t.dataset.k) return; c.kind = t.dataset.k;
-    if (c.kind === 'event') { if (!c.start) { c.allDay = true; c.start = '09:00'; c.end = '10:00'; c._noTime = true; } else if (!c.end) { c.allDay = false; c.end = hhmm(Math.min(1439, toMin(c.start) + 60)); } }
-    else if (c._noTime || c.allDay) { c.start = ''; delete c._noTime; }
-    rerenderMail();
-  },
-  mcDel: t => { MAIL.c.splice(+t.dataset.i, 1); rerenderMail(); },
-  mailCommit: () => mailCommit(),
   baseball: () => openBaseball(),
   nagi: () => openNagi(),
   ngRetry: t => { const w = t.closest('.ng-wrap'), f = w && $('.ng-frame', w); if (!f) return; const u = new URL(f.src); u.searchParams.set('r', Date.now()); ngWatch(w); f.src = u.toString(); },
@@ -8432,10 +8273,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v106';
+const APP_VER = 'hibi-v107';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.18.1';
-const HIBI_CHANGES = ['CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.19.0';
+const HIBI_CHANGES = ['カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
