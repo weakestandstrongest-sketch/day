@@ -1024,13 +1024,30 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .nk-wrap.fail .nk-load>b,.nk-wrap.fail .nk-spin{display:none}
 .chr-ico{width:27px;height:27px;display:block;color:var(--ink)}
 .ev-li .chr-ico{width:22px;height:22px;flex:none}
-.chr-ov{position:fixed;inset:0;z-index:200;background:#0b0a09;opacity:0;transition:opacity .35s ease,background-color .4s ease;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-.chr-ov.in{opacity:1}
-.chr-frame{display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .45s ease}
-.chr-ov.ready .chr-frame{opacity:1}
-.chr-load{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;color:#efe6d2;font-size:14px}
-.chr-load .chr-ico{width:64px;height:64px;color:#efe6d2;animation:obPulse 1.8s ease-in-out infinite}
-.chr-ov.ready .chr-load{display:none}
+.chr-ov{position:fixed;inset:0;z-index:200;--ease:cubic-bezier(.65,0,.35,1)}
+/* 1. a black circle opens from the button to the whole screen */
+.chr-iris{position:absolute;inset:0;background:#0b0a09;clip-path:circle(0px at var(--cx,50%) var(--cy,50%));transition:clip-path .62s var(--ease),background-color .45s ease}
+.chr-ov.in .chr-iris{clip-path:circle(150vmax at var(--cx,50%) var(--cy,50%))}
+.chr-ov.go .chr-iris{background:var(--tint,#0b0a09)}
+/* 2. the gold dial: the ring is drawn, the ticks come, the hands sweep round */
+.chr-dial{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;opacity:0;transition:opacity .25s ease,transform .45s var(--ease)}
+.chr-ov.in .chr-dial{opacity:1;transition-delay:.32s,0s}
+.chr-ov.go .chr-dial{opacity:0;transform:scale(1.9);transition-delay:0s}
+.chr-dial .rg{stroke-dasharray:390;stroke-dashoffset:390;transition:stroke-dashoffset .85s var(--ease) .26s}
+.chr-ov.in .chr-dial .rg{stroke-dashoffset:0}
+.chr-dial .tk{opacity:0;transition:opacity .3s ease}
+.chr-ov.in .chr-dial .tk{opacity:1}
+.chr-ov.in .chr-dial .t0{transition-delay:.45s}.chr-ov.in .chr-dial .t1{transition-delay:.58s}.chr-ov.in .chr-dial .t2{transition-delay:.71s}.chr-ov.in .chr-dial .t3{transition-delay:.84s}
+.chr-dial .hm,.chr-dial .hh{transform-box:view-box;transform-origin:90px 90px;transition:transform 1.15s cubic-bezier(.2,.75,.15,1) .34s}
+.chr-dial .hm{transform:rotate(-330deg)}.chr-dial .hh{transform:rotate(-75deg)}
+.chr-ov.in .chr-dial .hm,.chr-ov.in .chr-dial .hh{transform:none}
+.chr-dial .hub{opacity:0;transition:opacity .2s ease .3s}.chr-ov.in .chr-dial .hub{opacity:1}
+/* 3. 刻 itself */
+.chr-fwrap{position:absolute;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);pointer-events:none}
+.chr-ov.go .chr-fwrap{pointer-events:auto}
+.chr-frame{display:block;width:100%;height:100%;border:0;opacity:0;transform:scale(.985);transition:opacity .4s ease,transform .5s var(--ease)}
+.chr-ov.go .chr-frame{opacity:1;transform:none;transition-delay:.12s}
+@media (prefers-reduced-motion:reduce){.chr-iris,.chr-dial,.chr-dial *,.chr-frame{transition:opacity .2s ease!important;transform:none!important}.chr-iris{clip-path:none!important;opacity:0}.chr-ov.in .chr-iris{opacity:1}}
 .as-ico{width:28px;height:28px;display:block;color:var(--ink)}
 .as-big svg{width:64px;height:64px;display:block;color:var(--ink-2);animation:obPulse 1.8s ease-in-out infinite}
 .nk-wrap.fail .as-big{display:none}
@@ -4392,23 +4409,34 @@ const chrNote = n => n && (n.add || n.upd || n.del) ? `刻での変更を反映�
 const chrHost = (() => { try { return window.self !== window.top && window.parent.location.origin === location.origin && /[?&]from=chronos\b/.test(location.search); } catch (e) { return false; } })();
 const chrURL = () => new URL('../k/', location.href.split(/[?#]/)[0]).href;
 let chrOv = null;
-async function chrSwitch() {
+// the switch: a black circle opens out of the button, the gold dial of 刻's icon is drawn and its hands sweep round,
+// then the dial grows away into 刻 (it waits for whichever is last: the merge, 刻 loading, or the dial finishing)
+const CHR_DIAL = '<svg class="chr-dial" viewBox="0 0 180 180" aria-hidden="true"><g fill="none" stroke="#C9A45C"><circle class="rg" cx="90" cy="90" r="62" stroke-width="3" transform="rotate(-90 90 90)"/><circle class="tk t0" cx="90" cy="90" r="54" stroke-width="1" opacity=".5"/><g stroke-width="4" stroke-linecap="round"><line class="tk t0" x1="90" y1="28" x2="90" y2="42"/><line class="tk t1" x1="152" y1="90" x2="138" y2="90"/><line class="tk t2" x1="90" y1="152" x2="90" y2="138"/><line class="tk t3" x1="28" y1="90" x2="42" y2="90"/></g><path class="hm" d="M90 90L118 54" stroke-width="4" stroke-linecap="round"/><path class="hh" d="M90 90L60 98" stroke-width="3" stroke-linecap="round" stroke="#EFE6D2"/></g><circle class="hub" cx="90" cy="90" r="5" fill="#C9A45C"/></svg>';
+const chrMotion = () => !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+async function chrSwitch(btn) {
   if (chrOv) return;
   if (chrHost) { await chrSync('hibi'); window.parent.postMessage({ type: 'hibi:to-chronos' }, location.origin); return; }
   const ov = chrOv = document.createElement('div'); ov.className = 'chr-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', '刻');
-  ov.innerHTML = `<div class="chr-load">${CHR_SVG}<b>刻に切り替えています…</b></div>`;
-  document.body.append(ov); requestAnimationFrame(() => ov.classList.add('in'));
+  const r = btn && btn.getBoundingClientRect && btn.getBoundingClientRect();
+  if (r && r.width) { ov.style.setProperty('--cx', `${r.left + r.width / 2}px`); ov.style.setProperty('--cy', `${r.top + r.height / 2}px`); }
+  ov.innerHTML = `<div class="chr-iris"></div>${CHR_DIAL}<div class="chr-fwrap"></div>`;
+  document.body.append(ov); void ov.offsetWidth; ov.classList.add('in');
+  const shown = new Promise(res => setTimeout(res, chrMotion() ? 1500 : 150));
   await chrSync('hibi');
   if (chrOv !== ov) return;
   const f = document.createElement('iframe'); f.className = 'chr-frame'; f.title = '刻'; f.src = chrURL() + '?from=hibi';
-  // the area above and below the frame takes CHRONOS's own background (its theme color), like one screen
-  const tint = () => { try { const d = f.contentDocument, m = d && d.querySelector('meta[name="theme-color"]'), bg = (m && m.content) || (d && d.body && getComputedStyle(d.body).backgroundColor); if (bg) ov.style.background = bg; } catch (e) {} };
-  f.addEventListener('load', () => { tint(); ov.classList.add('ready'); ov._tint = setInterval(tint, 600); }, { once: true });
-  ov.append(f);
+  // the area above and below the frame takes 刻's own background (its theme color), like one screen
+  const tint = () => { try { const d = f.contentDocument, m = d && d.querySelector('meta[name="theme-color"]'), bg = (m && m.content) || (d && d.body && getComputedStyle(d.body).backgroundColor); if (bg) ov.style.setProperty('--tint', bg); } catch (e) {} };
+  const loaded = new Promise(res => f.addEventListener('load', res, { once: true }));
+  $('.chr-fwrap', ov).append(f);
+  await Promise.all([loaded, shown]);
+  if (chrOv !== ov) return;
+  tint(); ov.classList.add('go'); ov._tint = setInterval(tint, 600);
 }
 async function chrBack() {
   const ov = chrOv; if (!ov) return; chrOv = null; clearInterval(ov._tint);
-  ov.classList.remove('in'); setTimeout(() => ov.remove(), 380);
+  // the same way back: 刻 fades, the hands wind back and the circle closes into the button
+  ov.classList.remove('go'); setTimeout(() => ov.classList.remove('in'), chrMotion() ? 260 : 0); setTimeout(() => ov.remove(), chrMotion() ? 1000 : 300);
   const n = await chrSync('chronos'); render(); const msg = chrNote(n); if (msg) toast(msg);
 }
 window.addEventListener('message', e => {
@@ -6607,7 +6635,7 @@ const ACT = {
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
   asterism: () => openAsterism(),
-  chronos: () => chrSwitch(),
+  chronos: t => chrSwitch(t),
   camera: () => openCam(),
   baseball: () => openBaseball(),
   nagi: () => openNagi(),
@@ -8273,10 +8301,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v107';
+const APP_VER = 'hibi-v108';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.19.0';
-const HIBI_CHANGES = ['カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.20.0';
+const HIBI_CHANGES = ['刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
