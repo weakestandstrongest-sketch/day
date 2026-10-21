@@ -1042,6 +1042,14 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .nk-fail .btn{margin-top:6px;min-width:180px}
 .nk-wrap.fail .nk-fail{display:flex}
 .nk-wrap.fail .nk-load>b,.nk-wrap.fail .nk-spin{display:none}
+.chr-ico{width:27px;height:27px;display:block;color:var(--ink)}
+.chr-ov{position:fixed;inset:0;z-index:200;background:#0b0a09;opacity:0;transition:opacity .35s ease,background-color .4s ease;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.chr-ov.in{opacity:1}
+.chr-frame{display:block;width:100%;height:100%;border:0;opacity:0;transition:opacity .45s ease}
+.chr-ov.ready .chr-frame{opacity:1}
+.chr-load{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;color:#efe6d2;font-size:14px}
+.chr-load .chr-ico{width:64px;height:64px;color:#efe6d2;animation:obPulse 1.8s ease-in-out infinite}
+.chr-ov.ready .chr-load{display:none}
 .as-ico{width:28px;height:28px;display:block;color:var(--ink)}
 .as-big svg{width:64px;height:64px;display:block;color:var(--ink-2);animation:obPulse 1.8s ease-in-out infinite}
 .nk-wrap.fail .as-big{display:none}
@@ -2091,7 +2099,7 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
   var el = document.getElementById('splash');
   try {
     var s = JSON.parse(localStorage.getItem('hibi.v1') || 'null'), off = s && s.settings && s.settings.splash === false;
-    if (off || navigator.webdriver) { el.remove(); return; }
+    if (off || navigator.webdriver || /[?&]from=chronos\b/.test(location.search)) { el.remove(); return; }
     // a Home Screen app starts below the status bar, so the middle of the page sits lower than the middle of the screen:
     // lift the animation by half the status bar so it is centred on the whole screen
     var sa = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches), gap = screen.height - window.innerHeight;
@@ -2261,7 +2269,7 @@ const QUOTES = [['千里の道も一歩から','ことわざ'],['継続は力な
 
 /* ================= state / storage ================= */
 const KEY = 'hibi.v1', UIKEY = 'hibi.ui';
-const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', asterism: 'https://weakestandstrongest-sketch.github.io/memo/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], ext: { pending: {} }, habits: { list: [], log: {}, run: null, seen: {} } });
+const defaults = () => ({ events: [], entries: [], tasks: [], templates: [], jobs: [], timer: null, todos: [], places: [], spots: [], school: { periods: [['09:00','10:30'],['10:40','12:10'],['13:00','14:30'],['14:40','16:10'],['16:20','17:50'],['18:00','19:30']], sat: false, holidayOff: true, termStart: '', termEnd: '', lateRule: 3, classes: [], tasks: [], terms: [], days: {} }, settings: { theme: 'system', name: '', holidays: true, weekStart: 'mon', accent: '', weather: false, showPay: true, payLimit: 0, locEntry: true, locEntryAuto: 1, locOpen: false, locWarned: false, homeStation: '', leaveWalk: 10, leaveMargin: 5, todayView: true, icsAlarm: 15, icsTodo: true, icsClass: true, norikae: 'https://norikae.gohanoishi.workers.dev', asterism: 'https://weakestandstrongest-sketch.github.io/memo/', baseball: 'https://baseball.gohanoishi.workers.dev', nagi: 'https://weakestandstrongest-sketch.github.io/news/', bkRemind: 'daily', bkTime: '21:00', lastBackup: 0, bkSnooze: '', lastSnap: '' }, customFeelings: [], customTags: [], money: mnDefaults(), notes: [], ext: { pending: {} }, chr: null, habits: { list: [], log: {}, run: null, seen: {} } });
 let S;
 // stored or imported data is cleaned up before use: missing lists become empty, odd values are dropped,
 // and anything that ends up inside HTML attributes (ids, colors, photos) must have a safe shape
@@ -2308,6 +2316,7 @@ function normalizeState(d, imported) {
   n.notes = asArr(d.notes); // メモ was removed in 2.14.0: what was written is kept as it was
   { const x = asObj(d.ext); n.ext = { pending: {} }; for (const a of ['baseball', 'norikae']) { const v = asObj(x[a]); if (extOk(v.data)) n.ext[a] = { data: v.data, at: +v.at || 0 }; if (asObj(x.pending)[a] && n.ext[a]) n.ext.pending[a] = true; } }
   n.habits = normHabits(d.habits);
+  { const c = asObj(d.chr); n.chr = typeof c.id === 'string' && c.id ? { id: c.id, base: asObj(c.base), at: +c.at || 0 } : null; }
   return n;
 }
 let loadFailed = false;
@@ -2553,12 +2562,12 @@ function matches(ev, d) {
   if (ev.skip && ev.skip[d]) return false;
   if (ev.until && d > ev.until) return false;
   switch (ev.repeat) {
-    case 'daily': return true;
+    case 'daily': return !(ev.every > 1) || diffDays(ev.date, d) % ev.every === 0;
     case 'weekdays': { const w = wd(d); return w >= 1 && w <= 5; }
-    case 'weekly': return (ev.days && ev.days.length ? ev.days : [wd(ev.date)]).includes(wd(d));
-    case 'monthly': return P(d).getDate() === P(ev.date).getDate();
+    case 'weekly': return (ev.days && ev.days.length ? ev.days : [wd(ev.date)]).includes(wd(d)) && (!(ev.every > 1) || Math.floor(diffDays(addDays(ev.date, -wd(ev.date)), addDays(d, -wd(d))) / 7) % ev.every === 0);
+    case 'monthly': return P(d).getDate() === P(ev.date).getDate() && (!(ev.every > 1) || ((+d.slice(0, 4) - +ev.date.slice(0, 4)) * 12 + (+d.slice(5, 7) - +ev.date.slice(5, 7))) % ev.every === 0);
     case 'nth': { const a = P(d), b = P(ev.date); return a.getDay() === b.getDay() && Math.ceil(a.getDate() / 7) === Math.ceil(b.getDate() / 7); }
-    case 'yearly': return d.slice(5) === ev.date.slice(5);
+    case 'yearly': return d.slice(5) === ev.date.slice(5) && (!(ev.every > 1) || (+d.slice(0, 4) - +ev.date.slice(0, 4)) % ev.every === 0);
     default: return d === ev.date;
   }
 }
@@ -3218,7 +3227,7 @@ function viewReflect() {
   for (let i = 0; i < (sunStart() ? wd(mfirst) : (wd(mfirst) + 6) % 7); i++) mc += '<span></span>';
   for (let d = mfirst; d <= mlast; d = addDays(d, 1)) { const m = dayMood(d); mc += `<span class="c"><i class="${m ? 'on' : ''}" style="${m ? `background:${m.color};` : ''}border-radius:${blob(d)}"></i><span class="num">${P(d).getDate()}</span></span>`; }
   return `
-  <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div></div>
+  <div class="r-head"><div class="ttl"><h1>ふりかえり</h1><span class="script">Reflection</span></div><div class="head-icons"><button class="icon-btn" data-act="chronos" aria-label="${chrHost ? 'CHRONOSに戻る' : 'CHRONOSに切り替える'}">${CHR_SVG}</button></div></div>
   ${memoriesCard()}
   ${wrappedCard()}
   <button class="card report-btn" data-act="report"><span><b>${P(T).getMonth() + 1}月の月報</b><small>1か月の気持ち・できごと・写真をまとめて見る</small></span>${ico('right')}</button>
@@ -4367,6 +4376,161 @@ function rtAltApply(x) {
   RTA = null;
 }
 
+/* ================= CHRONOS: the same plans in another calendar, one button away =================
+   CHRONOS (…/k/) is on this same site and keeps its plans in IndexedDB "chronos-atelier". The button opens it over
+   ひび手帳 (and inside CHRONOS, its button brings ひび手帳 back the same way); each switch merges the plans of both:
+   - a pair is linked by CHRONOS's id: "hibi-<id>" for plans made here, ev.chr for plans made there;
+   - S.chr.base keeps how each pair looked after the last merge, so a change or a deletion on one side is told apart
+     from something new on the other; when both sides changed, the side being left wins;
+   - the base belongs to one CHRONOS database (its meta "hibiSync"): with another one (a new phone, cleared data)
+     nothing is deleted, the two are only added together. ルーティン and the sample plans stay out. */
+const CHR_SVG = '<svg class="chr-ico" viewBox="-30 -30 60 60" aria-hidden="true"><circle r="26" fill="none" stroke="currentColor" stroke-width="3.2"/><g stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><line y1="-26" y2="-19"/><line x1="26" x2="19"/><line y1="26" y2="19"/><line x1="-26" x2="-19"/></g><path d="M0 0L11-14" stroke="#C9A45C" stroke-width="3.6" stroke-linecap="round"/><circle cx="12" cy="-15.5" r="3.6" fill="#C9A45C"/><circle r="3.4" fill="#C9A45C"/></svg>';
+const CHR_CAT_ICON = { work: 'work', meeting: 'people', study: 'book', health: 'gym', personal: 'star', travel: 'train', social: 'heart', other: 'alarm' };
+const CHR_CAT_COLOR = { work: '#6B88B0', meeting: '#E07F78', study: '#A68BD2', health: '#86B067', personal: '#E9A23B', travel: '#4FA39B', social: '#9B4F6E', other: '#8E8E96' };
+const chrCat = icon => ({ work: 'work', people: 'meeting', book: 'study', school: 'study', pen: 'study', gym: 'health', train: 'travel', heart: 'social', cake: 'social', music: 'social', alarm: 'other' })[icon] || 'personal';
+const chrSyncable = ev => !!ev && !ev.sample && !ev.routine && isYmdS(ev.date) && !ev.cls;
+const chrKey = ev => ev.chr || 'hibi-' + ev.id;
+const chrHash = o => medHash(JSON.stringify(o));
+const chrDays = o => Object.keys(o || {}).filter(k => o[k] && isYmdS(k)).sort();
+// a plan as CHRONOS sees it, made from either side, in the same shape so the two can be compared
+function chrCanonH(ev) {
+  const a = !!ev.allDay; let s = a ? 0 : toMin(ev.start || '00:00'), e = a ? 1440 : ev.end ? toMin(ev.end) : Math.min(1440, s + 60), ed = ev.endDate && ev.endDate > ev.date ? ev.endDate : ev.date;
+  if (!a) {
+    if (e === 0 && ev.end) { if (ed > ev.date) ed = addDays(ed, -1); e = 1440; } // until midnight
+    else if (ed === ev.date && e <= s) ed = addDays(ev.date, 1); // past midnight
+    if (s >= 1440) s = 1439;
+  }
+  const f = { daily: 'daily', weekdays: 'weekly', weekly: 'weekly', monthly: 'monthly', yearly: 'yearly' }[ev.repeat];
+  const r = f ? { f, i: Math.max(1, Math.min(99, Math.round(+ev.every || 1))), w: f !== 'weekly' ? [] : ev.repeat === 'weekdays' ? [1, 2, 3, 4, 5] : (ev.days && ev.days.length ? [...new Set(ev.days)] : [wd(ev.date)]).sort(), u: ev.until && ev.until >= ev.date ? ev.until : null } : null;
+  const done = chrDays(ev.done);
+  return { t: String(ev.title || '').trim() || '（無題）', d: ev.date, e: ed, a, s, m: e, r, x: r ? chrDays(ev.skip) : [], n: ev.memo || '', l: ev.loc || '', k: chrCat(ev.icon), c: r ? done : done.filter(k => k === ev.date) };
+}
+function chrCanonC(c) {
+  const R = c.repeat, f = R && ['daily', 'weekly', 'monthly', 'yearly'].includes(R.freq) ? R.freq : null;
+  const r = f ? { f, i: Math.max(1, Math.min(99, Math.round(+R.interval || 1))), w: f !== 'weekly' ? [] : (Array.isArray(R.weekdays) && R.weekdays.length ? [...new Set(R.weekdays)] : [wd(c.date)]).sort(), u: isYmdS(R.until) && R.until >= c.date ? R.until : null } : null;
+  const done = r ? Object.keys(c.records || {}).filter(k => isYmdS(k) && c.records[k] && c.records[k].status === 'completed').sort() : c.status === 'completed' ? [c.date] : [];
+  return { t: String(c.title || '').trim() || '（無題）', d: c.date, e: isYmdS(c.endDate) && c.endDate > c.date ? c.endDate : c.date, a: !!c.allDay, s: c.allDay ? 0 : c.startMin, m: c.allDay ? 1440 : c.endMin, r,
+    x: r ? (Array.isArray(c.exceptions) ? c.exceptions.filter(isYmdS) : []).sort() : [], n: String(c.notes || ''), l: String(c.location || ''), k: CHR_CAT_ICON[c.category] ? c.category : 'other', c: done };
+}
+// what CHRONOS has (A) that differs from what ひび手帳 has (B) goes into ひび手帳's plan; the rest of it stays as it is
+function chrToHibi(h, A, B) {
+  const same = f => JSON.stringify(A[f]) === JSON.stringify(B[f]);
+  if (!same('t')) h.title = A.t;
+  if (!['d', 'e', 'a', 's', 'm'].every(same)) {
+    h.date = A.d; h.allDay = A.a;
+    if (A.a) h.endDate = A.e > A.d ? A.e : '';
+    else {
+      h.start = hhmm(A.s);
+      if (A.m >= 1440) { h.end = '00:00'; h.endDate = A.e > A.d ? addDays(A.e, 1) : ''; } else { h.end = hhmm(A.m); h.endDate = A.e > A.d ? A.e : ''; }
+      if (h.endDate && !(A.e === addDays(A.d, 1) && A.m < A.s)) h.calOnly = true; // more than one day: on the calendar, like ones made here
+    }
+  }
+  if (!same('r')) {
+    if (!A.r) { h.repeat = 'none'; delete h.days; delete h.every; delete h.until; }
+    else { h.repeat = A.r.f; if (A.r.f === 'weekly') h.days = A.r.w.slice(); else delete h.days; if (A.r.i > 1) h.every = A.r.i; else delete h.every; if (A.r.u) h.until = A.r.u; else delete h.until; }
+  }
+  if (!same('x')) h.skip = Object.fromEntries(A.x.map(d => [d, true]));
+  if (!same('n')) h.memo = A.n;
+  if (!same('l')) { if (A.l) h.loc = A.l; else delete h.loc; }
+  if (!same('k')) { h.icon = CHR_CAT_ICON[A.k] || 'star'; h.color = CHR_CAT_COLOR[A.k] || h.color; }
+  if (!same('c')) { if (A.r) h.done = Object.fromEntries(A.c.map(d => [d, true])); else { h.done = { ...(h.done || {}) }; delete h.done[h.date]; if (A.c.includes(h.date)) h.done[h.date] = true; } }
+}
+// ひび手帳's plan written into CHRONOS's (what only CHRONOS has — 実績, 余白, 準備, 履歴 — is kept)
+function chrFromHibi(h, c, B) {
+  const now = new Date().toISOString();
+  const o = c ? { ...c } : { id: chrKey(h), exceptions: [], records: {}, category: B.k, location: '', notes: '', prepTasks: [], status: 'planned', actualMinutes: null, bufferBeforeMin: 0, bufferAfterMin: 0, fixed: false, isSample: false, createdAt: now, history: [{ at: now, kind: 'created', detail: 'ひび手帳で作成' }] };
+  Object.assign(o, { title: B.t, date: B.d, endDate: B.e, allDay: B.a, startMin: B.s, endMin: B.m, repeat: B.r ? { freq: B.r.f, interval: B.r.i, weekdays: B.r.f === 'weekly' ? B.r.w : [], until: B.r.u } : null,
+    exceptions: B.x, notes: B.n, location: B.l, category: B.k, updatedAt: now });
+  if (B.r) { const rec = { ...(o.records || {}) }; for (const d of Object.keys(rec)) if (rec[d] && rec[d].status === 'completed' && !B.c.includes(d)) rec[d] = { ...rec[d], status: 'planned' }; for (const d of B.c) rec[d] = { actualMinutes: null, ...(rec[d] || {}), status: 'completed' }; o.records = rec; }
+  else o.status = B.c.length ? 'completed' : o.status === 'completed' ? 'planned' : o.status;
+  if (c) o.history = [...(Array.isArray(c.history) ? c.history : []), { at: now, kind: 'edited', detail: 'ひび手帳で変更' }].slice(-40);
+  return o;
+}
+function chrNewHibi(c) {
+  const k = CHR_CAT_ICON[c.category] ? c.category : 'other';
+  const ev = { id: uid(), title: '', date: c.date, endDate: '', allDay: false, start: '09:00', end: '10:00', color: CHR_CAT_COLOR[k], icon: CHR_CAT_ICON[k], repeat: 'none', routine: false, memo: '', done: {}, chr: c.id };
+  chrToHibi(ev, chrCanonC(c), chrCanonH(ev));
+  return ev;
+}
+function chrDB() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('no idb'));
+    const r = indexedDB.open('chronos-atelier', 1);
+    r.onupgradeneeded = () => { const db = r.result; // the same stores CHRONOS makes, in case ひび手帳 is first
+      if (!db.objectStoreNames.contains('events')) db.createObjectStore('events', { keyPath: 'id' }).createIndex('date', 'date', { unique: false });
+      if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' }); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked'));
+  });
+}
+const idbReq = q => new Promise((res, rej) => { q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+let chrBusy = Promise.resolve();
+// winner: the side being left ('hibi' | 'chronos'). Returns what changed in ひび手帳, or null when it could not merge
+function chrSync(winner) { const run = () => chrSyncRun(winner).catch(e => { console.error(e); return null; }); return (chrBusy = chrBusy.then(run, run)); }
+async function chrSyncRun(winner) {
+  if (dataPending || loadFailed) return null;
+  const db = await chrDB();
+  try {
+    const tx0 = db.transaction(['events', 'meta']), [list, meta] = await Promise.all([idbReq(tx0.objectStore('events').getAll()), idbReq(tx0.objectStore('meta').get('hibiSync'))]);
+    let sid = meta && meta.value;
+    if (!sid) { sid = uid(); const t = db.transaction('meta', 'readwrite'); t.objectStore('meta').put({ key: 'hibiSync', value: sid }); await new Promise((r, j) => { t.oncomplete = r; t.onerror = () => j(t.error); }); }
+    const base = S.chr && S.chr.id === sid ? S.chr.base || {} : {};
+    const C = new Map(); for (const c of list) if (c && typeof c.id === 'string' && !c.isSample && isYmdS(c.date) && Number.isFinite(c.startMin) && Number.isFinite(c.endMin)) C.set(c.id, c);
+    const H = new Map(); for (const ev of S.events) if (chrSyncable(ev)) { if (H.has(chrKey(ev))) delete ev.chr; H.set(chrKey(ev), ev); } // a copy carrying the same link becomes its own
+    const puts = [], dels = [], gone = [], nb = {}, n = { add: 0, upd: 0, del: 0, out: 0 };
+    const keep = (k, h, c) => { const B = chrCanonH(h); if (!c || chrHash(B) !== chrHash(chrCanonC(c))) { puts.push(chrFromHibi(h, c, B)); n.out++; } nb[k] = chrHash(B); };
+    for (const k of new Set([...H.keys(), ...C.keys()])) {
+      const h = H.get(k), c = C.get(k), b = base[k];
+      if (h && c) {
+        const A = chrCanonC(c), B = chrCanonH(h), ha = chrHash(A), hb = chrHash(B);
+        if (ha === hb) { nb[k] = ha; continue; }
+        if (ha !== b && (hb === b || winner === 'chronos')) { chrToHibi(h, A, B); n.upd++; }
+        keep(k, h, c); // and CHRONOS gets ひび手帳's (it is the same when nothing was lost on the way)
+      } else if (h) { if (b !== undefined) gone.push(h); else keep(k, h, null); }
+      else if (b !== undefined) dels.push(k);
+      else { const ev = chrNewHibi(c); S.events.push(ev); n.add++; keep(k, ev, c); }
+    }
+    // CHRONOS emptied (its data cleared, say): do not empty ひび手帳 with it
+    if (gone.length >= 10 && gone.length > Object.keys(base).length / 2) { for (const h of gone) keep(chrKey(h), h, null); n.kept = gone.length; gone.length = 0; }
+    if (gone.length) { await snapPut('CHRONOSと合わせる前').catch(() => {}); const g = new Set(gone); S.events = S.events.filter(e => !g.has(e)); n.del = gone.length; }
+    if (puts.length || dels.length) {
+      const t = db.transaction('events', 'readwrite'), os = t.objectStore('events');
+      for (const o of puts) os.put(o); for (const k of dels) os.delete(k);
+      await new Promise((r, j) => { t.oncomplete = r; t.onerror = () => j(t.error); t.onabort = () => j(t.error); });
+    }
+    S.chr = { id: sid, base: nb, at: Date.now() }; save(true);
+    return n;
+  } finally { db.close(); }
+}
+const chrNote = n => n && (n.add || n.upd || n.del) ? `CHRONOSでの変更を反映しました（${[n.add && `追加 ${n.add}`, n.upd && `変更 ${n.upd}`, n.del && `削除 ${n.del}`].filter(Boolean).join('・')}）` : '';
+// inside CHRONOS (it opened ひび手帳 over itself): the button goes back to it
+const chrHost = (() => { try { return window.self !== window.top && window.parent.location.origin === location.origin && /[?&]from=chronos\b/.test(location.search); } catch (e) { return false; } })();
+const chrURL = () => new URL('../k/', location.href.split(/[?#]/)[0]).href;
+let chrOv = null;
+async function chrSwitch() {
+  if (chrOv) return;
+  if (chrHost) { await chrSync('hibi'); window.parent.postMessage({ type: 'hibi:to-chronos' }, location.origin); return; }
+  const ov = chrOv = document.createElement('div'); ov.className = 'chr-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'CHRONOS');
+  ov.innerHTML = `<div class="chr-load">${CHR_SVG}<b>CHRONOSに切り替えています…</b></div>`;
+  document.body.append(ov); requestAnimationFrame(() => ov.classList.add('in'));
+  await chrSync('hibi');
+  if (chrOv !== ov) return;
+  const f = document.createElement('iframe'); f.className = 'chr-frame'; f.title = 'CHRONOS'; f.src = chrURL() + '?from=hibi';
+  // the area above and below the frame takes CHRONOS's own background (its theme color), like one screen
+  const tint = () => { try { const d = f.contentDocument, m = d && d.querySelector('meta[name="theme-color"]'), bg = (m && m.content) || (d && d.body && getComputedStyle(d.body).backgroundColor); if (bg) ov.style.background = bg; } catch (e) {} };
+  f.addEventListener('load', () => { tint(); ov.classList.add('ready'); ov._tint = setInterval(tint, 600); }, { once: true });
+  ov.append(f);
+}
+async function chrBack() {
+  const ov = chrOv; if (!ov) return; chrOv = null; clearInterval(ov._tint);
+  ov.classList.remove('in'); setTimeout(() => ov.remove(), 380);
+  const n = await chrSync('chronos'); render(); const msg = chrNote(n); if (msg) toast(msg);
+}
+window.addEventListener('message', e => {
+  const d = e.data; if (!d || e.origin !== location.origin) return;
+  if (d.type === 'chronos:to-hibi' && chrOv && e.source === ($('.chr-frame', chrOv) || {}).contentWindow) chrBack();
+});
+
 /* ================= leave time: when to set off for a plan with a destination station ================= */
 const LV_KEY = 'hibi.leave';
 let LV = (() => { try { return JSON.parse(localStorage.getItem(LV_KEY) || '{}'); } catch (e) { return {}; } })();
@@ -5451,7 +5615,7 @@ function cleanEv(x) { const o = JSON.parse(JSON.stringify(x)); for (const k of O
 function saveOccurrence(orig, occ, next, scope) {
   if (scope === 'one') {
     orig.skip = Object.assign({}, orig.skip, { [occ]: true });
-    const one = cleanEv(next); one.id = uid(); one.repeat = 'none'; delete one.days; delete one.until; one.skip = {}; one.done = {};
+    const one = cleanEv(next); one.id = uid(); one.repeat = 'none'; delete one.days; delete one.until; delete one.every; delete one.chr; one.skip = {}; one.done = {};
     if (orig.done && orig.done[occ]) one.done[one.date] = true;
     // only this day's timer minutes and packing go with it (otherwise the series' totals would count twice)
     one.actual = (orig.actual || {})[occ] ? { [one.date]: orig.actual[occ] } : {};
@@ -6553,6 +6717,7 @@ const ACT = {
   newEvent: t => openEvent(null, t.dataset.d),
   editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
   asterism: () => openAsterism(),
+  chronos: () => chrSwitch(),
   camera: () => openCam(),
   mailAdd: () => openMail(),
   mailPaste: async () => { const ta = $('#mail-text'); try { const t = await navigator.clipboard.readText(); if (t) { ta.value = t; MAIL.text = t; toast('貼り付けました'); } else toast('コピーした文章がありませんでした'); } catch (e) { ta.focus(); toast('欄を長押しして「ペースト」を選んでください'); } },
@@ -6632,6 +6797,7 @@ const ACT = {
     if (!e._iconSet && e.icon === 'star') e.icon = guessIcon(e.title);
     if (e.repeat === 'weekly') { if (!e.days || !e.days.length) e.days = [wd(e._seriesDate || e.date)]; } else delete e.days;
     if (e.repeat === 'none' || (e.until && e.until < (e._seriesDate || e.date))) delete e.until;
+    { const o = e.id && S.events.find(x => x.id === e.id); if (!o || o.repeat !== e.repeat) delete e.every; }
     const done = () => { if (save()) { while (stack.length) closeSheet(); st.sel = st.day = e.date; st.calMonth = e.date.slice(0, 8) + '01'; render(); toast('予定を保存しました'); } };
     const orig = e.id && S.events.find(x => x.id === e.id);
     if (orig && e._occ && orig.repeat !== 'none') {
@@ -8222,16 +8388,17 @@ setTimeout(() => loadFailed && toast('保存されていたデータを読み込
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
 setTimeout(extSync, 5000);
-if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday')) openToday();
+if (chrHost) chrSync('chronos').then(n => { render(); const m = chrNote(n); if (m) toast(m); });
+if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday') && !chrHost) openToday(); // switching over from CHRONOS: straight to the calendar
 }
 if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; setTimeout(endSplash, quick ? 700 : 1950); $('#splash').addEventListener('click', () => endSplash(true)); }
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v102';
+const APP_VER = 'hibi-v103';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.16.0';
-const HIBI_CHANGES = ['ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.17.0';
+const HIBI_CHANGES = ['ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
