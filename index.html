@@ -4408,8 +4408,40 @@ async function chrSyncRun(winner) {
     }
     S.chr = { id: sid, base: nb, at: Date.now() }; save(true);
     return n;
-  } finally { db.close(); }
+  } finally { db.close(); setTimeout(chrRefresh, 0); }
 }
+// 刻's whole database (its plans with everything only it records — 実績, 余白, 準備, 履歴 — and its settings) goes into
+// ひび手帳's backups and daily snapshots, and back on a restore. A 刻 that was never opened here is not created for it.
+const CHR_STORES = ['events', 'settings', 'meta'];
+function chrOpenIfThere() {
+  return new Promise(res => {
+    if (!window.indexedDB || (inFrame && !chrHost)) return res(null);
+    const r = indexedDB.open('chronos-atelier', 1);
+    r.onupgradeneeded = e => { if (e.oldVersion === 0) r.transaction.abort(); }; // not there: leave it so
+    r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null);
+  });
+}
+async function chrDump() {
+  const db = await chrOpenIfThere(); if (!db) return null;
+  try {
+    if (!CHR_STORES.every(n => db.objectStoreNames.contains(n))) return null;
+    const t = db.transaction(CHR_STORES), [events, settings, meta] = await Promise.all(CHR_STORES.map(n => idbReq(t.objectStore(n).getAll())));
+    return events.length || settings.length ? { v: 1, events, settings, meta } : null;
+  } catch (e) { return null; } finally { db.close(); }
+}
+async function chrRestore(d) {
+  const db = await chrDB();
+  try {
+    const t = db.transaction(CHR_STORES, 'readwrite');
+    for (const n of CHR_STORES) { const os = t.objectStore(n); os.clear(); for (const row of Array.isArray(d[n]) ? d[n] : []) if (row && typeof row === 'object') { try { os.put(row); } catch (e) {} } }
+    await new Promise((r, j) => { t.oncomplete = r; t.onerror = () => j(t.error); t.onabort = () => j(t.error); });
+    return true;
+  } catch (e) { return false; } finally { db.close(); }
+}
+// a copy kept ready, so saving a backup file stays immediate: read when ひび手帳 opens and after every switch
+let chrCache = null;
+const chrRefresh = () => chrDump().then(d => { chrCache = d; }).catch(() => {});
+const chrCount = d => (Array.isArray(d && d.events) ? d.events.filter(e => e && !e.isSample).length : 0);
 const chrNote = n => n && (n.add || n.upd || n.del) ? `刻での変更を反映しました（${[n.add && `追加 ${n.add}`, n.upd && `変更 ${n.upd}`, n.del && `削除 ${n.del}`].filter(Boolean).join('・')}）` : '';
 // inside CHRONOS (it opened ひび手帳 over itself): the button goes back to it
 const chrHost = (() => { try { return window.self !== window.top && window.parent.location.origin === location.origin && /[?&]from=chronos\b/.test(location.search); } catch (e) { return false; } })();
@@ -5281,8 +5313,9 @@ const standalone = () => !!(navigator.standalone || (window.matchMedia && matchM
 function snapDB() { return new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const r = indexedDB.open('hibi-snaps', 1); r.onupgradeneeded = () => r.result.createObjectStore('snaps', { keyPath: 'day' }); r.onsuccess = () => { const db = r.result; db.onversionchange = () => db.close(); res(db); }; r.onerror = () => rej(r.error); }); }
 let snapCache = [];
 async function snapPut(note, json = serialS(), ev = S.events.length, en = S.entries.length, late2 = false) {
+  const chr = await chrDump().catch(() => null);
   const db = await snapDB(), tx = db.transaction('snaps', 'readwrite'), os = tx.objectStore('snaps'), T = todayISO();
-  os.put({ day: note ? `${T}#${Date.now()}` : late2 ? `${T}~late` : T, at: Date.now(), json, ev, en, note: note || (late2 ? '夜の控え' : ''), apps: localApps() });
+  os.put({ day: note ? `${T}#${Date.now()}` : late2 ? `${T}~late` : T, at: Date.now(), json, ev, en, note: note || (late2 ? '夜の控え' : ''), apps: localApps(), ...(chr ? { chr } : {}) });
   // daily copies (7) and copies taken before a restore or an import (3) are kept separately, so one never pushes out the other
   const keys = os.getAllKeys(); keys.onsuccess = () => { const all = keys.result.slice().sort(), day = all.filter(k => !k.includes('#')), noted = all.filter(k => k.includes('#'));
     for (const old of [...day.slice(0, Math.max(0, day.length - 9)), ...noted.slice(0, Math.max(0, noted.length - 3))]) os.delete(old); };
@@ -6162,7 +6195,7 @@ function settingsHTML() {
     <p class="note" style="margin:0">タイムライン右上の電車のボタンから、のりかえで経路を調べて、そのまま予定に入れられます。</p>
     <div class="fld" style="margin:0"><label for="set-norikae">のりかえのURL</label><input class="inp" id="set-norikae" type="url" value="${esc(s.norikae || '')}" placeholder="https://norikae.○○○.workers.dev" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>メモ（Asterism）</h4><div class="set-list">
-    <p class="note" style="margin:0">日記の右上の星のボタンから、Asterismをひび手帳の中で開けます。ここで書いたメモは、ひび手帳の中に保存され、ひび手帳のバックアップ（ファイル・毎日の控え）にも一緒に入ります（凪・野球速報・乗換案内のデータも同じです）。ホーム画面に別に追加したAsterismとは別のデータです。</p>
+    <p class="note" style="margin:0">日記の右上の星のボタンから、Asterismをひび手帳の中で開けます。ここで書いたメモは、ひび手帳の中に保存され、ひび手帳のバックアップ（ファイル・毎日の控え）にも一緒に入ります（凪・野球速報・乗換案内・刻のデータも同じです）。ホーム画面に別に追加したAsterismとは別のデータです。</p>
     <div class="fld" style="margin:0"><label for="set-asterism">AsterismのURL</label><input class="inp" id="set-asterism" type="url" value="${esc(s.asterism || '')}" placeholder="https://○○○.github.io/memo/" autocapitalize="off" spellcheck="false"></div></div></div>
   ${!inFrame || chrHost ? `<div class="set-sec"><h4>刻（カレンダー）</h4><div class="set-list">
     <p class="note" style="margin:0">カレンダーの右上の時計のボタンで、カレンダーアプリ「刻」に切り替えられます。切り替えるたびに、両方の予定を合わせます。予定ごとに出すかどうかは、予定の画面の「刻に出す」で決められます（ルーティンは、はじめは出しません）。<br>ホーム画面に別に追加した刻とは保存場所が別なので、予定はこのアプリの中で切り替えたときに行き来します。</p>
@@ -6260,10 +6293,10 @@ function importICS(txt) {
     if (save()) { while (stack.length) closeSheet(); render(); toast(`${add.length}件の予定を取り込みました`); } else S.events.splice(S.events.length - add.length, add.length);
   });
 }
-const backupJSON = () => { const a = localApps(); return JSON.stringify({ app: 'hibi', version: 1, exportedAt: new Date().toISOString(), data: S, ...(a ? { apps: a } : {}) }, medFullRep); };
+const backupJSON = () => { const a = localApps(); return JSON.stringify({ app: 'hibi', version: 1, exportedAt: new Date().toISOString(), data: S, ...(a ? { apps: a } : {}), ...(chrCache ? { chronos: chrCache } : {}) }, medFullRep); };
 // a backup needs every photo: true when they are ready, otherwise start reading them and ask to press again
 function bkReady() { if (!medReady) { toast('写真を読み込んでいます。少しして、もう一度押してください'); return false; } let refs = false; medEach(S, (o, f) => { if (isRef(o[f])) refs = true; }); if (!refs || medFull) return true; toast('写真を用意しています。少しして、もう一度押してください'); medPreloadAll().then(() => toast('用意できました。もう一度押すと保存します')); return false; }
-function importData(txt, apps0) {
+function importData(txt, apps0, chr0) {
   try {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
@@ -6272,7 +6305,8 @@ function importData(txt, apps0) {
     const raw = isObj(o && o.apps) ? o.apps : isObj(o && o.asterism) ? { asterism: o.asterism } : isObj(apps0) ? apps0 : {}; // 2.15.0 files had "asterism" alone
     const apps = {}; for (const a of Object.keys(LOCAL_APPS)) if (isObj(raw[a])) apps[a] = raw[a];
     const ext = Object.keys(EXT_APPS).filter(a => isObj(d.ext) && isObj(d.ext[a]));
-    const more = [apps.asterism && `Asterismのメモ ${asCount(apps.asterism)}件`, apps.nagi && `凪の保存記事 ${ngCount(apps.nagi)}件`, ext.length && `${ext.map(a => ({ baseball: '野球速報', norikae: '乗換案内' })[a]).join('・')}の設定`].filter(Boolean);
+    const chr = isObj(o && o.chronos) && Array.isArray(o.chronos.events) ? o.chronos : isObj(chr0) && Array.isArray(chr0.events) ? chr0 : null; // 刻
+    const more = [chr && `刻の予定 ${chrCount(chr)}件`, apps.asterism && `Asterismのメモ ${asCount(apps.asterism)}件`, apps.nagi && `凪の保存記事 ${ngCount(apps.nagi)}件`, ext.length && `${ext.map(a => ({ baseball: '野球速報', norikae: '乗換案内' })[a]).join('・')}の設定`].filter(Boolean);
     confirmIn(`予定 ${d.events.length}件・日記 ${d.entries.length}件${more.length ? '・' + more.join('・') : ''}で、いまのデータを置き換えます。`, '復元する', async () => {
       const prev = S; let next;
       try { next = normalizeState(JSON.parse(JSON.stringify(d)), true); next.settings.lastSnap = prev.settings.lastSnap; next.settings.lock = prev.settings.lock; } catch (e) { toast('バックアップの中身が壊れているようで、読み込めませんでした'); return; }
@@ -6286,9 +6320,10 @@ function importData(txt, apps0) {
       if (!save()) { S = prev; loadFailed = wasFailed; render(); return; }
       applyTheme(); while (stack.length) closeSheet(); render(); hbTicker(); hbTick();
       // after Asterism's or 凪's frame (if one was open) has gone, so it cannot write its old data back over these
-      setTimeout(() => {
+      setTimeout(async () => {
         const bad = Object.keys(apps).filter(a => !localPut(LOCAL_APPS[a], apps[a]));
-        toast(bad.length ? '復元しました（Asterism・凪のデータは容量が足りず戻せませんでした）' : Object.keys(apps).length || ext.length ? '復元しました（ほかのアプリのデータも）' : '復元しました');
+        const chrOk = chr ? await chrRestore(chr) : true; if (chr) chrRefresh();
+        toast(!chrOk ? '復元しました（刻のデータは戻せませんでした）' : bad.length ? '復元しました（Asterism・凪のデータは容量が足りず戻せませんでした）' : Object.keys(apps).length || ext.length || chr ? '復元しました（ほかのアプリのデータも）' : '復元しました');
         extSync();
       }, 700);
     });
@@ -6567,7 +6602,7 @@ const ACT = {
   bkSave: () => saveBackupFile(),
   bkLater: () => { S.settings.bkSnooze = todayISO(); save(true); const bar = $('#bkbar'); if (bar) bar.hidden = true; toast('明日またお知らせします'); },
   bkRemindSet: t => { S.settings.bkRemind = t.dataset.k; save(); topSheet().querySelectorAll('[data-act="bkRemindSet"]').forEach(b => b.setAttribute('aria-pressed', b === t)); checkBackup(); },
-  snapRestore: t => { const x = snapCache.find(y => y.day === t.dataset.day); if (x) importData(x.json, x.apps || (x.ast ? { asterism: x.ast } : null)); },
+  snapRestore: t => { const x = snapCache.find(y => y.day === t.dataset.day); if (x) importData(x.json, x.apps || (x.ast ? { asterism: x.ast } : null), x.chr); },
   payGoal: () => { openSheet(payGoalSheet(), 'small'); setTimeout(() => { const i = $('#pg-v'); if (i) i.focus(); }, 300); },
   savePayGoal: () => { S.settings.payGoal = Math.max(0, Math.round(+$('#pg-v').value || 0)); save(); closeSheet(); rerenderKind('pay', paySheet); render(); },
   payToday: () => { payYM = todayISO().slice(0, 7); rerenderKind('pay', paySheet); topSheet().scrollTop = 0; },
@@ -8306,7 +8341,7 @@ medLoad().then(() => { if (!loadFailed) medSync().then(() => setTimeout(medGC, 8
 setTimeout(() => loadFailed && toast('保存されていたデータを読み込めませんでした。元のデータを守るため保存を止めています。設定 → バックアップ から戻してください'), 2400);
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
-setTimeout(extSync, 5000);
+setTimeout(extSync, 5000); chrRefresh();
 if (chrHost) chrSync('chronos').then(n => { render(); const m = chrNote(n); if (m) toast(m); });
 if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday') && !chrHost) openToday(); // switching over from CHRONOS: straight to the calendar
 }
@@ -8314,10 +8349,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v110';
+const APP_VER = 'hibi-v111';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.20.2';
-const HIBI_CHANGES = ['刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.21.0';
+const HIBI_CHANGES = ['ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
