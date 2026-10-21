@@ -2345,7 +2345,7 @@ function normalizeState(d, imported) {
   n.notes = asArr(d.notes); // メモ was removed in 2.14.0: what was written is kept as it was
   { const x = asObj(d.ext); n.ext = { pending: {} }; for (const a of ['baseball', 'norikae']) { const v = asObj(x[a]); if (extOk(v.data)) n.ext[a] = { data: v.data, at: +v.at || 0 }; if (asObj(x.pending)[a] && n.ext[a]) n.ext.pending[a] = true; } }
   n.habits = normHabits(d.habits);
-  { const c = asObj(d.chr); n.chr = typeof c.id === 'string' && c.id ? { id: c.id, base: asObj(c.base), at: +c.at || 0 } : null; }
+  { const c = asObj(d.chr); n.chr = typeof c.id === 'string' && c.id ? { id: c.id, base: asObj(c.base), at: +c.at || 0, ver: +c.ver || 1 } : null; }
   return n;
 }
 let loadFailed = false;
@@ -4430,14 +4430,14 @@ function chrCanonH(ev) {
   const f = { daily: 'daily', weekdays: 'weekly', weekly: 'weekly', monthly: 'monthly', yearly: 'yearly' }[ev.repeat];
   const r = f ? { f, i: Math.max(1, Math.min(99, Math.round(+ev.every || 1))), w: f !== 'weekly' ? [] : ev.repeat === 'weekdays' ? [1, 2, 3, 4, 5] : (ev.days && ev.days.length ? [...new Set(ev.days)] : [wd(ev.date)]).sort(), u: ev.until && ev.until >= ev.date ? ev.until : null } : null;
   const done = chrDays(ev.done);
-  return { t: String(ev.title || '').trim() || '（無題）', d: ev.date, e: ed, a, s, m: e, r, x: r ? chrDays(ev.skip) : [], n: ev.memo || '', l: ev.loc || '', k: chrCat(ev.icon), c: r ? done : done.filter(k => k === ev.date) };
+  return { t: String(ev.title || '').trim() || '（無題）', d: ev.date, e: ed, a, s, m: e, r, x: r ? chrDays(ev.skip) : [], n: ev.memo || '', l: ev.loc || '', k: chrCat(ev.icon), c: r ? done : done.filter(k => k === ev.date), v: ev.routine ? 'day' : ev.calOnly ? 'range' : 'both' }; // v: タイムラインだけ(ホーム・日) / カレンダーだけ(週・月) / どちらも
 }
 function chrCanonC(c) {
   const R = c.repeat, f = R && ['daily', 'weekly', 'monthly', 'yearly'].includes(R.freq) ? R.freq : null;
   const r = f ? { f, i: Math.max(1, Math.min(99, Math.round(+R.interval || 1))), w: f !== 'weekly' ? [] : (Array.isArray(R.weekdays) && R.weekdays.length ? [...new Set(R.weekdays)] : [wd(c.date)]).sort(), u: isYmdS(R.until) && R.until >= c.date ? R.until : null } : null;
   const done = r ? Object.keys(c.records || {}).filter(k => isYmdS(k) && c.records[k] && c.records[k].status === 'completed').sort() : c.status === 'completed' ? [c.date] : [];
   return { t: String(c.title || '').trim() || '（無題）', d: c.date, e: isYmdS(c.endDate) && c.endDate > c.date ? c.endDate : c.date, a: !!c.allDay, s: c.allDay ? 0 : c.startMin, m: c.allDay ? 1440 : c.endMin, r,
-    x: r ? (Array.isArray(c.exceptions) ? c.exceptions.filter(isYmdS) : []).sort() : [], n: String(c.notes || ''), l: String(c.location || ''), k: CHR_CAT_ICON[c.category] ? c.category : 'other', c: done };
+    x: r ? (Array.isArray(c.exceptions) ? c.exceptions.filter(isYmdS) : []).sort() : [], n: String(c.notes || ''), l: String(c.location || ''), k: CHR_CAT_ICON[c.category] ? c.category : 'other', c: done, v: c.show === 'day' || c.show === 'range' ? c.show : 'both' };
 }
 // what CHRONOS has (A) that differs from what ひび手帳 has (B) goes into ひび手帳's plan; the rest of it stays as it is
 function chrToHibi(h, A, B) {
@@ -4460,6 +4460,10 @@ function chrToHibi(h, A, B) {
   if (!same('n')) h.memo = A.n;
   if (!same('l')) { if (A.l) h.loc = A.l; else delete h.loc; }
   if (!same('k')) { h.icon = CHR_CAT_ICON[A.k] || 'star'; h.color = CHR_CAT_COLOR[A.k] || h.color; }
+  if (!same('v')) { // which screens: タイムラインだけ = ルーティン, カレンダーだけ = calOnly
+    h.routine = A.v === 'day'; if (h.routine) h.chrOn = true; else if (h.chrOn === true) delete h.chrOn; // a timeline-only plan that 刻 holds stays shared (routines are not, by default)
+    if (A.v === 'range') h.calOnly = true; else if (!(h.endDate && !(h.endDate === addDays(h.date, 1) && !h.allDay && h.end <= h.start))) delete h.calOnly;
+  }
   if (!same('c')) { if (A.r) h.done = Object.fromEntries(A.c.map(d => [d, true])); else { h.done = { ...(h.done || {}) }; delete h.done[h.date]; if (A.c.includes(h.date)) h.done[h.date] = true; } }
 }
 // ひび手帳's plan written into CHRONOS's (what only CHRONOS has — 実績, 余白, 準備, 履歴 — is kept)
@@ -4467,7 +4471,7 @@ function chrFromHibi(h, c, B) {
   const now = new Date().toISOString();
   const o = c ? { ...c } : { id: chrKey(h), exceptions: [], records: {}, category: B.k, location: '', notes: '', prepTasks: [], status: 'planned', actualMinutes: null, bufferBeforeMin: 0, bufferAfterMin: 0, fixed: false, isSample: false, createdAt: now, history: [{ at: now, kind: 'created', detail: 'ひび手帳で作成' }] };
   Object.assign(o, { title: B.t, date: B.d, endDate: B.e, allDay: B.a, startMin: B.s, endMin: B.m, repeat: B.r ? { freq: B.r.f, interval: B.r.i, weekdays: B.r.f === 'weekly' ? B.r.w : [], until: B.r.u } : null,
-    exceptions: B.x, notes: B.n, location: B.l, category: B.k, updatedAt: now });
+    exceptions: B.x, notes: B.n, location: B.l, category: B.k, show: B.v || 'both', updatedAt: now });
   if (B.r) { const rec = { ...(o.records || {}) }; for (const d of Object.keys(rec)) if (rec[d] && rec[d].status === 'completed' && !B.c.includes(d)) rec[d] = { ...rec[d], status: 'planned' }; for (const d of B.c) rec[d] = { actualMinutes: null, ...(rec[d] || {}), status: 'completed' }; o.records = rec; }
   else o.status = B.c.length ? 'completed' : o.status === 'completed' ? 'planned' : o.status;
   if (c) o.history = [...(Array.isArray(c.history) ? c.history : []), { at: now, kind: 'edited', detail: 'ひび手帳で変更' }].slice(-40);
@@ -4481,7 +4485,7 @@ function chrClassPlans() {
     if (!isYmdS(t.start) || !isYmdS(t.end) || t.end < t.start) continue;
     const occ = classOcc(t.start, t.end);
     for (const c of sc.classes.filter(x => x.term === t.id)) {
-      const mine = occ.filter(o => o.ev.cls === c.id), covered = new Set(), base = { t: c.name || '授業', a: false, n: c.teacher ? `先生：${c.teacher}` : '', l: c.room || '', k: 'study', c: [] };
+      const mine = occ.filter(o => o.ev.cls === c.id), covered = new Set(), base = { t: c.name || '授業', a: false, n: c.teacher ? `先生：${c.teacher}` : '', l: c.room || '', k: 'study', c: [], v: 'day' };
       for (const sl of c.slots) {
         const per = sc.periods[sl.p]; if (!per) continue;
         const hit = new Set(mine.filter(o => o.ev.p === sl.p && !o.ev.extra && wd(o.date) === sl.w).map(o => o.date)); if (!hit.size) continue;
@@ -4533,7 +4537,9 @@ async function chrSyncRun(winner) {
     for (const k of new Set([...H.keys(), ...C.keys()])) {
       const h = H.get(k), c = C.get(k), b = base[k];
       if (h && c) {
-        const A = chrCanonC(c), B = chrCanonH(h), ha = chrHash(A), hb = chrHash(B);
+        let A = chrCanonC(c); const B = chrCanonH(h);
+        if (!(S.chr && S.chr.ver >= 2) && A.v === 'both' && B.v !== 'both') { A = { ...A, v: B.v }; c.show = B.v; puts.push({ ...c }); } // plans made before 刻 knew where to show them
+        const ha = chrHash(A), hb = chrHash(B);
         if (ha === hb) { nb[k] = ha; continue; }
         if (ha !== b && (hb === b || winner === 'chronos')) { chrToHibi(h, A, B); n.upd++; }
         keep(k, h, c); // and CHRONOS gets ひび手帳's (it is the same when nothing was lost on the way)
@@ -4553,7 +4559,7 @@ async function chrSyncRun(winner) {
       for (const o of puts) os.put(o); for (const k of dels) os.delete(k);
       await new Promise((r, j) => { t.oncomplete = r; t.onerror = () => j(t.error); t.onabort = () => j(t.error); });
     }
-    S.chr = { id: sid, base: nb, at: Date.now() }; save(true);
+    S.chr = { id: sid, base: nb, at: Date.now(), ver: 2 }; save(true);
     return n;
   } finally { db.close(); setTimeout(chrRefresh, 0); }
 }
@@ -8508,10 +8514,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v112';
+const APP_VER = 'hibi-v113';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.22.0';
-const HIBI_CHANGES = ['Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.23.0';
+const HIBI_CHANGES = ['刻のホームと「日」にはひび手帳のタイムライン、刻の「週」と「月」にはひび手帳のカレンダーの予定が出るように（ルーティンや時間割の授業はホームと日だけ、カレンダー専用の予定は週と月だけ）。刻の予定の画面で「表示する場所」を変えると、ひび手帳にも反映されます', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
