@@ -2424,6 +2424,7 @@ function save(silent) {
   }
   if (medReady && medPending()) medSync();
   if (!ok && !silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください');
+  if (ok) gdSoon();
   return ok;
 }
 
@@ -5554,6 +5555,7 @@ const refreshSnaps = () => snapList().then(l => { snapCache = l; const el = $('#
 const bkAt = () => { const [h, m] = (S.settings.bkTime || '21:00').split(':').map(Number), d = new Date(); d.setHours(h || 0, m || 0, 0, 0); return d.getTime(); };
 function bkDue() {
   const s = S.settings, T = todayISO(); if (inFrame || s.bkRemind === 'off' || s.bkSnooze === T || Date.now() < bkAt()) return false;
+  if (gdOn() && !gd.hold && gd.last && Date.now() - gd.last < 2 * 86400000) return false; // Googleドライブに自動で保存されている
   if (!s.lastBackup) return true;
   const days = diffDays(iso(new Date(s.lastBackup)), T); return days >= ({ daily: 1, '3d': 3, weekly: 7 }[s.bkRemind] || 1);
 }
@@ -6447,6 +6449,7 @@ function settingsHTML() {
     <p class="note" style="margin:0">日記の右上の「凪」のボタンから、凪をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-nagi">凪のURL</label><input class="inp" id="set-nagi" type="url" value="${esc(s.nagi || '')}" placeholder="https://○○○.github.io/news/" autocapitalize="off" spellcheck="false"></div></div></div>
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
+  ${inFrame ? '' : `<div class="set-sec"><h4>Googleドライブに自動保存</h4><div class="set-list" id="gd-box">${gdHTML()}</div></div>`}
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
     ${inFrame ? '' : `<div class="toggle"><span>保存のお知らせ<small>決めた時刻をすぎたら、iPhoneの「ファイル」に保存するよう知らせます</small></span></div>
     <div class="seg mc-seg" style="margin:0">${[['daily', '毎日'], ['3d', '3日ごと'], ['weekly', '毎週'], ['off', 'オフ']].map(([k, l]) => `<button data-act="bkRemindSet" data-k="${k}" aria-pressed="${s.bkRemind === k}">${l}</button>`).join('')}</div>
@@ -6536,7 +6539,7 @@ function importICS(txt) {
 const backupJSON = () => { const a = localApps(); return JSON.stringify({ app: 'hibi', version: 1, exportedAt: new Date().toISOString(), data: S, ...(a ? { apps: a } : {}), ...(chrCache ? { chronos: chrCache } : {}) }, medFullRep); };
 // a backup needs every photo: true when they are ready, otherwise start reading them and ask to press again
 function bkReady() { if (!medReady) { toast('写真を読み込んでいます。少しして、もう一度押してください'); return false; } let refs = false; medEach(S, (o, f) => { if (isRef(o[f])) refs = true; }); if (!refs || medFull) return true; toast('写真を用意しています。少しして、もう一度押してください'); medPreloadAll().then(() => toast('用意できました。もう一度押すと保存します')); return false; }
-function importData(txt, apps0, chr0) {
+function importData(txt, apps0, chr0, onDone) {
   try {
     const o = JSON.parse(txt), d = o && o.data ? o.data : o;
     if (!d || !Array.isArray(d.events) || !Array.isArray(d.entries)) throw new Error();
@@ -6558,6 +6561,7 @@ function importData(txt, apps0, chr0) {
       await medSync(); // photos in the backup go to IndexedDB first, so hibi.v1 stays small enough to save
       const wasFailed = loadFailed; loadFailed = false;
       if (!save()) { S = prev; loadFailed = wasFailed; render(); return; }
+      if (onDone) onDone();
       applyTheme(); while (stack.length) closeSheet(); render(); hbTicker(); hbTick();
       // after Asterism's or 凪's frame (if one was open) has gone, so it cannot write its old data back over these
       setTimeout(async () => {
@@ -6568,6 +6572,171 @@ function importData(txt, apps0, chr0) {
       }, 700);
     });
   } catch (e) { toast('バックアップとして読み込めませんでした。中身をそのまま貼り付けてください'); }
+}
+
+/* ================= Googleドライブに自動保存 =================
+   Googleでログインすると、変更のたびに（少し待ってまとめて）Googleドライブの「アプリ専用の場所」に保存する。
+   この場所はひび手帳だけが読み書きでき、ドライブの一覧には出ない（容量はGoogleアカウントの容量を使う）。
+   写真は1枚ずつ別に置き、まだ送っていないものだけを送る。日ごとの控えも7日ぶん残す。
+   ログインは乗換案内のWorker（/hibi-auth/）を通す：Googleの秘密の鍵をiPhoneに置けないため。
+   Workerは何も保存せず、長く使える鍵は暗号にしてこの端末（localStorage 'hibi.gd'）にだけ置く。 */
+const GD_KEY = 'hibi.gd', GD_API = 'https://www.googleapis.com/drive/v3/files', GD_UP = 'https://www.googleapis.com/upload/drive/v3/files';
+let gd = (() => { try { return JSON.parse(localStorage.getItem(GD_KEY) || 'null') || {}; } catch (e) { return {}; } })();
+let gdBusy = null, gdT = 0, gdErr = '', gdUp = null;
+const gdOn = () => !!(gd.rt && !inFrame);
+function gdPut(o) { gd = { ...gd, ...o }; try { localStorage.setItem(GD_KEY, JSON.stringify(gd)); } catch (e) {} }
+function gdClear() { gd = {}; gdUp = null; try { localStorage.removeItem(GD_KEY); localStorage.removeItem(GD_KEY + '.up'); } catch (e) {} }
+// the photos already in the drive (their keys)
+function gdUploaded() { if (!gdUp) { try { gdUp = new Set(JSON.parse(localStorage.getItem(GD_KEY + '.up') || '[]')); } catch (e) { gdUp = new Set(); } } return gdUp; }
+function gdUpSave() { try { localStorage.setItem(GD_KEY + '.up', JSON.stringify([...gdUploaded()])); } catch (e) {} }
+const gdAuthBase = () => { const b = nkBase(); return b ? b.replace(/\/+$/, '') + '/hibi-auth' : ''; };
+function gdLogin() {
+  const b = gdAuthBase(); if (!b) { toast('設定の「乗換案内のURL」が空のため、ログインできません'); return; }
+  const s = Math.random().toString(36).slice(2, 12); try { localStorage.setItem(GD_KEY + '.s', s); } catch (e) {}
+  location.href = `${b}/start?ret=${encodeURIComponent(location.origin + location.pathname)}&s=${s}${gd.email ? '&hint=' + encodeURIComponent(gd.email) : ''}`;
+}
+// back from the Google login: the result comes in the address (#gauth=…)
+function gdFromHash() {
+  const h = new URLSearchParams(location.hash.slice(1)); if (!h.has('gauth') && !h.has('gauth_err')) return false;
+  let s0 = ''; try { s0 = localStorage.getItem(GD_KEY + '.s') || ''; localStorage.removeItem(GD_KEY + '.s'); } catch (e) {}
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!s0 || h.get('s') !== s0) return false; // not the login this app started
+  if (h.has('gauth_err')) { const e = h.get('gauth_err'); toast(e === 'access_denied' ? 'ログインを取りやめました' : e === 'setup' ? 'ログインの準備（Googleの登録）がまだ済んでいないようです' : 'Googleにログインできませんでした。もう一度お試しください'); return true; }
+  try {
+    const p = JSON.parse(decodeURIComponent(escape(atob(h.get('gauth').replace(/-/g, '+').replace(/_/g, '/')))));
+    if (!p.rt) throw new Error();
+    const same = gd.email && gd.email === p.email;
+    if (!same) gdUp = new Set(), gdUpSave();
+    gdPut({ rt: p.rt, at: p.at, exp: p.exp, email: p.email || '', hold: true, fid: same ? gd.fid : '' }); gdUpSave();
+    toast(`${p.email || 'Google'} でログインしました`);
+    gdCheckDrive();
+  } catch (e) { toast('Googleにログインできませんでした。もう一度お試しください'); }
+  return true;
+}
+async function gdToken() {
+  if (gd.at && gd.exp - 60000 > Date.now()) return gd.at;
+  const r = await fetch(gdAuthBase() + '/token', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rt: gd.rt }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { const e = gd.email; gdClear(); gdPut({ email: e }); gdErr = ''; gdPaint(); toast('Googleのログインが切れました。設定からもう一度ログインしてください'); throw new Error('revoked'); }
+  if (!r.ok || !j.at) throw new Error(j.error || 'token');
+  gdPut({ at: j.at, exp: j.exp }); return j.at;
+}
+async function gdFetch(url, init = {}) {
+  const go = async () => fetch(url, { ...init, headers: { ...(init.headers || {}), authorization: 'Bearer ' + await gdToken() } });
+  let r = await go();
+  if (r.status === 401) { gdPut({ at: '', exp: 0 }); r = await go(); }
+  if (!r.ok) throw new Error('drive ' + r.status);
+  return r;
+}
+async function gdList(q) {
+  const out = []; let page = '';
+  do {
+    const u = `${GD_API}?spaces=appDataFolder&pageSize=1000&fields=nextPageToken,files(id,name,modifiedTime,size)&q=${encodeURIComponent(q)}${page ? '&pageToken=' + page : ''}`;
+    const j = await (await gdFetch(u)).json(); out.push(...(j.files || [])); page = j.nextPageToken || '';
+  } while (page);
+  return out;
+}
+async function gdWrite(name, body, id, type = 'application/json') {
+  if (id) { const r = await gdFetch(`${GD_UP}/${id}?uploadType=media&fields=id`, { method: 'PATCH', headers: { 'content-type': type }, body }); return (await r.json()).id; }
+  const b = 'hibi' + Math.random().toString(36).slice(2);
+  const meta = JSON.stringify({ name, parents: ['appDataFolder'] });
+  const r = await gdFetch(`${GD_UP}?uploadType=multipart&fields=id`, { method: 'POST', headers: { 'content-type': `multipart/related; boundary=${b}` }, body: `--${b}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\ncontent-type: ${type}\r\n\r\n${body}\r\n--${b}--` });
+  return (await r.json()).id;
+}
+const gdMainJSON = () => { const a = localApps(); return JSON.stringify({ app: 'hibi', version: 1, exportedAt: new Date().toISOString(), data: S, ...(a ? { apps: a } : {}), ...(chrCache ? { chronos: chrCache } : {}) }, medRep); };
+// right after logging in: is there already a backup in the drive? then nothing is written until the person chooses
+async function gdCheckDrive() {
+  try {
+    const f = (await gdList("name='hibi.json'"))[0];
+    if (!f) { gdPut({ hold: false, fid: '' }); gdPaint(); gdSave(); return; }
+    gdPut({ fid: f.id, remote: Date.parse(f.modifiedTime) || 0 });
+    if (!gd.hold) return;
+    gdPaint();
+    confirmIn(`Googleドライブに、${md(iso(new Date(gd.remote)))} ${hmOf(gd.remote)} に保存したデータがあります。この端末に戻しますか？（戻さない場合は、設定の「Googleドライブに自動保存」で「この端末のデータで続ける」を選ぶと、保存が始まります）`, 'ドライブから戻す', gdRestore);
+  } catch (e) { if (e.message !== 'revoked') { gdErr = '通信できませんでした'; gdPaint(); } }
+}
+// (try: a save can come while the app is still starting)
+function gdSoon(ms = 20000) { try { if (!gdOn() || gd.hold) return; } catch (e) { return; } clearTimeout(gdT); gdT = setTimeout(gdSave, ms); }
+async function gdSave(manual) {
+  if (!gdOn() || gd.hold || loadFailed || dataPending) return;
+  if (gdBusy) { if (manual) toast('保存しています…'); return gdBusy; }
+  clearTimeout(gdT);
+  gdBusy = (async () => {
+    const r0 = rev;
+    try {
+      // photos first (only those not sent yet), so the data in the drive never points at a photo that is not there
+      const up = gdUploaded(), need = []; medEach(S, (o, f) => { if (isRef(o[f]) && !up.has(o[f].slice(4))) need.push(o[f].slice(4)); });
+      for (const k of [...new Set(need)]) { const v = await medIdb(k); if (v) { await gdWrite(k, v, null, 'text/plain'); up.add(k); gdUpSave(); } }
+      const txt = gdMainJSON();
+      try { gdPut({ fid: await gdWrite('hibi.json', txt, gd.fid) }); } catch (e) { if (!gd.fid) throw e; gdPut({ fid: '' }); gdPut({ fid: await gdWrite('hibi.json', txt, '') }); } // the file was removed in the drive: make it again
+      // one copy per day, the last 7 days
+      const T = todayISO();
+      if (gd.day !== T) {
+        const days = await gdList("name contains 'hibi-2'"); const name = `hibi-${T}.json`;
+        if (!days.some(f => f.name === name)) await gdWrite(name, txt);
+        const old = days.filter(f => /^hibi-\d{4}-\d\d-\d\d\.json$/.test(f.name) && f.name !== name).sort((a, b) => a.name < b.name ? 1 : -1).slice(6);
+        for (const f of old) await gdFetch(`${GD_API}/${f.id}`, { method: 'DELETE' }).catch(() => {});
+        gdPut({ day: T });
+      }
+      gdPut({ last: Date.now(), rev: r0, remote: Date.now() }); gdErr = '';
+      if (manual) toast('Googleドライブに保存しました');
+    } catch (e) {
+      if (e.message !== 'revoked') { gdErr = navigator.onLine === false ? 'オフラインのため、つながったら保存します' : '保存できませんでした。少ししてからもう一度試します'; if (manual) toast(gdErr); gdSoon(5 * 60000); }
+    } finally { gdBusy = null; gdPaint(); }
+    if (rev !== r0) gdSoon(); // changed while saving
+  })();
+  return gdBusy;
+}
+async function gdRestore() {
+  if (!gdOn()) return;
+  toast('Googleドライブから読み込んでいます…');
+  try {
+    const f = (await gdList("name='hibi.json'"))[0]; if (!f) { toast('ドライブに保存されたデータがありません'); return; }
+    const txt = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).text();
+    const o = JSON.parse(txt), keys = new Set();
+    medEach(o.data || o, (x, k) => { if (isRef(x[k])) keys.add(x[k].slice(4)); });
+    const miss = [...keys].filter(k => !medKeys.has(k));
+    if (miss.length) {
+      toast(`写真を読み込んでいます（${miss.length}枚）…`);
+      const files = new Map((await gdList("not name contains 'hibi'")).map(x => [x.name, x.id]));
+      for (const k of miss) {
+        const id = files.get(k); if (!id) continue;
+        const v = await (await gdFetch(`${GD_API}/${id}?alt=media`)).text();
+        if (!isData(v)) continue;
+        const db = await medDB(), tx = db.transaction('m', 'readwrite'); tx.objectStore('m').put(v, k);
+        await new Promise(r => { tx.oncomplete = r; tx.onerror = r; tx.onabort = r; }); db.close(); medKeys.add(k); medKey.set(v, k);
+      }
+      const up = gdUploaded(); keys.forEach(k => up.add(k)); gdUpSave(); // these are in the drive already
+    }
+    gdPut({ fid: f.id });
+    importData(txt, null, null, () => { gdPut({ hold: false, rev }); gdPaint(); });
+  } catch (e) { if (e.message !== 'revoked') toast('Googleドライブから読み込めませんでした。通信を確かめてください'); }
+}
+function gdKeep() { gdPut({ hold: false }); gdPaint(); gdSave(true); }
+function gdLogout() {
+  confirmIn('Googleドライブへの自動保存をやめて、ログアウトしますか？（ドライブに保存したデータは消えません）', 'ログアウト', async () => {
+    const rt = gd.rt, b = gdAuthBase(); gdClear(); gdPaint(); toast('ログアウトしました');
+    if (rt && b) fetch(b + '/revoke', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rt }) }).catch(() => {});
+  });
+}
+function gdHTML() {
+  if (!gdOn()) return `<p class="note" style="margin:0">Googleでログインしておくと、変更のたびに自動で、Googleドライブ（ひび手帳専用の、一覧には出ない場所）に保存します。写真も含みます。機種変更やデータが消えたときは、新しい端末でログインして「ドライブから戻す」だけで元に戻せます。</p>
+    <button class="btn primary" data-act="gdLogin">Googleでログイン</button>`;
+  const last = gd.last ? `${md(iso(new Date(gd.last)))} ${hmOf(gd.last)}` : 'まだ保存していません';
+  return `<p class="note" style="margin:0">ログイン中：<b>${esc(gd.email || 'Google')}</b></p>
+    ${gd.hold ? `<p class="note" style="margin:0;color:var(--sun)">ドライブに${gd.remote ? ` ${md(iso(new Date(gd.remote)))} ${hmOf(gd.remote)} の` : ''}保存があります。戻すか、この端末のデータで続けるかを選ぶまで、保存を止めています。</p>
+    <button class="btn primary" data-act="gdRestore">ドライブから戻す</button><button class="btn ghost" data-act="gdKeep">この端末のデータで続ける（ドライブを上書き）</button>`
+    : `<p class="note" style="margin:0">最後にドライブに保存：${gdBusy ? '保存中…' : last}${gdErr ? `<br><span style="color:var(--sun)">${esc(gdErr)}</span>` : ''}</p>
+    <button class="btn" data-act="gdNow">いまドライブに保存</button><button class="btn ghost" data-act="gdRestore">ドライブから戻す</button>`}
+    <button class="btn ghost" data-act="gdLogout">ログアウト</button>`;
+}
+function gdPaint() { const el = $('#gd-box'); if (el) el.innerHTML = gdHTML(); }
+function gdStart() {
+  if (inFrame) return;
+  gdFromHash();
+  if (gdOn() && !gd.hold && gd.rev !== rev) gdSoon(4000);
+  // leaving the app: save what is waiting right away
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && gdOn() && !gd.hold && gd.rev !== rev) gdSave(); });
 }
 
 /* ================= actions ================= */
@@ -6848,6 +7017,7 @@ const ACT = {
   album: () => { const sh = openSheet(albumSheet(), 'full'); sh.dataset.kind = 'album'; },
   albOpen: t => { const ym = t.dataset.ym, list = photoEntries().reverse().filter(e => e.date.slice(0, 7) === ym); openStory(list, +t.dataset.i, `${+ym.slice(0, 4)}年${+ym.slice(5)}月`); },
   bkSave: () => saveBackupFile(),
+  gdLogin: () => gdLogin(), gdNow: () => gdSave(true), gdRestore: () => gdRestore(), gdKeep: () => gdKeep(), gdLogout: () => gdLogout(),
   bkLater: () => { S.settings.bkSnooze = todayISO(); save(true); const bar = $('#bkbar'); if (bar) bar.hidden = true; toast('明日またお知らせします'); },
   bkRemindSet: t => { S.settings.bkRemind = t.dataset.k; save(); topSheet().querySelectorAll('[data-act="bkRemindSet"]').forEach(b => b.setAttribute('aria-pressed', b === t)); checkBackup(); },
   snapRestore: t => { const x = snapCache.find(y => y.day === t.dataset.day); if (x) importData(x.json, x.apps || (x.ast ? { asterism: x.ast } : null), x.chr); },
@@ -8593,7 +8763,7 @@ medLoad().then(() => { if (!loadFailed) medSync().then(() => setTimeout(medGC, 8
 setTimeout(() => loadFailed && toast('保存されていたデータを読み込めませんでした。元のデータを守るため保存を止めています。設定 → バックアップ から戻してください'), 2400);
 try { localStorage.removeItem('hibi.spotify'); } catch (e) {}
 autoPlace(); checkBackup(); wxRefresh();
-setTimeout(extSync, 5000); chrRefresh();
+setTimeout(extSync, 5000); chrRefresh(); gdStart();
 if (chrHost) chrSync('chronos').then(n => { render(); const m = chrNote(n); if (m) toast(m); });
 if (S.settings.todayView !== false && !new URLSearchParams(location.search).has('notoday') && !chrHost && !(chrWasLast() && S.settings.chrResume !== false && !inFrame)) openToday(); // switching over from CHRONOS: straight to the calendar; coming back to 刻: no summary in between
 if (!lockOn()) chrResume(); // (with the lock on, it is opened once unlocked)
@@ -8602,10 +8772,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v123';
+const APP_VER = 'hibi-v124';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.24.9';
-const HIBI_CHANGES = ['刻の画面の上部にピンク色が残ることがあったのを、別の方法で直しました', '刻で終わったあとの起動で、刻の画面の上部にピンク色が残ることがあったのを直しました', '刻で終わったあとの起動で、黒い画面の前にひび手帳の「h」を書くアニメーションを出すようにしました', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', '刻を開いたまま閉じて開き直すとき、最初の一瞬だけ出ていた白い画面を、最初から黒で始まるように直しました', '刻を開き直すときと、刻からひび手帳に戻るときも、黒い画面の上で時計が回るように（刻を開き直すときだけ白い画面になっていました）', '刻を開いたまま消して開き直したとき、ひび手帳のカレンダーが一瞬映ってから刻になるのを修正（起動の最初から画面を覆って、そのまま刻に入ります）', '刻から開き直したとき、上のバー（時計や電池のところ）にひび手帳のピンクが残るのを修正。刻から開くときはピンクの起動画面を出さず、刻を表示しているあいだは上の色も刻の色にします', 'のりかえで入れた経路が、刻の予定の詳細にも出るように（駅・時刻・電車・徒歩・運賃。変えると刻にも反映）', '刻を開いたままアプリを閉じたときは、次も刻から開くように（設定 → 刻 の「最後に使った画面から開く」でオフにできます）。パスコードのロックをかけているときは、解除してから刻が開きます', '刻の画面の上でロック画面が隠れてしまうのを修正', '刻のホームと「日」にはひび手帳のタイムライン、刻の「週」と「月」にはひび手帳のカレンダーの予定が出るように（ルーティンや時間割の授業はホームと日だけ、カレンダー専用の予定は週と月だけ）。刻の予定の画面で「表示する場所」を変えると、ひび手帳にも反映されます', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.25.0';
+const HIBI_CHANGES = ['Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '刻の画面の上部にピンク色が残ることがあったのを、別の方法で直しました', '刻で終わったあとの起動で、刻の画面の上部にピンク色が残ることがあったのを直しました', '刻で終わったあとの起動で、黒い画面の前にひび手帳の「h」を書くアニメーションを出すようにしました', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', '刻を開いたまま閉じて開き直すとき、最初の一瞬だけ出ていた白い画面を、最初から黒で始まるように直しました', '刻を開き直すときと、刻からひび手帳に戻るときも、黒い画面の上で時計が回るように（刻を開き直すときだけ白い画面になっていました）', '刻を開いたまま消して開き直したとき、ひび手帳のカレンダーが一瞬映ってから刻になるのを修正（起動の最初から画面を覆って、そのまま刻に入ります）', '刻から開き直したとき、上のバー（時計や電池のところ）にひび手帳のピンクが残るのを修正。刻から開くときはピンクの起動画面を出さず、刻を表示しているあいだは上の色も刻の色にします', 'のりかえで入れた経路が、刻の予定の詳細にも出るように（駅・時刻・電車・徒歩・運賃。変えると刻にも反映）', '刻を開いたままアプリを閉じたときは、次も刻から開くように（設定 → 刻 の「最後に使った画面から開く」でオフにできます）。パスコードのロックをかけているときは、解除してから刻が開きます', '刻の画面の上でロック画面が隠れてしまうのを修正', '刻のホームと「日」にはひび手帳のタイムライン、刻の「週」と「月」にはひび手帳のカレンダーの予定が出るように（ルーティンや時間割の授業はホームと日だけ、カレンダー専用の予定は週と月だけ）。刻の予定の画面で「表示する場所」を変えると、ひび手帳にも反映されます', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、刻のデータも丸ごと入るように（予定の実施の記録・余白・準備・固定・履歴、刻の設定まで）。読み込むと刻も元に戻ります', '刻からひび手帳に戻るときも時計の動きが見えるように：金の時計盤が戻ってきて、針が巻き戻り、輪が消えてから、黒い円がボタンに閉じます', '刻に切り替えたとき、刻のホームのアナログ時計が現れる動きが見えるように（いままでは見えないうちに終わっていました）', '刻に切り替えるときのアニメーション：ボタンから黒い円が広がり、刻のアイコンの金の時計盤が描かれて針が回り、そのまま刻の画面へ。戻るときは逆向きに閉じます', 'カレンダーの「メールから予定を追加」をなくし、そのボタンの場所に「刻」への切り替えボタンを移しました（ふりかえりのボタンはなくしました）', 'CHRONOS の名前が「刻（こく）」になったので、ボタン・設定・予定の画面の表示も「刻」に。ボタンのアイコンも新しい時計盤に合わせました', '予定ごとに「CHRONOSに出す」を選べるように（ルーティンは、はじめは出さない）', '大学の授業も CHRONOS に出すように（学期ごとの毎週の予定として。休講・休み・祝日は除き、補講・振替・集中講義も）。設定 → CHRONOS で切り替えられます', 'ふりかえりの右上に CHRONOS への切り替えボタン。押すと CHRONOS に切り替わり、CHRONOS のひび手帳ボタンで戻れます（CHRONOS から開いたときも同じ）。切り替えるたびに、両方の予定を合わせます（追加・変更・削除）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '「別の電車」を、のりかえの「前後のダイヤ」と同じ形に：駅の時刻表から、その路線の電車が1本ずつ並び、それぞれ何時に着くかが出ます', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '家から歩いて乗る駅で別の電車にすると、家を出る時刻も合わせて変わるように', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '0時台の予定の「家を出る時刻」を、前の日の夜で正しく出すように', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
