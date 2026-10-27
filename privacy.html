@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ひび手帳 プライバシーポリシー</title>
+<meta name="theme-color" content="#F4EEEA">
+<style>
+:root{--bg:#F4EEEA;--ink:#2a2523;--ink-2:#6b625e;--line:#e2d8d2;--accent:#c96f68}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1918;--ink:#ece6e2;--ink-2:#a69d98;--line:#34302e;--accent:#e4908a}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px;line-height:1.8}
+main{max-width:680px;margin:0 auto;padding:40px 16px 64px}
+h1{font-size:22px;margin:0 0 4px}
+.date{color:var(--ink-2);font-size:13px;margin:0 0 28px}
+h2{font-size:16px;margin:32px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+p,li{margin:0 0 10px}
+ul{padding-left:1.3em}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>ひび手帳 プライバシーポリシー</h1>
+<p class="date">2026年10月27日 制定</p>
+
+<p>ひび手帳（以下「本アプリ」）は、個人が自分のために作った手帳アプリです。本アプリでの情報の扱いを、次のとおり定めます。</p>
+
+<h2>1. 保存する情報と保存場所</h2>
+<p>予定・日記・写真・設定などのデータは、利用者の端末（ブラウザの中）にだけ保存します。本アプリの作者や第三者のサーバーに送ることはありません。</p>
+
+<h2>2. Googleアカウントとの連携（任意）</h2>
+<p>利用者が「Googleでログイン」を選んだ場合に限り、次のGoogleの情報を使います。</p>
+<ul>
+<li><b>メールアドレス</b>：ログイン中のアカウントを設定画面に表示するためだけに使います。</li>
+<li><b>Googleドライブのアプリ専用領域（drive.appdata）</b>：本アプリのデータの保存と復元のためだけに使います。この領域は本アプリだけが読み書きでき、利用者のドライブにあるほかのファイルを見たり変更したりすることはありません。</li>
+</ul>
+<p>Googleから受け取った情報は、上の目的以外には使わず、第三者に提供・販売することはありません。本アプリによるGoogle APIから受け取った情報の利用と他のアプリへの転送は、限定的な使用の要件を含む <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API サービスのユーザーデータに関するポリシー</a> に従います。</p>
+
+<h2>3. ログインの仲介</h2>
+<p>Googleへのログインは、本アプリ用の中継サーバー（Cloudflare Workers）を通して行います。中継サーバーはログインの手続きを仲介するだけで、データやログイン情報を保存しません。ログインを続けるための鍵は暗号化した状態で利用者の端末にだけ保存します。</p>
+
+<h2>4. 連携の解除とデータの削除</h2>
+<ul>
+<li>本アプリの 設定 →「Googleドライブに自動保存」→「ログアウト」で、連携を解除できます（Googleへの許可も取り消します）。</li>
+<li>Googleアカウントの <a href="https://myaccount.google.com/permissions">サードパーティのアクセス</a> からも、いつでも許可を取り消せます。</li>
+<li>Googleドライブに保存したデータは、Googleドライブの 設定 →「アプリの管理」→ ひび手帳 →「非表示のアプリデータを削除」で削除できます。</li>
+<li>端末のデータは、本アプリの 設定 →「すべてのデータを削除」で削除できます。</li>
+</ul>
+
+<h2>5. 改定</h2>
+<p>このポリシーを変更するときは、このページで知らせます。</p>
+
+<h2>6. お問い合わせ</h2>
+<p>本アプリに関するお問い合わせは、<a href="https://github.com/weakestandstrongest-sketch/day">本アプリのGitHubリポジトリ</a> からお願いします。</p>
+</main>
+</body>
+</html>
