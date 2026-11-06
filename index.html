@@ -28,7 +28,7 @@
 <title>ひび手帳</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allura&family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allura&family=Zen+Maru+Gothic:wght@400;500;700&family=Sora:wght@200;300;400;500;600&family=Fraunces:opsz,wght@9..144,200;9..144,300&family=Barlow+Condensed:wght@600&display=swap">
 <style>
 /* Layout: one-screen app — page header, scrolling content, bottom tab bar; editors slide up as sheets */
 :root{
@@ -1438,106 +1438,199 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .sheet.fs{max-width:none;max-height:none;height:100%;border-radius:0;padding:0;background:#0b0b10;overflow:hidden}
 .qt-custom{display:flex;align-items:center;gap:8px;margin-top:10px}.qt-custom .inp{width:96px;min-height:42px;padding:8px 12px;text-align:center}
 .icon-btn.on{color:var(--accent)}
-.tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:var(--tbg,#0b0b10);--dfont:var(--f-body);--dw:700}
-.tm-art{position:absolute;inset:-25%;filter:blur(46px) saturate(150%);pointer-events:none;transform:translateZ(0);contain:strict}
-.tm-art i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate;animation-delay:var(--ph,0s);will-change:transform}
-.tm-art i:nth-child(1){background:var(--t1);left:2%;top:4%}
-.tm-art i:nth-child(2){background:var(--t2);right:0;top:32%;animation-duration:23s;animation-delay:calc(var(--ph,0s) - 6s)}
-.tm-art i:nth-child(3){background:var(--t3);left:18%;bottom:0;animation-duration:27s;animation-delay:calc(var(--ph,0s) - 12s)}
+/* ===== focus timer: 13 designs. Shared frame first, then each design, then the picker ===== */
+.tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:var(--tbg,#0b0b10);--sfont:"Sora",var(--f-body);--dfont:"Sora",var(--f-body);--dw:300;-webkit-font-smoothing:antialiased}
+.tm-art{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.tm-blobs{position:absolute;inset:-25%;filter:blur(64px) saturate(140%);transform:translateZ(0);contain:strict}
+.tm-blobs i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate;animation-delay:var(--ph,0s);will-change:transform}
+.tm-blobs i:nth-child(1){background:var(--t1);left:2%;top:4%}
+.tm-blobs i:nth-child(2){background:var(--t2);right:0;top:32%;animation-duration:23s;animation-delay:calc(var(--ph,0s) - 6s)}
+.tm-blobs i:nth-child(3){background:var(--t3);left:18%;bottom:0;animation-duration:27s;animation-delay:calc(var(--ph,0s) - 12s)}
 @keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(12%,-10%,0) scale(1.18)}100%{transform:translate3d(-10%,12%,0) scale(.92)}}
-.face-ring .tm-art,.face-cards .tm-art{opacity:.75}
+.tm-art .grain{position:absolute;inset:0;opacity:.16;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
 .tm-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0;touch-action:none}
-.tm-top span{font-size:14px;font-weight:600;opacity:.9}
-.tm-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
-.tm-btn .ico{width:22px;height:22px}
-.tm-center{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 20px;text-align:center;min-height:0}
-.tm-name{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;max-width:100%}
-.tm-name i{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.22);flex:none}
-.tm-name .ico{width:18px;height:18px}
+.tm-top span{font:500 12.5px var(--sfont);letter-spacing:.06em;opacity:.78}
+.tm-btn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:inherit;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.tm-btn .ico{width:20px;height:20px}
+.tm-center{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0 20px;text-align:center;min-height:0}
+.tm-name{display:flex;align-items:center;gap:9px;max-width:100%;padding:5px 14px 5px 5px;border-radius:99px;font-size:14px;font-weight:700;letter-spacing:.03em;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.tm-name i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);flex:none}
+.tm-name .ico{width:15px;height:15px}
 .tm-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tm-big{font-size:clamp(72px,min(25vw,34vh),240px);font-weight:700;line-height:.95;letter-spacing:-.02em;text-shadow:0 2px 24px rgba(0,0,0,.18)}
-.tm-cards{display:flex;gap:12px}
-.tm-cards b{display:grid;place-items:center;min-width:min(38vw,32vh);padding:4px 12px;font-size:clamp(64px,min(21vw,28vh),200px);font-weight:700;line-height:1.1;border-radius:30px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
-.tm-cards.over b{color:#ffd8cf}
-.face-ring .ring{width:min(72vw,46vh);height:min(72vw,46vh)}
-.face-ring .ring .bgc{stroke:rgba(255,255,255,.22)}
-.face-ring .ring .fgc{stroke:#fff}
-.face-ring .ring .ctr b{font-size:clamp(44px,min(15vw,10vh),90px);color:#fff}
-#tm-sub{font-size:13.5px;opacity:.92}
-#tm-sub.over{color:#ffd8cf;font-weight:700;opacity:1}
-.tm-bar{width:min(320px,72%);height:6px;border-radius:3px;background:rgba(255,255,255,.24);overflow:hidden}
-.tm-bar i{display:block;height:100%;width:0;background:#fff;border-radius:3px;transition:width 1s linear}
-.tm-ctrls{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:30px;padding:0 20px calc(26px + env(safe-area-inset-bottom,0px))}
-.tm-c{display:flex;flex-direction:column;align-items:center;gap:7px;color:#fff;font-size:12px;font-weight:600}
-.tm-c .cb{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
-.tm-c .cb .ico{width:24px;height:24px;stroke-width:2.2}
-.tm-c.main .cb{width:78px;height:78px;background:#fff;color:#16161a;border-color:#fff}
-.tm-c.main .cb .ico{width:30px;height:30px;stroke-width:2.6}
-@media (orientation:landscape) and (max-height:520px){.tm-center{gap:8px;padding:0 128px}.tm-big{font-size:min(24vw,44vh)}.tm-cards b{font-size:min(17vw,36vh);min-width:min(26vw,40vh)}.face-ring .ring{width:min(40vw,56vh);height:min(40vw,56vh)}.tm-name{font-size:15px}.tm-ctrls{position:absolute;right:calc(22px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column;align-items:center;gap:12px;padding:0}.tm-c{font-size:10.5px;gap:4px}.tm-c .cb{width:50px;height:50px}.tm-c.main .cb{width:64px;height:64px}}
-/* timer designs */
-.tm-fs.still .tm-art i,.tm-fs.still .tm-wave{animation:none}
+.tm-big{font-family:var(--dfont);font-weight:var(--dw);font-size:clamp(76px,min(27vw,30vh),240px);line-height:.9;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+#tm-sub{font:500 12.5px var(--sfont);letter-spacing:.04em;opacity:.72;max-width:100%}
+#tm-sub.over{color:#ffc9bd;font-weight:600;opacity:1}
+.tm-bar{width:min(300px,66%);height:3px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden}
+.tm-bar i{display:block;height:100%;width:0;background:#fff;border-radius:2px}
+.tm-pomo{padding:7px 14px;border-radius:999px;font:600 12.5px var(--f-body);color:inherit;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+.tm-pomo.on{background:rgba(255,110,90,.28);border-color:rgba(255,150,130,.5)}
+.tm-ctrls{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:34px;padding:0 20px calc(26px + env(safe-area-inset-bottom,0px))}
+.tm-c{display:flex;flex-direction:column;align-items:center;gap:8px;color:inherit;font-size:11.5px;font-weight:600;letter-spacing:.04em}
+.tm-c .cb{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.tm-c .cb .ico{width:22px;height:22px;stroke-width:2.2}
+.tm-c.main .cb{width:76px;height:76px;background:#fff;color:#141418;border-color:transparent;box-shadow:0 12px 34px rgba(0,0,0,.32)}
+.tm-c.main .cb .ico{width:28px;height:28px;stroke-width:2.6}
+.ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.ctr b{font-family:var(--dfont);font-weight:var(--dw);font-size:clamp(46px,min(16vw,9vh),88px);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ctr small{font:600 10.5px var(--sfont);letter-spacing:.26em;opacity:.55}
+.tm-fs .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* light designs */
+.tm-fs.lt{color:#1E1D22}
+.tm-fs.lt .tm-btn,.tm-fs.lt .tm-c .cb,.tm-fs.lt .tm-name,.tm-fs.lt .tm-pomo{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.09)}
+.tm-fs.lt .tm-name i{background:rgba(0,0,0,.07)}
+.tm-fs.lt .tm-c.main .cb{background:#1E1D22;color:#fff}
+.tm-fs.lt .tm-bar{background:rgba(0,0,0,.1)}
+.tm-fs.lt .tm-bar i{background:#1E1D22}
+.tm-fs.lt #tm-sub.over{color:#C2412D}
+
+/* オーロラ: deep night, three slow lights, a very light sans */
+.face-aurora{background:#07070C;--dw:200}
+.face-aurora .tm-big{text-shadow:0 0 70px rgba(255,255,255,.16)}
+/* 夜明け: dark paper, a breathing light, hairline serif digits */
+.face-dawn{background:#0E0D12;--dfont:"Fraunces",Georgia,serif;--dw:200}
+.face-dawn .tm-big{font-variation-settings:"opsz" 144;letter-spacing:-.02em;font-size:clamp(84px,min(29vw,30vh),250px)}
+.face-dawn .glow{position:absolute;inset:-30%;background:radial-gradient(closest-side,color-mix(in srgb,var(--t1) 70%,transparent),transparent 72%);animation:breathe 9s ease-in-out infinite;animation-delay:var(--ph,0s);transform:translate3d(0,8%,0)}
+@keyframes breathe{50%{transform:translate3d(0,0,0) scale(1.08);opacity:.72}}
+.face-dawn .tm-bar{height:1px;width:min(280px,62%)}
+.face-dawn .tm-name{background:transparent;border-color:rgba(255,255,255,.2)}
+/* 光の輪: a glowing ring that runs down smoothly */
+.face-halo{background:radial-gradient(120% 80% at 50% 36%,#1B1A22,#060609)}
+.tm-halo{position:relative;width:min(80vw,44vh);aspect-ratio:1;max-width:100%}
+.tm-halo canvas{position:absolute;inset:0;width:100%;height:100%}
+.face-halo .tm-c.main .cb{background:var(--t1);color:#111;box-shadow:0 0 34px color-mix(in srgb,var(--t1) 55%,transparent)}
+/* しずく: coloured water that slowly drains */
+.face-drop{background:#F3F1EE;--dw:600}
+.face-drop .tm-art canvas{position:absolute;inset:0;width:100%;height:100%}
+.face-drop .tm-big{letter-spacing:-.055em}
+.face-drop .tm-ctrls .tm-c{color:#fff}
+.face-drop .tm-ctrls .tm-c .cb{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.32);color:#fff}
+.face-drop .tm-ctrls .tm-c.main .cb{background:#fff;color:#1E1D22}
+/* めくり板: split-flap cards that fall one by one */
+.face-board{background:linear-gradient(180deg,#151517,#09090A)}
+.tm-board{display:flex;align-items:center;gap:min(1.6vw,8px);perspective:700px;--cw:min(17vw,10.5vh)}
+.tm-board .fc{position:relative;width:var(--cw);height:calc(var(--cw)*1.5);font:600 calc(var(--cw)*1.22)/calc(var(--cw)*1.5) "Barlow Condensed",var(--dfont);text-align:center;color:#F4F1EC}
+.tm-board .fc i{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:#232326;font-style:normal}
+.tm-board .fc .u,.tm-board .fc .fu{top:0;border-radius:calc(var(--cw)*.14) calc(var(--cw)*.14) 0 0;box-shadow:inset 0 -1px 0 rgba(0,0,0,.65)}
+.tm-board .fc .l{bottom:0;border-radius:0 0 calc(var(--cw)*.14) calc(var(--cw)*.14);background:#1F1F22}
+.tm-board .fc i::before{content:attr(data-v);display:block}
+.tm-board .fc .l::before{margin-top:calc(var(--cw)*-.75)}
+.tm-board .fc .fu{transform-origin:50% 100%;-webkit-backface-visibility:hidden;backface-visibility:hidden;z-index:2}
+.tm-board .fc.go .fu{animation:flap .42s cubic-bezier(.45,.05,.55,.95) forwards}
+@keyframes flap{to{transform:rotateX(-180deg);filter:brightness(.5)}}
+.tm-board .sep{font:600 calc(var(--cw)*.75)/1 "Barlow Condensed",sans-serif;opacity:.45;padding:0 .04em}
+.face-board .tm-bar i{background:var(--t1)}
+.face-board .tm-c.main .cb{background:var(--t1);color:#111}
+/* ガラス: a frosted slab over bright colour, with a slow sheen */
+.face-glass .tm-blobs{filter:blur(48px) saturate(160%)}
+.tm-slab{position:relative;overflow:hidden;padding:.14em .36em;border-radius:34px;background:linear-gradient(135deg,rgba(255,255,255,.24),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 30px 60px rgba(0,0,0,.22);-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%)}
+.tm-slab::after{content:"";position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.22) 50%,transparent 58%);animation:sheen 8s ease-in-out infinite;animation-delay:var(--ph,0s)}
+@keyframes sheen{0%,60%{transform:translateX(-40%)}100%{transform:translateX(40%)}}
+.face-glass .tm-big{font-size:clamp(60px,min(20vw,24vh),190px);letter-spacing:-.035em;--dw:300}
+/* カード: two matte tiles with a glowing colon */
+.face-cards{background:#0B0B0F;--dw:500}
+.face-cards .tm-blobs{opacity:.32}
+.tm-cards{display:flex;align-items:center;gap:min(3vw,16px)}
+.tc{display:flex;flex-direction:column;align-items:center;gap:10px}
+.tc b{display:grid;place-items:center;width:min(36vw,24vh);aspect-ratio:1/1.12;border-radius:min(7vw,30px);font-family:var(--dfont);font-weight:var(--dw);font-size:clamp(60px,min(22vw,16vh),170px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#202027,#141419);border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 24px 50px rgba(0,0,0,.45)}
+.tc small{font:600 10.5px var(--sfont);letter-spacing:.26em;opacity:.5}
+.tm-colon{display:flex;flex-direction:column;gap:14px;padding-bottom:22px}
+.tm-colon i{width:8px;height:8px;border-radius:50%;background:var(--t1);box-shadow:0 0 14px var(--t1)}
+.tm-cards.over .tc b{color:#ffc9bd}
+/* フリップ: cream cards on the plan's colour, like a desk clock */
+.face-flip{background:color-mix(in srgb,var(--t1) 80%,#000);--dfont:"Barlow Condensed",var(--f-body);--dw:600}
+.face-flip .tc b{position:relative;color:#1B1B1F;font-size:clamp(78px,min(28vw,19vh),200px);letter-spacing:0;background:linear-gradient(180deg,#F7F3EB 0 50%,#ECE6DA 50%);border:0;box-shadow:0 2px 0 rgba(0,0,0,.14),0 26px 50px rgba(0,0,0,.28)}
+.face-flip .tc b::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:rgba(0,0,0,.16)}
+.face-flip .tm-colon i{background:#F7F3EB;box-shadow:none}
+.face-flip .tm-cards.over .tc b{color:#B3361F}
+.face-flip .tm-name,.face-flip .tm-btn,.face-flip .tm-c:not(.main) .cb,.face-flip .tm-pomo{background:rgba(0,0,0,.16);border-color:rgba(255,255,255,.14)}
+/* ロール: a picker drum for the seconds */
+.face-roll{background:#060607;--dfont:"Fraunces",Georgia,serif;--dw:300}
+.face-roll .tm-blobs{filter:blur(72px) grayscale(.55);opacity:.55}
+.tm-roll{display:flex;align-items:center;font-family:var(--dfont);font-weight:var(--dw);font-size:clamp(64px,min(22vw,10.5vh),160px);line-height:1;--rh:1.06em;font-variant-numeric:tabular-nums;font-variation-settings:"opsz" 144}
+.tm-roll .rc{opacity:.38;padding:0 .04em}
+.tm-drum{height:calc(var(--rh)*3);overflow:hidden;-webkit-mask-image:linear-gradient(transparent,rgba(0,0,0,.3) 22%,#000 38%,#000 62%,rgba(0,0,0,.3) 78%,transparent);mask-image:linear-gradient(transparent,rgba(0,0,0,.3) 22%,#000 38%,#000 62%,rgba(0,0,0,.3) 78%,transparent)}
+#tm-drum{display:flex;flex-direction:column;padding-top:var(--rh);transition:transform .55s cubic-bezier(.2,.85,.25,1);will-change:transform}
+#tm-drum span{height:var(--rh);line-height:var(--rh)}
+/* ウェーブ: light paper, two ribbons of colour */
+.face-wave{background:#EFECE7;--dfont:"Fraunces",Georgia,serif;--dw:300}
+.tm-wave{position:absolute;left:-15%;top:30%;width:130%;height:52%;filter:blur(7px)}
+.tm-wave path{transform-box:fill-box;transform-origin:center}
+.tm-wave .w1{animation:wv 16s ease-in-out infinite alternate;animation-delay:var(--ph,0s)}
+.tm-wave .w2{animation:wv 21s ease-in-out infinite alternate-reverse;animation-delay:calc(var(--ph,0s) - 5s)}
+@keyframes wv{from{transform:translateX(-5%) skewY(-3deg)}to{transform:translateX(5%) skewY(3deg)}}
+.face-wave .tm-big{color:#26252B;font-variation-settings:"opsz" 144;letter-spacing:-.03em}
+/* リング: sixty ticks, the time left lit */
+.face-ring{background:radial-gradient(110% 70% at 50% 40%,#16161C,#050507)}
+.tm-ticks{position:relative;width:min(82vw,45vh);aspect-ratio:1;max-width:100%}
+.tm-ticks svg{width:100%;height:100%;display:block}
+.tm-ticks line{stroke:rgba(255,255,255,.11);stroke-width:2.6;stroke-linecap:round;transition:stroke .5s}
+.tm-ticks line.on{stroke:var(--t1)}
+.tm-ticks line.hd{stroke:#fff}
+/* アナログ: a metal kitchen timer; the colour shows the minutes left */
+.face-analog{background:radial-gradient(120% 90% at 50% 30%,#3A3D44,#141519)}
+.tm-dial{width:min(80vw,43vh);aspect-ratio:1;max-width:100%;border-radius:50%;padding:3.2%;background:conic-gradient(from 210deg,#D6D9DE,#8C919A,#EEF0F3,#7E838C,#D6D9DE);box-shadow:0 30px 60px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.6)}
+.tm-dial svg{width:100%;height:100%;display:block}
+.tm-dial .fc{fill:#F4F3EF}
+.tm-dial .sec{fill:var(--t1)}
+.tm-dial .mk{stroke:#2A2A30;stroke-width:1.3;stroke-linecap:round}
+.tm-dial .mk.b{stroke-width:2.6}
+.tm-dial text{font:600 13px "Sora",sans-serif;fill:#2A2A30;text-anchor:middle}
+.tm-dial .hand{stroke:#1D1D22;stroke-width:3.5;stroke-linecap:round;transform-origin:120px 120px;transform-box:view-box}
+.tm-dial .knob{fill:#1D1D22;stroke:#F4F3EF;stroke-width:3}
+.tm-pill{font:400 22px var(--sfont);padding:.3em .9em;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);font-variant-numeric:tabular-nums}
+/* ドット: an LED board */
+.face-dots{background:#050507}
+.tm-dots{display:block;width:min(88vw,62vh);max-width:100%}
+.face-dots .tm-bar i{background:var(--t1)}
+/* break and still */
+.tm-fs.brk .tm-blobs{filter:blur(64px) saturate(60%) hue-rotate(90deg)}
+.tm-fs.brk .glow{filter:saturate(.6) hue-rotate(90deg)}
+.tm-fs.brk #tm-sub{color:#bff5d0}
+.tm-fs.lt.brk #tm-sub{color:#2F7D4F}
+.tm-fs.still .tm-blobs i,.tm-fs.still .tm-wave path,.tm-fs.still .glow,.tm-fs.still .tm-slab::after{animation:none}
+@media (prefers-reduced-motion:reduce){.tm-blobs i,.tm-wave path,.glow,.tm-slab::after{animation:none}}
+/* digits the person picked (otherwise each design uses its own) */
+.tm-fs.dg-round{--dfont:var(--f-body);--dw:700}
 .tm-fs.dg-grotesk{--dfont:"Helvetica Neue","Arial Black",Arial,system-ui,sans-serif;--dw:800}
-.tm-fs.dg-thin{--dw:300}
-.tm-big,.tm-cards b,.tm-roll b,.tm-roll span,.tm-pill,.face-ring .ring .ctr b{font-family:var(--dfont);font-weight:var(--dw)}
-.face-glass .tm-big{font-size:clamp(56px,min(19vw,26vh),180px);padding:.06em .3em;border-radius:.3em;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
-.face-flip .tm-art{inset:0;filter:none;background:linear-gradient(90deg,var(--t1) 0 12.5%,var(--t2) 12.5% 25%,var(--t3) 25% 37.5%,var(--t2) 37.5% 50%,var(--t1) 50% 62.5%,var(--t3) 62.5% 75%,var(--t2) 75% 87.5%,var(--t1) 87.5%)}
-.face-flip .tm-art i{opacity:.55;filter:blur(40px)}
-.face-flip .tm-cards b{position:relative;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.face-flip .tm-cards b::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(0,0,0,.28)}
-.face-roll .tm-art{filter:blur(50px) grayscale(.85) contrast(1.1)}
-.tm-roll{display:flex;align-items:center;gap:.18em;font-size:clamp(70px,min(23vw,20vh),190px);line-height:.95}
-.tm-roll b{font-size:1em}
-.tm-roll .col{display:flex;flex-direction:column;align-items:center}
-.tm-roll .col span{font-size:1em;opacity:.32}
-.tm-roll .col.tick{animation:rollin .35s ease-out}
-@keyframes rollin{from{transform:translateY(-.3em)}to{transform:none}}
-.face-wave{color:#33333a;background:#ECE9E4}
-.face-wave .tm-art{inset:0;filter:blur(10px) saturate(120%)}
-.face-wave .tm-art i{display:none}
-.tm-wave{position:absolute;left:-10%;top:18%;width:120%;height:60%;animation:wv 14s ease-in-out infinite alternate;animation-delay:var(--ph,0s);will-change:transform}
-@keyframes wv{from{transform:translateX(-4%) skewY(-2deg)}to{transform:translateX(4%) skewY(2deg)}}
-.face-wave .tm-big{font-size:clamp(48px,min(14vw,12vh),110px);color:#8b8b90;align-self:flex-end;margin-right:4%}
-.face-wave .tm-btn,.face-wave .tm-c .cb{color:#222;background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12)}
-.face-wave .tm-c,.face-wave .tm-name{color:#222}
-.face-wave .tm-name i{background:rgba(0,0,0,.08)}
-.face-wave .tm-c.main .cb{background:#222;color:#fff;border-color:#222}
-.face-wave .tm-bar{background:rgba(0,0,0,.1)}
-.face-wave .tm-bar i{background:#555}
-.face-analog{background:linear-gradient(135deg,#d9dce1,#7e838c 55%,#3c3f46)}
-.face-analog .tm-art{left:35%;opacity:.85}
-.tm-dial{width:min(64vw,40vh);aspect-ratio:1;border-radius:50%;background:rgba(40,42,50,.35);border:1px solid rgba(255,255,255,.45);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 18px 40px rgba(0,0,0,.25)}
-.tm-dial svg{width:100%;height:100%;stroke:#fff;stroke-width:4;stroke-linecap:round;fill:#fff}
-.tm-dial .hand{stroke-width:7;transition:transform 1s linear;transform-origin:110px 110px;transform-box:view-box}
-.tm-pill{font-size:clamp(20px,6vw,30px);padding:.2em .8em;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.face-dots .tm-art{inset:0;filter:none;-webkit-mask-image:radial-gradient(circle,#000 42%,transparent 46%);mask-image:radial-gradient(circle,#000 42%,transparent 46%);-webkit-mask-size:9px 9px;mask-size:9px 9px}
-.face-dots .tm-art i{filter:blur(30px)}
-.face-dots .tm-name span,.face-dots #tm-sub,.face-dots #tm-now{padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.face-dots .tm-big{font-size:clamp(56px,min(18vw,24vh),170px);padding:.08em .3em;border-radius:.25em;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.tm-fs.dg-thin{--dfont:"Sora",var(--f-body);--dw:200}
+@media (orientation:landscape) and (max-height:520px){.tm-center{gap:8px;padding:0 128px}.tm-big{font-size:min(24vw,44vh)}.tc b{width:min(22vw,34vh);font-size:min(14vw,26vh)}.tm-halo,.tm-ticks,.tm-dial{width:min(40vw,60vh)}.tm-board{--cw:min(10vw,17vh)}.tm-roll{font-size:min(16vw,22vh)}.tm-name{font-size:13px}.tm-ctrls{position:absolute;right:calc(22px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);flex-direction:column;align-items:center;gap:12px;padding:0}.tm-c{font-size:10.5px;gap:4px}.tm-c .cb{width:48px;height:48px}.tm-c.main .cb{width:62px;height:62px}}
 /* timer design picker */
-.tf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.tf{display:flex;flex-direction:column;gap:5px;align-items:stretch;font-size:12px;color:var(--ink-2)}
+.tf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
+.tf{display:flex;flex-direction:column;gap:6px;align-items:stretch;font-size:12px;color:var(--ink-2)}
 .tf[aria-pressed="true"]{color:var(--ink);font-weight:700}
-.tf-art{position:relative;display:grid;place-items:center;aspect-ratio:16/10;border-radius:14px;overflow:hidden;color:#fff;background:radial-gradient(circle at 20% 25%,var(--t1),transparent 60%),radial-gradient(circle at 80% 50%,var(--t2),transparent 60%),radial-gradient(circle at 40% 95%,var(--t3),transparent 60%),var(--tbg)}
+.tf-art{position:relative;display:grid;place-items:center;aspect-ratio:16/11;border-radius:14px;overflow:hidden;color:#fff;background:radial-gradient(circle at 20% 25%,var(--t1),transparent 60%),radial-gradient(circle at 80% 50%,var(--t2),transparent 60%),radial-gradient(circle at 40% 95%,var(--t3),transparent 60%),#07070C}
 .tf[aria-pressed="true"] .tf-art{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
-.tf-art b{position:relative;font-size:19px;font-weight:700;display:flex;gap:4px;align-items:center}
+.tf-art b{position:relative;display:flex;gap:3px;align-items:center;font:300 19px "Sora",var(--f-body);letter-spacing:-.03em}
 .tf-art i{position:absolute}
-.tf-glass .tf-art b{padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45)}
-.tf-cards .tf-art u,.tf-flip .tf-art u{text-decoration:none;padding:2px 6px;border-radius:7px;background:rgba(0,0,0,.3)}
-.tf-flip .tf-art{background:linear-gradient(90deg,var(--t1) 0 25%,var(--t2) 25% 50%,var(--t3) 50% 75%,var(--t1) 75%)}
-.tf-flip .tf-art u{background:rgba(255,255,255,.25);box-shadow:inset 0 -1px 0 rgba(0,0,0,.2)}
-.tf-roll .tf-art{filter:grayscale(.85)}
-.tf-roll .tf-art b{flex-direction:column;gap:0;line-height:1}
-.tf-roll .tf-art em{font-style:normal;font-size:13px;opacity:.35}
-.tf-wave .tf-art{background:#ECE9E4;color:#8b8b90}
-.tf-wave .tf-art i{inset:30% -10% 30% -10%;border-radius:50%;background:linear-gradient(90deg,var(--t3),var(--t1),var(--t2));filter:blur(4px);transform:rotate(-8deg)}
-.tf-wave .tf-art b{align-self:end;justify-self:end;margin:0 8px 4px 0;font-size:13px}
-.tf-ring .tf-art i{width:48px;height:48px;border-radius:50%;border:4px solid rgba(255,255,255,.85)}
-.tf-ring .tf-art b{font-size:11px}
-.tf-analog .tf-art{background:radial-gradient(circle at 85% 40%,var(--t1),transparent 45%),linear-gradient(135deg,#d9dce1,#7e838c 55%,#3c3f46)}
-.tf-analog .tf-art i{width:46px;height:46px;border-radius:50%;background:rgba(40,42,50,.4);border:1px solid rgba(255,255,255,.6)}
-.tf-analog .tf-art b{display:none}
-.tf-dots .tf-art{background:radial-gradient(circle,rgba(255,255,255,.0) 0,transparent 0),var(--tbg)}
-.tf-dots .tf-art i{inset:0;background:radial-gradient(circle at 30% 30%,var(--t1),transparent 60%),radial-gradient(circle at 75% 70%,var(--t2),transparent 60%);-webkit-mask-image:radial-gradient(circle,#000 40%,transparent 46%);mask-image:radial-gradient(circle,#000 40%,transparent 46%);-webkit-mask-size:5px 5px;mask-size:5px 5px}
+.tf-art u,.tf-art s{text-decoration:none}
+.tf-dawn .tf-art{background:radial-gradient(circle at 50% 75%,var(--t1),transparent 62%),#0E0D12}
+.tf-dawn .tf-art b{font:200 23px "Fraunces",Georgia,serif}
+.tf-halo .tf-art{background:radial-gradient(#1B1A22,#060609)}
+.tf-halo .tf-art i{width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--t1) 0 64%,rgba(255,255,255,.12) 0);-webkit-mask:radial-gradient(closest-side,transparent 83%,#000 85%);mask:radial-gradient(closest-side,transparent 83%,#000 85%);filter:drop-shadow(0 0 5px var(--t1))}
+.tf-halo .tf-art b,.tf-ring .tf-art b{font-size:11.5px}
+.tf-drop .tf-art{background:linear-gradient(transparent 58%,var(--t1) 58%),#F3F1EE;color:#1E1D22}
+.tf-drop .tf-art b{font-weight:600;margin-bottom:24%}
+.tf-board .tf-art{background:#111113}
+.tf-board .tf-art u{background:#2A2A2E;border-radius:3px;padding:1px 3px;font:600 20px "Barlow Condensed",sans-serif;box-shadow:inset 0 -1px 0 #000}
+.tf-board .tf-art s{opacity:.5;font:600 16px "Barlow Condensed",sans-serif}
+.tf-board .tf-art b{gap:2px}
+.tf-glass .tf-art b{padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45)}
+.tf-cards .tf-art{background:#0B0B0F}
+.tf-cards .tf-art u{padding:4px 6px;border-radius:6px;background:#202027;font-weight:500}
+.tf-flip .tf-art{background:color-mix(in srgb,var(--t1) 80%,#000)}
+.tf-flip .tf-art u{padding:2px 6px;border-radius:5px;background:#F7F3EB;color:#1B1B1F;font:600 21px "Barlow Condensed",sans-serif}
+.tf-roll .tf-art{background:#060607}
+.tf-roll .tf-art b{font:300 21px "Fraunces",Georgia,serif}
+.tf-roll .tf-art span{display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.tf-roll .tf-art em{font-style:normal;font-size:12px;opacity:.32}
+.tf-wave .tf-art{background:radial-gradient(ellipse 85% 20% at 50% 64%,var(--t1),transparent 72%),radial-gradient(ellipse 70% 14% at 38% 56%,var(--t3),transparent 72%),#EFECE7;color:#26252B}
+.tf-wave .tf-art b{font:300 21px "Fraunces",Georgia,serif}
+.tf-ring .tf-art{background:#07070A}
+.tf-ring .tf-art i{width:54px;height:54px;border-radius:50%;background:repeating-conic-gradient(from -2deg,var(--t1) 0 2.4deg,transparent 2.4deg 6deg);-webkit-mask:radial-gradient(closest-side,transparent 76%,#000 78%);mask:radial-gradient(closest-side,transparent 76%,#000 78%)}
+.tf-analog .tf-art{background:radial-gradient(#3A3D44,#141519)}
+.tf-analog .tf-art i{width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--t1) 0 42%,#F4F3EF 0);border:3px solid #BEC2C9}
+.tf-dots .tf-art{background:#050507;color:var(--t1)}
+.tf-dots .tf-art b{font:600 26px "Barlow Condensed",sans-serif;letter-spacing:2px;-webkit-mask:radial-gradient(circle,#000 46%,transparent 52%) 0 0/3px 3px;mask:radial-gradient(circle,#000 46%,transparent 52%) 0 0/3px 3px}
 .pal-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 4px;scrollbar-width:none}
 .pal-row::-webkit-scrollbar{display:none}
 .pal{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:58px;font-size:11px;color:var(--ink-2)}
@@ -1848,10 +1941,6 @@ button.toggle .ico{width:18px;height:18px;color:var(--ink-3)}
 .pomo-row{display:flex;align-items:center;gap:10px;margin-top:6px}
 .pomo-row>span{flex:none;width:5em;font-size:13px;color:var(--ink-2);line-height:1.3}.pomo-row>span small{display:block;font-size:11px;color:var(--ink-3)}
 .pomo-row .chips{flex-wrap:wrap}
-.tm-pomo{margin-top:14px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25)}
-.tm-pomo.on{background:rgba(255,110,90,.35);border-color:rgba(255,150,130,.6)}
-.tm-fs.brk .tm-art{filter:blur(46px) saturate(60%) hue-rotate(90deg)}
-.tm-fs.brk #tm-sub{color:#bff5d0}
 #hb-cel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:rgba(0,0,0,.35);opacity:0;transition:opacity .3s;overflow:hidden}
 #hb-cel.on{opacity:1}
 .hb-conf i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:hbFall linear forwards}
@@ -6128,32 +6217,46 @@ function pomoStep(t) {
 let timerInt = null, wakeLock = null;
 const tElapsed = () => { const t = S.timer; return t ? t.accum + (t.paused ? 0 : Date.now() - t.startedAt) : 0; };
 const mmss = ms => { const s0 = Math.floor(Math.max(0, ms) / 1000), h = Math.floor(s0 / 3600), m = Math.floor(s0 % 3600 / 60); return (h ? h + ':' + pad(m) : m) + ':' + pad(s0 % 60); };
-const FACES = [['aurora', 'オーロラ'], ['glass', 'ガラス'], ['cards', 'カード'], ['flip', 'フリップ'], ['roll', 'ロール'], ['wave', 'ウェーブ'], ['ring', 'リング'], ['analog', 'アナログ'], ['dots', 'ドット']];
+const FACES = [['aurora', 'オーロラ'], ['dawn', '夜明け'], ['halo', '光の輪'], ['drop', 'しずく'], ['board', 'めくり板'], ['glass', 'ガラス'], ['cards', 'カード'], ['flip', 'フリップ'], ['roll', 'ロール'], ['wave', 'ウェーブ'], ['ring', 'リング'], ['analog', 'アナログ'], ['dots', 'ドット']];
 const PALETTES = [['event', '予定の色'], ['sunset', 'サンセット', '#ff7a45', '#ff3d7f', '#7b3cff', '#1a0b14'], ['ocean', 'オーシャン', '#2bd4ff', '#2f6bff', '#00b3a4', '#06121c'], ['forest', 'フォレスト', '#9ad95b', '#2f9e6a', '#e6c84a', '#0b140d'], ['candy', 'キャンディ', '#ff5fd2', '#4fd1ff', '#ff8a3d', '#1a0e22'], ['night', 'ナイト', '#3b3bff', '#8f3bff', '#14206a', '#05050f'], ['mono', 'モノクロ', '#f2f2f2', '#8a8a8a', '#3a3a3a', '#050505'], ['custom', 'カスタム']];
-const DIGITS = [['round', '丸ゴシック'], ['grotesk', 'ゴシック太字'], ['thin', '細字']];
-const tset = () => Object.assign({ face: S.settings.timerFace || 'aurora', palette: 'event', custom: ['#ff7a45', '#7b3cff', '#2bd4ff'], motion: true, mode: 'left', digits: 'round' }, S.settings.timer || {});
+const DIGITS = [['auto', 'デザインに合わせる'], ['round', '丸ゴシック'], ['grotesk', 'ゴシック太字'], ['thin', '細字']];
+// v2 (the remade designs): each design has its own digits unless one is picked again
+const tset = () => { const o = Object.assign({ face: S.settings.timerFace || 'aurora', palette: 'event', custom: ['#ff7a45', '#7b3cff', '#2bd4ff'], motion: true, mode: 'left', digits: 'auto' }, S.settings.timer || {}); if (!o.v2) { o.digits = 'auto'; o.v2 = 1; } if (!FACES.some(x => x[0] === o.face)) o.face = 'aurora'; if (!DIGITS.some(x => x[0] === o.digits)) o.digits = 'auto'; return o; };
 function tVars(o, color) {
   const pal = PALETTES.find(x => x[0] === o.palette) || PALETTES[0];
   const [a, b, c, bg] = o.palette === 'custom' ? [...o.custom, '#0b0b10'] : o.palette === 'event' ? [color, `color-mix(in srgb,${color} 45%,#ff6a3d)`, `color-mix(in srgb,${color} 35%,#4b5bff)`, '#0b0b10'] : pal.slice(2);
   return `--t1:${a};--t2:${b};--t3:${c};--tbg:${bg}`;
 }
+const TM_LIGHT = ['wave', 'drop'], TM_NOBAR = ['ring', 'analog', 'halo', 'drop'];
+function tmArt(f) {
+  if (f === 'wave') return `<svg class="tm-wave" viewBox="0 0 400 300" preserveAspectRatio="none"><defs><linearGradient id="twg1" x1="0" x2="1"><stop offset="0" style="stop-color:var(--t3)"/><stop offset=".55" style="stop-color:var(--t1)"/><stop offset="1" style="stop-color:var(--t2)"/></linearGradient><linearGradient id="twg2" x1="1" x2="0"><stop offset="0" style="stop-color:var(--t1)"/><stop offset="1" style="stop-color:var(--t3)"/></linearGradient></defs><path class="w1" d="M-60 170 C 40 80, 140 90, 220 150 S 380 230, 460 130 L 460 190 C 380 280, 280 250, 210 205 S 40 150, -60 230 Z" fill="url(#twg1)"/><path class="w2" d="M-60 120 C 60 170, 150 60, 250 110 S 400 90, 460 160 L 460 180 C 390 120, 300 150, 240 140 S 60 200, -60 150 Z" fill="url(#twg2)" opacity=".7"/></svg>`;
+  if (f === 'drop') return '<canvas id="tm-cv"></canvas>';
+  if (f === 'dawn') return '<i class="glow"></i><u class="grain"></u>';
+  if (['flip', 'analog', 'board', 'dots', 'halo', 'ring'].includes(f)) return '<u class="grain"></u>';
+  return '<div class="tm-blobs"><i></i><i></i><i></i></div><u class="grain"></u>';
+}
+function tmBig(f) {
+  const T = '<b id="tm-time" class="tm-big num"></b>';
+  if (f === 'glass') return `<div class="tm-slab">${T}</div>`;
+  if (f === 'cards' || f === 'flip') return '<div class="tm-cards" id="tm-cards"><div class="tc"><b id="tm-a"></b><small id="tm-al">分</small></div><span class="tm-colon" aria-hidden="true"><i></i><i></i></span><div class="tc"><b id="tm-b"></b><small id="tm-bl">秒</small></div></div>';
+  if (f === 'roll') return `<div class="tm-roll"><b id="tm-a"></b><span class="rc">:</span><div class="tm-drum"><div id="tm-drum">${[...Array(60)].map((_, i) => `<span>${pad(i)}</span>`).join('')}</div></div></div>`;
+  if (f === 'ring') return `<div class="tm-ticks"><svg viewBox="0 0 240 240" aria-hidden="true">${[...Array(60)].map((_, i) => `<line x1="120" y1="${i % 5 ? 10 : 6}" x2="120" y2="${i % 5 ? 23 : 27}" transform="rotate(${i * 6} 120 120)"/>`).join('')}</svg><div class="ctr"><b id="tm-time"></b><small id="tm-cl"></small></div></div>`;
+  if (f === 'analog') return `<div class="tm-dial"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="fc" cx="120" cy="120" r="112"/><path id="tm-sector" class="sec"/>${[...Array(60)].map((_, i) => `<line class="mk${i % 5 ? '' : ' b'}" x1="120" y1="${i % 5 ? 14 : 12}" x2="120" y2="${i % 5 ? 20 : 25}" transform="rotate(${i * 6} 120 120)"/>`).join('')}${[...Array(12)].map((_, i) => { const a = i * Math.PI / 6; return `<text x="${(120 + 86 * Math.sin(a)).toFixed(1)}" y="${(124.5 - 86 * Math.cos(a)).toFixed(1)}">${i * 5}</text>`; }).join('')}<line id="tm-hand" class="hand" x1="120" y1="120" x2="120" y2="30"/><circle class="knob" cx="120" cy="120" r="10"/></svg></div><b id="tm-time" class="tm-pill"></b>`;
+  if (f === 'dots') return '<canvas id="tm-dots" class="tm-dots" aria-hidden="true"></canvas><b id="tm-time" class="sr"></b>';
+  if (f === 'halo') return '<div class="tm-halo"><canvas id="tm-cv"></canvas><div class="ctr"><b id="tm-time"></b><small id="tm-cl"></small></div></div>';
+  if (f === 'board') return '<div class="tm-board" id="tm-board"></div><b id="tm-time" class="sr"></b>';
+  return T;
+}
 function timerHTML() {
-  const t = S.timer, o = tset(), f = o.face, C = 2 * Math.PI * 100;
-  const split = '<div class="tm-cards" id="tm-cards"><b id="tm-a" class="num"></b><b id="tm-b" class="num"></b></div>';
-  const big = {
-    ring: `<div class="ring"><svg viewBox="0 0 220 220" aria-hidden="true"><circle class="bgc" cx="110" cy="110" r="100" fill="none" stroke-width="12"/><circle id="tm-ring" class="fgc" cx="110" cy="110" r="100" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/></svg><div class="ctr"><b id="tm-time" class="num"></b></div></div>`,
-    analog: `<div class="tm-dial"><svg viewBox="0 0 220 220" aria-hidden="true">${[...Array(12)].map((_, i) => `<line x1="110" y1="${i % 3 ? 20 : 16}" x2="110" y2="${i % 3 ? 30 : 36}" transform="rotate(${i * 30} 110 110)"/>`).join('')}<line id="tm-hand" class="hand" x1="110" y1="110" x2="110" y2="40"/><circle cx="110" cy="110" r="6"/></svg></div><b id="tm-time" class="tm-pill num"></b>`,
-    cards: split, flip: split,
-    roll: '<div class="tm-roll"><b id="tm-a" class="num"></b><div class="col"><span id="tm-bp" class="num"></span><b id="tm-b" class="num"></b><span id="tm-bn" class="num"></span></div></div>',
-  }[f] || '<b id="tm-time" class="tm-big num"></b>';
-  return `<div class="tm-fs face-${f} dg-${o.digits}${o.motion ? '' : ' still'}" style="${tVars(o, t.color)};--ph:-${(Date.now() / 1000 % 1890).toFixed(2)}s">
-    <div class="tm-art" aria-hidden="true"><i></i><i></i><i></i>${f === 'wave' ? '<svg class="tm-wave" viewBox="0 0 400 200" preserveAspectRatio="none"><defs><linearGradient id="twg" x1="0" x2="1"><stop offset="0" stop-color="var(--t3)"/><stop offset=".5" stop-color="var(--t1)"/><stop offset="1" stop-color="var(--t2)"/></linearGradient></defs><path d="M-40 120 C 40 40, 120 40, 200 110 S 360 180, 440 90 L 440 150 C 360 230, 280 200, 200 160 S 40 100, -40 170 Z" fill="url(#twg)"/></svg>' : ''}</div>
+  const t = S.timer, o = tset(), f = o.face;
+  return `<div class="tm-fs face-${f}${TM_LIGHT.includes(f) ? ' lt' : ''} dg-${o.digits}${o.motion ? '' : ' still'}" style="${tVars(o, t.color)};--ph:-${(Date.now() / 1000 % 1890).toFixed(2)}s">
+    <div class="tm-art" aria-hidden="true">${tmArt(f)}</div>
     <div class="tm-top"><button class="tm-btn" data-act="close" aria-label="閉じる（計測は続きます）">${ico('down')}</button><span id="tm-now" class="num"></span><button class="tm-btn" data-act="tmSet" aria-label="デザインと色を変える">${ico('palette')}</button></div>
     <div class="tm-center">
       <div class="tm-name"><i>${ico(t.icon)}</i><span>${esc(t.title)}</span></div>
-      ${big}
+      ${tmBig(f)}
       <small id="tm-sub" class="num"></small>
-      ${['ring', 'analog'].includes(f) ? '' : '<div class="tm-bar"><i id="tm-bar"></i></div>'}
+      ${TM_NOBAR.includes(f) ? '' : '<div class="tm-bar"><i id="tm-bar"></i></div>'}
       <button class="tm-pomo${t.pomo ? ' on' : ''}" data-act="tmPomo" aria-pressed="${!!t.pomo}">🍅 ポモドーロ ${t.pomo ? `${pomoSet().w}分＋${pomoSet().b}分休憩` : 'オフ'}</button>
     </div>
     <div class="tm-ctrls">
@@ -6163,11 +6266,130 @@ function timerHTML() {
     </div>
   </div>`;
 }
+function tfArt(k) {
+  return {
+    cards: '<b><u>25</u><u>00</u></b>', flip: '<b><u>25</u><u>00</u></b>',
+    roll: '<b>25<em>:</em><span><em>01</em>00<em>59</em></span></b>',
+    board: '<b><u>2</u><u>5</u><s>:</s><u>0</u><u>0</u></b>',
+    ring: '<i></i><b>25:00</b>', halo: '<i></i><b>25:00</b>', analog: '<i></i>',
+  }[k] || '<b>25:00</b>';
+}
+
+/* ---- the focus timer's moving parts ---- */
+// where the timer is, right now (also between whole seconds, for the smooth parts)
+function tmCalc() {
+  const t = S.timer, o = tset(), pm = t.pomo, brk = !!(pm && pm.ph === 'break'), bLen = brk ? pomoBreakMs(pm.n) : 0, bLeft = brk ? pm.at + bLen - Date.now() : 0;
+  const el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = !brk && left < 0;
+  const frac = brk ? Math.min(1, Math.max(0, 1 - bLeft / bLen)) : Math.min(1, el / plan);
+  // what is drawn as "full": the time left, or the time gone in 経過時間 mode
+  const fill = over ? 0 : !brk && o.mode === 'elapsed' ? frac : 1 - frac;
+  return { t, o, brk, bLeft, el, plan, left, over, frac, fill };
+}
+const tmCol = fs => { if (!fs._c) { const v = getComputedStyle(fs).getPropertyValue('--t1').trim(); fs._c = /^#[0-9a-f]{3,8}$/i.test(v) ? v : '#ffffff'; } return fs._c; };
+function tmFit(cv) { const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1), w = Math.max(1, Math.round(r.width * d)), h = Math.max(1, Math.round(r.height * d)); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } return d; }
+function tmHalo(cv, c, fs) {
+  const d = tmFit(cv), x = cv.getContext('2d'), W = cv.width, H = cv.height, lw = 9 * d, R = Math.min(W, H) / 2 - lw * 2.6, cx = W / 2, cy = H / 2, col = tmCol(fs);
+  x.clearRect(0, 0, W, H); x.lineCap = 'round'; x.lineWidth = lw;
+  x.strokeStyle = 'rgba(255,255,255,.08)'; x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.stroke();
+  if (c.fill <= .0005) return;
+  const a0 = -Math.PI / 2, a1 = a0 + Math.PI * 2 * c.fill;
+  x.shadowColor = col; x.shadowBlur = 24 * d; x.strokeStyle = col; x.beginPath(); x.arc(cx, cy, R, a0, a1); x.stroke();
+  x.shadowBlur = 30 * d; x.fillStyle = '#fff'; x.beginPath(); x.arc(cx + R * Math.cos(a1), cy + R * Math.sin(a1), lw * .42, 0, Math.PI * 2); x.fill(); x.shadowBlur = 0;
+}
+function tmDrop(cv, c, fs, now) {
+  const d = tmFit(cv), x = cv.getContext('2d'), W = cv.width, H = cv.height, col = tmCol(fs), lvl = H * (.84 - .3 * c.fill), t = fs.classList.contains('still') ? 0 : now / 1000;
+  x.clearRect(0, 0, W, H);
+  for (const [amp, sp, ph, a] of [[10, .8, 0, .45], [6, 1.3, 2, 1]]) {
+    x.beginPath(); x.moveTo(0, H);
+    for (let i = 0; i <= 48; i++) { const px = W * i / 48; x.lineTo(px, lvl + Math.sin(i / 48 * Math.PI * 2.6 + t * sp + ph) * amp * d + Math.sin(i / 8 + t * .6) * 3 * d); }
+    x.lineTo(W, H); x.closePath();
+    const g = x.createLinearGradient(0, lvl - 20 * d, 0, H); g.addColorStop(0, col); g.addColorStop(1, '#1E1D22');
+    x.globalAlpha = a; x.fillStyle = g; x.fill(); x.globalAlpha = 1;
+  }
+}
+function tmAnalog(c) {
+  const sec = $('#tm-sector'), hand = $('#tm-hand'); if (!sec) return;
+  // up to an hour the dial is minutes, like a kitchen timer; longer plans fill the whole dial
+  const ms = c.brk ? c.bLeft : c.o.mode === 'elapsed' ? c.el : Math.max(0, c.left);
+  const f = c.brk || c.plan <= 3600000 ? Math.min(1, Math.max(0, ms / 3600000)) : c.fill, ang = f * 360;
+  if (ang < .05) sec.setAttribute('d', '');
+  else if (ang > 359.95) sec.setAttribute('d', 'M120 8a112 112 0 1 1 0 224a112 112 0 1 1 0-224z');
+  else { const r = ang * Math.PI / 180; sec.setAttribute('d', `M120 120L120 8A112 112 0 ${ang > 180 ? 1 : 0} 1 ${(120 + 112 * Math.sin(r)).toFixed(2)} ${(120 - 112 * Math.cos(r)).toFixed(2)}Z`); }
+  hand.style.transform = `rotate(${ang.toFixed(2)}deg)`;
+}
+function tmDrum(drum, v) {
+  const prev = +drum.dataset.v; if (prev === v) return;
+  const jump = isNaN(prev) || Math.abs(prev - v) > 1;
+  if (jump) drum.style.transition = 'none';
+  drum.style.transform = `translateY(calc(${-v} * var(--rh)))`; drum.dataset.v = v;
+  if (jump) { void drum.offsetWidth; drum.style.transition = ''; }
+}
+function tmBoard(el, txt) {
+  const prev = el.dataset.v || '';
+  if (prev.length !== txt.length) { el.innerHTML = [...txt].map(ch => /\d/.test(ch) ? `<span class="fc"><i class="u" data-v="${ch}"></i><i class="l" data-v="${ch}"></i><i class="fu" data-v="${ch}"></i></span>` : `<span class="sep">${ch}</span>`).join(''); el.dataset.v = txt; return; }
+  [...el.children].forEach((c, i) => {
+    const v = txt[i], was = prev[i]; if (v === was || !c.classList.contains('fc')) return;
+    const u = c.querySelector('.u'), l = c.querySelector('.l'), fu = c.querySelector('.fu');
+    u.dataset.v = v; fu.dataset.v = was; l.dataset.v = was;
+    c.classList.remove('go'); void c.offsetWidth; c.classList.add('go');
+    clearTimeout(c._t); c._t = setTimeout(() => { l.dataset.v = v; }, 210);
+  });
+  el.dataset.v = txt;
+}
+// 5×7 LED letters
+const DOTF = { 0: '01110100011001110101110011000101110', 1: '00100011000010000100001000010001110', 2: '01110100010000100010001000100011111', 3: '11111000100010000010000011000101110', 4: '00010001100101010010111110001000010', 5: '11111100001111000001000011000101110', 6: '00110010001000011110100011000101110', 7: '11111000010001000100010000100001000', 8: '01110100011000101110100011000101110', 9: '01110100011000101111000010001001100', '+': '00000001000010011111001000010000000', ':': '0010100' };
+function tmDots(cv, txt) {
+  const fs = cv.closest('.tm-fs'), w0 = cv.getBoundingClientRect().width; if (cv.dataset.v === txt && cv._w === w0) return; cv.dataset.v = txt; cv._w = w0;
+  const gl = [...txt].map(ch => DOTF[ch]).filter(Boolean).map(b => ({ b, w: b.length / 7 }));
+  const cols = gl.reduce((n, g) => n + g.w, 0) + gl.length - 1, p = w0 / (cols + 1); // half a dot of room on each side for the glow
+  cv.style.height = (p * 8).toFixed(1) + 'px';
+  const d = tmFit(cv), x = cv.getContext('2d'), P = p * d, r = P * .36, col = tmCol(fs);
+  x.clearRect(0, 0, cv.width, cv.height);
+  let cx = .5;
+  for (const g of gl) {
+    for (let cI = 0; cI < g.w; cI++) for (let rI = 0; rI < 7; rI++) {
+      const on = g.b[rI * g.w + cI] === '1';
+      x.fillStyle = on ? col : 'rgba(255,255,255,.07)'; x.shadowColor = col; x.shadowBlur = on ? P * .6 : 0;
+      x.beginPath(); x.arc((cx + cI) * P + P / 2, (rI + .5) * P + P / 2, r, 0, Math.PI * 2); x.fill();
+    }
+    cx += g.w + 1;
+  }
+  x.shadowBlur = 0;
+}
+let tmRaf = 0;
+function tmFrame(now) {
+  tmRaf = 0;
+  const fs = $('.tm-fs'); if (!fs || !S.timer) return;
+  const c = tmCalc(), bar = $('#tm-bar'); if (bar) bar.style.width = (c.frac * 100).toFixed(3) + '%';
+  const cv = $('#tm-cv');
+  if (cv && fs.classList.contains('face-halo')) tmHalo(cv, c, fs);
+  else if (cv && fs.classList.contains('face-drop')) tmDrop(cv, c, fs, now);
+  else if (fs.classList.contains('face-analog')) tmAnalog(c);
+  tmRaf = requestAnimationFrame(tmFrame);
+}
+const tmLoop = () => { if (!tmRaf) tmRaf = requestAnimationFrame(tmFrame); };
+// the parts that change once a second
+function tmFaceTick(c, shown, sign, txt) {
+  const cl = $('#tm-cl'); if (cl) cl.textContent = c.brk ? '休憩' : c.o.mode === 'elapsed' ? '経過' : c.over ? 'こえた時間' : 'のこり';
+  const a = $('#tm-a');
+  if (a) {
+    const s0 = Math.floor(shown / 1000), hrs = s0 >= 3600, bv = hrs ? Math.floor(s0 % 3600 / 60) : s0 % 60;
+    a.textContent = sign + (hrs ? Math.floor(s0 / 3600) : pad(Math.floor(s0 / 60)));
+    const b = $('#tm-b'); if (b) b.textContent = pad(bv);
+    const al = $('#tm-al'); if (al) { al.textContent = hrs ? '時間' : '分'; $('#tm-bl').textContent = hrs ? '分' : '秒'; }
+    const drum = $('#tm-drum'); if (drum) tmDrum(drum, bv);
+    const cards = $('#tm-cards'); if (cards) cards.classList.toggle('over', c.over && c.o.mode !== 'elapsed');
+  }
+  const board = $('#tm-board'); if (board) tmBoard(board, txt);
+  const dots = $('#tm-dots'); if (dots) tmDots(dots, txt);
+  const ticks = $('.tm-ticks');
+  if (ticks) { const lit = Math.round(c.fill * 60); ticks.querySelectorAll('line').forEach((l, i) => { l.classList.toggle('on', i < lit); l.classList.toggle('hd', i === lit - 1); }); }
+}
 function tmSetHTML() {
   const o = tset(), color = S.timer ? S.timer.color : evDraft && evDraft.color || COLORS[0];
   const chip = (k, l, on, act) => `<button class="chip" data-act="${act}" data-k="${k}" aria-pressed="${on}">${l}</button>`;
   return `<div class="sh-bar"><span></span><b>タイマーの見た目</b><button class="r" data-act="close">完了</button></div>
-  <div class="fld"><span class="lb">デザイン</span><div class="tf-grid">${FACES.map(([k, l]) => `<button class="tf tf-${k}" style="${tVars(o, color)}" data-act="tmSetFace" data-k="${k}" aria-pressed="${o.face === k}"><span class="tf-art"><i></i><b class="num">${k === 'roll' ? '<em>26</em>25<em>24</em>' : k === 'cards' || k === 'flip' ? '<u>25</u><u>00</u>' : '25:00'}</b></span><small>${l}</small></button>`).join('')}</div></div>
+  <div class="fld"><span class="lb">デザイン</span><div class="tf-grid">${FACES.map(([k, l]) => `<button class="tf tf-${k}" style="${tVars(o, color)}" data-act="tmSetFace" data-k="${k}" aria-pressed="${o.face === k}"><span class="tf-art">${tfArt(k)}</span><small>${l}</small></button>`).join('')}</div></div>
   <div class="fld"><span class="lb">カラー</span><div class="pal-row">${PALETTES.map(([k, l]) => `<button class="pal" data-act="tmSetPal" data-k="${k}" aria-pressed="${o.palette === k}"><i style="${tVars(Object.assign({}, o, { palette: k }), color)}"></i><small>${l}</small></button>`).join('')}</div></div>
   ${o.palette === 'custom' ? `<div class="fld"><span class="lb">カスタムの色（3色）</span><div class="cust">${o.custom.map((c, i) => `<label><input type="color" id="tmc-${i}" value="${c}" aria-label="色${i + 1}"><span class="num">${c}</span></label>`).join('')}</div></div>` : ''}
   <div class="fld"><span class="lb">数字の書体</span><div class="chips">${DIGITS.map(([k, l]) => chip(k, l, o.digits === k, 'tmSetDigits')).join('')}</div></div>
@@ -6206,21 +6428,7 @@ function tick() {
   sub.textContent = brk ? `休憩中・${pm.n}回集中しました・合計 ${mmss(el)}` : `${pw}${t.paused ? '一時停止中・' : ''}${o.mode === 'elapsed' ? `のこり ${over ? '0:00' : mmss(left)}` : `経過 ${mmss(el)}`}・予定 ${dur(t.planned)}${over ? '・予定をこえています' : ''}`;
   sub.classList.toggle('over', over);
   const time = $('#tm-time'); if (time) time.textContent = txt;
-  const a = $('#tm-a');
-  if (a) {
-    const s0 = Math.floor(shown / 1000), hrs = s0 >= 3600, bv = hrs ? Math.floor(s0 % 3600 / 60) : s0 % 60, dir = o.mode === 'elapsed' || over ? 1 : -1;
-    a.textContent = sign + (hrs ? Math.floor(s0 / 3600) : pad(Math.floor(s0 / 60)));
-    const b = $('#tm-b'), nb = pad(bv);
-    if (b.textContent !== nb) { b.textContent = nb; const col = b.parentElement; if (col.classList.contains('col')) { col.classList.remove('tick'); void col.offsetWidth; col.classList.add('tick'); } }
-    const bp = $('#tm-bp'); if (bp) { bp.textContent = pad((bv - dir + 60) % 60); $('#tm-bn').textContent = pad((bv + dir + 60) % 60); }
-    const cards = $('#tm-cards'); if (cards) cards.classList.toggle('over', over && o.mode !== 'elapsed');
-  }
-  const frac = brk ? Math.min(1, 1 - bLeft / bLen) : Math.min(1, el / plan);
-  // a freshly drawn screen (after pause, ポモドーロ…) starts at 0: put it in place at once, and glide only from then on
-  const put = (el, f) => { if (!el) return; if (el.dataset.ok) { f(el); return; } el.style.transition = 'none'; f(el); void el.getBoundingClientRect(); el.style.transition = ''; el.dataset.ok = '1'; };
-  put($('#tm-bar'), el => { el.style.width = (frac * 100).toFixed(2) + '%'; });
-  put($('#tm-ring'), el => { el.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - frac)).toFixed(2); });
-  put($('#tm-hand'), el => { el.style.transform = `rotate(${(frac * 360).toFixed(2)}deg)`; });
+  tmFaceTick(tmCalc(), shown, sign, txt); tmLoop();
   if (!brk && !t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
 }
 // one update just after each whole second of the timer (a plain 1-second interval drifts, so a second could be skipped or shown twice)
@@ -9258,10 +9466,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v160';
+const APP_VER = 'hibi-v161';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.36.0';
-const HIBI_CHANGES = ['タイムライン上の大学と電車のボタンのあいだに、集中タイマーをすぐ始めるボタンを追加しました。予定がなくても、なにをするか・時間・色を選んで始められます。記録すると、集中した時間がそのままタイムラインに残ります', '集中タイマーの秒の進みがときどき飛んだり、一時停止・再開のときに進み具合のバーや背景がガクッと戻ったりしていたのを直しました', '通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.37.0';
+const HIBI_CHANGES = ['集中タイマーに新しいデザインを4つ追加しました（夜明け・光の輪・しずく・めくり板）', 'いままでの9つのデザイン（オーロラ・ガラス・カード・フリップ・ロール・ウェーブ・リング・アナログ・ドット）を作り直しました。ロールは秒が回る筒に、リングは60の目盛りに、アナログはキッチンタイマーのような文字盤に、ドットは電光掲示板になりました。数字の書体は、はじめはそれぞれのデザインに合ったものになります（タイマーの見た目 → 数字の書体 で変えられます）', 'タイムライン上の大学と電車のボタンのあいだに、集中タイマーをすぐ始めるボタンを追加しました。予定がなくても、なにをするか・時間・色を選んで始められます。記録すると、集中した時間がそのままタイムラインに残ります', '集中タイマーの秒の進みがときどき飛んだり、一時停止・再開のときに進み具合のバーや背景がガクッと戻ったりしていたのを直しました', '通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
