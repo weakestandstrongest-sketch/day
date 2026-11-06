@@ -992,6 +992,8 @@ body:has(#timerChip:not([hidden])) .bkbar{bottom:calc(env(safe-area-inset-bottom
 .pk-chip.on{background:color-mix(in srgb,var(--c) 18%,var(--surface));border-color:transparent;color:var(--ink-2);text-decoration:line-through}
 .pk-chip.on .ico{color:var(--c)}
 /* app lock */
+.vk{display:flex;flex-direction:column;gap:10px;padding:4px 0 20px}.vk .note{margin:0}
+.vk-rec{font-size:19px;font-weight:700;letter-spacing:.06em;text-align:center;padding:16px 10px;border-radius:14px;background:var(--surface-2);word-break:break-all;user-select:all;-webkit-user-select:all}
 .lock{position:fixed;inset:0;z-index:300;background:radial-gradient(120% 70% at 50% 0%,color-mix(in srgb,var(--accent) 22%,var(--bg)),var(--bg) 70%);display:flex;align-items:center;justify-content:center;color:var(--ink);user-select:none;-webkit-user-select:none}
 .lk-in{display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 16px)}
 .lk-ic{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 35%,transparent)}
@@ -2237,6 +2239,7 @@ const IC = {
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   umbrella:'<path d="M3 12a9 9 0 0 1 18 0zM12 12v7a2 2 0 0 0 4 0M12 3v-1"/>',
   target:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
   lock:'<rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14.5v2.5"/>',
   face:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1.5M15 9v1.5M12 9v4h-1M9 16c1.7 1.3 4.3 1.3 6 0"/>',
   back:'<path d="M9 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-6-6z"/><path d="m13 10 4 4M17 10l-4 4"/>',
@@ -2382,7 +2385,7 @@ function save(silent) {
   }
   if (medReady && medPending()) medSync();
   if (!ok && !silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください');
-  if (ok) gdSoon();
+  if (ok) { gdSoon(); ntSoon(); }
   return ok;
 }
 
@@ -4855,6 +4858,8 @@ function lockSettingsHTML() {
   return `${faceOK() ? `<label class="toggle"><span>Face IDでも開けるようにする<small>iPhoneの「パスワード」アプリに「ひび手帳」の鍵が保存されます</small></span><input type="checkbox" id="set-faceid" ${l.cred ? 'checked' : ''}></label>` : ''}
     <div class="toggle"><span>ロックするまで<small>アプリを離れてから</small></span></div>
     <div class="seg mc-seg" style="margin:0">${[[0, 'すぐ'], [60, '1分'], [300, '5分'], [900, '15分']].map(([k, t]) => `<button data-act="lockDelay" data-k="${k}" aria-pressed="${(l.delay || 0) === k}">${t}</button>`).join('')}</div>
+    <div class="toggle"><span>開くときにも鍵をかける<small>アプリのロックとは別に、ここを開くたびにパスコードを求めます</small></span></div>
+    ${[['journal', '日記'], ['moves', '場所の記録（MOVE）'], ['money', '家計簿']].map(([k, l]) => `<label class="toggle"><span>${l}</span><input type="checkbox" id="lk-sec-${k}" ${(l0 => l0.sec && l0.sec[k])(LK()) ? 'checked' : ''}></label>`).join('')}
     <button class="btn" data-act="lockChange">パスコードを変更</button><button class="btn ghost" data-act="lockOff">ロックをやめる</button>
     <p class="note" style="margin:0">データそのものを暗号化するものではなく、人に見られないための鍵です。パスコードを忘れると、データをすべて消さないと開けなくなるので、バックアップをとっておいてください。</p>`;
 }
@@ -4867,9 +4872,9 @@ function showLock(mode, done) {
 }
 function lockRender() {
   const el = $('#lock'); if (!el || !LKS) return;
-  const t = { unlock: ['ひび手帳', 'パスコードを入力'], setup: [LKS.first ? 'もう一度入力' : '新しいパスコード', LKS.first ? '確認のため、同じ4けたを入力してください' : '4けたの数字を決めてください'], verify: ['いまのパスコード', '確認のため入力してください'] }[LKS.mode];
+  const t = { unlock: ['ひび手帳', 'パスコードを入力'], setup: [LKS.first ? 'もう一度入力' : '新しいパスコード', LKS.first ? '確認のため、同じ4けたを入力してください' : '4けたの数字を決めてください'], verify: ['いまのパスコード', '確認のため入力してください'], sec: [LKS.title || 'ひび手帳', 'パスコードを入力'] }[LKS.mode];
   if (LKS.view === 'forgot') { el.innerHTML = `<div class="lk-in"><div class="lk-ic">${ico('lock')}</div><b class="lk-t">パスコードを忘れたとき</b><p class="lk-warn">この端末のひび手帳のデータを<b>すべて消す</b>と、ロックを解除できます。元に戻せません。バックアップファイルがあれば、あとで「設定 → データ」から復元できます。</p><button class="btn danger" data-lk="erase">すべて消してロックを解除</button><button class="btn" data-lk="back">戻る</button></div>`; return; }
-  const fc = LKS.mode === 'unlock' && LK().cred && faceOK();
+  const fc = (LKS.mode === 'unlock' || LKS.mode === 'sec') && LK().cred && faceOK();
   el.innerHTML = `<div class="lk-in"><div class="lk-ic">${ico('lock')}</div><b class="lk-t">${t[0]}</b><small class="lk-s" id="lk-s">${t[1]}</small>
     <div class="lk-dots" id="lk-dots">${[0, 1, 2, 3].map(i => `<i class="${i < LKS.code.length ? 'on' : ''}"></i>`).join('')}</div>
     <div class="lk-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="num" data-lk="${n}">${n}</button>`).join('')}${fc ? `<button class="ghost" data-lk="face" aria-label="Face IDで開く">${ico('face')}</button>` : '<span></span>'}<button class="num" data-lk="0">0</button><button class="ghost" data-lk="del" aria-label="1文字消す">${ico('back')}</button></div>
@@ -4904,6 +4909,14 @@ function lockClick(ev) {
   if (k === 'erase') { try { for (const x of [KEY, KEY + '.rev', WX_KEY, UIKEY, LV_KEY, 'hibi.accentColor', KEY + '.broken']) localStorage.removeItem(x); if (window.indexedDB) { indexedDB.deleteDatabase('hibi-snaps'); indexedDB.deleteDatabase('hibi-media'); indexedDB.deleteDatabase('hibi-data'); } } catch (e) {} location.reload(); }
 }
 const lockOn = () => LK().on && LK().hash;
+// a lock of its own for 日記・場所の記録・家計簿: asked each time, until the app is left
+const secOpen = new Set(), SEC_T = { journal: '日記', moves: '場所の記録', money: '家計簿' };
+function secGuard(k, fn) {
+  if (!lockOn() || !(LK().sec && LK().sec[k]) || secOpen.has(k)) return fn();
+  showLock('sec', () => { secOpen.add(k); fn(); }); if (LKS) { LKS.title = SEC_T[k]; lockRender(); }
+  if (LK().cred && faceOK() && document.visibilityState === 'visible') setTimeout(() => lockFace(true), 350);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') secOpen.clear(); });
 document.addEventListener('visibilitychange', () => {
   if (!lockOn()) return;
   if (document.visibilityState === 'hidden') { lockHiddenAt = Date.now(); if (!(LK().delay > 0)) showLock('unlock'); }
@@ -4929,6 +4942,126 @@ function packCard(d) {
   return `<section class="pk-card"><h3>${ico('bag')}${lbl}の持ち物<span class="sub num">${done === tot ? '準備OK！' : `${done}/${tot}`}</span></h3>${list.map(o => { const on = packedOf(o.ev, d); return `<div class="pk-ev" style="--c:${o.ev.color}"><b>${esc(o.ev.title)}${o.ev.allDay ? '' : ` <span class="num">${hm(o.ev.start)}</span>`}</b><div class="pk-chips">${o.ev.items.map((t, i) => `<button class="pk-chip${on.includes(t) ? ' on' : ''}" data-act="packT" data-id="${o.ev.id}" data-d="${d}" data-i="${i}">${ico('check')}${esc(t)}</button>`).join('')}</div></div>`; }).join('')}</section>`;
 }
 function togglePacked(ev, d, t) { ev.packed = ev.packed || {}; const a = (ev.packed[d] || []).filter(x => x !== t); if (a.length === (ev.packed[d] || []).length) a.push(t); if (a.length) ev.packed[d] = a; else delete ev.packed[d]; }
+
+/* ================= notifications (Web Push): leave time, packing, deadlines, habits, plans =================
+   The words of each notice stay on this iPhone (IndexedDB 'hibi-push', read by sw.js). のりかえ's Worker only gets the times,
+   and at each time it sends an empty push; sw.js then shows the notice that is due. Works on iOS 16.4+ from the Home Screen. */
+const NT_KEY = 'hibi.push', NT_DAYS = 7, NT_MAX = 100;
+let NT = (() => { try { return JSON.parse(localStorage.getItem(NT_KEY) || 'null') || {}; } catch (e) { return {}; } })();
+let ntT = 0, ntBusy = null, ntExtra = [];
+const ntPut = o => { NT = { ...NT, ...o }; try { localStorage.setItem(NT_KEY, JSON.stringify(NT)); } catch (e) {} };
+const NTD = { on: false, leave: true, leaveBefore: 10, pack: true, packAt: '21:00', hw: true, hwAt: '19:00', habit: true, habitAt: '20:00', ev: false, evBefore: 15 };
+const ntS = () => Object.assign({}, NTD, asObj(S.settings.ntf));
+const ntCan = () => !inFrame && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const ntBase = () => { const b = nkBase(); return b ? b.replace(/\/+$/, '') + '/hibi-push' : ''; };
+const ntAt = (d, hm, addMin = 0) => P(d).getTime() + (toMin(hm) + addMin) * 60000;
+// what to tell, and when, for the next 7 days (only from what is in the app now: done / packed things drop out at the next save)
+function ntPlan(now = Date.now()) {
+  const s = ntS(), T = todayISO(), out = [], add = (id, at, title, body, d) => { if (at > now + 30000 && at < now + (NT_DAYS + 1) * 86400000) out.push({ id, at, title, body, d }); };
+  for (let i = 0; i <= NT_DAYS; i++) {
+    const d = addDays(T, i), occ = onDay(d);
+    if (s.leave) for (const o of occ) {
+      const ev = o.ev; if (!ev.dest || ev.allDay || ev.cls || o.date !== d) continue;
+      const r = i <= 2 ? leaveGet(ev, d, ntSoon) : LV[lvKey(ev, d)]; if (!r || !r.dep) continue;
+      add(`lv|${ev.id}|${d}`, P(d).getTime() + (lvLeaveMin(r, ev) - (+s.leaveBefore || 0)) * 60000, '出発の時間です', `${lvLeave(r, ev)}に家を出ると${ev.title}に間に合います（${lvFrom(ev)} ${r.dep}発）`, d);
+    }
+    if (s.ev) for (const o of occ) {
+      const ev = o.ev; if (ev.allDay || ev.routine || ev.calOnly || o.date !== d || !ev.start) continue;
+      add(`ev|${ev.id}|${d}`, ntAt(d, ev.start, -(+s.evBefore || 0)), ev.title, `${hm(ev.start)}から${ev.place ? `・${ev.place}` : ''}`, d);
+    }
+    if (s.pack) {
+      const nx = addDays(d, 1), list = onDay(nx).filter(o => !o.ev.cls && (o.ev.items || []).length && o.date === nx), left = list.reduce((n, o) => n + o.ev.items.length - packedOf(o.ev, nx).length, 0);
+      if (left > 0) add(`pk|${nx}`, ntAt(d, s.packAt), '持ち物の確認', `明日の${list.map(o => o.ev.title).slice(0, 2).join('・')}の持ち物を確認しましょう（あと${left}つ）`, nx);
+    }
+    if (s.hw) {
+      const due = [...S.school.tasks.filter(x => !x.done && x.due).map(x => { const c = clsById(x.classId); return { id: x.id, due: x.due, name: (c ? `${c.name}の` : '') + x.title }; }), ...S.todos.filter(x => !x.done && x.due).map(x => ({ id: x.id, due: x.due, name: x.title }))];
+      for (const x of due) {
+        if (x.due === addDays(d, 1)) add(`hw1|${x.id}|${x.due}`, ntAt(d, s.hwAt), '締め切りが近づいています', `${x.name}の締め切りまであと1日です`, x.due);
+        if (x.due === d) add(`hw0|${x.id}|${x.due}`, ntAt(d, '08:00'), '今日が締め切りです', `${x.name}の締め切りは今日です`, d);
+      }
+    }
+    if (s.habit) for (const h of hbAct()) {
+      if (!hbSched(h, d) || hbDone(h, d) || hbSkip(h, d)) continue;
+      if (h.freq.t === 'week' && hbWeekCnt(h, weekStart(d)) >= h.freq.n) continue;
+      add(`hb|${h.id}|${d}`, ntAt(d, s.habitAt), '習慣の記録', `今日の${h.name}がまだ記録されていません`, d);
+    }
+  }
+  out.push(...ntExtra.filter(x => x.at > now));
+  return out.sort((a, b) => a.at - b.at).slice(0, NT_MAX);
+}
+function ntDB() { return new Promise((ok, ng) => { const r = indexedDB.open('hibi-push', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => ng(r.error); }); }
+async function ntStore(plan) { const db = await ntDB(); await new Promise(r => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(plan, 'plan'); tx.oncomplete = tx.onerror = tx.onabort = r; }); db.close(); }
+async function ntPost(path, body) {
+  const r = await fetch(ntBase() + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'http ' + r.status); return r.json();
+}
+function ntSoon(ms = 4000) { if (!ntS().on || !NT.ep) return; clearTimeout(ntT); ntT = setTimeout(ntSync, ms); }
+// write the notices for sw.js and send only the times to the Worker (again when they change, or every 12 hours)
+async function ntSync(force) {
+  if (!ntS().on || !NT.ep || loadFailed || dataPending) return;
+  if (ntBusy) return ntBusy;
+  clearTimeout(ntT);
+  ntBusy = (async () => {
+    try {
+      const plan = ntPlan(); await ntStore(plan);
+      const times = [...new Set(plan.map(x => x.at))], h = JSON.stringify(times);
+      if (force || h !== NT.sent || Date.now() - (NT.at || 0) > 12 * 3600000) { await ntPost('/sub', { endpoint: NT.ep, times }); ntPut({ sent: h, at: Date.now(), err: '' }); }
+    } catch (e) { ntPut({ err: navigator.onLine === false ? 'オフラインです' : String(e.message || e) }); ntSoon(5 * 60000); }
+    finally { ntBusy = null; const b = $('#nt-box'); if (b) b.innerHTML = ntHTML(); }
+  })();
+  return ntBusy;
+}
+async function ntEnable() {
+  if (!ntCan()) { toast(standalone() ? 'このiPhoneでは通知を使えません（iOS 16.4以降が必要です）' : 'ホーム画面に追加したひび手帳から、通知をオンにできます'); return; }
+  if (!ntBase()) { toast('設定 → 乗換案内 に、のりかえのURLを入れてください'); return; }
+  try {
+    const p = await Notification.requestPermission(); // must stay the first await: iOS asks only from a tap
+    if (p !== 'granted') { toast('通知が許可されませんでした。iPhoneの設定 → 通知 → ひび手帳 から許可できます'); return; }
+    const reg = await navigator.serviceWorker.ready, key = (await (await fetch(ntBase() + '/key')).json()).key;
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && NT.key !== key) { await sub.unsubscribe().catch(() => {}); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromB64u(key) });
+    ntPut({ ep: sub.endpoint, key, sent: '', err: '' });
+    S.settings.ntf = Object.assign(ntS(), { on: true }); save();
+    await ntSync(true); rerenderSettings(); toast('通知をオンにしました');
+  } catch (e) { toast('通知をオンにできませんでした（' + (e.message || e) + '）'); }
+}
+async function ntDisable() {
+  S.settings.ntf = Object.assign(ntS(), { on: false }); save();
+  const ep = NT.ep; ntPut({ ep: '', sent: '' });
+  try { const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) {}
+  if (ep && ntBase()) ntPost('/del', { endpoint: ep }).catch(() => {});
+  ntStore([]).catch(() => {}); rerenderSettings(); toast('通知をオフにしました');
+}
+// a notice one minute from now, through the Worker (checks the whole way, not just the permission)
+function ntTest() { ntExtra = [{ id: 'test|' + Date.now(), at: Math.ceil((Date.now() + 70000) / 60000) * 60000, title: 'ひび手帳', body: '通知のテストです。これが届けば準備OKです', d: todayISO() }]; ntSync(true).then(() => toast(NT.err ? '送れませんでした：' + NT.err : '1分ほどで通知が届きます。ホーム画面に戻って待ってください')); }
+// opening the app: the subscription can disappear (iOS removes it after restoring a backup etc.)
+async function ntCheck() {
+  if (!ntS().on || !ntCan()) return;
+  try { const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription(); if (!sub || sub.endpoint !== NT.ep) { ntPut({ ep: sub ? sub.endpoint : '', err: sub ? '' : '通知の登録が切れています。「通知をオンにする」をもう一度押してください', sent: '' }); } } catch (e) {}
+  ntSoon(3000);
+}
+function ntHTML() {
+  const s = ntS(), sel = (id, v, opts) => `<select class="inp" id="${id}" style="width:auto">${opts.map(([k, l]) => `<option value="${k}" ${String(v) === String(k) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  const tm = (id, v) => `<input class="inp" type="time" id="${id}" value="${esc(v)}" style="width:auto">`;
+  if (!s.on || !NT.ep) return `<p class="note" style="margin:0">家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣を、ひび手帳から通知で知らせます。${standalone() ? '' : '<b>ホーム画面に追加したひび手帳で使えます。</b>'}</p>
+    ${s.on && NT.err ? `<p class="note" style="margin:0;color:var(--sun)">${esc(NT.err)}</p>` : ''}
+    <button class="btn primary" data-act="ntOn">${ico('bell')}通知をオンにする</button>
+    <p class="note" style="margin:0">通知の文はこのiPhoneの中だけに置きます。のりかえのサーバーには「何時に知らせるか」だけを送ります。</p>`;
+  return `<label class="toggle"><span>出発の時刻<small>行き先の駅を入れた予定で、家を出る時刻の前に</small></span><input type="checkbox" id="nt-leave" ${s.leave ? 'checked' : ''}></label>
+    ${s.leave ? `<label class="toggle"><span>家を出る</span>${sel('nt-leave-b', s.leaveBefore, [[0, 'ちょうど'], [5, '5分前'], [10, '10分前'], [15, '15分前'], [30, '30分前']])}</label>` : ''}
+    <label class="toggle"><span>明日の持ち物<small>まだ準備していない持ち物があるとき</small></span><input type="checkbox" id="nt-pack" ${s.pack ? 'checked' : ''}></label>
+    ${s.pack ? `<label class="toggle"><span>前の日の</span>${tm('nt-pack-t', s.packAt)}</label>` : ''}
+    <label class="toggle"><span>課題・やることの締め切り<small>1日前と、当日の朝8時に</small></span><input type="checkbox" id="nt-hw" ${s.hw ? 'checked' : ''}></label>
+    ${s.hw ? `<label class="toggle"><span>1日前の</span>${tm('nt-hw-t', s.hwAt)}</label>` : ''}
+    <label class="toggle"><span>習慣<small>その日の分をまだ記録していないとき</small></span><input type="checkbox" id="nt-habit" ${s.habit ? 'checked' : ''}></label>
+    ${s.habit ? `<label class="toggle"><span>毎日の</span>${tm('nt-habit-t', s.habitAt)}</label>` : ''}
+    <label class="toggle"><span>予定の前<small>iPhoneのカレンダーに書き出して通知しているなら、オフのままで</small></span><input type="checkbox" id="nt-ev" ${s.ev ? 'checked' : ''}></label>
+    ${s.ev ? `<label class="toggle"><span>予定の</span>${sel('nt-ev-b', s.evBefore, [[5, '5分前'], [10, '10分前'], [15, '15分前'], [30, '30分前'], [60, '1時間前']])}</label>` : ''}
+    <p class="note" style="margin:0">これから7日ぶんを用意しています（${NT.at ? `${md(iso(new Date(NT.at)))} ${hmOf(NT.at)} に更新` : 'まだ送っていません'}）。ひび手帳をしばらく開かないと、その先の通知は届きません。${NT.err ? `<br><span style="color:var(--sun)">${esc(NT.err)}</span>` : ''}</p>
+    <button class="btn" data-act="ntTest">${ico('bell')}テストの通知を送る</button><button class="btn ghost" data-act="ntOff">通知をオフにする</button>`;
+}
+function ntSet(o) { S.settings.ntf = Object.assign(ntS(), o); save(); const b = $('#nt-box'); if (b) b.innerHTML = ntHTML(); }
 
 /* ================= Wrapped: the year as stories (Spotify Wrapped style) ================= */
 const WR_MS = 6500;
@@ -6346,6 +6479,7 @@ function settingsHTML() {
   <div class="set-sec"><h4>ニュース（凪）</h4><div class="set-list">
     <p class="note" style="margin:0">日記の右上の「凪」のボタンから、凪をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-nagi">凪のURL</label><input class="inp" id="set-nagi" type="url" value="${esc(s.nagi || '')}" placeholder="https://○○○.github.io/news/" autocapitalize="off" spellcheck="false"></div></div></div>
+  ${inFrame ? '' : `<div class="set-sec"><h4>通知</h4><div class="set-list" id="nt-box">${ntHTML()}</div></div>`}
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   ${inFrame ? '' : `<div class="set-sec"><h4>Googleドライブに自動保存</h4><div class="set-list" id="gd-box">${gdHTML()}</div></div>`}
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
@@ -6555,16 +6689,17 @@ async function gdCheckDrive() {
 // (try: a save can come while the app is still starting)
 function gdSoon(ms = 20000) { try { if (!gdOn() || gd.hold) return; } catch (e) { return; } clearTimeout(gdT); gdT = setTimeout(gdSave, ms); }
 async function gdSave(manual) {
-  if (!gdOn() || gd.hold || loadFailed || dataPending) return;
+  if (!gdOn() || gd.hold || loadFailed || dataPending || vkNeed) return;
   if (gdBusy) { if (manual) toast('保存しています…'); return gdBusy; }
   clearTimeout(gdT);
   gdBusy = (async () => {
     const r0 = rev;
     try {
+      if (!(await vkGuard())) { if (manual) toast('ドライブのデータは暗号化されています。設定で合言葉を入れてください'); return; }
       // photos first (only those not sent yet), so the data in the drive never points at a photo that is not there
       const up = gdUploaded(), need = []; medEach(S, (o, f) => { if (isRef(o[f]) && !up.has(o[f].slice(4))) need.push(o[f].slice(4)); });
-      for (const k of [...new Set(need)]) { const v = await medIdb(k); if (v) { await gdWrite(k, v, null, 'text/plain'); up.add(k); gdUpSave(); } }
-      const txt = gdMainJSON();
+      for (const k of [...new Set(need)]) { const v = await medIdb(k); if (v) { await gdWrite(k, await vkSeal(v), null, 'text/plain'); up.add(k); gdUpSave(); } }
+      const txt = await vkSeal(gdMainJSON());
       try { gdPut({ fid: await gdWrite('hibi.json', txt, gd.fid) }); } catch (e) { if (!gd.fid) throw e; gdPut({ fid: '' }); gdPut({ fid: await gdWrite('hibi.json', txt, '') }); } // the file was removed in the drive: make it again
       // one copy per day, the last 7 days
       const T = todayISO();
@@ -6589,7 +6724,9 @@ async function gdRestore() {
   toast('Googleドライブから読み込んでいます…');
   try {
     const f = (await gdList("name='hibi.json'"))[0]; if (!f) { toast('ドライブに保存されたデータがありません'); return; }
-    const txt = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).text();
+    let txt = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).text();
+    // encrypted: this phone needs the key first (asked once, then the restore goes on)
+    if (vkIs(txt)) { try { txt = await vkOpen(txt); } catch (e) { vkNeed = true; gdPaint(); vkOpenSheet('unlock', gdRestore); return; } }
     const o = JSON.parse(txt), keys = new Set();
     medEach(o.data || o, (x, k) => { if (isRef(x[k])) keys.add(x[k].slice(4)); });
     const miss = [...keys].filter(k => !medKeys.has(k));
@@ -6598,7 +6735,8 @@ async function gdRestore() {
       const files = new Map((await gdList("not name contains 'hibi'")).map(x => [x.name, x.id]));
       for (const k of miss) {
         const id = files.get(k); if (!id) continue;
-        const v = await (await gdFetch(`${GD_API}/${id}?alt=media`)).text();
+        let v = await (await gdFetch(`${GD_API}/${id}?alt=media`)).text();
+        try { v = await vkOpen(v); } catch (e) { continue; }
         if (!isData(v)) continue;
         const db = await medDB(), tx = db.transaction('m', 'readwrite'); tx.objectStore('m').put(v, k);
         await new Promise(r => { tx.oncomplete = r; tx.onerror = r; tx.onabort = r; }); db.close(); medKeys.add(k); medKey.set(v, k);
@@ -6625,6 +6763,7 @@ function gdHTML() {
     <button class="btn primary" data-act="gdRestore">ドライブから戻す</button><button class="btn ghost" data-act="gdKeep">この端末のデータで続ける（ドライブを上書き）</button>`
     : `<p class="note" style="margin:0">最後にドライブに保存：${gdBusy ? '保存中…' : last}${gdErr ? `<br><span style="color:var(--sun)">${esc(gdErr)}</span>` : ''}</p>
     <button class="btn" data-act="gdNow">いまドライブに保存</button><button class="btn ghost" data-act="gdRestore">ドライブから戻す</button>`}
+    ${vkHTML()}
     <button class="btn ghost" data-act="gdLogout">ログアウト</button>`;
 }
 function gdPaint() { const el = $('#gd-box'); if (el) el.innerHTML = gdHTML(); }
@@ -6633,8 +6772,151 @@ function gdStart() {
   gdFromHash();
   if (gdOn() && !gd.hold && gd.rev !== rev) gdSoon(4000);
   mvSoon(2500); // move で記録した場所を受け取る
+  ntCheck(); // 通知の時刻を送りなおす
   // leaving the app: save what is waiting right away
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && gdOn() && !gd.hold && gd.rev !== rev) gdSave(); if (document.visibilityState === 'visible') mvSoon(800); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && gdOn() && !gd.hold && gd.rev !== rev) gdSave(); if (document.visibilityState === 'hidden' && ntT) ntSync(); if (document.visibilityState === 'visible') mvSoon(800); });
+}
+
+/* ================= vault: what goes to Google Drive is encrypted on this iPhone first =================
+   A random data key (AES-GCM 256) encrypts hibi.json, the daily copies, the photos and hibi-moves.json.
+   The data key itself is kept in the drive only wrapped twice (hibi-key.json): once with the passphrase, once with the recovery key.
+   This iPhone keeps the data key (localStorage 'hibi.vault'), so the passphrase is asked only on a new phone.
+   hibi-inbox.json (plans sent from まいにち / Shortcuts) stays as it is: those apps write it without the key. */
+const VK_KEY = 'hibi.vault', VK_FILE = 'hibi-key.json', VK_ITER = 310000, VK_HEAD = '{"app":"hibi-enc"';
+let VK = (() => { try { const v = JSON.parse(localStorage.getItem(VK_KEY) || 'null'); return v && v.k && v.kid ? v : null; } catch (e) { return null; } })();
+let vkCk = null, vkNeed = false, vkChecked = false;
+const vkOn = () => !!VK;
+const vkEnc = new TextEncoder(), vkDec = new TextDecoder();
+// base64url in pieces (photos are several MB: spreading them into one call would overflow)
+function vkB64(buf) { const a = new Uint8Array(buf); let s = ''; for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+const vkUn = x => fromB64u(x);
+const vkRand = n => crypto.getRandomValues(new Uint8Array(n));
+async function vkCK() { if (!vkCk) vkCk = await crypto.subtle.importKey('raw', vkUn(VK.k), 'AES-GCM', false, ['encrypt', 'decrypt']); return vkCk; }
+const vkIs = t => typeof t === 'string' && t.startsWith(VK_HEAD);
+async function vkSeal(text) {
+  if (!vkOn()) return text;
+  const iv = vkRand(12), ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await vkCK(), vkEnc.encode(text));
+  return `${VK_HEAD},"v":1,"kid":"${VK.kid}","iv":"${vkB64(iv)}","ct":"${vkB64(ct)}"}`;
+}
+async function vkOpen(text) {
+  if (!vkIs(text)) return text;
+  const o = JSON.parse(text); if (!vkOn() || o.kid !== VK.kid) throw new Error('vault');
+  return vkDec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: vkUn(o.iv) }, await vkCK(), vkUn(o.ct)));
+}
+// the passphrase and the recovery key each make a key (PBKDF2) that wraps the data key
+async function vkKek(secret, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', vkEnc.encode(secret), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function vkWrap(raw, secret) { const salt = vkRand(16), iv = vkRand(12); const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await vkKek(secret, salt, VK_ITER), raw); return { salt: vkB64(salt), iter: VK_ITER, iv: vkB64(iv), ct: vkB64(ct) }; }
+async function vkUnwrap(w, secret) { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: vkUn(w.iv) }, await vkKek(secret, vkUn(w.salt), w.iter || VK_ITER), vkUn(w.ct))); }
+// the recovery key: 20 random bytes as 32 letters (no 0/O, 1/I/L mix-ups), shown in groups of four
+const VK_AB = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function vkRecovery() { const b = vkRand(32); return [...b].map(x => VK_AB[x % 31]).join('').match(/.{4}/g).join('-'); }
+const vkRecNorm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const vkSetLocal = v => { VK = v; vkCk = null; try { if (v) localStorage.setItem(VK_KEY, JSON.stringify(v)); else localStorage.removeItem(VK_KEY); } catch (e) {} };
+async function vkKeyFile() { const f = (await gdList(`name='${VK_FILE}'`))[0]; if (!f) return null; try { return { id: f.id, o: await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).json() }; } catch (e) { if (e.message === 'revoked') throw e; return null; } }
+// before writing: a phone without the key must not put readable data over an encrypted drive
+async function vkGuard() {
+  if (!vkChecked) {
+    const f = await vkKeyFile(); vkChecked = true;
+    if (!f) { if (vkOn()) vkSetLocal(null); } // encryption was turned off elsewhere: the old key is not used any more
+    else if (!vkOn() || VK.kid !== f.o.kid) { vkSetLocal(null); vkNeed = true; gdPaint(); }
+  }
+  return !vkNeed;
+}
+// every file in the drive, encrypted (on) or back to readable (off). hibi-key.json and hibi-inbox.json are left alone
+async function vkConvert(on) {
+  const files = (await gdList("trashed=false")).filter(f => f.name !== VK_FILE && f.name !== IB_FILE);
+  let n = 0;
+  for (const f of files) {
+    const txt = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).text();
+    if (on === vkIs(txt)) continue;
+    const out = on ? await vkSeal(txt) : await vkOpen(txt);
+    await gdWrite(f.name, out, f.id, /\.json$/.test(f.name) ? 'application/json' : 'text/plain');
+    if (++n % 5 === 0) toast(`${on ? '暗号化' : '元に戻して'}います…（${n}/${files.length}）`);
+  }
+  return n;
+}
+let VKS = null; // the sheet's steps
+function vkHTML() {
+  if (!gdOn()) return '';
+  if (vkNeed) return `<p class="note" style="margin:0;color:var(--sun)">ドライブのデータは暗号化されています。この端末で使うには、合言葉か復旧キーを入れてください。それまで、ドライブへの保存を止めています。</p><button class="btn primary" data-act="vkUnlock">${ico('lock')}合言葉を入れる</button>`;
+  if (!vkOn()) return `<p class="note" style="margin:0"><b>ドライブのデータを暗号化</b>：日記・写真・場所の記録などを、このiPhoneの中で暗号にしてからドライブに送ります。Googleにも中身は読めなくなります。機種変更のときは、合言葉か復旧キーで戻します。</p><button class="btn" data-act="vkSetup">${ico('lock')}ドライブのデータを暗号化する</button>`;
+  return `<p class="note" style="margin:0">${ico('lock')} ドライブのデータは<b>暗号化</b>されています（合言葉と復旧キーで戻せます）。</p>
+    <button class="btn ghost" data-act="vkPass">合言葉を変える</button><button class="btn ghost" data-act="vkRec">復旧キーを作り直す</button><button class="btn ghost" data-act="vkOff">暗号化をやめる</button>`;
+}
+function vkSheet() {
+  const s = VKS, head = `<div class="sh-bar"><span></span><b>${s.mode === 'unlock' ? '暗号化されたデータ' : s.mode === 'pass' ? '合言葉を変える' : s.mode === 'rec' ? '復旧キー' : 'ドライブの暗号化'}</b><button class="r" data-act="close">${s.step === 'rec' ? '' : 'キャンセル'}</button></div>`;
+  if (s.step === 'rec') return head + `<div class="vk"><p class="note">これが<b>復旧キー</b>です。合言葉を忘れたときに、これでデータを戻せます。<b>この画面を閉じると、二度と表示できません。</b>スクリーンショットか紙に控えて、iPhoneの外にも残してください。</p>
+    <div class="vk-rec num" id="vk-rec">${esc(s.rec)}</div><button class="btn" data-act="vkCopy">コピー</button>
+    <label class="toggle"><span>復旧キーを控えました</span><input type="checkbox" id="vk-saved"></label>
+    <button class="btn primary" data-act="vkDone" id="vk-done" disabled>${s.mode === 'rec' ? '新しい復旧キーにする' : '暗号化をはじめる'}</button></div>`;
+  if (s.mode === 'unlock') return head + `<div class="vk"><p class="note">別の端末でドライブのデータを暗号化しています。決めた<b>合言葉</b>か<b>復旧キー</b>（XXXX-XXXX-… の32文字）を入れてください。</p>
+    <div class="fld"><input class="inp" id="vk-in" type="password" autocomplete="current-password" placeholder="合言葉 または 復旧キー" autocapitalize="off" spellcheck="false"></div>
+    <p class="note" id="vk-msg" style="color:var(--sun)"></p><button class="btn primary" data-act="vkGo">開く</button></div>`;
+  return head + `<div class="vk"><p class="note">${s.mode === 'pass' ? '新しい合言葉を決めてください。' : '合言葉を決めてください。新しいiPhoneでデータを戻すときに使います。'}<b>8文字以上</b>で、ほかで使っていないものにしてください。<br>合言葉は保存されません。忘れたときは復旧キーで戻します。</p>
+    <div class="fld"><input class="inp" id="vk-p1" type="password" autocomplete="new-password" placeholder="合言葉" autocapitalize="off" spellcheck="false"></div>
+    <div class="fld"><input class="inp" id="vk-p2" type="password" autocomplete="new-password" placeholder="もう一度" autocapitalize="off" spellcheck="false"></div>
+    <p class="note" id="vk-msg" style="color:var(--sun)"></p><button class="btn primary" data-act="vkNext">${s.mode === 'pass' ? '合言葉を変える' : '次へ'}</button></div>`;
+}
+function vkOpenSheet(mode, after) { VKS = { mode, step: 'in', after }; const sh = openSheet(vkSheet()); sh.dataset.kind = 'vault'; }
+const vkRe = () => { const sh = topSheet(); if (sh && sh.dataset.kind === 'vault') { sh.innerHTML = vkSheet(); } };
+const vkMsg = m => { const e = $('#vk-msg'); if (e) e.textContent = m; };
+async function vkNext() {
+  const a = ($('#vk-p1') || {}).value || '', b = ($('#vk-p2') || {}).value || '';
+  if (a.length < 8) return vkMsg('8文字以上にしてください');
+  if (a !== b) return vkMsg('2回の入力がちがいます');
+  vkMsg('');
+  if (VKS.mode === 'pass') {
+    try { const kf = await vkKeyFile(); if (!kf) throw new Error('nokey'); kf.o.p = await vkWrap(vkUn(VK.k), a); kf.o.at = new Date().toISOString(); await gdWrite(VK_FILE, JSON.stringify(kf.o), kf.id); closeSheet(); toast('合言葉を変えました'); }
+    catch (e) { vkMsg('変えられませんでした。通信を確かめてください'); }
+    return;
+  }
+  VKS.pass = a; VKS.rec = vkRecovery(); VKS.step = 'rec'; vkRe();
+}
+async function vkDone() {
+  const s = VKS; if (!s || s.busy) return; s.busy = true; const btn = $('#vk-done'); if (btn) { btn.disabled = true; btn.textContent = '準備しています…'; }
+  try {
+    if (s.mode === 'rec') {
+      const kf = await vkKeyFile(); if (!kf) throw new Error('nokey');
+      kf.o.r = await vkWrap(vkUn(VK.k), vkRecNorm(s.rec)); kf.o.at = new Date().toISOString(); await gdWrite(VK_FILE, JSON.stringify(kf.o), kf.id);
+      closeSheet(); toast('新しい復旧キーにしました。前の復旧キーは使えなくなりました'); return;
+    }
+    if (gdBusy) await gdBusy;
+    const raw = vkRand(32), kid = vkB64(vkRand(6));
+    const o = { app: 'hibi-key', version: 1, kid, p: await vkWrap(raw, s.pass), r: await vkWrap(raw, vkRecNorm(s.rec)), at: new Date().toISOString() };
+    const old = await vkKeyFile();
+    await gdWrite(VK_FILE, JSON.stringify(o), old ? old.id : '');
+    vkSetLocal({ kid, k: vkB64(raw) }); vkNeed = false; vkChecked = true; s.pass = s.rec = '';
+    closeSheet(); toast('ドライブのデータを暗号化しています…');
+    const n = await vkConvert(true); await gdSave(); mvSoon(500);
+    toast(`暗号化しました（${n}ファイル）`); gdPaint();
+  } catch (e) { s.busy = false; if (btn) { btn.disabled = false; btn.textContent = 'もう一度'; } toast('暗号化できませんでした。通信を確かめて、もう一度試してください'); }
+}
+async function vkGo() {
+  const x = (($('#vk-in') || {}).value || '').trim(); if (!x) return;
+  vkMsg('確かめています…');
+  try {
+    const kf = await vkKeyFile(); if (!kf) { vkNeed = false; vkChecked = true; closeSheet(); gdPaint(); toast('ドライブのデータは暗号化されていませんでした'); return; }
+    let raw = null;
+    try { raw = await vkUnwrap(kf.o.p, x); } catch (e) {}
+    if (!raw && vkRecNorm(x).length === 32) try { raw = await vkUnwrap(kf.o.r, vkRecNorm(x)); } catch (e) {}
+    if (!raw) { vkMsg('合言葉か復旧キーがちがいます'); return; }
+    vkSetLocal({ kid: kf.o.kid, k: vkB64(raw) }); vkNeed = false; vkChecked = true;
+    const after = VKS.after; closeSheet(); gdPaint(); toast('開けました');
+    if (after) after(); else { gdSoon(2000); mvSoon(1000); }
+  } catch (e) { vkMsg('確かめられませんでした。通信を確かめてください'); }
+}
+function vkOff() {
+  confirmIn('ドライブのデータの暗号化をやめて、読める形に戻しますか？', '暗号化をやめる', async () => {
+    try {
+      if (gdBusy) await gdBusy;
+      toast('元に戻しています…'); const n = await vkConvert(false);
+      const kf = await vkKeyFile(); if (kf) await gdFetch(`${GD_API}/${kf.id}`, { method: 'DELETE' }).catch(() => {});
+      vkSetLocal(null); vkNeed = false; vkChecked = true; gdPaint(); toast(`暗号化をやめました（${n}ファイル）`);
+    } catch (e) { toast('戻せませんでした。通信を確かめて、もう一度試してください'); }
+  });
 }
 
 /* ================= move（場所の記録のアプリ）と分け合う =================
@@ -6674,14 +6956,15 @@ function mvForget(kind, ids) { const g = S.mvGone = asObj(S.mvGone); g.p = Array
 let mvBusy = null, mvT = 0;
 function mvSoon(ms = 3000) { if (!gdOn()) return; clearTimeout(mvT); mvT = setTimeout(mvSync, ms); }
 async function mvSync() {
-  if (!gdOn() || loadFailed || dataPending) return;
+  if (!gdOn() || loadFailed || dataPending || vkNeed) return;
   if (mvBusy) return mvBusy;
   clearTimeout(mvT);
   mvBusy = (async () => {
     try {
       // ふたつ同時に作られていたら、全部合わせてひとつにする
       const files = [];
-      for (const f of await gdList(`name='${MV_FILE}'`)) { let o = {}; try { o = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).json(); } catch (e) { if (e.message === 'revoked') throw e; } files.push({ id: f.id, o }); }
+      if (!(await vkGuard())) return;
+      for (const f of await gdList(`name='${MV_FILE}'`)) { let o = {}, enc = false; try { const raw = await (await gdFetch(`${GD_API}/${f.id}?alt=media`)).text(); enc = vkIs(raw); o = JSON.parse(await vkOpen(raw)); } catch (e) { if (e.message === 'revoked') throw e; if (e.message === 'vault' || e.name === 'OperationError') { vkNeed = true; gdPaint(); return; } } files.push({ id: f.id, o, enc }); }
       const remote = files.length ? mvMerge(...files.map(f => f.o)) : null, all = mvMerge(remote || {}, mvLocal());
       if (!mvSame(all, mvLocal())) {
         // spots keep anything else ひび手帳 put on them; places / spots that came from move are added
@@ -6689,7 +6972,7 @@ async function mvSync() {
         S.places = all.places; S.spots = all.spots.map(x => Object.assign(old.get(x.id) || {}, x)); S.mvGone = all.gone; save(true);
         if (topSheet() && topSheet().dataset.kind === 'moves') rerenderMoves(); else if (!stack.length && st.tab === 'reflect') render();
       }
-      if (!remote || !mvSame(all, remote)) await gdWrite(MV_FILE, JSON.stringify({ app: 'hibi-moves', version: 1, savedAt: new Date().toISOString(), by: 'hibi', ...all }), files.length ? files[0].id : '');
+      if (!remote || !mvSame(all, remote) || (vkOn() && files.some(f => !f.enc))) await gdWrite(MV_FILE, await vkSeal(JSON.stringify({ app: 'hibi-moves', version: 1, savedAt: new Date().toISOString(), by: 'hibi', ...all })), files.length ? files[0].id : '');
       for (const f of files.slice(1)) await gdFetch(`${GD_API}/${f.id}`, { method: 'DELETE' }).catch(() => {});
     } catch (e) { if (e.message !== 'revoked' && navigator.onLine !== false) mvSoon(5 * 60000); }
     finally { mvBusy = null; ibSync(); }
@@ -6766,7 +7049,7 @@ async function ibSync() {
 
 /* ================= actions ================= */
 const ACT = {
-  tab: t => { st.tab = t.dataset.tab; saveUI(); main.dataset.tab = ''; render(); },
+  tab: t => { const go = () => { st.tab = t.dataset.tab; saveUI(); main.dataset.tab = ''; render(); }; if (t.dataset.tab === 'journal') secGuard('journal', go); else go(); },
   fab: () => st.tab === 'journal' || st.tab === 'reflect' ? openEntry(null, todayISO()) : openEvent(null, st.tab === 'day' ? st.day : st.sel),
   selDay: t => { const d = t.dataset.d; st.sel = d; if (d.slice(0, 7) !== st.calMonth.slice(0, 7)) st.calMonth = d.slice(0, 8) + '01'; st.day = d; render(); },
   calToday: () => { const T = todayISO(); st.anim = st.calMonth.slice(0, 7) !== T.slice(0, 7) ? { sel: '#monthGrid', dir: T > st.calMonth ? 1 : -1 } : null; st.sel = T; st.calMonth = T.slice(0, 8) + '01'; main.scrollTop = 0; while (stack.length) closeSheet(); render(); },
@@ -6919,7 +7202,8 @@ const ACT = {
     const go = () => { ps.pop(); S.school.classes.forEach(c => { c.slots = c.slots.filter(x => x.p !== p); }); save(); rerenderKind('school', schoolSheet); render(); };
     if (used.length) confirmIn(`${p + 1}限を消すと、「${used.map(c => c.name).join('」「')}」の${p + 1}限のコマも外れます。`, '消す', go); else go(); },
   pay: () => { payYM = st.calMonth.slice(0, 7); const sh = openSheet(paySheet(), 'full'); sh.dataset.kind = 'pay'; },
-  moves: () => { mvWeek = 0; mvDay = null; const sh = openSheet(movesSheet(), 'full'); sh.dataset.kind = 'moves'; requestAnimationFrame(() => setTimeout(drawMoves, 60)); mvSoon(300);
+  moves: () => secGuard('moves', () => ACT.movesGo()),
+  movesGo: () => { mvWeek = 0; mvDay = null; const sh = openSheet(movesSheet(), 'full'); sh.dataset.kind = 'moves'; requestAnimationFrame(() => setTimeout(drawMoves, 60)); mvSoon(300);
     stLoad(routeDays()).then(got => { if (got && topSheet() && topSheet().dataset.kind === 'moves') rerenderMoves(); }); },
   mvWeek: t => { mvWeek = Math.min(0, mvWeek + +t.dataset.n); mvDay = null; rerenderMoves(); },
   mvReplay: () => openReplay(),
@@ -7025,6 +7309,18 @@ const ACT = {
   },
   todoClear: () => confirmIn('完了したやること（課題をふくむ）を一覧から消します。', '消す', () => { S.todos = S.todos.filter(y => !y.done); S.school.tasks = S.school.tasks.filter(y => !y.done); save(); render(); }),
   lockSetup: () => showLock('setup', rerenderSettings),
+  ntOn: () => ntEnable(),
+  vkSetup: () => vkOpenSheet('setup'),
+  vkPass: () => vkOpenSheet('pass'),
+  vkRec: () => { vkOpenSheet('rec'); VKS.rec = vkRecovery(); VKS.step = 'rec'; vkRe(); },
+  vkUnlock: () => vkOpenSheet('unlock'),
+  vkNext: () => vkNext(),
+  vkDone: () => vkDone(),
+  vkGo: () => vkGo(),
+  vkOff: () => vkOff(),
+  vkCopy: () => { try { navigator.clipboard.writeText(VKS.rec).then(() => toast('コピーしました')); } catch (e) { toast('コピーできませんでした。書き写してください'); } },
+  ntOff: () => ntDisable(),
+  ntTest: () => ntTest(),
   lockChange: () => showLock('verify', () => setTimeout(() => showLock('setup', rerenderSettings), 50)),
   lockOff: () => showLock('verify', () => { S.settings.lock = { on: false }; save(); rerenderSettings(); toast('ロックをやめました'); }),
   lockDelay: t => { S.settings.lock = Object.assign({}, LK(), { delay: +t.dataset.k }); save(); topSheet().querySelectorAll('[data-act="lockDelay"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
@@ -7291,6 +7587,11 @@ document.addEventListener('change', async e => {
   else if (t.id === 'set-home') { S.settings.homeStation = t.value.trim(); save(); render(); }
   else if (t.id === 'set-walk' || t.id === 'set-margin') { S.settings[t.id === 'set-walk' ? 'leaveWalk' : 'leaveMargin'] = Math.max(0, Math.min(120, Math.round(+t.value || 0))); save(); render(); }
   else if (t.id === 'set-icsalarm') { S.settings.icsAlarm = +t.value; save(); }
+  else if (/^lk-sec-(journal|moves|money)$/.test(t.id)) { const l = LK(); S.settings.lock = Object.assign({}, l, { sec: Object.assign({}, l.sec, { [t.id.slice(7)]: t.checked }) }); save(); }
+  else if (t.id === 'vk-saved') { const b = $('#vk-done'); if (b) b.disabled = !t.checked; }
+  else if (/^nt-(leave|pack|hw|habit|ev)$/.test(t.id)) ntSet({ [t.id.slice(3)]: t.checked });
+  else if (t.id === 'nt-leave-b' || t.id === 'nt-ev-b') ntSet({ [t.id === 'nt-leave-b' ? 'leaveBefore' : 'evBefore']: +t.value });
+  else if (/^nt-(pack|hw|habit)-t$/.test(t.id) && /^\d\d:\d\d$/.test(t.value)) ntSet({ [t.id.split('-')[1] + 'At']: t.value });
   else if (t.id === 'set-icstodo' || t.id === 'set-icsclass') { S.settings[t.id === 'set-icstodo' ? 'icsTodo' : 'icsClass'] = t.checked; save(); }
   else if (t.id === 'set-norikae') { S.settings.norikae = t.value.trim(); save(); }
   else if (t.id === 'set-asterism') { S.settings.asterism = t.value.trim(); save(); }
@@ -7834,7 +8135,7 @@ document.addEventListener('pointerup', e => {
 }, true);
 
 Object.assign(ACT, {
-  money: t => openMoney('in', t.dataset.d),
+  money: t => secGuard('money', () => openMoney('in', t.dataset.d)),
   mnTab: t => { MNV.tab = t.dataset.k; if (MNV.tab === 'in' && !MNI) MNI = mnFresh(); rerenderMoney(); topSheet().scrollTop = 0; },
   mnEditCats: () => { MNV.tab = 'set'; MNV.ck = MNI.k; rerenderMoney(); const c = $('#mn-catsec'); if (c) c.scrollIntoView({ block: 'start' }); },
   mnKind: t => { MNI.k = t.dataset.k; rerenderMoney(); },
@@ -8860,8 +9161,12 @@ async function sendGo() {
     openSheet(`<div class="confirm"><p>「${esc(x.title)}」をひび手帳に送りました。</p><p class="note" style="margin:0 0 12px">ホーム画面のひび手帳を開くと、予定に入ります。この Safari の画面は閉じてかまいません。</p><button class="btn primary" data-act="close" style="width:100%">閉じる</button></div>`, 'small');
   } catch (e) { if (e.message !== 'revoked') toast('送れませんでした。通信を確かめて、もう一度試してください'); }
 }
+// a tapped notice opens its day (…/?d=2026-11-07, or a message from sw.js when the app is already open)
+function ntOpenDay(d) { if (!isYmd(d)) return; while (stack.length) closeSheet(); st.tab = 'day'; st.day = d; saveUI(); main.dataset.tab = ''; render(); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { const m = e.data; if (m && m.type === 'hibi:open') { try { ntOpenDay(new URL(m.url).searchParams.get('d')); } catch (x) {} } });
 function addFromUrl() {
   const q = new URLSearchParams(location.search);
+  if (q.has('d') && !q.has('add')) { const d = q.get('d'); history.replaceState(null, '', location.pathname); ntOpenDay(d); return; }
   if (!q.has('add')) return;
   history.replaceState(null, '', location.pathname); // used once
   // one sentence from a Shortcut: …?add=1&q=明日15時から17時までバイト
@@ -8885,6 +9190,7 @@ else { bootApp(); dataBoot().then(r => { if (r === 'idb') { try { while (stack.l
 function bootApp() {
 try { mnApplyFixed(); } catch (e) {}
 try { localStorage.removeItem('hibi.last'); localStorage.removeItem('hibi.chrTint'); } catch (e) {} // keys left over from 刻
+if (st.tab === 'journal' && lockOn() && (LK().sec || {}).journal) { st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); } // 日記 has its own lock: never open straight into it
 applyTheme(); if (lockOn()) showLock('unlock', addFromUrl); else addFromUrl();
 try { render(); } catch (e) { console.error(e); main.innerHTML = `<p class="empty">画面を表示できませんでした。データは消えていません。<br>設定 → バックアップ から書き出して、もう一度読み込んでみてください。</p><div style="text-align:center"><button class="btn primary" data-act="settings">設定を開く</button></div>`; }
 ensureTick();
@@ -8898,12 +9204,12 @@ if (S.settings.todayView !== false && !new URLSearchParams(location.search).has(
 }
 if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; setTimeout(endSplash, quick ? 700 : 1950); $('#splash').addEventListener('click', () => endSplash(true)); }
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if ('serviceWorker' in navigator && location.protocol === 'https:' && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v158';
+const APP_VER = 'hibi-v159';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.34.3';
-const HIBI_CHANGES = ['ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.35.0';
+const HIBI_CHANGES = ['通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
