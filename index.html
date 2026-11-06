@@ -1436,13 +1436,15 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .choice .btn .ico{width:20px;height:20px}
 /* focus timer — full screen, standby-clock style */
 .sheet.fs{max-width:none;max-height:none;height:100%;border-radius:0;padding:0;background:#0b0b10;overflow:hidden}
+.qt-custom{display:flex;align-items:center;gap:8px;margin-top:10px}.qt-custom .inp{width:96px;min-height:42px;padding:8px 12px;text-align:center}
+.icon-btn.on{color:var(--accent)}
 .tm-fs{position:relative;height:100%;display:flex;flex-direction:column;color:#fff;overflow:hidden;background:var(--tbg,#0b0b10);--dfont:var(--f-body);--dw:700}
-.tm-art{position:absolute;inset:-25%;filter:blur(46px) saturate(150%);pointer-events:none}
-.tm-art i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate}
+.tm-art{position:absolute;inset:-25%;filter:blur(46px) saturate(150%);pointer-events:none;transform:translateZ(0);contain:strict}
+.tm-art i{position:absolute;width:62%;height:62%;border-radius:50%;animation:drift 18s ease-in-out infinite alternate;animation-delay:var(--ph,0s);will-change:transform}
 .tm-art i:nth-child(1){background:var(--t1);left:2%;top:4%}
-.tm-art i:nth-child(2){background:var(--t2);right:0;top:32%;animation-duration:23s;animation-delay:-6s}
-.tm-art i:nth-child(3){background:var(--t3);left:18%;bottom:0;animation-duration:27s;animation-delay:-12s}
-@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(12%,-10%) scale(1.18)}100%{transform:translate(-10%,12%) scale(.92)}}
+.tm-art i:nth-child(2){background:var(--t2);right:0;top:32%;animation-duration:23s;animation-delay:calc(var(--ph,0s) - 6s)}
+.tm-art i:nth-child(3){background:var(--t3);left:18%;bottom:0;animation-duration:27s;animation-delay:calc(var(--ph,0s) - 12s)}
+@keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(12%,-10%,0) scale(1.18)}100%{transform:translate3d(-10%,12%,0) scale(.92)}}
 .face-ring .tm-art,.face-cards .tm-art{opacity:.75}
 .tm-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0;touch-action:none}
 .tm-top span{font-size:14px;font-weight:600;opacity:.9}
@@ -1492,7 +1494,7 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .face-wave{color:#33333a;background:#ECE9E4}
 .face-wave .tm-art{inset:0;filter:blur(10px) saturate(120%)}
 .face-wave .tm-art i{display:none}
-.tm-wave{position:absolute;left:-10%;top:18%;width:120%;height:60%;animation:wv 14s ease-in-out infinite alternate}
+.tm-wave{position:absolute;left:-10%;top:18%;width:120%;height:60%;animation:wv 14s ease-in-out infinite alternate;animation-delay:var(--ph,0s);will-change:transform}
 @keyframes wv{from{transform:translateX(-4%) skewY(-2deg)}to{transform:translateX(4%) skewY(2deg)}}
 .face-wave .tm-big{font-size:clamp(48px,min(14vw,12vh),110px);color:#8b8b90;align-self:flex-end;margin-right:4%}
 .face-wave .tm-btn,.face-wave .tm-c .cb{color:#222;background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12)}
@@ -1505,7 +1507,7 @@ button.set-row .ico{width:18px;height:18px;color:var(--ink-3)}
 .face-analog .tm-art{left:35%;opacity:.85}
 .tm-dial{width:min(64vw,40vh);aspect-ratio:1;border-radius:50%;background:rgba(40,42,50,.35);border:1px solid rgba(255,255,255,.45);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 18px 40px rgba(0,0,0,.25)}
 .tm-dial svg{width:100%;height:100%;stroke:#fff;stroke-width:4;stroke-linecap:round;fill:#fff}
-.tm-dial .hand{stroke-width:7;transition:transform 1s linear}
+.tm-dial .hand{stroke-width:7;transition:transform 1s linear;transform-origin:110px 110px;transform-box:view-box}
 .tm-pill{font-size:clamp(20px,6vw,30px);padding:.2em .8em;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .face-dots .tm-art{inset:0;filter:none;-webkit-mask-image:radial-gradient(circle,#000 42%,transparent 46%);mask-image:radial-gradient(circle,#000 42%,transparent 46%);-webkit-mask-size:9px 9px;mask-size:9px 9px}
 .face-dots .tm-art i{filter:blur(30px)}
@@ -2919,7 +2921,7 @@ function viewDay() {
   const moodCard = es.map(miniEntry).join('');
   return `
   <div class="tl-head"><button class="tl-title" data-act="dayToday" aria-label="今日に戻る"><h1><span class="yr num">${F.getFullYear()}</span>年${F.getMonth() + 1}月</h1></button>
-    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
+    <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn${S.timer ? ' on' : ''}" data-act="quickTimer" aria-label="${S.timer ? '計測中の集中タイマーを開く' : '集中タイマーをすぐ始める'}">${ico('timer')}</button><button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
     <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${h ? `<span class="tl-hol">${esc(h)}</span>` : ''}${occ.length}件の予定</p>
@@ -6144,7 +6146,7 @@ function timerHTML() {
     cards: split, flip: split,
     roll: '<div class="tm-roll"><b id="tm-a" class="num"></b><div class="col"><span id="tm-bp" class="num"></span><b id="tm-b" class="num"></b><span id="tm-bn" class="num"></span></div></div>',
   }[f] || '<b id="tm-time" class="tm-big num"></b>';
-  return `<div class="tm-fs face-${f} dg-${o.digits}${o.motion ? '' : ' still'}" style="${tVars(o, t.color)}">
+  return `<div class="tm-fs face-${f} dg-${o.digits}${o.motion ? '' : ' still'}" style="${tVars(o, t.color)};--ph:-${(Date.now() / 1000 % 1890).toFixed(2)}s">
     <div class="tm-art" aria-hidden="true"><i></i><i></i><i></i>${f === 'wave' ? '<svg class="tm-wave" viewBox="0 0 400 200" preserveAspectRatio="none"><defs><linearGradient id="twg" x1="0" x2="1"><stop offset="0" stop-color="var(--t3)"/><stop offset=".5" stop-color="var(--t1)"/><stop offset="1" stop-color="var(--t2)"/></linearGradient></defs><path d="M-40 120 C 40 40, 120 40, 200 110 S 360 180, 440 90 L 440 150 C 360 230, 280 200, 200 160 S 40 100, -40 170 Z" fill="url(#twg)"/></svg>' : ''}</div>
     <div class="tm-top"><button class="tm-btn" data-act="close" aria-label="閉じる（計測は続きます）">${ico('down')}</button><span id="tm-now" class="num"></span><button class="tm-btn" data-act="tmSet" aria-label="デザインと色を変える">${ico('palette')}</button></div>
     <div class="tm-center">
@@ -6188,7 +6190,7 @@ function tmApply(change) {
 }
 function tick() {
   const t = S.timer, chip = $('#timerChip');
-  if (!t) { chip.hidden = true; clearInterval(timerInt); timerInt = null; return; }
+  if (!t) { chip.hidden = true; clearTimeout(timerInt); timerInt = null; return; }
   if (pomoStep(t)) { const ts = stack.map(x => x.firstElementChild).find(x => x.dataset.kind === 'timer'); if (ts) ts.innerHTML = timerHTML(); }
   const pm = t.pomo, brk = pm && pm.ph === 'break', bLen = brk ? pomoBreakMs(pm.n) : 0, bLeft = brk ? pm.at + bLen - Date.now() : 0;
   const o = tset(), el = tElapsed(), plan = t.planned * 60000, left = plan - el, over = !brk && left < 0;
@@ -6214,15 +6216,57 @@ function tick() {
     const cards = $('#tm-cards'); if (cards) cards.classList.toggle('over', over && o.mode !== 'elapsed');
   }
   const frac = brk ? Math.min(1, 1 - bLeft / bLen) : Math.min(1, el / plan);
-  const bar = $('#tm-bar'); if (bar) bar.style.width = (frac * 100).toFixed(1) + '%';
-  const ring = $('#tm-ring'); if (ring) ring.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - frac)).toFixed(1);
-  const hand = $('#tm-hand'); if (hand) hand.setAttribute('transform', `rotate(${(frac * 360).toFixed(1)} 110 110)`);
+  // a freshly drawn screen (after pause, ポモドーロ…) starts at 0: put it in place at once, and glide only from then on
+  const put = (el, f) => { if (!el) return; if (el.dataset.ok) { f(el); return; } el.style.transition = 'none'; f(el); void el.getBoundingClientRect(); el.style.transition = ''; el.dataset.ok = '1'; };
+  put($('#tm-bar'), el => { el.style.width = (frac * 100).toFixed(2) + '%'; });
+  put($('#tm-ring'), el => { el.style.strokeDashoffset = (2 * Math.PI * 100 * (1 - frac)).toFixed(2); });
+  put($('#tm-hand'), el => { el.style.transform = `rotate(${(frac * 360).toFixed(2)}deg)`; });
   if (!brk && !t.notified && !t.paused && el >= plan) { t.notified = true; save(); toast('予定の時間になりました'); }
 }
-function ensureTick() { if (S.timer && !timerInt) timerInt = setInterval(tick, 1000); tick(); }
+// one update just after each whole second of the timer (a plain 1-second interval drifts, so a second could be skipped or shown twice)
+function ensureTick() {
+  if (S.timer && !timerInt) { const loop = () => { if (!S.timer) { timerInt = null; return; } tick(); const ms = (S.timer.paused ? Date.now() : tElapsed()) % 1000; timerInt = setTimeout(loop, 1000 - ms + 15); }; timerInt = setTimeout(loop, 0); }
+  tick();
+}
 function openTimer() {
   const sh = openSheet(timerHTML(), 'fs'); sh.dataset.kind = 'timer'; ensureTick();
   wakeReq();
+}
+/* ---- start the focus timer right away, without a plan (the header button between 大学 and 電車) ---- */
+let QT = null;
+const QT_MIN = [15, 25, 30, 45, 60, 90, 120];
+function qtHTML() {
+  const q = QT;
+  return `<div class="sh-bar"><button class="l" data-act="close">キャンセル</button><b>集中タイマー</b><span></span></div>
+  <div class="fld"><label for="qt-title">なにをする？</label><input class="inp title" id="qt-title" value="${esc(q.title)}" placeholder="集中" maxlength="40" autocomplete="off"></div>
+  <div class="fld"><span class="lb">時間</span><div class="chips">${QT_MIN.map(m => `<button class="chip" data-act="qtMin" data-v="${m}" aria-pressed="${q.min === m}">${dur(m)}</button>`).join('')}</div>
+    <div class="qt-custom"><input class="inp num" id="qt-min" type="number" inputmode="numeric" min="1" max="600" value="${q.min}" aria-label="分"><span>分</span></div></div>
+  <div class="fld"><span class="lb">色</span><div class="swatches">${COLORS.map(c => `<button class="sw" style="--c:${c};width:30px;height:30px" data-act="qtColor" data-c="${c}" aria-pressed="${q.color === c}" aria-label="${c}"></button>`).join('')}</div></div>
+  <label class="toggle"><span>🍅 ポモドーロ<small>${pomoSet().w}分集中＋${pomoSet().b}分休憩をくり返す</small></span><input type="checkbox" id="qt-pomo" ${q.pomo ? 'checked' : ''}></label>
+  <p class="note">「記録する」を押すと、集中した時間がそのまま今日のタイムラインに予定として残ります。</p>
+  <div class="sheet-actions"><button class="btn primary" data-act="qtGo">${ico('play')}始める</button></div>`;
+}
+function openQuickTimer() {
+  if (S.timer) { while (stack.length) closeSheet(); openTimer(); return; }
+  const last = S.settings.quickTimer || {};
+  QT = { title: '', min: QT_MIN.includes(+last.min) || (+last.min > 0 && +last.min <= 600) ? +last.min : 25, color: COLORS.includes(last.color) ? last.color : COLORS[6], pomo: !!S.settings.pomoOn };
+  const sh = openSheet(qtHTML(), 'pick'); sh.dataset.kind = 'quick';
+}
+function qtGo() {
+  const q = QT; if (!q) return;
+  q.title = (($('#qt-title') || {}).value || '').trim(); q.min = Math.max(1, Math.min(600, Math.round(+(($('#qt-min') || {}).value) || q.min)));
+  pomoUnlock();
+  const title = q.title || '集中', now = Date.now();
+  S.settings.quickTimer = { min: q.min, color: q.color }; S.settings.pomoOn = q.pomo;
+  S.timer = { id: 'q' + uid(), quick: true, t0: now, d: todayISO(), title, color: q.color, icon: q.title ? guessIcon(q.title) : 'timer', planned: q.min, startedAt: now, accum: 0, paused: false, pomo: q.pomo ? { ph: 'work', base: 0, n: 0, at: 0 } : null };
+  save(); while (stack.length) closeSheet(); render(); openTimer();
+}
+// a quick timer becomes a plan on the timeline, from when it started to now
+function qtRecord(t, min) {
+  const end = new Date(), st0 = new Date(t.t0 || Date.now() - min * 60000), d0 = iso(st0), d1 = iso(end);
+  const ev = { id: uid(), title: t.title, date: d0, endDate: d1 !== d0 ? d1 : '', allDay: false, start: hhmm(st0.getHours() * 60 + st0.getMinutes()), end: hhmm(end.getHours() * 60 + end.getMinutes()), color: t.color, icon: t.icon, repeat: 'none', routine: false, memo: '', done: { [d0]: true }, actual: { [d0]: min } };
+  if (ev.end === ev.start && !ev.endDate) ev.end = hhmm((toMin(ev.start) + 1) % 1440);
+  S.events.push(ev); return ev;
 }
 function wakeReq() { if (wakeLock && !wakeLock.released) return; try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {} }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.timer && stack.some(o => o.firstElementChild.dataset.kind === 'timer')) wakeReq(); });
@@ -7370,6 +7414,10 @@ const ACT = {
     else go();
   },
   openTimer: () => { if (S.timer) openTimer(); },
+  quickTimer: () => openQuickTimer(),
+  qtMin: t => { QT.title = (($('#qt-title') || {}).value || ''); QT.min = +t.dataset.v; rerenderKind('quick', qtHTML); },
+  qtColor: t => { QT.title = (($('#qt-title') || {}).value || ''); QT.min = Math.max(1, Math.round(+(($('#qt-min') || {}).value) || QT.min)); QT.color = t.dataset.c; rerenderKind('quick', qtHTML); },
+  qtGo: () => qtGo(),
   tmSet: () => { const sh = openSheet(tmSetHTML(), 'pick'); sh.dataset.kind = 'tmset'; },
   tmSetFace: t => tmApply({ face: t.dataset.k }),
   pomoSet: t => { S.settings.pomo = Object.assign(pomoSet(), { [t.dataset.k]: +t.dataset.v }); save(); tmApply({}); hbRe(); },
@@ -7384,7 +7432,9 @@ const ACT = {
   },
   tmPause: () => { const t = S.timer; if (!t) return; pomoUnlock(); if (t.pomo && t.pomo.ph === 'break') { t.startedAt = Date.now(); t.paused = false; t.pomo.ph = 'work'; t.pomo.base = t.accum; save(); rerenderKind('timer', timerHTML); tick(); return; } if (t.paused) { t.startedAt = Date.now(); t.paused = false; } else { t.accum += Date.now() - t.startedAt; t.paused = true; } save(); rerenderKind('timer', timerHTML); tick(); },
   tmFinish: () => {
-    const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000)), ev = S.events.find(x => x.id === t.id);
+    const t = S.timer; if (!t) return; const min = Math.max(1, Math.round(tElapsed() / 60000));
+    if (t.quick) { qtRecord(t, min); S.timer = null; save(); releaseWake(); while (stack.length) closeSheet(); render(); tick(); toast(`${dur(min)}の集中をタイムラインに記録しました`); return; }
+    const ev = S.events.find(x => x.id === t.id);
     if (ev) { ev.actual = Object.assign({}, ev.actual, { [t.d]: ((ev.actual || {})[t.d] || 0) + min }); ev.done = Object.assign({}, ev.done, { [t.d]: true }); }
     // the same practice as a 灯 timer habit (same name, or the plan 灯 made): add the minutes there too
     const nk2 = x => String(x || '').replace(/[\s　]/g, ''), hh = ev && hbAct().find(h => h.kind === 'time' && (ev.habit === h.id || nk2(h.name) === nk2(ev.title)));
@@ -7588,6 +7638,8 @@ document.addEventListener('change', async e => {
   else if (t.id === 'set-walk' || t.id === 'set-margin') { S.settings[t.id === 'set-walk' ? 'leaveWalk' : 'leaveMargin'] = Math.max(0, Math.min(120, Math.round(+t.value || 0))); save(); render(); }
   else if (t.id === 'set-icsalarm') { S.settings.icsAlarm = +t.value; save(); }
   else if (/^lk-sec-(journal|moves|money)$/.test(t.id)) { const l = LK(); S.settings.lock = Object.assign({}, l, { sec: Object.assign({}, l.sec, { [t.id.slice(7)]: t.checked }) }); save(); }
+  else if (t.id === 'qt-pomo') { if (QT) QT.pomo = t.checked; }
+  else if (t.id === 'qt-min') { if (QT) { QT.min = Math.max(1, Math.min(600, Math.round(+t.value || QT.min))); topSheet().querySelectorAll('[data-act="qtMin"]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === QT.min)); } }
   else if (t.id === 'vk-saved') { const b = $('#vk-done'); if (b) b.disabled = !t.checked; }
   else if (/^nt-(leave|pack|hw|habit|ev)$/.test(t.id)) ntSet({ [t.id.slice(3)]: t.checked });
   else if (t.id === 'nt-leave-b' || t.id === 'nt-ev-b') ntSet({ [t.id === 'nt-leave-b' ? 'leaveBefore' : 'evBefore']: +t.value });
@@ -9206,10 +9258,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v159';
+const APP_VER = 'hibi-v160';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.35.0';
-const HIBI_CHANGES = ['通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.36.0';
+const HIBI_CHANGES = ['タイムライン上の大学と電車のボタンのあいだに、集中タイマーをすぐ始めるボタンを追加しました。予定がなくても、なにをするか・時間・色を選んで始められます。記録すると、集中した時間がそのままタイムラインに残ります', '集中タイマーの秒の進みがときどき飛んだり、一時停止・再開のときに進み具合のバーや背景がガクッと戻ったりしていたのを直しました', '通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || location.protocol !== 'https:' || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
