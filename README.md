@@ -111,3 +111,41 @@ home で調べた「現在地から家まで」の経路は、home の「ひび�
 - まいにち は home と同じ `hibi-inbox.json` に `kind: "event"` の項目（`{ title, date, start, end, allDay, memo, show, countdown, chrOn }`。`show` は `both`／`cal`（カレンダーだけ）／`tl`（タイムラインだけ））を置き、ひび手帳は開いたとき・戻ったときにそれを読んで予定に入れる（入れたものは中から消し、同じ日・同じ時刻・同じ名前の予定がもうあれば入れない）
 - 入るまでのあいだ、まいにち の画面では「追加待ち」として表示される
 - まいにち の AI で調べた経路（のりかえ）も、home と同じ `kind: "route"` の項目で届き、経路の予定になる
+
+## iOS アプリ版（Capacitor・署名なし IPA）
+
+GitHub Pages 版のファイルはそのままにして、`npm run build` でビルド用の `www/` にコピーし、Capacitor 8 で iOS アプリに包みます。IPA は GitHub Actions の無料 macOS ランナーで作ります（Apple Developer Program なし・署名なし）。iPhone へは AltStore などで個人署名して入れます。
+
+- アプリ名：ひび手帳／Bundle ID：`jp.weakestandstrongest.hibi`／iOS 15.0 以上／iPhone 用
+- 追加したファイル：`package.json`・`package-lock.json`・`capacitor.config.ts`・`scripts/prepare-web.mjs`（www/ を作る）・`scripts/ios-icons.mjs`（アイコンを入れる）・`ios-assets/AppIcon.appiconset/`（`icons/icon-512.png` から作ったアイコン一式）・`.github/workflows/ios-ipa.yml`・`.gitignore`
+- `www/`・`ios/`・`node_modules/` は毎回作り直すので、リポジトリには入れない
+
+### Windows 11 で（www/ と iOS プロジェクトを作るところまで）
+
+Node.js 22 以上を入れてから、PowerShell で：
+
+```powershell
+git clone https://github.com/weakestandstrongest-sketch/day.git
+cd day
+npm install
+npm run build          # www/ を作る（index.html・manifest.webmanifest・sw.js・privacy.html・icons/・startup/ をコピー）
+npx cap add ios        # ios/ を作る（初回だけ。作り直すときは ios フォルダを消してから）
+npm run ios:icons      # アプリのアイコンを入れる
+npx cap sync ios       # www/ の中身を iOS プロジェクトに入れる
+```
+
+iOS のビルド（xcodebuild）は Mac が必要なので、Windows ではここまでです。IPA は次の GitHub Actions で作ります。
+
+### GitHub Actions で IPA を作って受け取る
+
+1. GitHub のリポジトリ → Actions → 「iOS IPA (unsigned)」→「Run workflow」で実行（main のひび手帳のファイルが変わったときも自動で実行されます）
+2. 終わったら（緑のチェック）、その実行のページの下にある Artifacts の「hibi-unsigned-ipa」をダウンロード（ZIP の中に `hibi-unsigned.ipa`）。保存は 7 日間
+3. `hibi-unsigned.ipa` を AltStore（または SideStore など）で、自分の Apple ID で署名して iPhone に入れる。無料の Apple ID の署名は 7 日で切れるので、AltStore で更新する
+
+### iOS アプリ版で、まだ動かないもの
+
+- **Google でログイン（ドライブの自動保存）**：アプリの中の住所は `capacitor://localhost` になり、ログインの窓口（のりかえの Worker）はこの住所への戻りを許していません。また Google はアプリの中の画面でのログインを禁止しています。外のブラウザでログインして、`jp.weakestandstrongest.hibi://` のようなアプリ専用の住所で戻ってくる仕組みと、Worker 側の対応が必要です（別の作業）
+- **のりかえ・駅・道・通知の Worker**：Worker が `capacitor://localhost` からの呼び出しを許していないので、出発時刻・経路・地図の道などは動きません（Worker 側で許可を足す必要あり）
+- **通知（Web Push）・ホーム画面のオフライン機能**：アプリの中では Service Worker が使えません
+- **まいにち（AI）**：`../hibi2/` を開く作りなので、アプリには入っていません
+- **データ**：Safari／ホーム画面版のデータとアプリ版のデータは別の場所に保存されます。移すときは、ホーム画面版で 設定 → バックアップ →「いまバックアップを保存」したファイルを、アプリ版の 設定 →「バックアップファイルから復元」で読み込みます（ドライブから戻すのはログインが動くようになってから）

@@ -1,0 +1,105 @@
+# ひび手帳の iOS アプリ（署名なし IPA）を作る。
+# GitHub の標準 macOS ランナー（無料枠）で、Capacitor 8 の iOS プロジェクトを毎回作り直してビルドする。
+# できた IPA は Artifacts「hibi-unsigned-ipa」に 7 日間置く。iPhone には AltStore などで個人署名して入れる。
+name: iOS IPA (unsigned)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - manifest.webmanifest
+      - sw.js
+      - privacy.html
+      - icons/**
+      - startup/**
+      - ios-assets/**
+      - package.json
+      - package-lock.json
+      - capacitor.config.ts
+      - scripts/**
+      - .github/workflows/ios-ipa.yml
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Build www/
+        run: |
+          npm run build
+          test -f www/index.html
+
+      - name: Add iOS platform
+        run: npx cap add ios
+
+      - name: App icons
+        run: npm run ios:icons
+
+      - name: Sync
+        run: npx cap sync ios
+
+      - name: Show versions
+        run: |
+          xcodebuild -version
+          node -v
+          grep -m1 IPHONEOS_DEPLOYMENT_TARGET ios/App/App.xcodeproj/project.pbxproj
+
+      - name: Build (Release, no signing)
+        run: |
+          set -o pipefail
+          cd ios/App
+          # Capacitor 8 は Swift Package Manager（App.xcodeproj）。CocoaPods のときは App.xcworkspace を使う
+          if [ -d App.xcworkspace ]; then TARGET=(-workspace App.xcworkspace); else TARGET=(-project App.xcodeproj); fi
+          xcodebuild "${TARGET[@]}" \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            TARGETED_DEVICE_FAMILY=1 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Make IPA
+        run: |
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist"
+          rm -rf Payload hibi-unsigned.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          # ditto keeps the bundle as it is (symlinks, permissions); the result is a normal ZIP named .ipa
+          ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
+          unzip -l hibi-unsigned.ipa | grep ' Payload/App.app/' | head -5
+          ls -lh hibi-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hibi-unsigned-ipa
+          path: hibi-unsigned.ipa
+          retention-days: 7
+          if-no-files-found: error

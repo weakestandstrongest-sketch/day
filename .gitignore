@@ -1,0 +1,8 @@
+# iOS アプリ版（Capacitor）のビルドで作られるもの。リポジトリには入れない
+node_modules/
+www/
+ios/
+build/
+*.ipa
+Payload/
+.DS_Store
