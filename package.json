@@ -1,0 +1,28 @@
+{
+  "name": "hibi-techo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ひび手帳を Capacitor で iOS アプリにするためのビルド設定（GitHub Pages 版のファイルはそのまま使い、www/ にコピーしてから包む）",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "node scripts/prepare-web.mjs",
+    "cap:add:ios": "cap add ios",
+    "cap:sync:ios": "cap sync ios",
+    "ios:icons": "node scripts/ios-icons.mjs",
+    "ios:setup": "node scripts/ios-setup.mjs"
+  },
+  "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@capgo/capacitor-native-biometric": "8.9.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "typescript": "5.9.3"
+  }
+}

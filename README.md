@@ -111,3 +111,49 @@ home で調べた「現在地から家まで」の経路は、home の「ひび�
 - まいにち は home と同じ `hibi-inbox.json` に `kind: "event"` の項目（`{ title, date, start, end, allDay, memo, show, countdown, chrOn }`。`show` は `both`／`cal`（カレンダーだけ）／`tl`（タイムラインだけ））を置き、ひび手帳は開いたとき・戻ったときにそれを読んで予定に入れる（入れたものは中から消し、同じ日・同じ時刻・同じ名前の予定がもうあれば入れない）
 - 入るまでのあいだ、まいにち の画面では「追加待ち」として表示される
 - まいにち の AI で調べた経路（のりかえ）も、home と同じ `kind: "route"` の項目で届き、経路の予定になる
+
+## iOS アプリ版（Capacitor・署名なし IPA）
+
+GitHub Pages 版のファイルはそのままにして、`npm run build` でビルド用の `www/` にコピーし、Capacitor 8 で iOS アプリに包みます。IPA は GitHub Actions の無料 macOS ランナーで作ります（Apple Developer Program なし・署名なし）。iPhone へは AltStore などで個人署名して入れます。
+
+- アプリ名：ひび手帳／Bundle ID：`jp.weakestandstrongest.hibi`／iOS 15.0 以上／iPhone 用
+- 追加したファイル：`package.json`・`package-lock.json`・`capacitor.config.ts`・`scripts/prepare-web.mjs`（www/ を作る）・`scripts/ios-setup.mjs`（アイコンと Info.plist の設定を入れる）・`ios-assets/`（アイコン一式と、その元の 1024px 画像）・`.github/workflows/ios-ipa.yml`・`.gitignore`
+- 使うプラグイン：`@capacitor/app`（Google ログインから戻る）・`@capacitor/browser`（ログインを Safari で開く）・`@capgo/capacitor-native-biometric`（Face ID でロックを開く）
+- `www/`・`ios/`・`node_modules/` は毎回作り直すので、リポジトリには入れない
+- index.html の中で、アプリの中で動いているとき（`window.Capacitor`）だけ分岐しています。Safari／ホーム画面版の動きは変わりません
+
+### アプリ版で変わるところ
+
+- **Google でログイン**：Safari（アプリの上に重なる画面）でログインし、`jp.weakestandstrongest.hibi://auth/` でアプリに戻ります。のりかえの Worker がこの住所への戻りと、`capacitor://localhost` からの呼び出しを受け付けます
+- **のりかえ・駅・道**：のりかえの Worker が `capacitor://localhost` を許可しているので、出発時刻・経路・地図の道が使えます
+- **まいにち（AI）**：リポジトリ hibi2 をアプリの中の `hibi2/` に入れて、ひび手帳から今までどおり開きます
+- **Face ID のロック**：iPhone の Face ID（ネイティブ）で開きます
+- **アップデートの確認**：GitHub Pages の版と比べて、新しければ「IPA を作り直して入れ直す」よう知らせます
+- **まだ使えないもの**：通知（Web Push）と、オフライン用の Service Worker
+
+### Windows 11 で（www/ と iOS プロジェクトを作るところまで）
+
+Node.js 22 以上を入れてから、PowerShell で：
+
+```powershell
+git clone https://github.com/weakestandstrongest-sketch/day.git
+git clone https://github.com/weakestandstrongest-sketch/hibi2.git   # まいにち（AI）。day の隣に置くと自動で入る
+cd day
+npm install
+npm run build          # www/ を作る（index.html・manifest.webmanifest・sw.js・privacy.html・icons/・startup/、隣の hibi2 があれば www/hibi2/）
+npx cap add ios        # ios/ を作る（初回だけ。作り直すときは ios フォルダを消してから）
+npm run ios:setup      # アイコンと Info.plist（ログインから戻る URL スキーム・Face ID などの説明）を入れる
+npx cap sync ios       # www/ の中身とプラグインを iOS プロジェクトに入れる
+```
+
+hibi2 を別の場所に置いたときは、`$env:HIBI2_DIR = "C:\path\to\hibi2"` を設定してから `npm run build` します。iOS のビルド（xcodebuild）は Mac が必要なので、Windows ではここまでです。IPA は次の GitHub Actions で作ります。
+
+### GitHub Actions で IPA を作って受け取る
+
+1. GitHub のリポジトリ → Actions → 「iOS IPA (unsigned)」→「Run workflow」で実行（main のひび手帳のファイルが変わったときも自動で実行されます。まいにち（hibi2）だけを変えたときは、手動で実行してください）
+2. 終わったら（緑のチェック）、その実行のページの下にある Artifacts の「hibi-unsigned-ipa」をダウンロード（ZIP の中に `hibi-unsigned.ipa`）。保存は 7 日間
+3. `hibi-unsigned.ipa` を AltStore（または SideStore など）で、自分の Apple ID で署名して iPhone に入れる。無料の Apple ID の署名は 7 日で切れるので、AltStore で更新する
+
+### データ
+
+Safari／ホーム画面版のデータとアプリ版のデータは別の場所に保存されます。アプリ版で Google にログインして「ドライブから戻す」を押すと、ドライブに保存してあるデータが入ります（ファイルで移すときは、ホーム画面版の 設定 → バックアップ →「いまバックアップを保存」したファイルを、アプリ版の 設定 →「バックアップファイルから復元」で読み込みます）
