@@ -6,7 +6,7 @@ name: iOS IPA (unsigned)
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/hibi-ios-ipa-workflow] # TEMP: ブランチでの動作確認用
+    branches: [main]
     paths:
       - index.html
       - manifest.webmanifest
