@@ -94,10 +94,11 @@ jobs:
           # ditto keeps the bundle as it is (symlinks, permissions); the result is a normal ZIP named .ipa
           ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/index.html$'
           unzip -l hibi-unsigned.ipa | grep ' Payload/App.app/' | head -5
           ls -lh hibi-unsigned.ipa
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: hibi-unsigned-ipa
           path: hibi-unsigned.ipa
