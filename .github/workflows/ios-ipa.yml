@@ -35,6 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # まいにち（AI）も一緒に入れる（ひび手帳は ../hibi2/ を開くので、アプリの中の hibi2/ に置く）
+      - uses: actions/checkout@v5
+        with:
+          repository: weakestandstrongest-sketch/hibi2
+          path: hibi2-src
+
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -44,15 +50,19 @@ jobs:
         run: npm install
 
       - name: Build www/
+        env:
+          HIBI2_DIR: hibi2-src
+          HIBI2_REQUIRED: '1'
         run: |
           npm run build
           test -f www/index.html
+          test -f www/hibi2/ai/mainichi-ai.js
 
       - name: Add iOS platform
         run: npx cap add ios
 
-      - name: App icons
-        run: npm run ios:icons
+      - name: App icons and Info.plist (URL scheme for the Google login, Face ID etc.)
+        run: npm run ios:setup
 
       - name: Sync
         run: npx cap sync ios
@@ -95,6 +105,9 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/index.html$'
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/hibi2/ai/mainichi-ai.js$'
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' "$APP/Info.plist"
           unzip -l hibi-unsigned.ipa | grep ' Payload/App.app/' | head -5
           ls -lh hibi-unsigned.ipa
 
