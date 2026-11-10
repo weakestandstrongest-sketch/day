@@ -116,7 +116,7 @@ home で調べた「現在地から家まで」の経路は、home の「ひび�
 
 GitHub Pages 版のファイルはそのままにして、`npm run build` でビルド用の `www/` にコピーし、Capacitor 8 で iOS アプリに包みます。IPA は GitHub Actions の無料 macOS ランナーで作ります（Apple Developer Program なし・署名なし）。iPhone へは AltStore などで個人署名して入れます。
 
-- アプリ名：ひび手帳／Bundle ID：`jp.weakestandstrongest.hibi`／iOS 15.0 以上／iPhone 用
+- アプリ名：ひび手帳（Info.plist の表示名は英字の `Hibi`。AltStore が Apple に登録する名前は英数字しか使えないため。日本語の iPhone のホーム画面には `ios-assets/ja.lproj/InfoPlist.strings` の「ひび手帳」が出る）／Bundle ID：`jp.weakestandstrongest.hibi`／iOS 15.0 以上／iPhone 用
 - 追加したファイル：`package.json`・`package-lock.json`・`capacitor.config.ts`・`scripts/prepare-web.mjs`（www/ を作る）・`scripts/ios-setup.mjs`（アイコンと Info.plist の設定を入れる）・`ios-assets/`（アイコン一式と、その元の 1024px 画像）・`.github/workflows/ios-ipa.yml`・`.gitignore`
 - 使うプラグイン：`@capacitor/app`（Google ログインから戻る）・`@capacitor/browser`（ログインを Safari で開く）・`@capgo/capacitor-native-biometric`（Face ID でロックを開く）
 - `www/`・`ios/`・`node_modules/` は毎回作り直すので、リポジトリには入れない

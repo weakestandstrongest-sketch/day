@@ -98,12 +98,16 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist"
+          # the home screen name in Japanese (Info.plist keeps the plain "Hibi" that AltStore can register with Apple)
+          cp -R ios-assets/ja.lproj "$APP/"
+          plutil -lint "$APP/ja.lproj/InfoPlist.strings"
           rm -rf Payload hibi-unsigned.ipa
           mkdir Payload
           cp -R "$APP" Payload/
           # ditto keeps the bundle as it is (symlinks, permissions); the result is a normal ZIP named .ipa
           ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/ja.lproj/InfoPlist.strings$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/index.html$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/hibi2/ai/mainichi-ai.js$'
           /usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$APP/Info.plist"

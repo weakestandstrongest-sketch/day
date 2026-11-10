@@ -1,6 +1,6 @@
 // `npx cap add ios` で作られた iOS プロジェクトに、ひび手帳に必要な設定を入れる（毎回作り直すので、ここで足す）
 //   - アプリのアイコン（ios-assets/AppIcon.appiconset）
-//   - Info.plist：Google ログインから戻る URL スキーム、Face ID・カメラ・マイク・位置情報・写真の使い道の説明
+//   - Info.plist：表示名（英字の Hibi。日本語の iPhone では ja.lproj で「ひび手帳」）、Google ログインから戻る URL スキーム、Face ID・カメラ・マイク・位置情報・写真の使い道の説明
 // Windows・macOS・Linux どれでも動く。何度実行しても同じ結果になる。
 import { cp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -18,6 +18,10 @@ await cp(join(root, 'ios-assets', 'AppIcon.appiconset'), iconTo, { recursive: tr
 // Info.plist
 const SCHEME = 'jp.weakestandstrongest.hibi';
 const keys = {
+  // AltStore / AltServer register the app with Apple under this name, and Apple only takes letters and digits there
+  // ("The name for this app is invalid"). The home screen still shows ひび手帳 from ja.lproj/InfoPlist.strings,
+  // which the workflow copies into the app (ios-assets/ja.lproj).
+  CFBundleDisplayName: '<string>Hibi</string>',
   CFBundleURLTypes: `<array><dict><key>CFBundleURLName</key><string>${SCHEME}</string><key>CFBundleURLSchemes</key><array><string>${SCHEME}</string></array></dict></array>`,
   NSFaceIDUsageDescription: '<string>ひび手帳のロックを Face ID で開くために使います。</string>',
   NSCameraUsageDescription: '<string>日記の写真を撮るために使います。</string>',

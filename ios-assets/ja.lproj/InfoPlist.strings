@@ -1,0 +1,3 @@
+/* ホーム画面に出る名前（日本語の iPhone）。Info.plist の CFBundleDisplayName は AltStore のために英字の Hibi */
+"CFBundleDisplayName" = "ひび手帳";
+"CFBundleName" = "ひび手帳";
