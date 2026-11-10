@@ -9,7 +9,8 @@ const config: CapacitorConfig = {
   ios: {
     // 画面のすみ（ノッチ・ホームバー）は、ひび手帳の CSS が env(safe-area-inset-*) で避けている
     contentInset: 'never',
-    backgroundColor: '#F5EFEB',
+    // behind the page while it loads: black, like the screen before it (no beige flash before the launch animation)
+    backgroundColor: '#000000',
   },
 };
 

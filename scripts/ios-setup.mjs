@@ -14,6 +14,10 @@ try { await stat(app); } catch { console.error('ios/ がありません。先に
 const iconTo = join(app, 'Assets.xcassets', 'AppIcon.appiconset');
 await rm(iconTo, { recursive: true, force: true });
 await cp(join(root, 'ios-assets', 'AppIcon.appiconset'), iconTo, { recursive: true });
+// the screen before ひび手帳 starts: plain black (Capacitor's own is white with its logo)
+const splashTo = join(app, 'Assets.xcassets', 'Splash.imageset');
+await rm(splashTo, { recursive: true, force: true });
+await cp(join(root, 'ios-assets', 'Splash.imageset'), splashTo, { recursive: true });
 
 // Info.plist
 const SCHEME = 'jp.weakestandstrongest.hibi';
