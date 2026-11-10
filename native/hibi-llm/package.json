@@ -1,0 +1,12 @@
+{
+  "name": "hibi-llm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "まいにち（ひび手帳の AI）を iPhone の中で直接動かす Capacitor プラグイン：llama.cpp（GGUF のモデル）と Apple Intelligence（Foundation Models）",
+  "license": "MIT",
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  }
+}

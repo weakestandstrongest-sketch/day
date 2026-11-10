@@ -6,3 +6,6 @@ build/
 *.ipa
 Payload/
 .DS_Store
+
+# llama.cpp を iOS 用にビルドしたもの（GitHub Actions が作る）
+native/hibi-llm/ios/llama.xcframework/

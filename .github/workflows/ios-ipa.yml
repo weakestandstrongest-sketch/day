@@ -19,6 +19,7 @@ on:
       - package-lock.json
       - capacitor.config.ts
       - scripts/**
+      - native/**
       - .github/workflows/ios-ipa.yml
 
 concurrency:
@@ -27,6 +28,10 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  # llama.cpp の版（Gemma 4・Qwen3.5・LFM3・Bonsai 2 の Q2_0 に対応している版）
+  LLAMA_CPP_REF: v0.9.0
 
 jobs:
   build:
@@ -40,6 +45,29 @@ jobs:
         with:
           repository: weakestandstrongest-sketch/hibi2
           path: hibi2-src
+
+      # まいにち の AI をアプリの中で動かす llama.cpp（GGUF のモデル用）。作るのに数分かかるので、同じ版ならキャッシュを使う
+      - name: llama.cpp for iOS (cache)
+        id: llama-cache
+        uses: actions/cache@v4
+        with:
+          path: native/hibi-llm/ios/llama.xcframework
+          key: llama-xcframework-${{ env.LLAMA_CPP_REF }}-ios-device-v1
+
+      - name: Build llama.cpp for iOS
+        if: steps.llama-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 --branch "$LLAMA_CPP_REF" https://github.com/ggml-org/llama.cpp "$RUNNER_TEMP/llama.cpp"
+          cd "$RUNNER_TEMP/llama.cpp"
+          ./build-xcframework.sh ios-device
+          rm -rf "$GITHUB_WORKSPACE/native/hibi-llm/ios/llama.xcframework"
+          cp -R build-apple/llama.xcframework "$GITHUB_WORKSPACE/native/hibi-llm/ios/"
+
+      - name: Check llama.xcframework
+        run: |
+          ls native/hibi-llm/ios/llama.xcframework
+          find native/hibi-llm/ios/llama.xcframework -name llama.h | head -1 | xargs grep -c llama_model_load_from_file
 
       - uses: actions/setup-node@v5
         with:
@@ -65,7 +93,11 @@ jobs:
         run: npm run ios:setup
 
       - name: Sync
-        run: npx cap sync ios
+        run: |
+          npx cap sync ios
+          # まいにち の AI のプラグインが入っているか
+          grep -n 'HibiLlm' ios/App/CapApp-SPM/Package.swift
+          grep -n 'HibiLLMPlugin' ios/App/App/capacitor.config.json
 
       - name: Show versions
         run: |
@@ -107,6 +139,7 @@ jobs:
           # ditto keeps the bundle as it is (symlinks, permissions); the result is a normal ZIP named .ipa
           ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Frameworks/llama.framework/llama$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/ja.lproj/InfoPlist.strings$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/index.html$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/hibi2/ai/mainichi-ai.js$'
