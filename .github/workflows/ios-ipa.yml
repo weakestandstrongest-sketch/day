@@ -61,6 +61,7 @@ jobs:
           git clone -q --depth 1 --branch "$LLAMA_CPP_REF" https://github.com/ggml-org/llama.cpp "$RUNNER_TEMP/llama.cpp"
           cd "$RUNNER_TEMP/llama.cpp"
           ./build-xcframework.sh ios-device
+          mkdir -p "$GITHUB_WORKSPACE/native/hibi-llm/ios"
           rm -rf "$GITHUB_WORKSPACE/native/hibi-llm/ios/llama.xcframework"
           cp -R build-apple/llama.xcframework "$GITHUB_WORKSPACE/native/hibi-llm/ios/"
 
