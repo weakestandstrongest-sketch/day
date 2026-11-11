@@ -150,6 +150,7 @@ enum AlarmStore {
     private static let key = "hibi.alarms"
     static func ids() -> [UUID] { (UserDefaults.standard.stringArray(forKey: key) ?? []).compactMap(UUID.init(uuidString:)) }
     static func save(_ ids: [UUID]) { UserDefaults.standard.set(ids.map(\.uuidString), forKey: key) }
+    @available(iOS 16.0, *)
     static func weekday(_ n: Int) -> Locale.Weekday? {
         switch n { case 0: return .sunday; case 1: return .monday; case 2: return .tuesday; case 3: return .wednesday
         case 4: return .thursday; case 5: return .friday; case 6: return .saturday; default: return nil }
