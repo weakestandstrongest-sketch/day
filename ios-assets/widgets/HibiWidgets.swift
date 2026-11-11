@@ -247,6 +247,14 @@ func agendaLines(_ entry: HibiEntry, budget: Int) -> [AgendaLine] {
     return out
 }
 
+let hhmmFmt: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "HH:mm"; return f }()
+/// "08:45"（そろえるため0をつける）・"終日"
+func hhmm(_ it: HibiItem) -> String {
+    if it.allDay ?? (it.time == "終日") { return "終日" }
+    if let s = it.startAt { return hhmmFmt.string(from: Date(timeIntervalSince1970: s / 1000)) }
+    return it.time
+}
+
 struct HibiAgenda: View {
     let entry: HibiEntry
     let budget: Int
@@ -263,22 +271,22 @@ struct HibiAgenda: View {
                     Text(t).font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary).frame(height: line)
                 case .item(let it):
                     HStack(spacing: 7) {
-                        Text(it.time).font(.system(size: 11, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).frame(width: 33, alignment: .leading)
+                        Text(hhmm(it)).font(.system(size: 11, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
                         RoundedRectangle(cornerRadius: 1.5).fill(mono ? Color.primary : Color(hex: it.color, fallback: .primary)).frame(width: 3.5, height: 15)
                         Text(it.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     }
                     .frame(height: line)
                 }
             }
-            Spacer(minLength: 0)
         }
     }
 }
 
+/// 月のカレンダー：iPhone のカレンダーアプリの小さいウィジェットと同じ形
+/// （赤い「11月」、曜日、今日は赤い丸に白い数字、土日・祝日はうすい色。行は高さいっぱいに等しく並べる）
 struct HibiMonthGrid: View {
     let date: Date
     let data: HibiWidgetData?
-    var cell: CGFloat = 17
     var font: CGFloat = 12
     var body: some View {
         let cal = Calendar(identifier: .gregorian)
@@ -289,18 +297,20 @@ struct HibiMonthGrid: View {
         let ws = data?.weekStart ?? 1
         let lead = (cal.component(.weekday, from: first) - 1 - ws + 7) % 7
         let key = String(format: "%04d-%02d", y, m)
-        let ev = Set(data?.evDays?[key] ?? []), hol = Set(data?.holDays?[key] ?? [])
+        let hol = Set(data?.holDays?[key] ?? [])
+        let mono = data?.mono ?? false
         let heads = ws == 1 ? ["月", "火", "水", "木", "金", "土", "日"] : ["日", "月", "火", "水", "木", "金", "土"]
         let cells: [Int] = Array(repeating: 0, count: lead) + Array(1...days)
         let rows = (cells.count + 6) / 7
+        let red = mono ? Color.primary : Color.red
         VStack(alignment: .leading, spacing: 0) {
-            Text("\(m)月").font(.system(size: font + 1, weight: .bold)).frame(height: cell, alignment: .bottom).padding(.leading, 4)
+            Text("\(m)月").font(.system(size: font + 1, weight: .bold)).foregroundStyle(red).padding(.leading, 3).padding(.bottom, 3)
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { i in
-                    Text(heads[i]).font(.system(size: font - 2.5, weight: .semibold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                    Text(heads[i]).font(.system(size: font - 1.5, weight: .bold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: cell)
+            .frame(maxHeight: .infinity)
             ForEach(0..<rows, id: \.self) { r in
                 HStack(spacing: 0) {
                     ForEach(0..<7, id: \.self) { c in
@@ -309,23 +319,17 @@ struct HibiMonthGrid: View {
                         let col = (ws + c) % 7 // 0 = Sunday
                         let dim = col == 0 || col == 6 || hol.contains(d)
                         ZStack {
-                            if d == today {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.primary.opacity(0.16)).frame(width: font * 2 + 2, height: cell + 1)
-                            }
+                            if d == today { Circle().fill(red).frame(width: font * 1.85, height: font * 1.85) }
                             if d > 0 {
-                                Text("\(d)").font(.system(size: font, weight: d == today ? .bold : .medium).monospacedDigit())
-                                    .foregroundStyle(dim && d != today ? Color.secondary : Color.primary)
-                                if ev.contains(d) && d != today {
-                                    Capsule().fill(dim ? Color.secondary : Color.primary.opacity(0.7)).frame(width: font * 1.15, height: 1.6).offset(y: font * 0.78)
-                                }
+                                Text("\(d)").font(.system(size: font, weight: .semibold).monospacedDigit())
+                                    .foregroundStyle(d == today ? (mono ? Color(UIColor.systemBackground) : Color.white) : (dim ? Color.secondary : Color.primary))
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: cell)
                     }
                 }
+                .frame(maxHeight: .infinity)
             }
-            Spacer(minLength: 0)
         }
     }
 }
@@ -336,17 +340,18 @@ struct HibiCalendarView: View {
     var body: some View {
         Group {
             if family == .systemLarge {
-                VStack(alignment: .leading, spacing: 8) {
-                    HibiMonthGrid(date: entry.date, data: entry.data, cell: 24, font: 15).frame(height: 24 * 8)
+                VStack(alignment: .leading, spacing: 10) {
+                    HibiMonthGrid(date: entry.date, data: entry.data, font: 15).frame(height: 200)
                     Rectangle().fill(Color.secondary.opacity(0.25)).frame(height: 0.5)
-                    HibiAgenda(entry: entry, budget: 7, line: 19)
+                    HibiAgenda(entry: entry, budget: 7, line: 19).frame(maxHeight: .infinity, alignment: .top)
                 }
             } else if family == .systemSmall {
-                HibiMonthGrid(date: entry.date, data: entry.data, cell: 16, font: 10.5)
+                HibiMonthGrid(date: entry.date, data: entry.data, font: 11)
             } else {
-                HStack(alignment: .top, spacing: 14) {
-                    HibiAgenda(entry: entry, budget: 7, line: 19).frame(maxWidth: .infinity, alignment: .leading)
-                    HibiMonthGrid(date: entry.date, data: entry.data, cell: 17, font: 11.5).frame(maxWidth: .infinity)
+                HStack(alignment: .center, spacing: 14) {
+                    // the plans: centred top-to-bottom
+                    HibiAgenda(entry: entry, budget: 7, line: 19).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    HibiMonthGrid(date: entry.date, data: entry.data, font: 11.5).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }
@@ -376,7 +381,7 @@ func nextItems(_ entry: HibiEntry, _ n: Int) -> [NextItem] {
     return Array((today.map { NextItem(it: $0, tomorrow: false) } + tom.map { NextItem(it: $0, tomorrow: true) }).prefix(n))
 }
 
-let hmFmt: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "H:mm"; return f }()
+let hmFmt: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "HH:mm"; return f }()
 func timeRange(_ x: NextItem) -> String {
     guard let s = x.it.startAt else { return x.it.time }
     let a = hmFmt.string(from: Date(timeIntervalSince1970: s / 1000))
