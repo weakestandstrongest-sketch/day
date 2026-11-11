@@ -5,6 +5,7 @@ import SwiftUI
 import Capacitor
 import PhotosUI
 import AVFoundation
+import MediaPlayer
 #if canImport(WidgetKit)
 import WidgetKit
 #endif
@@ -437,26 +438,66 @@ enum HibiAlarms {
 final class HibiRinger {
     static let shared = HibiRinger()
     private var player: AVAudioPlayer?
+    private var vol: MPVolumeView?
+    private var ramp: Timer?
+    private var saved: Float?
+    private var started = Date()
+
+    /// 鳴らす：iPhone の音量が 0 でも聞こえるよう、iPhone の音量を少しずつ上げて、30秒で最大に。
+    /// 音量ボタンで下げられても、すぐ元の大きさへ戻す（止めるのは「止める」だけ）
     func ring(_ name: String) {
         stop()
         let n = HibiSounds.names.contains(name) ? name : "bell" // iPhone の標準の音はアプリからは鳴らせないので、ベルで
         guard let u = Bundle.main.url(forResource: n, withExtension: "wav", subdirectory: "public/sounds") else { return }
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-        try? AVAudioSession.sharedInstance().setActive(true)
+        let ses = AVAudioSession.sharedInstance()
+        try? ses.setCategory(.playback, mode: .default, options: [])
+        try? ses.setActive(true)
+        saved = ses.outputVolume
         player = try? AVAudioPlayer(contentsOf: u)
         player?.numberOfLoops = -1
         player?.volume = 1
         player?.play()
+        installVolumeView()
+        started = Date()
+        ramp?.invalidate()
+        ramp = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in self?.tick() }
+        tick()
     }
+
+    private func tick() {
+        let t = Date().timeIntervalSince(started)
+        let want = Float(min(1.0, 0.2 + 0.8 * t / 30))
+        if abs(AVAudioSession.sharedInstance().outputVolume - want) > 0.02 { setVolume(want) }
+    }
+
+    private func installVolumeView() {
+        guard vol == nil else { return }
+        let w = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap { $0.windows }.first { $0.isKeyWindow }
+        let v = MPVolumeView(frame: CGRect(x: -3000, y: -3000, width: 20, height: 20)) // off screen: no volume bubble on screen
+        v.alpha = 0.01
+        w?.addSubview(v)
+        vol = v
+    }
+
+    private func setVolume(_ x: Float) {
+        guard let s = vol?.subviews.compactMap({ $0 as? UISlider }).first else { return }
+        s.setValue(x, animated: false)
+        s.sendActions(for: .valueChanged)
+    }
+
     func stop() {
+        ramp?.invalidate(); ramp = nil
+        let had = player != nil
         player?.stop(); player = nil
+        if had, let v = saved { setVolume(v) } // the volume the iPhone had before
+        saved = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
 
 /// ひび手帳のアラーム音（アプリに入っている sounds/*.wav）を、iPhone が鳴らせる場所（Library/Sounds）へ置く
 enum HibiSounds {
-    static let names = ["bell", "chime", "marimba", "digital", "breeze", "birds", "harp", "clock"]
+    static let names = ["bell", "chime", "marimba", "harp", "musicbox", "piano", "kalimba", "sunrise", "birds", "waves", "digital", "clock"]
     static func file(_ name: String) -> String? { names.contains(name) ? "hibi-\(name).wav" : nil }
     static func install() {
         let fm = FileManager.default
