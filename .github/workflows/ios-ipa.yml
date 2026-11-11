@@ -100,6 +100,12 @@ jobs:
           grep -n 'HibiLlm' ios/App/CapApp-SPM/Package.swift
           grep -n 'HibiLLMPlugin' ios/App/App/capacitor.config.json
 
+      # ショートカット・Siri とバックグラウンドの更新（アプリ本体）、ウィジェットとライブアクティビティ（拡張機能 HibiWidgets）
+      - name: Widgets, Siri, background refresh
+        run: |
+          ruby -e 'require "xcodeproj"' 2>/dev/null || sudo gem install xcodeproj --no-document
+          ruby scripts/ios-extras.rb
+
       - name: Show versions
         run: |
           xcodebuild -version
@@ -134,6 +140,12 @@ jobs:
           # the home screen name in Japanese (Info.plist keeps the plain "Hibi" that AltStore can register with Apple)
           cp -R ios-assets/ja.lproj "$APP/"
           plutil -lint "$APP/ja.lproj/InfoPlist.strings"
+          # sign each part ad hoc with the App Group, so AltStore registers it (the app and the widget share 「今日の予定」 there)
+          test -d "$APP/PlugIns/HibiWidgets.appex"
+          for f in "$APP"/Frameworks/*; do codesign -f -s - "$f"; done
+          codesign -f -s - --entitlements ios-assets/hibi.entitlements "$APP/PlugIns/HibiWidgets.appex"
+          codesign -f -s - --entitlements ios-assets/hibi.entitlements "$APP"
+          codesign -d --entitlements - "$APP" | grep -c application-groups
           rm -rf Payload hibi-unsigned.ipa
           mkdir Payload
           cp -R "$APP" Payload/
@@ -141,6 +153,7 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent Payload hibi-unsigned.ipa
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Info.plist$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/Frameworks/llama.framework/llama$'
+          unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/PlugIns/HibiWidgets.appex/HibiWidgets$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/ja.lproj/InfoPlist.strings$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/index.html$'
           unzip -l hibi-unsigned.ipa | grep -q ' Payload/App.app/public/hibi2/ai/mainichi-ai.js$'

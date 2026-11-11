@@ -2,6 +2,12 @@ import Foundation
 import UIKit
 import CoreLocation
 import Capacitor
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 #if canImport(AlarmKit)
 import AlarmKit
 import SwiftUI
@@ -24,6 +30,10 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "alarmStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmAuth", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "widgetSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "siriSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "takeIntent", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "liveSet", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -61,6 +71,70 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     /// The points recorded since the last time (and forget them here: ひび手帳 keeps them from now on).
     @objc func bgLocTake(_ call: CAPPluginCall) {
         DispatchQueue.main.async { call.resolve(["points": PlaceRecorder.shared.take()]) }
+    }
+
+
+    // MARK: - widgets (the JSON goes to the App Group, then every widget reloads)
+
+    @objc func widgetSet(_ call: CAPPluginCall) {
+        guard let json = call.getString("json"), let url = HibiGroup.widgetFile else { return call.resolve(["ok": false, "group": HibiGroup.id]) }
+        do { try json.data(using: .utf8)?.write(to: url, options: .atomic) } catch { return call.resolve(["ok": false, "group": HibiGroup.id, "error": error.localizedDescription]) }
+        #if canImport(WidgetKit)
+        if #available(iOS 14.0, *) { WidgetCenter.shared.reloadAllTimelines() }
+        #endif
+        call.resolve(["ok": true, "group": HibiGroup.id])
+    }
+
+    // MARK: - what Siri / Shortcuts read without opening the app
+
+    @objc func siriSet(_ call: CAPPluginCall) {
+        let d = UserDefaults.standard
+        d.set(call.getString("today") ?? "", forKey: "hibi.todayText")
+        d.set(call.getString("date") ?? "", forKey: "hibi.todayDate")
+        d.set(call.getArray("next", JSObject.self)?.map { o -> [String: Any] in ["at": (o["at"] as? Double) ?? Double((o["at"] as? Int) ?? 0), "say": (o["say"] as? String) ?? ""] } ?? [], forKey: "hibi.next")
+        call.resolve()
+    }
+
+    /// What a shortcut asked for when it opened the app ("newEntry", "newEvent", "timer", "alarms"), once.
+    @objc func takeIntent(_ call: CAPPluginCall) {
+        let d = UserDefaults.standard, s = d.string(forKey: "hibi.intent") ?? "", at = d.double(forKey: "hibi.intent.at")
+        d.removeObject(forKey: "hibi.intent")
+        call.resolve(["intent": Date().timeIntervalSince1970 - at < 120 ? s : ""])
+    }
+
+    // MARK: - live activities: [{ key, kind: "timer"|"leave", title, symbol, startAt, endAt, sub }] — the ones not in the list end
+
+    @objc func liveSet(_ call: CAPPluginCall) {
+        #if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            let want = call.getArray("items", JSObject.self) ?? []
+            Task {
+                guard ActivityAuthorizationInfo().areActivitiesEnabled else { return call.resolve(["enabled": false]) }
+                var keep = Set<String>()
+                for o in want {
+                    let key = (o["key"] as? String) ?? ""
+                    let ms = { (k: String) -> Double in (o[k] as? Double) ?? Double((o[k] as? Int) ?? 0) }
+                    let end = Date(timeIntervalSince1970: ms("endAt") / 1000), start = Date(timeIntervalSince1970: ms("startAt") / 1000)
+                    if end <= Date() { continue }
+                    keep.insert(key)
+                    let state = HibiActivityAttributes.ContentState(endAt: end, startAt: start, sub: (o["sub"] as? String) ?? "")
+                    let content = ActivityContent(state: state, staleDate: end.addingTimeInterval(60))
+                    if let a = Activity<HibiActivityAttributes>.activities.first(where: { LiveKeys.key(of: $0.id) == key }) {
+                        await a.update(content)
+                    } else {
+                        let attrs = HibiActivityAttributes(kind: (o["kind"] as? String) ?? "timer", title: (o["title"] as? String) ?? "ひび手帳", symbol: (o["symbol"] as? String) ?? "timer")
+                        if let a = try? Activity.request(attributes: attrs, content: content, pushType: nil) { LiveKeys.set(a.id, key) }
+                    }
+                }
+                for a in Activity<HibiActivityAttributes>.activities where !keep.contains(LiveKeys.key(of: a.id) ?? "") {
+                    await a.end(nil, dismissalPolicy: .immediate)
+                }
+                call.resolve(["enabled": true, "count": keep.count])
+            }
+            return
+        }
+        #endif
+        call.resolve(["enabled": false])
     }
 
     // MARK: - alarms (AlarmKit, iOS 26)
@@ -144,6 +218,13 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
 @available(iOS 26.0, *)
 struct HibiAlarmData: AlarmMetadata {}
 #endif
+
+/// Which live activity is which plan (the activity id → ひび手帳's key).
+enum LiveKeys {
+    private static let k = "hibi.live"
+    static func key(of id: String) -> String? { (UserDefaults.standard.dictionary(forKey: k) as? [String: String])?[id] }
+    static func set(_ id: String, _ key: String) { var d = (UserDefaults.standard.dictionary(forKey: k) as? [String: String]) ?? [:]; d[id] = key; if d.count > 40 { d = [id: key] }; UserDefaults.standard.set(d, forKey: k) }
+}
 
 /// The alarms ひび手帳 has set (so it can take them back before setting the new list).
 enum AlarmStore {

@@ -35,7 +35,10 @@ const keys = {
   NSPhotoLibraryAddUsageDescription: '<string>撮った写真を「写真」アプリに保存するために使います。</string>',
   // iPhone の機能（2.43）：場所の記録・歩数・カレンダー・リマインダー・アラーム
   NSLocationAlwaysAndWhenInUseUsageDescription: '<string>アプリを閉じているあいだも、行った場所を「この1週間の動き」に記録するために使います（iPhoneの中だけに保存します）。</string>',
-  UIBackgroundModes: '<array><string>location</string></array>',
+  UIBackgroundModes: '<array><string>location</string><string>fetch</string></array>',
+  // 2.45：ライブアクティビティ（ダイナミックアイランド）と、バックグラウンドの更新
+  NSSupportsLiveActivities: '<true/>',
+  BGTaskSchedulerPermittedIdentifiers: '<array><string>jp.weakestandstrongest.hibi.refresh</string></array>',
   NSMotionUsageDescription: '<string>歩数と歩いた距離を、タイムラインとふりかえりに出すために使います。</string>',
   NSCalendarsFullAccessUsageDescription: '<string>iPhoneのカレンダーの予定をひび手帳に表示し、ひび手帳の予定を「ひび手帳」カレンダーに書き出すために使います。</string>',
   NSCalendarsWriteOnlyAccessUsageDescription: '<string>ひび手帳の予定を、iPhoneのカレンダーに書き出すために使います。</string>',
@@ -46,8 +49,17 @@ const plistPath = join(app, 'Info.plist');
 let plist = await readFile(plistPath, 'utf8');
 for (const [k, v] of Object.entries(keys)) {
   // remove an older copy of the key (so running twice changes nothing), then add it before the closing </dict>
-  plist = plist.replace(new RegExp(`\\s*<key>${k}</key>\\s*(<string>[\\s\\S]*?</string>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
+  plist = plist.replace(new RegExp(`\\s*<key>${k}</key>\\s*(<true/>|<false/>|<string>[\\s\\S]*?</string>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
   plist = plist.replace(/\n?<\/dict>\s*<\/plist>\s*$/, `\n\t<key>${k}</key>\n\t${v}\n</dict>\n</plist>\n`);
 }
 await writeFile(plistPath, plist);
+
+// AppDelegate：バックグラウンドの更新は、起動しきる前に登録しないといけない（HibiBackground は ios-assets/app-extra）
+const adPath = join(app, 'AppDelegate.swift');
+let ad = await readFile(adPath, 'utf8');
+if (!ad.includes('HibiBackground.register()')) {
+  ad = ad.replace(/(didFinishLaunchingWithOptions[^{]*\{)/, '$1\n        HibiBackground.register()');
+  if (!ad.includes('HibiBackground.register()')) { console.error('AppDelegate.swift: didFinishLaunching が見つかりません'); process.exit(1); }
+  await writeFile(adPath, ad);
+}
 console.log('iOS プロジェクトに、アイコンと Info.plist の設定（URL スキーム・Face ID などの説明）を入れました');
