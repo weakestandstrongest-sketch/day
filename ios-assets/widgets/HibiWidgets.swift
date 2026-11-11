@@ -385,20 +385,24 @@ func timeRange(_ x: NextItem) -> String {
     return (x.tomorrow ? "明日 " : "") + t
 }
 
-/// 予定の丸いアイコン（色の丸に白い絵）
+/// 予定の丸いアイコン（不透明な丸に白い絵。後ろの線は透けない）
 struct NextBubble: View {
     let x: NextItem
     let size: CGFloat
     let mono: Bool
     let live: Bool
     var body: some View {
-        let c = mono ? Color.primary : Color(hex: x.it.color, fallback: .accentColor)
+        // mono: 落ち着いた灰色の丸に白い絵（白い丸に白い絵で見えなくならないように）
+        let c = mono ? Color(white: 0.42) : Color(hex: x.it.color, fallback: Color(white: 0.42))
         ZStack {
-            Circle().fill(c.opacity(live ? 1 : 0.85))
-            Image(systemName: x.it.sym ?? "circle.fill").font(.system(size: size * 0.42, weight: .semibold))
-                .foregroundStyle(mono ? Color(UIColor.systemBackground) : .white)
+            Circle().fill(Color.black)          // fully opaque base, so the line behind never shows through
+            Circle().fill(c)
+            Image(systemName: x.it.sym ?? "circle.fill").font(.system(size: size * 0.46, weight: .semibold))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.18), radius: 1, y: 0.5)
         }
         .frame(width: size, height: size)
+        .overlay(Circle().strokeBorder(Color.white.opacity(live ? 0.9 : 0), lineWidth: 2))
     }
 }
 
@@ -429,7 +433,8 @@ struct HibiNextView: View {
         let list = nextItems(entry, 1)
         return ZStack(alignment: .topLeading) {
             if let x = list.first {
-                Rectangle().fill(Color.secondary.opacity(0.35)).frame(width: 3).frame(height: 84).offset(x: 26.5, y: -26)
+                Rectangle().fill(Color.secondary.opacity(0.45)).frame(width: 3, height: 30).offset(x: 26.5, y: -30)
+                Rectangle().fill(Color.secondary.opacity(0.45)).frame(width: 3, height: 16).offset(x: 26.5, y: 56)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top) {
                         NextBubble(x: x, size: 56, mono: mono, live: isLive(x))
