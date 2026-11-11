@@ -1,0 +1,266 @@
+import Foundation
+import UIKit
+import CoreLocation
+import Capacitor
+#if canImport(AlarmKit)
+import AlarmKit
+import SwiftUI
+#endif
+
+/// ひび手帳の iPhone アプリ版で、iPhone の機能を使う（AI のプラグインと同じパッケージ）。
+///
+/// - 場所：アプリを閉じていても、行った場所（滞在）と大きな移動を記録する（CLVisit・大きな位置の変化）。
+///   iPhone の中に貯めておき、ひび手帳を開いたときに「この1週間の動き」へ渡す。どこにも送らない。
+/// - アラーム：iOS 26 の AlarmKit で、目覚まし（毎週）と出発時刻のアラームを鳴らす（マナーモード・集中モードでも鳴る）。
+@objc(HibiDevicePlugin)
+public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "HibiDevicePlugin"
+    public let jsName = "HibiDevice"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "bgLocStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "bgLocStart", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "bgLocStop", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "bgLocTake", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmAuth", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmSet", returnType: CAPPluginReturnPromise),
+    ]
+
+    override public func load() {
+        // the app may have been started in the background by a visit: keep recording
+        DispatchQueue.main.async { if PlaceRecorder.shared.enabled { PlaceRecorder.shared.start() } }
+    }
+
+    // MARK: - places in the background
+
+    @objc func bgLocStatus(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            call.resolve(["enabled": PlaceRecorder.shared.enabled, "auth": PlaceRecorder.shared.authName(), "pending": PlaceRecorder.shared.count()])
+        }
+    }
+
+    /// Asks for 「常に許可」 (iOS first shows 「使用中のみ」, and later asks the person again by itself) and starts.
+    @objc func bgLocStart(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            PlaceRecorder.shared.enabled = true
+            PlaceRecorder.shared.askAlways { auth in
+                PlaceRecorder.shared.start()
+                call.resolve(["enabled": true, "auth": auth])
+            }
+        }
+    }
+
+    @objc func bgLocStop(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            PlaceRecorder.shared.enabled = false
+            PlaceRecorder.shared.stop()
+            call.resolve(["enabled": false])
+        }
+    }
+
+    /// The points recorded since the last time (and forget them here: ひび手帳 keeps them from now on).
+    @objc func bgLocTake(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { call.resolve(["points": PlaceRecorder.shared.take()]) }
+    }
+
+    // MARK: - alarms (AlarmKit, iOS 26)
+
+    @objc func alarmStatus(_ call: CAPPluginCall) {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            let s: String
+            switch AlarmManager.shared.authorizationState {
+            case .authorized: s = "authorized"
+            case .denied: s = "denied"
+            case .notDetermined: s = "notDetermined"
+            @unknown default: s = "unknown"
+            }
+            return call.resolve(["state": s, "count": AlarmStore.ids().count])
+        }
+        #endif
+        call.resolve(["state": "unavailable", "count": 0])
+    }
+
+    @objc func alarmAuth(_ call: CAPPluginCall) {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            Task {
+                do {
+                    let st = try await AlarmManager.shared.requestAuthorization()
+                    call.resolve(["state": st == .authorized ? "authorized" : st == .denied ? "denied" : "notDetermined"])
+                } catch { call.reject("アラームを許可できませんでした（\(error.localizedDescription)）") }
+            }
+            return
+        }
+        #endif
+        call.resolve(["state": "unavailable"])
+    }
+
+    /// Replaces every alarm ひび手帳 has set with this list:
+    /// [{ key, title, kind: "fixed", at: ms } | { key, title, kind: "weekly", hour, minute, weekdays: [0-6, 0 = 日] }]
+    @objc func alarmSet(_ call: CAPPluginCall) {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            let list = call.getArray("alarms", JSObject.self) ?? []
+            Task {
+                // cancel what was set before
+                for id in AlarmStore.ids() { try? AlarmManager.shared.cancel(id: id) }
+                var done: [UUID] = []
+                var failed = 0
+                for a in list.prefix(40) {
+                    let title = (a["title"] as? String) ?? "ひび手帳"
+                    let kind = (a["kind"] as? String) ?? "fixed"
+                    let schedule: Alarm.Schedule
+                    if kind == "weekly" {
+                        let h = (a["hour"] as? Int) ?? 7, m = (a["minute"] as? Int) ?? 0
+                        let wd = ((a["weekdays"] as? [Any]) ?? []).compactMap { $0 as? Int }.compactMap(AlarmStore.weekday)
+                        schedule = .relative(.init(time: .init(hour: h, minute: m), repeats: wd.isEmpty ? .never : .weekly(wd)))
+                    } else {
+                        guard let ms = a["at"] as? Double ?? (a["at"] as? Int).map(Double.init) else { failed += 1; continue }
+                        let date = Date(timeIntervalSince1970: ms / 1000)
+                        if date <= Date() { continue }
+                        schedule = .fixed(date)
+                    }
+                    let stop = AlarmButton(text: "止める", textColor: .white, systemImageName: "stop.circle")
+                    let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: title), stopButton: stop)
+                    let attrs = AlarmAttributes<HibiAlarmData>(presentation: AlarmPresentation(alert: alert), metadata: HibiAlarmData(), tintColor: Color(red: 0.88, green: 0.5, blue: 0.47))
+                    let id = UUID()
+                    do {
+                        _ = try await AlarmManager.shared.schedule(id: id, configuration: .init(schedule: schedule, attributes: attrs))
+                        done.append(id)
+                    } catch { failed += 1 }
+                }
+                AlarmStore.save(done)
+                call.resolve(["count": done.count, "failed": failed])
+            }
+            return
+        }
+        #endif
+        call.reject("アラームは iOS 26 以降で使えます", "UNAVAILABLE")
+    }
+}
+
+#if canImport(AlarmKit)
+@available(iOS 26.0, *)
+struct HibiAlarmData: AlarmMetadata {}
+#endif
+
+/// The alarms ひび手帳 has set (so it can take them back before setting the new list).
+enum AlarmStore {
+    private static let key = "hibi.alarms"
+    static func ids() -> [UUID] { (UserDefaults.standard.stringArray(forKey: key) ?? []).compactMap(UUID.init(uuidString:)) }
+    static func save(_ ids: [UUID]) { UserDefaults.standard.set(ids.map(\.uuidString), forKey: key) }
+    static func weekday(_ n: Int) -> Locale.Weekday? {
+        switch n { case 0: return .sunday; case 1: return .monday; case 2: return .tuesday; case 3: return .wednesday
+        case 4: return .thursday; case 5: return .friday; case 6: return .saturday; default: return nil }
+    }
+}
+
+/// Records where the iPhone has been while ひび手帳 is closed. The points stay in a file of this app until ひび手帳 takes them.
+final class PlaceRecorder: NSObject, CLLocationManagerDelegate {
+    static let shared = PlaceRecorder()
+    private let manager = CLLocationManager()
+    private var onAuth: ((String) -> Void)?
+    private let flagKey = "hibi.bgloc"
+
+    var enabled: Bool {
+        get { UserDefaults.standard.bool(forKey: flagKey) }
+        set { UserDefaults.standard.set(newValue, forKey: flagKey) }
+    }
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        manager.pausesLocationUpdatesAutomatically = true
+    }
+
+    func authName() -> String {
+        switch manager.authorizationStatus {
+        case .authorizedAlways: return "always"
+        case .authorizedWhenInUse: return "whenInUse"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .notDetermined: return "notDetermined"
+        @unknown default: return "unknown"
+        }
+    }
+
+    func askAlways(_ done: @escaping (String) -> Void) {
+        let st = manager.authorizationStatus
+        if st == .authorizedAlways || st == .denied || st == .restricted { return done(authName()) }
+        onAuth = done
+        if st == .notDetermined { manager.requestWhenInUseAuthorization() } else { manager.requestAlwaysAuthorization() }
+        // iOS may not answer (already asked before): do not wait for ever
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20) { [weak self] in
+            if let f = self?.onAuth { self?.onAuth = nil; f(self?.authName() ?? "unknown") }
+        }
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let st = manager.authorizationStatus
+        if st == .authorizedWhenInUse && onAuth != nil {
+            // the first answer is 「使用中のみ」: ask for 「常に」 right after, as iOS wants
+            manager.requestAlwaysAuthorization()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                if let f = self?.onAuth { self?.onAuth = nil; f(self?.authName() ?? "unknown") }
+            }
+            return
+        }
+        if st != .notDetermined, let f = onAuth { onAuth = nil; f(authName()) }
+        if enabled { start() }
+    }
+
+    func start() {
+        let st = manager.authorizationStatus
+        guard enabled, st == .authorizedAlways || st == .authorizedWhenInUse else { return }
+        if CLLocationManager.significantLocationChangeMonitoringAvailable() { manager.startMonitoringSignificantLocationChanges() }
+        manager.startMonitoringVisits()
+    }
+
+    func stop() {
+        manager.stopMonitoringSignificantLocationChanges()
+        manager.stopMonitoringVisits()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
+        var p: [String: Any] = ["lat": round5(visit.coordinate.latitude), "lng": round5(visit.coordinate.longitude), "acc": Int(visit.horizontalAccuracy), "src": "visit"]
+        let arr = visit.arrivalDate, dep = visit.departureDate
+        // a visit can be told twice: on arriving (no departure yet) and on leaving
+        p["t"] = Int64((arr == .distantPast ? Date() : arr).timeIntervalSince1970 * 1000)
+        if dep != .distantFuture { p["until"] = Int64(dep.timeIntervalSince1970 * 1000) }
+        append(p)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        for l in locations where l.horizontalAccuracy >= 0 && l.horizontalAccuracy < 1500 {
+            append(["t": Int64(l.timestamp.timeIntervalSince1970 * 1000), "lat": round5(l.coordinate.latitude), "lng": round5(l.coordinate.longitude), "acc": Int(l.horizontalAccuracy), "src": "move"])
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
+
+    private func round5(_ x: Double) -> Double { (x * 100000).rounded() / 100000 }
+
+    // ---- the file of points not yet given to ひび手帳
+    private var fileURL: URL? {
+        guard let base = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else { return nil }
+        return base.appendingPathComponent("hibi-bgloc.json")
+    }
+    private func read() -> [[String: Any]] {
+        guard let u = fileURL, let d = try? Data(contentsOf: u), let a = try? JSONSerialization.jsonObject(with: d) as? [[String: Any]] else { return [] }
+        return a
+    }
+    private func write(_ a: [[String: Any]]) {
+        guard let u = fileURL, let d = try? JSONSerialization.data(withJSONObject: a) else { return }
+        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+    func append(_ p: [String: Any]) {
+        var a = read()
+        a.append(p)
+        if a.count > 3000 { a.removeFirst(a.count - 3000) }
+        write(a)
+    }
+    func count() -> Int { read().count }
+    func take() -> [[String: Any]] { let a = read(); write([]); return a }
+}

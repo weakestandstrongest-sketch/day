@@ -33,6 +33,14 @@ const keys = {
   NSLocationWhenInUseUsageDescription: '<string>日記や「この1週間の動き」に、いる場所と天気を記録するために使います。</string>',
   NSPhotoLibraryUsageDescription: '<string>日記に写真を入れるために使います。</string>',
   NSPhotoLibraryAddUsageDescription: '<string>撮った写真を「写真」アプリに保存するために使います。</string>',
+  // iPhone の機能（2.43）：場所の記録・歩数・カレンダー・リマインダー・アラーム
+  NSLocationAlwaysAndWhenInUseUsageDescription: '<string>アプリを閉じているあいだも、行った場所を「この1週間の動き」に記録するために使います（iPhoneの中だけに保存します）。</string>',
+  UIBackgroundModes: '<array><string>location</string></array>',
+  NSMotionUsageDescription: '<string>歩数と歩いた距離を、タイムラインとふりかえりに出すために使います。</string>',
+  NSCalendarsFullAccessUsageDescription: '<string>iPhoneのカレンダーの予定をひび手帳に表示し、ひび手帳の予定を「ひび手帳」カレンダーに書き出すために使います。</string>',
+  NSCalendarsWriteOnlyAccessUsageDescription: '<string>ひび手帳の予定を、iPhoneのカレンダーに書き出すために使います。</string>',
+  NSRemindersFullAccessUsageDescription: '<string>ひび手帳のやること・課題を「ひび手帳」リマインダーに入れて、完了を両方でそろえるために使います。</string>',
+  NSAlarmKitUsageDescription: '<string>目覚ましと、出発時刻のアラームを鳴らすために使います。</string>',
 };
 const plistPath = join(app, 'Info.plist');
 let plist = await readFile(plistPath, 'utf8');

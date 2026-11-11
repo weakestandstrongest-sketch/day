@@ -23,8 +23,8 @@ let package = Package(
             ],
             path: "ios/Sources/HibiLLMPlugin",
             linkerSettings: [
-                // Apple Intelligence (iOS 26). Weak, so the app still opens on older iOS
-                .unsafeFlags(["-Xlinker", "-weak_framework", "-Xlinker", "FoundationModels"])
+                // Apple Intelligence and alarms (iOS 26). Weak, so the app still opens on older iOS
+                .unsafeFlags(["-Xlinker", "-weak_framework", "-Xlinker", "FoundationModels", "-Xlinker", "-weak_framework", "-Xlinker", "AlarmKit"])
             ])
     ]
 )
