@@ -32,6 +32,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "alarmStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmAuth", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmTest", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "widgetSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "siriSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "takeIntent", returnType: CAPPluginReturnPromise),
@@ -322,10 +323,12 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         if #available(iOS 26.0, *) {
             let list = call.getArray("alarms", JSObject.self) ?? []
             Task {
+                HibiSounds.install()
                 // cancel what was set before
                 for id in AlarmStore.ids() { try? AlarmManager.shared.cancel(id: id) }
                 var done: [UUID] = []
                 var failed = 0
+                var lastErr = ""
                 for a in list.prefix(40) {
                     let title = (a["title"] as? String) ?? "ひび手帳"
                     let kind = (a["kind"] as? String) ?? "fixed"
@@ -340,17 +343,35 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                         if date <= Date() { continue }
                         schedule = .fixed(date)
                     }
-                    let stop = AlarmButton(text: "止める", textColor: .white, systemImageName: "stop.circle")
-                    let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: title), stopButton: stop)
-                    let attrs = AlarmAttributes<HibiAlarmData>(presentation: AlarmPresentation(alert: alert), metadata: HibiAlarmData(), tintColor: Color(red: 0.88, green: 0.5, blue: 0.47))
-                    let id = UUID()
                     do {
-                        _ = try await AlarmManager.shared.schedule(id: id, configuration: .init(schedule: schedule, attributes: attrs))
+                        let id = try await HibiAlarms.schedule(title: title, schedule: schedule, sound: (a["sound"] as? String) ?? "", snooze: (a["snooze"] as? Bool) ?? true)
                         done.append(id)
-                    } catch { failed += 1 }
+                    } catch { failed += 1; lastErr = String(describing: error) }
                 }
                 AlarmStore.save(done)
-                call.resolve(["count": done.count, "failed": failed])
+                call.resolve(["count": done.count, "failed": failed, "error": lastErr])
+            }
+            return
+        }
+        #endif
+        call.reject("アラームは iOS 26 以降で使えます", "UNAVAILABLE")
+    }
+
+    /// 鳴らしてみる：{sound, title} を数秒後に1回だけ（ほかのアラームはそのまま）
+    @objc func alarmTest(_ call: CAPPluginCall) {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            Task {
+                do {
+                    if AlarmManager.shared.authorizationState != .authorized {
+                        let st = try await AlarmManager.shared.requestAuthorization()
+                        if st != .authorized { return call.reject("アラームが許可されていません", "DENIED") }
+                    }
+                    HibiSounds.install()
+                    let at = Date().addingTimeInterval(Double(call.getInt("seconds") ?? 5))
+                    _ = try await HibiAlarms.schedule(title: call.getString("title") ?? "ひび手帳のアラーム", schedule: .fixed(at), sound: call.getString("sound") ?? "", snooze: false)
+                    call.resolve(["ok": true])
+                } catch { call.reject(String(describing: error), "FAILED") }
             }
             return
         }
@@ -361,8 +382,48 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
 
 #if canImport(AlarmKit)
 @available(iOS 26.0, *)
-struct HibiAlarmData: AlarmMetadata {}
+enum HibiAlarms {
+    static func schedule(title: String, schedule: Alarm.Schedule, sound: String, snooze: Bool) async throws -> UUID {
+        let stop = AlarmButton(text: "止める", textColor: .white, systemImageName: "stop.circle")
+        let alert: AlarmPresentation.Alert
+        if snooze {
+            let sn = AlarmButton(text: "スヌーズ", textColor: .white, systemImageName: "zzz")
+            alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: title), stopButton: stop, secondaryButton: sn, secondaryButtonBehavior: .countdown)
+        } else {
+            alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: title), stopButton: stop)
+        }
+        let countdown = AlarmPresentation.Countdown(title: LocalizedStringResource(stringLiteral: "スヌーズ中：" + title))
+        let attrs = AlarmAttributes<HibiAlarmData>(presentation: AlarmPresentation(alert: alert, countdown: countdown), metadata: HibiAlarmData(), tintColor: Color(red: 0.88, green: 0.5, blue: 0.47))
+        let file = HibiSounds.file(sound)
+        let cfg = AlarmManager.AlarmConfiguration<HibiAlarmData>(
+            countdownDuration: snooze ? Alarm.CountdownDuration(preAlert: nil, postAlert: 9 * 60) : nil,
+            schedule: schedule, attributes: attrs,
+            sound: file.map { AlertConfiguration.AlertSound.named($0) } ?? .default)
+        let id = UUID()
+        _ = try await AlarmManager.shared.schedule(id: id, configuration: cfg)
+        return id
+    }
+}
 #endif
+
+/// ひび手帳のアラーム音（アプリに入っている sounds/*.wav）を、iPhone が鳴らせる場所（Library/Sounds）へ置く
+enum HibiSounds {
+    static let names = ["bell", "chime", "marimba", "digital", "breeze", "birds", "harp", "clock"]
+    static func file(_ name: String) -> String? { names.contains(name) ? "hibi-\(name).wav" : nil }
+    static func install() {
+        let fm = FileManager.default
+        guard let lib = fm.urls(for: .libraryDirectory, in: .userDomainMask).first else { return }
+        let dir = lib.appendingPathComponent("Sounds", isDirectory: true)
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        for n in names {
+            let to = dir.appendingPathComponent("hibi-\(n).wav")
+            guard let from = Bundle.main.url(forResource: n, withExtension: "wav", subdirectory: "public/sounds") else { continue }
+            let a = (try? fm.attributesOfItem(atPath: from.path)[.size] as? Int) ?? -1
+            let b = (try? fm.attributesOfItem(atPath: to.path)[.size] as? Int) ?? -2
+            if a != b { try? fm.removeItem(at: to); try? fm.copyItem(at: from, to: to) }
+        }
+    }
+}
 
 /// Which live activity is which plan (the activity id → ひび手帳's key).
 enum LiveKeys {

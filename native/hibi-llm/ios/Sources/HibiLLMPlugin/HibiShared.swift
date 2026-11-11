@@ -2,6 +2,9 @@ import Foundation
 #if canImport(ActivityKit)
 import ActivityKit
 #endif
+#if canImport(AlarmKit)
+import AlarmKit
+#endif
 
 // このファイルは、アプリ本体（プラグイン）とウィジェットの拡張機能の両方に入る（GitHub Actions が拡張機能にもコピーする）。
 
@@ -47,3 +50,11 @@ public enum HibiGroup {
     /// ウィジェットに出す中身（ひび手帳が書き、ウィジェットが読む）
     public static var widgetFile: URL? { folder?.appendingPathComponent("hibi-widget.json") }
 }
+
+/// アラーム（AlarmKit）につける、ひび手帳の印。アプリとウィジェット（スヌーズ中の表示）の両方で使う。
+#if canImport(AlarmKit)
+@available(iOS 26.0, *)
+public struct HibiAlarmData: AlarmMetadata {
+    public init() {}
+}
+#endif

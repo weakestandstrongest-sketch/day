@@ -52,6 +52,8 @@ wt.build_configurations.each do |c|
   s['CURRENT_PROJECT_VERSION'] = cv
   s['LD_RUNPATH_SEARCH_PATHS'] = ['$(inherited)', '@executable_path/Frameworks', '@executable_path/../../Frameworks']
   s['CODE_SIGNING_ALLOWED'] = 'NO'
+  # AlarmKit（スヌーズ中の表示）は iOS 26 から。それより前の iPhone でもウィジェットが動くように、弱くつなぐ
+  s['OTHER_LDFLAGS'] = ['$(inherited)', '-weak_framework', 'AlarmKit']
 end
 app.add_dependency(wt) unless app.dependencies.any? { |d| d.target == wt }
 embed = app.copy_files_build_phases.find { |p| p.name == 'Embed Foundation Extensions' } || app.new_copy_files_build_phase('Embed Foundation Extensions')
