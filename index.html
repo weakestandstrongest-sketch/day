@@ -283,6 +283,8 @@ svg{display:block}
 .chk{width:30px;height:30px;border-radius:50%;border:2.5px solid var(--c);display:grid;place-items:center;justify-self:center;color:#fff}
 .chk .ico{width:16px;height:16px;stroke-width:3;opacity:0}
 .chk.on{background:var(--c)} .chk.on .ico{opacity:1}
+.steps-chip{display:inline-flex;align-items:center;gap:3px;margin-left:8px;font-size:12px;color:var(--ink-2)}
+.steps-chip .ico{width:14px;height:14px}.steps-chip b{color:var(--ink)}
 .tl-gap{padding:6px 0 6px 122px;font-size:12px;color:var(--ink-3)}
 .tl-now{display:flex;align-items:center;gap:8px;padding:2px 0 2px 46px;font-size:11.5px;color:var(--accent);font-weight:700}
 .tl-now::after{content:"";flex:1;height:2px;background:var(--accent);border-radius:1px}
@@ -2404,6 +2406,7 @@ const IC = {
   share:'<path d="M12 15V3.5M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
   save:'<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
+  walk:'<circle cx="13" cy="4" r="2"/><path d="M9 20l2.5-6.5L14 16v4M10.5 13.5 12 8l3 3 3 1M12 8l-4 2-1 4"/>',
   pin:'<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   cloud:'<path d="M7 18h10.5a4 4 0 0 0 .3-8A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
   rain:'<path d="M7 15h10.5a3.5 3.5 0 0 0 .3-7A5.5 5.5 0 0 0 6.6 8 3.6 3.6 0 0 0 7 15zM8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
@@ -2536,7 +2539,7 @@ function save(silent) {
   }
   if (medReady && medPending()) medSync();
   if (!ok && !silent) toast('保存できませんでした。容量がいっぱいかもしれません。写真を減らしてみてください');
-  if (ok) { gdSoon(); ntSoon(); }
+  if (ok) { gdSoon(); ntSoon(); if (!silent) { try { iosSoon(); } catch (e) {} } }
   return ok;
 }
 
@@ -2753,9 +2756,10 @@ function matches(ev, d) {
     default: return d === ev.date;
   }
 }
+const NATIVE_EV = () => (typeof IOS_EV !== 'undefined' && IOS_EV && IOS_EV.length ? S.events.concat(IOS_EV) : S.events);
 function occurrences(from, to) {
   const out = [];
-  for (const ev of S.events) {
+  for (const ev of NATIVE_EV()) { // (+ the iPhone calendar's plans in the app, to look at)
     const span = evSpan(ev);
     if (!ev.repeat || ev.repeat === 'none') {
       const end = addDays(ev.date, span);
@@ -3086,7 +3090,7 @@ function viewDay() {
     <div class="head-icons"><button class="icon-btn" data-act="tasks" aria-label="あとで">${ico('inbox')}${nTask ? `<span class="badge num">${nTask}</span>` : ''}</button><button class="icon-btn" data-act="openSchool" aria-label="大学の時間割・課題を開く">${ico('school')}${nHw ? `<span class="badge num" aria-label="締め切りが近い課題 ${nHw}件">${nHw}</span>` : ''}</button><button class="icon-btn${S.timer ? ' on' : ''}" data-act="quickTimer" aria-label="${S.timer ? '計測中の集中タイマーを開く' : '集中タイマーをすぐ始める'}">${ico('timer')}</button><button class="icon-btn" data-act="norikae" aria-label="乗換案内で調べる">${ico('train')}</button><button class="icon-btn" data-act="dayPick" aria-label="日付を選ぶ">${ico('today')}</button><button class="icon-btn" data-act="settings" aria-label="設定">${ico('gear')}</button></div></div>
   <div class="weekstrip" id="weekStrip" data-swipe="week">${strip}</div>
   <div class="tl-sheet">
-    <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${h ? `<span class="tl-hol">${esc(h)}</span>` : ''}${occ.length}件の予定</p>
+    <p class="tl-date"><b>${F.getMonth() + 1}月${F.getDate()}日(${WD[F.getDay()]})</b>${h ? `<span class="tl-hol">${esc(h)}</span>` : ''}${occ.length}件の予定${stepsChip(d)}</p>
     ${hbStripHTML(d)}
     ${todoJump()}
     ${d === T && new Date().getHours() >= 17 ? packCard(addDays(T, 1)) : ''}${packCard(d)}
@@ -3679,7 +3683,7 @@ function weekDays(ws) { return [...Array(7)].map((_, i) => { const d = addDays(w
 function movesCard() {
   const T = todayISO(), days = weekDays(addDays(T, -6)), stops = days.flatMap(x => x.stops);
   const km = kmText(days.reduce((a, x) => a + pathLen(x.stops), 0)), n = placeCount(stops);
-  return `<button class="card mv-card" data-act="moves"><span class="mv-mini">${movesMini(days)}</span><span><span class="card-eyebrow">Moves</span><b>この1週間の動き</b><small>${stops.length ? `${km}km 移動・${n}か所` : '場所を記録すると、1週間の動きを地図で見られます'}</small></span>${ico('right')}</button>`;
+  return `<button class="card mv-card" data-act="moves"><span class="mv-mini">${movesMini(days)}</span><span><span class="card-eyebrow">Moves</span><b>この1週間の動き</b><small>${stops.length ? `${km}km 移動・${n}か所` : '場所を記録すると、1週間の動きを地図で見られます'}${(() => { if (!NATIVE || !iosS().steps) return ''; let n2 = 0, m2 = 0; for (let i = 0; i < 7; i++) { const x = stepsOf(addDays(T, -i)); if (x) { n2 += x.n || 0; m2 += x.m || 0; } } return n2 ? `<br>歩数 ${n2.toLocaleString()}歩・${(m2 / 1000).toFixed(1)}km（1日平均 ${Math.round(n2 / 7).toLocaleString()}歩）` : ''; })()}</small></span>${ico('right')}</button>`;
 }
 function placeCount(stops) { const c = []; for (const s of stops) if (!s.via && !c.some(x => (s.spot && x.spot === s.spot) || hav(x, s) < 200)) c.push(s); return c.length; }
 let mvWeek = 0, mvDay = null, spDraft = null;
@@ -4248,6 +4252,7 @@ async function camAddEntry(withWords) {
 async function camSavePhotos() {
   const c = CAM; if (!c || !c.shot) return;
   const blob = await new Promise(r => c.shot.full.toBlob(r, 'image/jpeg', 0.92)); if (!blob) return;
+  if (NATIVE) { try { if (await savePhotoNative(blob)) return; } catch (e) { toast('写真アプリに保存できませんでした（' + (e.message || e) + '）'); return; } } // the app: straight into the Photos app
   const file = new File([blob], `hibi-${todayISO()}-${nowHM().replace(':', '')}.jpg`, { type: 'image/jpeg' });
   try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
@@ -5042,6 +5047,226 @@ function capPlugin(name) {
 const APP_SCHEME = 'jp.weakestandstrongest.hibi', APP_RET = APP_SCHEME + '://auth/'; // Google ログインから戻るアプリ専用の住所（Info.plist と のりかえの Worker に登録）
 const PAGES_URL = 'https://weakestandstrongest-sketch.github.io/day/', IPA_URL = 'https://github.com/weakestandstrongest-sketch/day/actions/workflows/ios-ipa.yml';
 function capOpen(url) { const B = capPlugin('Browser'); if (B) return B.open({ url, presentationStyle: 'popover' }); location.href = url; }
+
+/* ================= iPhone の機能（アプリ版だけ）：カレンダー・リマインダー・歩数・閉じているあいだの場所・アラーム・触覚・写真 =================
+   どれも iPhone の中だけで動き、ひび手帳のデータをどこかへ送ることはない。設定 → iPhoneとの連携 でひとつずつオンにする。 */
+const IOSD = { calRead: false, calWrite: false, rem: false, steps: false, bgLoc: false, wakeWdOn: false, wakeWd: '07:00', wakeHolOn: false, wakeHol: '09:00', leaveAlarm: false, haptics: true };
+const iosS = () => Object.assign({}, IOSD, asObj(S.settings.ios));
+function iosSet(o) { S.settings.ios = Object.assign(iosS(), o); save(); }
+// things kept only on this iPhone (ids in its calendar / reminders): not in backups, not shared through the drive
+const IOS_KEY = 'hibi.ios';
+let IOSL = (() => { try { return JSON.parse(localStorage.getItem(IOS_KEY) || 'null') || {}; } catch (e) { return {}; } })();
+const iosPut = o => { IOSL = { ...IOSL, ...o }; try { localStorage.setItem(IOS_KEY, JSON.stringify(IOSL)); } catch (e) {} };
+const CALP = () => capPlugin('CapacitorCalendar'), DEVP = () => capPlugin('HibiDevice');
+const msOf = (d, hm_) => P(d).getTime() + (hm_ ? toMin(hm_) * 60000 : 0);
+const ymdOf = ms => iso(new Date(ms));
+const hmFromMs = ms => { const x = new Date(ms); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+
+// ---- 触覚（軽いバイブ）
+function haptic(kind = 'light') {
+  if (!NATIVE || !iosS().haptics) return;
+  const H = capPlugin('Haptics'); if (!H) return;
+  try { (kind === 'success' ? H.notification({ type: 'SUCCESS' }) : H.impact({ style: kind === 'medium' ? 'MEDIUM' : 'LIGHT' })).catch(() => {}); } catch (e) {}
+}
+const HAPTIC_ACTS = { tab: 'light', fab: 'light', todoDone: 'medium', hwDone: 'medium', saveEntry: 'success', quickMood: 'medium', taskDone: 'light', theme: 'light', close: 'light' };
+
+// ---- 写真アプリに直接保存（アプリ版。ブラウザ版は今までどおり共有シート）
+async function savePhotoNative(blob) {
+  const M = capPlugin('Media'); if (!M) return false;
+  const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+  await M.savePhoto({ path: data }); haptic('success'); toast('写真アプリに保存しました'); return true;
+}
+
+// ---- iPhone のカレンダーの予定を、ひび手帳に表示する（見るだけ。変えるのは iPhone のカレンダーで）
+var IOS_EV = [];
+function iosEvFrom(x) {
+  const s = new Date(x.startDate), e = new Date(x.endDate), date = ymdOf(x.startDate);
+  const ev = { id: 'ios:' + x.id, ext: true, title: x.title || '（タイトルなし）', date, allDay: !!x.isAllDay, repeat: 'none', routine: false, memo: x.location || '', done: {},
+    color: /^#[0-9a-f]{6}$/i.test(x.color || '') ? x.color : '#8E8E93', icon: 'cal', calOnly: false, extUrl: x.id };
+  if (x.isAllDay) { const last = ymdOf(x.endDate - 1000); if (last > date) ev.endDate = last; }
+  else { ev.start = hmFromMs(s); ev.end = hmFromMs(e); const last = ymdOf(x.endDate - 1000); if (last > date && e - s >= 86400000) ev.endDate = last; }
+  return ev;
+}
+async function iosCalRead() {
+  const C = CALP(); if (!C || !iosS().calRead) { IOS_EV = []; return; }
+  try {
+    const T = todayISO(), from = msOf(addDays(T, -45)), to = msOf(addDays(T, 200));
+    const r = await C.listEventsInRange({ from, to });
+    const mine = IOSL.calId; // ひび手帳 が書き出したカレンダーは、二重にならないよう読まない
+    IOS_EV = (r.result || []).filter(x => x.calendarId !== mine && x.startDate && x.endDate).map(iosEvFrom);
+    if (!stack.length) render();
+  } catch (e) { IOS_EV = []; }
+}
+
+// ---- ひび手帳の予定を、iPhone の「ひび手帳」カレンダーに書き出す（こちらが正。毎回、範囲の中を書き直す）
+async function iosCalId(C) {
+  const list = (await C.listCalendars()).result || [];
+  let cal = list.find(c => c.id === IOSL.calId) || list.find(c => c.title === 'ひび手帳' && c.allowsContentModifications !== false);
+  if (!cal) { const r = await C.createCalendar({ title: 'ひび手帳', color: '#E07F78' }); iosPut({ calId: r.id }); return r.id; }
+  if (cal.id !== IOSL.calId) iosPut({ calId: cal.id });
+  return cal.id;
+}
+async function iosCalWrite(force) {
+  const C = CALP(); if (!C || !iosS().calWrite) return;
+  const T = todayISO(), a = addDays(T, -14), b = addDays(T, 120);
+  const occ = occurrences(a, b).filter(o => !o.ev.ext && !o.ev.cls && !o.ev.routine && !o.ev.sample);
+  const items = occ.map(o => { const ev = o.ev, end = o.end || o.date;
+    return ev.allDay ? { title: ev.title, isAllDay: true, startDate: msOf(o.date), endDate: msOf(addDays(end, 1)), location: ev.place || '', description: ev.memo || '' }
+      : { title: ev.title, isAllDay: false, startDate: msOf(o.date, ev.start), endDate: msOf(multiDay(ev) ? end : o.date, ev.end) + (!multiDay(ev) && toMin(ev.end) <= toMin(ev.start) ? 86400000 : 0), location: ev.place || '', description: ev.memo || '' }; });
+  const h = JSON.stringify(items);
+  if (!force && h === IOSL.calHash && Date.now() - (IOSL.calAt || 0) < 6 * 3600000) return;
+  const calId = await iosCalId(C);
+  const old = ((await C.listEventsInRange({ from: msOf(addDays(a, -1)), to: msOf(addDays(b, 2)) })).result || []).filter(x => x.calendarId === calId).map(x => x.id);
+  if (old.length) await C.deleteEventsById({ ids: old, commit: false });
+  for (const it of items) await C.createEvent({ ...it, calendarId: calId, commit: false });
+  await C.commit();
+  iosPut({ calHash: h, calAt: Date.now() });
+}
+
+// ---- やること・課題 ⇄ iPhone の「ひび手帳」リマインダー（完了はどちらで押しても、もう片方に入る）
+async function iosRemSync() {
+  const C = CALP(); if (!C || !iosS().rem) return;
+  const lists = (await C.getRemindersLists()).result || [];
+  let listId = (lists.find(l => l.id === IOSL.remList) || lists.find(l => l.title === 'ひび手帳') || {}).id;
+  if (!listId) listId = (await C.createRemindersList({ title: 'ひび手帳', color: '#E07F78' })).id;
+  const map = Object.assign({}, IOSL.remMap || {}); // ひび手帳の key（t:id / h:id）→ リマインダーの id（null = 向こうで消された）
+  const rems = (await C.getRemindersFromLists({ listIds: [listId] })).result || [];
+  const byId = new Map(rems.map(r => [r.id, r]));
+  const T = todayISO(), items = tdAll().map(([x, list]) => [list === S.school.tasks ? 'h:' + x.id : 't:' + x.id, x]).filter(([, x]) => !x.done || (x.doneAt && Date.now() - x.doneAt < 14 * 864e5));
+  const mine = new Set(), due = x => x.due ? msOf(x.due, x.time || '') : undefined;
+  let changed = false;
+  for (const [k, x] of items) {
+    mine.add(k);
+    const rid = map[k], r = rid ? byId.get(rid) : null;
+    if (rid === null) continue; // 向こうで消されたもの：作り直さない
+    if (rid && !r) { map[k] = null; continue; } // iPhone のリマインダーで消された
+    const title = x.title + (x.classId && clsById(x.classId) ? `（${clsById(x.classId).name}）` : '');
+    if (!r) { if (x.done) continue; const c = await C.createReminder({ title, listId, dueDate: due(x), notes: x.note || undefined, commit: false }); map[k] = c.id; continue; }
+    if (r.isCompleted && !x.done) { x.done = true; x.doneAt = r.completionDate || Date.now(); changed = true; continue; }
+    if (x.done && !r.isCompleted) { await C.modifyReminder({ id: r.id, isCompleted: true, completionDate: x.doneAt || Date.now(), commit: false }); continue; }
+    if (!x.done && (r.title !== title || (r.dueDate || 0) !== (due(x) || 0))) await C.modifyReminder({ id: r.id, title, dueDate: due(x) ?? null, commit: false });
+  }
+  // ひび手帳で消したもの → リマインダーも消す。リマインダーで足したもの → ひび手帳のやることにする
+  const known = new Set(Object.values(map).filter(Boolean));
+  for (const [k, rid] of Object.entries(map)) if (!mine.has(k)) { if (rid && byId.has(rid) && !byId.get(rid).isCompleted) await C.deleteReminder({ id: rid, commit: false }).catch(() => {}); delete map[k]; }
+  for (const r of rems) if (!known.has(r.id) && !r.isCompleted && r.title) {
+    const x = { id: uid(), title: r.title, start: '', due: r.dueDate ? ymdOf(r.dueDate) : '', time: r.dueDate && hmFromMs(r.dueDate) !== '00:00' ? hmFromMs(r.dueDate) : '', note: r.notes || '', done: false, doneAt: 0 };
+    S.todos.push(x); map['t:' + x.id] = r.id; changed = true;
+  }
+  await C.commit().catch(() => {});
+  iosPut({ remList: listId, remMap: map, remAt: Date.now() });
+  if (changed) { save(); if (!stack.length) render(); }
+}
+
+// ---- 歩数・歩いた距離（iPhone のモーションセンサー。iPhone は7日分をさかのぼれる）
+async function iosSteps() {
+  const Pd = capPlugin('CapacitorPedometer'); if (!Pd || !iosS().steps) return;
+  const T = todayISO(), stp = Object.assign({}, (S.more && S.more.steps) || {});
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(T, -i); if (i > 0 && stp[d] && stp[d].fin) continue;
+    try { const m = await Pd.getMeasurement({ start: msOf(d), end: i === 0 ? Date.now() : msOf(addDays(d, 1)) });
+      stp[d] = { n: Math.round(m.numberOfSteps || 0), m: Math.round(m.distance || 0), ...(i > 0 ? { fin: 1 } : {}) }; } catch (e) {}
+  }
+  S.more = S.more || {}; S.more.steps = stp; save(true);
+  if (!stack.length && (st.tab === 'day' || st.tab === 'reflect')) render();
+}
+const stepsOf = d => (S.more && S.more.steps && S.more.steps[d]) || null;
+const stepsChip = d => { const x = NATIVE && iosS().steps ? stepsOf(d) : null; return x && x.n ? `<span class="steps-chip">${ico('walk')}<b class="num">${x.n.toLocaleString()}</b>歩・<span class="num">${(x.m / 1000).toFixed(1)}</span>km</span>` : ''; };
+
+// ---- アプリを閉じているあいだの場所 → 「この1週間の動き」
+async function iosBgTake() {
+  const D = DEVP(); if (!D || !iosS().bgLoc) return;
+  try {
+    const r = await D.bgLocTake(); const pts = (r.points || []).filter(p => Number.isFinite(+p.lat) && Number.isFinite(+p.lng) && +p.t > 0);
+    if (!pts.length) return;
+    const seen = new Set(S.places.map(p => Math.round(p.t / 60000) + ',' + p.lat + ',' + p.lng));
+    for (const p of pts) { const q = { t: +p.t, lat: +p.lat, lng: +p.lng, acc: +p.acc || 0, bg: 1 }; const k = Math.round(q.t / 60000) + ',' + q.lat + ',' + q.lng; if (!seen.has(k)) { seen.add(k); S.places.push(q); }
+      if (p.until && +p.until > +p.t) { const z = { t: +p.until, lat: +p.lat, lng: +p.lng, acc: +p.acc || 0, bg: 1 }; const k2 = Math.round(z.t / 60000) + ',' + z.lat + ',' + z.lng; if (!seen.has(k2)) { seen.add(k2); S.places.push(z); } } }
+    S.places.sort((a, b) => a.t - b.t); save(); mvSoon();
+  } catch (e) {}
+}
+
+// ---- アラーム（iOS 26 の AlarmKit）：目覚まし（毎週の平日・休日）と、出発時刻
+async function iosAlarms() {
+  const D = DEVP(); if (!D) return;
+  const s = iosS(), list = [];
+  const [h1, m1] = s.wakeWd.split(':').map(Number), [h2, m2] = s.wakeHol.split(':').map(Number);
+  if (s.wakeWdOn) list.push({ key: 'wake-wd', kind: 'weekly', title: 'おはようございます', hour: h1, minute: m1, weekdays: [1, 2, 3, 4, 5] });
+  if (s.wakeHolOn) list.push({ key: 'wake-hol', kind: 'weekly', title: 'おはようございます', hour: h2, minute: m2, weekdays: [0, 6] });
+  if (s.leaveAlarm) {
+    const T = todayISO();
+    for (let i = 0; i <= 6; i++) { const d = addDays(T, i);
+      for (const o of onDay(d)) { const ev = o.ev; if (!ev.dest || ev.allDay || ev.cls || ev.ext || o.date !== d) continue;
+        const r = LV[lvKey(ev, d)]; if (!r || !r.dep) continue;
+        const at = P(d).getTime() + lvLeaveMin(r, ev) * 60000; if (at > Date.now() + 60000) list.push({ key: `lv|${ev.id}|${d}`, kind: 'fixed', title: `出発の時間です：${ev.title}`, at }); } }
+  }
+  const h = JSON.stringify(list);
+  if (h === IOSL.alarmHash) return;
+  if (list.length) { const a = await D.alarmAuth(); if (a.state !== 'authorized') { iosPut({ alarmErr: a.state === 'unavailable' ? 'アラームは iOS 26 以降で使えます' : 'アラームが許可されていません。iPhoneの設定 → ひび手帳 → アラーム から許可してください' }); return; } }
+  const r = await D.alarmSet({ alarms: list });
+  iosPut({ alarmHash: h, alarmErr: r.failed ? `${r.failed}件のアラームを設定できませんでした` : '', alarmN: r.count });
+}
+
+// ---- まとめて：開いたとき・戻ったとき・保存のあと（少し待って）
+let iosT = 0, iosBusy = false;
+async function iosSync(force) {
+  if (!NATIVE || iosBusy || loadFailed || dataPending) return; iosBusy = true;
+  const s = iosS();
+  try {
+    if (s.bgLoc) await iosBgTake();
+    if (s.steps) await iosSteps();
+    if (s.rem) await iosRemSync().catch(e => iosPut({ remErr: String(e.message || e) }));
+    if (s.calWrite) await iosCalWrite(force).catch(e => iosPut({ calErr: String(e.message || e) }));
+    if (s.calRead) await iosCalRead();
+    if (s.wakeWdOn || s.wakeHolOn || s.leaveAlarm || IOSL.alarmN) await iosAlarms().catch(e => iosPut({ alarmErr: String(e.message || e) }));
+  } finally { iosBusy = false; }
+}
+function iosSoon(ms = 8000) { if (!NATIVE) return; clearTimeout(iosT); iosT = setTimeout(() => iosSync(), ms); }
+if (NATIVE) {
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') iosSoon(800); });
+  setTimeout(() => iosSync(), 2500);
+  setInterval(() => { if (document.visibilityState === 'visible') iosSync(); }, 15 * 60000);
+}
+
+// ---- 設定 → iPhoneとの連携
+function iosHTML() {
+  if (!NATIVE) return '';
+  const s = iosS(), tg = (id, on, t, sub) => `<label class="toggle"><span>${t}<small>${sub}</small></span><input type="checkbox" id="${id}" ${on ? 'checked' : ''}></label>`;
+  const err = x => x ? `<p class="note" style="margin:0;color:var(--sun)">${esc(x)}</p>` : '';
+  const tm = (id, v) => `<input class="inp" type="time" id="${id}" value="${esc(v)}" style="width:auto">`;
+  return `<div class="set-sec"><h4>iPhoneとの連携</h4><div class="set-list">
+    ${tg('ios-calread', s.calRead, 'iPhoneのカレンダーの予定を表示', 'カレンダーとタイムラインに出します（見るだけ。変えるときはiPhoneのカレンダーで）')}
+    ${tg('ios-calwrite', s.calWrite, 'ひび手帳の予定をiPhoneのカレンダーへ', 'iPhoneに「ひび手帳」カレンダーを作って、前後の予定を書き出します（授業・ルーティンはのぞく）')}${err(s.calWrite && IOSL.calErr)}
+    ${tg('ios-rem', s.rem, 'やること・課題をリマインダーへ', '「ひび手帳」リストに入れます。完了はどちらで押してもそろい、リマインダーで足したものはやることに入ります')}${err(s.rem && IOSL.remErr)}
+    ${tg('ios-steps', s.steps, '歩数・歩いた距離', 'タイムラインと「この1週間の動き」に出します')}
+    ${tg('ios-bgloc', s.bgLoc, 'アプリを閉じていても場所を記録', '行った場所と大きな移動を「この1週間の動き」に入れます。位置情報は「常に」を選んでください')}
+    ${tg('ios-haptics', s.haptics, '触覚（軽いバイブ）', 'タブの切り替え・完了・日記の保存のときに')}
+  </div></div>
+  <div class="set-sec"><h4>アラーム</h4><div class="set-list">
+    <p class="note" style="margin:0">iPhoneのアラームとして鳴ります（マナーモードや集中モードでも鳴ります。iOS 26 以降）。</p>
+    ${tg('ios-wake-wd', s.wakeWdOn, '目覚まし（平日）', '月〜金')}${s.wakeWdOn ? `<label class="toggle"><span>時刻</span>${tm('ios-wake-wd-t', s.wakeWd)}</label>` : ''}
+    ${tg('ios-wake-hol', s.wakeHolOn, '目覚まし（土日）', '土・日')}${s.wakeHolOn ? `<label class="toggle"><span>時刻</span>${tm('ios-wake-hol-t', s.wakeHol)}</label>` : ''}
+    ${tg('ios-leave', s.leaveAlarm, '出発時刻のアラーム', '行き先の駅を入れた予定で、家を出る時刻に鳴らします（出発時刻のお知らせの設定を使います）')}
+    ${err(IOSL.alarmErr)}
+  </div></div>`;
+}
+const IOS_TOGGLES = { 'ios-calread': 'calRead', 'ios-calwrite': 'calWrite', 'ios-rem': 'rem', 'ios-steps': 'steps', 'ios-bgloc': 'bgLoc', 'ios-haptics': 'haptics', 'ios-wake-wd': 'wakeWdOn', 'ios-wake-hol': 'wakeHolOn', 'ios-leave': 'leaveAlarm' };
+async function iosToggle(t) {
+  const k = IOS_TOGGLES[t.id]; if (!k) return false;
+  const on = t.checked;
+  try {
+    if (on && (k === 'calRead' || k === 'calWrite')) { const r = await CALP().requestFullCalendarAccess(); if (r.result !== 'granted') { t.checked = false; toast('カレンダーへのアクセスが許可されませんでした。iPhoneの設定 → ひび手帳 から許可できます'); return true; } }
+    if (on && k === 'rem') { const r = await CALP().requestFullRemindersAccess(); if (r.result !== 'granted') { t.checked = false; toast('リマインダーへのアクセスが許可されませんでした。iPhoneの設定 → ひび手帳 から許可できます'); return true; } }
+    if (on && k === 'steps') { const Pd = capPlugin('CapacitorPedometer'); const r = await Pd.requestPermissions(); if (r.activityRecognition !== 'granted') { t.checked = false; toast('モーションとフィットネスが許可されませんでした。iPhoneの設定 → ひび手帳 から許可できます'); return true; } }
+    if (k === 'bgLoc') { const D = DEVP(); if (on) { const r = await D.bgLocStart(); if (r.auth !== 'always') toast(r.auth === 'denied' ? '位置情報が許可されていません。iPhoneの設定 → ひび手帳 → 位置情報 で「常に」を選んでください' : 'iPhoneの設定 → ひび手帳 → 位置情報 で「常に」を選ぶと、閉じているあいだも記録できます'); } else await D.bgLocStop(); }
+    if (on && (k === 'wakeWdOn' || k === 'wakeHolOn' || k === 'leaveAlarm')) { const r = await DEVP().alarmAuth(); if (r.state !== 'authorized') { t.checked = false; toast(r.state === 'unavailable' ? 'アラームは iOS 26 以降で使えます' : 'アラームが許可されませんでした。iPhoneの設定 → ひび手帳 から許可できます'); return true; } }
+  } catch (e) { t.checked = false; toast('うまくいきませんでした（' + (e.message || e) + '）'); return true; }
+  iosSet({ [k]: on });
+  if (!on && k === 'calRead') { IOS_EV = []; render(); }
+  if (!on && k === 'calWrite') { try { const C = CALP(); const old = ((await C.listEventsInRange({ from: msOf(addDays(todayISO(), -30)), to: msOf(addDays(todayISO(), 200)) })).result || []).filter(x => x.calendarId === IOSL.calId).map(x => x.id); if (old.length) await C.deleteEventsById({ ids: old }); iosPut({ calHash: '' }); } catch (e) {} }
+  rerenderSettings(); iosSync(true); haptic('light');
+  return true;
+}
 // Face ID / Touch ID (the app cannot use the web's passkeys: they need https)
 async function capBio(reason) {
   const B = capPlugin('NativeBiometric'); if (!B) throw new Error('nobio');
@@ -5199,7 +5424,7 @@ function ntPlan(now = Date.now()) {
       add(`lv|${ev.id}|${d}`, P(d).getTime() + (lvLeaveMin(r, ev) - (+s.leaveBefore || 0)) * 60000, '出発の時間です', `${lvLeave(r, ev)}に家を出ると${ev.title}に間に合います（${lvFrom(ev)} ${r.dep}発）`, d);
     }
     if (s.ev) for (const o of occ) {
-      const ev = o.ev; if (ev.allDay || ev.routine || ev.calOnly || o.date !== d || !ev.start) continue;
+      const ev = o.ev; if (ev.allDay || ev.routine || ev.calOnly || ev.ext || o.date !== d || !ev.start) continue;
       add(`ev|${ev.id}|${d}`, ntAt(d, ev.start, -(+s.evBefore || 0)), ev.title, `${hm(ev.start)}から${ev.place ? `・${ev.place}` : ''}`, d);
     }
     if (s.pack) {
@@ -6928,6 +7153,7 @@ function settingsHTML() {
     <p class="note" style="margin:0">日記の右上の「凪」のボタンから、凪をひび手帳の中で開けます。</p>
     <div class="fld" style="margin:0"><label for="set-nagi">凪のURL</label><input class="inp" id="set-nagi" type="url" value="${esc(s.nagi || '')}" placeholder="https://○○○.github.io/news/" autocapitalize="off" spellcheck="false"></div></div></div>
   ${inFrame ? '' : `<div class="set-sec"><h4>通知</h4><div class="set-list" id="nt-box">${ntHTML()}</div></div>`}
+  ${iosHTML()}
   <div class="set-sec"><h4>ロック</h4><div class="set-list">${lockSettingsHTML()}</div></div>
   ${inFrame ? '' : `<div class="set-sec"><h4>Googleドライブに自動保存</h4><div class="set-list" id="gd-box">${gdHTML()}</div></div>`}
   <div class="set-sec"><h4>バックアップ</h4><div class="set-list">
@@ -7879,7 +8105,8 @@ const ACT = {
   pickDay: t => { st.day = t.dataset.d; st.sel = st.day; st.calMonth = st.day.slice(0, 8) + '01'; render(); },
   openDay: t => { st.day = t.dataset.d; st.tab = 'day'; saveUI(); main.dataset.tab = ''; render(); },
   newEvent: t => openEvent(null, t.dataset.d),
-  editEvent: t => { const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
+  editEvent: t => { if (/^ios:/.test(t.dataset.id || '')) { const C = CALP(); if (C) C.openCalendar({ date: msOf(t.dataset.d || todayISO()) }).catch(() => {}); return; } // the iPhone calendar's own plan: changed there
+ const ev = S.events.find(x => x.id === t.dataset.id); if (ev && ev.route && !t.dataset.edit) { const sh = openSheet(routeSheet(ev, t.dataset.d), 'full'); sh.dataset.kind = 'route'; return; } if (t.dataset.edit) closeSheet(); openEvent(t.dataset.id, t.dataset.d); },
   asterism: () => openAsterism(),
   mainichi: () => openMainichi(),
   sendGo: () => sendGo(), sendNo: () => { try { localStorage.removeItem(SEND_Q); } catch (e) {} closeSheet(); },
@@ -8015,10 +8242,15 @@ document.addEventListener('click', e => {
   const ow = e.target.closest('.sw-wrap.open');
   if (ow && !e.target.closest('.sw-del')) { closeSwipes(null); e.preventDefault(); return; }
   const t = e.target.closest('[data-act]'); if (!t || t.disabled || t.closest('.ov:not(.in)')) return;
-  const f = ACT[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
+  const f = ACT[t.dataset.act]; if (f) { e.preventDefault(); if (HAPTIC_ACTS[t.dataset.act]) haptic(HAPTIC_ACTS[t.dataset.act]); f(t, e); }
 });
 document.addEventListener('change', async e => {
   const t = e.target;
+  if (/^ios-/.test(t.id || '')) { // 設定 → iPhoneとの連携・アラーム
+    if (IOS_TOGGLES[t.id]) { await iosToggle(t); return; }
+    if (t.id === 'ios-wake-wd-t' && t.value) { iosSet({ wakeWd: t.value }); iosSync(); return; }
+    if (t.id === 'ios-wake-hol-t' && t.value) { iosSet({ wakeHol: t.value }); iosSync(); return; }
+  }
   if (t.id === 'ev-allday') { syncEvent(); evDraft.allDay = t.checked; if (t.checked && !evDraft.endDate) evDraft.endDate = evDraft.date; if (!t.checked && evDraft.endDate <= evDraft.date) evDraft.endDate = ''; rerenderEvent(); }
   else if (t.id === 'ev-end-date2') { syncEvent(); if (multiDay(evDraft)) { evDraft.calOnly = true; evDraft.routine = false; } refreshEventLive(); }
   else if (t.id === 'ev-repeat') { syncEvent(); if (evDraft.repeat === 'weekly' && !(evDraft.days && evDraft.days.length)) evDraft.days = [wd(evDraft._seriesDate || evDraft.date)]; rerenderEvent(); }
@@ -9667,10 +9899,10 @@ if ($('#splash')) { const quick = window.matchMedia && matchMedia('(prefers-redu
 if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && !NATIVE && (location.protocol === 'https:' || location.hostname === 'localhost') && !inFrame) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 // iPhone often resumes the Home Screen app without reloading it: when it comes back, look for a newer version and switch to it
-const APP_VER = 'hibi-v182';
+const APP_VER = 'hibi-v183';
 // the version people see in 設定: 2.x.0 when a feature is added, 2.x.y for fixes; the build number (in parentheses) is the update number above
-const HIBI_VERSION = '2.42.6';
-const HIBI_CHANGES = ['気持ちをつけずに書いた日記（モノクロモードで書いた日記など）は、その日の前の日記の気持ちを、前がなければその日の次の日記の気持ちを使って表示します。その日に気持ちのある日記がなければ、日が終わったあと白（ライトでは黒）の印になります', 'モノクロモードを切り替えると、スイッチのところから円が広がって見た目が変わるようになりました。アプリ版の起動前の画面を黒にしました', 'モノクロモードでは予定を追加せず、カレンダーとタイムラインの右下のボタンも日記を書くボタンになりました。日記のボタンのえんぴつを真ん中に。タイムラインの予定をつなぐ線が、ときどき左にずれていたのを直しました', 'モノクロモード：カレンダーの終日の予定も、左の線と白い部分のあいだにすき間を入れて、ほかの予定と文字の位置がそろって見えるようにしました', 'モノクロモード：カレンダー・タイムラインの予定を、ダークでは真っ白・ライトでは真っ黒にしました。カレンダー・タイムライン・検索・メモリーからも気持ちの表示を消しました', 'モノクロモードでは、開いたときのアニメーションが、黒い画面に白で h を書くようになりました', 'モノクロモードを追加しました（設定 → 表示）。白と黒だけの見た目になり、日記の気持ちや気分のグラフは出なくなります。オフにすると元どおりです', 'アプリ版でも通知が使えるようになりました（設定 → 通知）。iPhoneの中で予約するので、オフラインでも鳴ります', 'アプリ版：まいにち の AI が iPhone の中で直接動くようになりました。Apple Intelligence・Gemma 4 E4B・Qwen3.5 4B・LFM3 VL 2B・LLM-jp-4.1 8B・Ternary Bonsai 2 9B から選べます（まいにち の 設定 → AIのモデル）', 'アプリ版：「まいにち」のAIを開くと、ひび手帳が開いてしまっていたのを直しました。Asterism・野球速報・凪・AIを開いたとき、上に大きな空白があいていたのも直しました', 'ふりかえりの右上の Jam のボタンと、設定の Jam の欄を消しました', 'ふりかえりの右上の Jam のアイコンを大きくしました', 'ふりかえりの右上に、Jam（communication）を開くボタンを付けました（ほかの画面の設定ボタンと同じ位置）。設定 → Jam（communication）に Jam の URL を入れると、Safari の画面で開きます', '集中タイマーの時計のマークが左に寄って見えていたので、針の向きを右上にして、まん中に見えるようにしました', 'タイムラインの右上のボタンが、ほかの画面より少し詰まってずれていたのを直しました。ボタンはどの画面でも同じ位置・同じ間隔にして、「2026年11月」の文字のほうを画面に合わせて少し小さくします', 'iOS アプリ版（Capacitor）のための準備を入れました。アプリの中で動いているときだけ、Google ログインを Safari で行う・Face ID をアプリの機能で使う・新しい版の知らせ方を変える、などに切り替わります（Safari・ホーム画面版の動きは変わりません）', '「更新」の知らせが何度でも出る状態になっていたのを直しました', '集中タイマーのボタンを、大学と電車のボタンのあいだに戻しました', 'タイムラインの上の「2026年11月」を、右のボタンより優先して表示するようにしました。場所が足りないときは、ボタンのほうが少しずつ詰まります', 'タイムラインの上の「2026年11月」の「月」が、ボタンが増えたせいで切れていたのを直しました', '集中タイマーに新しいデザインを4つ追加しました（夜明け・光の輪・しずく・めくり板）', 'いままでの9つのデザイン（オーロラ・ガラス・カード・フリップ・ロール・ウェーブ・リング・アナログ・ドット）を作り直しました。ロールは秒が回る筒に、リングは60の目盛りに、アナログはキッチンタイマーのような文字盤に、ドットは電光掲示板になりました。数字の書体は、はじめはそれぞれのデザインに合ったものになります（タイマーの見た目 → 数字の書体 で変えられます）', 'タイムライン上の大学と電車のボタンのあいだに、集中タイマーをすぐ始めるボタンを追加しました。予定がなくても、なにをするか・時間・色を選んで始められます。記録すると、集中した時間がそのままタイムラインに残ります', '集中タイマーの秒の進みがときどき飛んだり、一時停止・再開のときに進み具合のバーや背景がガクッと戻ったりしていたのを直しました', '通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
+const HIBI_VERSION = '2.43.0';
+const HIBI_CHANGES = ['アプリ版：iPhoneとの連携を追加しました（設定 → iPhoneとの連携・アラーム）。iPhoneのカレンダーの予定の表示と書き出し、やること・課題とリマインダーの連携、歩数、アプリを閉じているあいだの場所の記録、目覚まし・出発のアラーム、触覚、写真アプリへの直接保存', '気持ちをつけずに書いた日記（モノクロモードで書いた日記など）は、その日の前の日記の気持ちを、前がなければその日の次の日記の気持ちを使って表示します。その日に気持ちのある日記がなければ、日が終わったあと白（ライトでは黒）の印になります', 'モノクロモードを切り替えると、スイッチのところから円が広がって見た目が変わるようになりました。アプリ版の起動前の画面を黒にしました', 'モノクロモードでは予定を追加せず、カレンダーとタイムラインの右下のボタンも日記を書くボタンになりました。日記のボタンのえんぴつを真ん中に。タイムラインの予定をつなぐ線が、ときどき左にずれていたのを直しました', 'モノクロモード：カレンダーの終日の予定も、左の線と白い部分のあいだにすき間を入れて、ほかの予定と文字の位置がそろって見えるようにしました', 'モノクロモード：カレンダー・タイムラインの予定を、ダークでは真っ白・ライトでは真っ黒にしました。カレンダー・タイムライン・検索・メモリーからも気持ちの表示を消しました', 'モノクロモードでは、開いたときのアニメーションが、黒い画面に白で h を書くようになりました', 'モノクロモードを追加しました（設定 → 表示）。白と黒だけの見た目になり、日記の気持ちや気分のグラフは出なくなります。オフにすると元どおりです', 'アプリ版でも通知が使えるようになりました（設定 → 通知）。iPhoneの中で予約するので、オフラインでも鳴ります', 'アプリ版：まいにち の AI が iPhone の中で直接動くようになりました。Apple Intelligence・Gemma 4 E4B・Qwen3.5 4B・LFM3 VL 2B・LLM-jp-4.1 8B・Ternary Bonsai 2 9B から選べます（まいにち の 設定 → AIのモデル）', 'アプリ版：「まいにち」のAIを開くと、ひび手帳が開いてしまっていたのを直しました。Asterism・野球速報・凪・AIを開いたとき、上に大きな空白があいていたのも直しました', 'ふりかえりの右上の Jam のボタンと、設定の Jam の欄を消しました', 'ふりかえりの右上の Jam のアイコンを大きくしました', 'ふりかえりの右上に、Jam（communication）を開くボタンを付けました（ほかの画面の設定ボタンと同じ位置）。設定 → Jam（communication）に Jam の URL を入れると、Safari の画面で開きます', '集中タイマーの時計のマークが左に寄って見えていたので、針の向きを右上にして、まん中に見えるようにしました', 'タイムラインの右上のボタンが、ほかの画面より少し詰まってずれていたのを直しました。ボタンはどの画面でも同じ位置・同じ間隔にして、「2026年11月」の文字のほうを画面に合わせて少し小さくします', 'iOS アプリ版（Capacitor）のための準備を入れました。アプリの中で動いているときだけ、Google ログインを Safari で行う・Face ID をアプリの機能で使う・新しい版の知らせ方を変える、などに切り替わります（Safari・ホーム画面版の動きは変わりません）', '「更新」の知らせが何度でも出る状態になっていたのを直しました', '集中タイマーのボタンを、大学と電車のボタンのあいだに戻しました', 'タイムラインの上の「2026年11月」を、右のボタンより優先して表示するようにしました。場所が足りないときは、ボタンのほうが少しずつ詰まります', 'タイムラインの上の「2026年11月」の「月」が、ボタンが増えたせいで切れていたのを直しました', '集中タイマーに新しいデザインを4つ追加しました（夜明け・光の輪・しずく・めくり板）', 'いままでの9つのデザイン（オーロラ・ガラス・カード・フリップ・ロール・ウェーブ・リング・アナログ・ドット）を作り直しました。ロールは秒が回る筒に、リングは60の目盛りに、アナログはキッチンタイマーのような文字盤に、ドットは電光掲示板になりました。数字の書体は、はじめはそれぞれのデザインに合ったものになります（タイマーの見た目 → 数字の書体 で変えられます）', 'タイムライン上の大学と電車のボタンのあいだに、集中タイマーをすぐ始めるボタンを追加しました。予定がなくても、なにをするか・時間・色を選んで始められます。記録すると、集中した時間がそのままタイムラインに残ります', '集中タイマーの秒の進みがときどき飛んだり、一時停止・再開のときに進み具合のバーや背景がガクッと戻ったりしていたのを直しました', '通知：家を出る時刻・明日の持ち物・課題の締め切り・まだ記録していない習慣・予定の前を、ひび手帳から通知で知らせます（設定 → 通知。ホーム画面に追加したひび手帳で使えます）。通知の文はiPhoneの中だけに置き、のりかえのサーバーには時刻だけを送ります', 'ドライブのデータを暗号化：設定 → Googleドライブに自動保存 から、日記・写真・場所の記録などをiPhoneの中で暗号にしてからドライブに送れます。新しいiPhoneでは合言葉か復旧キーで戻します（move・まいにちも同じ合言葉で読めます）', '日記・場所の記録（MOVE）・家計簿に、それぞれ開くときの鍵をかけられるようにしました（設定 → ロック）', 'ひび手帳の中で開く「凪」を、暗いテーマのときはカレンダーと同じ黒い背景で表示するようにしました（「のりかえ」も同じ黒に）', 'MOVE：「ゆっくりたどる」の動く点と線も、道に沿って進むようにしました', 'MOVE：電車は途中の駅も順に通る線にしました。バスはバス停を駅として探さず、道に沿った線にしました', 'MOVE：記録が少ない日も、場所と場所の間を道に沿った線で描くようにしました（歩き・自転車・車を速さで見分けます）', 'MOVE の地図の下に「電車の線」：のりかえの電車を駅で結べた数と、結べなかった理由を出すようにしました（駅の場所を取り直すボタンつき）', 'MOVE：前の日に予定に入れた電車も、駅を結んだ線で描くようにしました（「ゆっくりたどる」も）', 'MOVE の「記録した回数」に、線に使わなかった記録も数えるようにしました', 'MOVE：のりかえで予定に入れた電車の区間は、駅と駅を結んだ線で描くようにしました（実際にその電車に乗った日だけ）', 'MOVE：位置が大きく飛んだ記録や、誤差の大きい記録は、線に使わないようにしました（記録そのものは消しません）', '暗いテーマのカードの灰色を、黒になじむ色（#101012）にしました。タイムラインの板も同じ色です', 'タイムラインの「やること」と日記の間も空けました', 'タイムラインの日記と終日の予定の間を空けました', 'ショートカットが Safari で開いたときは、Googleドライブを通してホーム画面のひび手帳に予定を送るようにしました（開くと「ショートカットから…を予定に追加しました」と出ます）', '暗いテーマの背景を、iOS のカレンダーと同じ真っ黒にしました（タイムラインの予定の板は少し明るい黒のまま）', '暗いテーマの時刻や補足の文字と、一番薄い文字を、さらに明るくしました', 'ショートカットから「明日15時から17時までバイト」のような文1つで予定の画面を開けるように（?add=1&q=…）', 'ショートカットから予定を入れられるように（URLで名前・日付・時刻を渡すと、予定の画面が入った内容で開きます。保存は押したときだけ）', '刻の名残（保存キーと設定、古い更新履歴）を消しました', '暗いテーマの薄い文字を、読みやすい明るさに（背景に対して4.5:1以上）', 'タイムラインの予定の色を少し薄くして、公式の淡い色に近づけました（線も同じ色）', 'タイムラインのまわりの背景を、暗いテーマで hibi2 と同じ黒に近づけました（予定の丸は灰色に、アイコンだけ色）', 'タイムライン：まだ始まっていない予定は、黒い丸にアイコンだけ色がつくようにしました', 'タイムラインの線は、時間が進むにつれて色がついていき、過去の予定の間は全部色がつくようにしました', 'タイムラインの色を、少し明るく（Structured に近く）しました', '灯の下のバーを、communication と同じ作り（透ける丸いガラス・選んだ欄へ滑る丸・ぷにっとした動き）にしました', 'ひび手帳の「まいにち」は、AIの画面だけを開くようにしました（今日の画面と下のバーは出しません）', 'home（帰るアプリ）で「ひび手帳に追加」した経路が、開いたときに予定に入るようになりました（同じGoogleアカウントでログインしているとき）', '下のバーの丸の動きを、jamと同じ動き（ばねのように滑り、ぷにっと伸び縮みする）にしました', '下のバーの丸の動きを速くしました', '灯の「時間」の習慣は、どこで押してもタイマーの画面が開くようにしました（始めるのはその画面の「はじめる」で）', '下のバーの選択の丸の動きを、平たく浮いて滑り、着いたところでぷるんと揺れる動きに変えました（アイコンは動かしません）', '下のバーで別の欄に移るとき、選択の丸がぷにっと伸びて弾むように動くようにしました', '灯で「時間」の習慣を押すと、その場で始まらずにタイマーの画面が開くようにしました', 'Googleでログインすると、Googleドライブに自動で保存するようにしました（設定 → Googleドライブに自動保存）。写真も含み、新しい端末ではログインして「ドライブから戻す」だけで元に戻せます', '起動した瞬間に出る起動画面を、黒からひび手帳のクリーム色に変えました', '起動した瞬間に出るiPhoneの起動画面を黒にしました（ホーム画面のアイコンを入れ直すと反映されることがあります）', 'Moves に「今までの軌跡をゆっくりたどる」を追加。記録した場所を古い日から順に、地図の上で動く点が追いかけます（日ごとの色で線が残る・名前をつけた場所が現れる・速さ「ゆっくり／ふつう／はやい」・棒で見たい時期から再生・拡大縮小・直近1週間〜全期間）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、凪（保存した記事・既読・設定）、野球速報（お気に入りの球団などの設定）、乗換案内（お気に入り・履歴・設定）のデータも入るように。読み込むと、それぞれのアプリも元に戻ります', 'Asterismのボタンを、黒い四角なしの星と軌道だけにして大きく（野球速報のボタンと同じように、画面の色に合わせた線で表示）', 'ひび手帳のバックアップ（ファイル・毎日の控え）に、ひび手帳の中のAsterismのメモも入るように。読み込むとAsterismも元に戻ります（Asterismが入っていない古いバックアップでは、Asterismはそのまま）', 'Asterismのボタンのアイコンを、ほかのアプリと同じ大きさに見えるように（星と軌道を大きく・暗い画面でも四角が見えるように）', '日記の右上の Orb のボタンを、Asterism（メモ）を開くボタンに入れ替え。Asterism をひび手帳の中で開けます（設定 → メモ（Asterism））', '「あとで」の中のメモ機能をなくしました（「あとで」と「メモ」の切り替えもなし）。これまでに書いたメモは、データの中に残してあります', '大学の時間割の下に「集中講義・オンデマンド」を追加。集中講義は授業の日（1日中もOK）を決めるとタイムラインに入り、オンデマンドは時間割に出さずに課題だけ管理できます。「＋課題」から締め切りを入れると、カレンダーに「〆」で出ます', 'やること・課題に「くり返し」を追加（毎日・毎週・2週間ごと・毎月）。完了にするか締め切りが過ぎると、次の回が出てきます。「いつまでくり返す」で学期の終わりなどまでにできます', '時間割の「課題」からも、毎週の課題を学期の終わりまでくり返して追加できるように', '「別の電車」を開くと、いったん全体の経路の候補が出てから駅の電車に入れ替わって、画面ががくっと動いていたのを修正（駅の電車が出るまで待つように）', '検索に出てこない電車も、押すと停車駅を調べて「どこで乗り換えるか」ごとの経路を出します', '「別の電車」で新幹線・有料特急を使わない電車も探せるように（「使う」のボタンで切り替え。選んだものは覚えておきます）', '「別の電車」の候補に「早」「安」「楽」の印を付けるように', '「別の電車」で候補を押すと、その電車にしたときの経路（どこで乗り換えて何時に着くか）が、のりかえと同じ形で見られるように', '開くときのアニメーションが、画面のまん中に来るように（ホーム画面から開くと少し下に寄っていました）', '2.8.0 で開けなくなっていたのを修正', '経路の予定：駅の「別の電車」から、そこから先の電車だけを変えられるように。到着が何分変わるかも見られます', '家計簿のグラフに「月ごと」（カテゴリー別に6か月を比べる）と「今年」（カテゴリーごとの合計と割合）を追加', '家計簿：メモの候補を押しても入らないことがあったのを修正', '日記の写真をきれいに保存するように（長い辺 2048px・画質85%。これまでは720px・70%で粗くなっていました）。一覧やアルバムには軽い小さな版を使うので、動きは重くなりません', '日記・予定などのデータも容量の大きい保存場所に入るようにしました。5MBの上限を気にせず使えます（いまのデータは自動で移ります）', '写真は画面に出るものだけを読み込むように。写真が何千枚あっても、すぐに開きます', '日記の写真を、容量の大きい別の保存場所に移しました。写真が増えても日記や予定が保存できなくなりません（いまある写真も自動で移ります。バックアップのファイルには今までどおり写真も入ります）', 'メモリーの総点検：写真を選んですぐキャンセルすると、取り消した日記が別の画面に出たりエラーになったりしていたのを修正', 'メモリー：2/29 の日記も「N年前の今日」に出るように（うるう年でない年は 2/28 に）。月末の「1か月前」などの範囲がずれるのを修正', '容量が少ないときに、書きかけの控えのせいで日記が保存できないことがあったのを修正', 'メモリーの写真：最後の写真で押すと閉じたり前に戻ったりしていたのを、そこで止まって「最後の写真です」と出すように。文字の上を押しても次の写真へ進み、押した側に矢印が出ます', '灯の総点検：目標を変えると過去の記録が「未達成」になる・タイマー中に書いたメモが消える・作る前の日の記録が連続に入らない、などを修正', '灯：週N回の習慣の完了率と「すべての習慣」の連続、達成とスキップが重なった日、記念のお祝いが重なったときを修正', '灯：バックアップから戻したあともタイマーが動くように。過去の日の画面からはタイマーを始めない', '野球速報が開けないとき（URL違いなど）は「開けませんでした」と出すように', 'Orb の URL が http:// でも開けるように', '2.5.3 で開けなくなっていたのを修正', '乗換案内の総点検：0時をまたぐ経路が前の日に入る・繰り返しの経路を「調べ直す」と全部の回が消える・カレンダーで選んだ日が履歴から調べると今日になる、などを修正', '設定の乗換案内のURLを「https://」なしでも使えるように', 'バイト・給料の円グラフに、ひとことの文字が重なるのを修正', '総点検：データの保存・灯のタイマー・繰り返しの予定・家計簿の計算など、見つかった不具合をまとめて修正', '書きかけの日記を、アプリが閉じられても戻せるように', '灯の習慣に「ひとことメモ」（Part5を20問など）。習慣の画面と積み重ねで見返せます', 'ポモドーロ（25分集中→5分休憩をくり返す）を集中タイマーと灯のタイマーに追加', '灯のタイマーで目標までやりきると、タイムラインにその時間の予定として記録', 'タイムラインの集中タイマーで計った時間も、同じ名前の灯の習慣に入るように', '今日の画面とタイムラインに、今日の習慣を表示（そこからチェックできます）', '灯にバッジ（連続日数・合計回数）と、達成したときのお祝い', '灯：習慣カードを長押ししてドラッグで並べ替え', 'ふりかえり：「今月の予定」（終わった予定の割合と、予定の多い日のカレンダー）。小さな集計はなくしました', 'ふりかえりに、灯の統計のような「日記の連続記録」「予定の完了率」「日記を書く時間帯」「曜日ごとの気分」を追加', 'カレンダーの上の大きな月の数字やアイコンの上半分がぼやけて見えるのを修正', '日記の右上のアイコンを、ほかのタブと同じ幅・位置に', '集中タイマーで横向き→縦向きに戻したとき、画面が上にずれるのを修正', '灯の「積み重ね」に「1か月」を追加（1か月・3か月・半年・1年の順）', '灯の統計で、今日まだできていない習慣も数えるように（達成率が100%になる不具合）'];
 let verChecked = Date.now();
 async function checkVersion(manual) {
   if (inFrame || (!NATIVE && location.protocol !== 'https:') || (!manual && Date.now() - verChecked < 60000)) return; verChecked = Date.now();
