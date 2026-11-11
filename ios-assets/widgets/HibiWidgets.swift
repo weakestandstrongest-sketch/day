@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import UIKit
 import ActivityKit
 #if canImport(AlarmKit)
 import AlarmKit
@@ -29,6 +30,8 @@ struct HibiItem: Codable, Hashable {
     var startAt: Double?  // ms
     var endAt: Double?    // ms
     var color: String?
+    var sym: String?      // SF Symbols（予定のアイコン）
+    var allDay: Bool?
 }
 struct HibiDayGroup: Codable, Hashable {
     var date: String      // "2026-11-12"
@@ -220,12 +223,63 @@ struct HibiLiveActivity: Widget {
     }
 }
 
-// MARK: - カレンダー（左に次の予定、右に月のカレンダー）
+// MARK: - カレンダー（左に次の予定、右に月のカレンダー）：シンプルな月カレンダーのウィジェットの並べ方
+
+let jaLocale = Locale(identifier: "ja_JP")
+
+/// 1行ずつ積む：見出し・予定・「今後の予定なし」。入るぶんだけ出す
+enum AgendaLine: Hashable {
+    case head(String)
+    case none(String)
+    case item(HibiItem)
+}
+
+func agendaLines(_ entry: HibiEntry, budget: Int) -> [AgendaLine] {
+    var out: [AgendaLine] = [.head(entry.dayLabel)]
+    let today = entry.items
+    if today.isEmpty { out.append(.none("今後の予定なし")) }
+    for it in today { if out.count >= budget { break }; out.append(.item(it)) }
+    for g in (entry.data?.upcoming ?? []) where g.date > entry.dayKey {
+        if out.count + 2 > budget { break }   // a day's name needs at least one plan under it
+        out.append(.head(g.label))
+        for it in g.items { if out.count >= budget { break }; out.append(.item(it)) }
+    }
+    return out
+}
+
+struct HibiAgenda: View {
+    let entry: HibiEntry
+    let budget: Int
+    let line: CGFloat
+    var body: some View {
+        let mono = entry.data?.mono ?? false
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(agendaLines(entry, budget: budget).enumerated()), id: \.offset) { i, l in
+                switch l {
+                case .head(let t):
+                    Text(t).font(.system(size: 13, weight: .bold)).foregroundStyle(i == 0 ? Color.primary : Color.secondary)
+                        .frame(height: line, alignment: .bottom).padding(.top, i == 0 ? 0 : 4)
+                case .none(let t):
+                    Text(t).font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary).frame(height: line)
+                case .item(let it):
+                    HStack(spacing: 7) {
+                        Text(it.time).font(.system(size: 11, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).frame(width: 33, alignment: .leading)
+                        RoundedRectangle(cornerRadius: 1.5).fill(mono ? Color.primary : Color(hex: it.color, fallback: .primary)).frame(width: 3.5, height: 15)
+                        Text(it.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    }
+                    .frame(height: line)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
 
 struct HibiMonthGrid: View {
     let date: Date
     let data: HibiWidgetData?
-    var compact = false
+    var cell: CGFloat = 17
+    var font: CGFloat = 12
     var body: some View {
         let cal = Calendar(identifier: .gregorian)
         let comps = cal.dateComponents([.year, .month, .day], from: date)
@@ -233,72 +287,45 @@ struct HibiMonthGrid: View {
         let first = cal.date(from: DateComponents(year: y, month: m, day: 1)) ?? date
         let days = cal.range(of: .day, in: .month, for: first)?.count ?? 30
         let ws = data?.weekStart ?? 1
-        let lead = (cal.component(.weekday, from: first) - 1 - ws + 7) % 7 // 0 = Sunday in weekday-1
+        let lead = (cal.component(.weekday, from: first) - 1 - ws + 7) % 7
         let key = String(format: "%04d-%02d", y, m)
         let ev = Set(data?.evDays?[key] ?? []), hol = Set(data?.holDays?[key] ?? [])
         let heads = ws == 1 ? ["月", "火", "水", "木", "金", "土", "日"] : ["日", "月", "火", "水", "木", "金", "土"]
         let cells: [Int] = Array(repeating: 0, count: lead) + Array(1...days)
         let rows = (cells.count + 6) / 7
-        let fs: CGFloat = compact ? 10 : 12
-        VStack(alignment: .leading, spacing: compact ? 1 : 3) {
-            Text("\(m)月").font(.system(size: fs + 1, weight: .bold))
-            Grid(horizontalSpacing: 0, verticalSpacing: compact ? 0 : 2) {
-                GridRow {
-                    ForEach(0..<7, id: \.self) { i in
-                        Text(heads[i]).font(.system(size: fs - 2, weight: .semibold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
-                    }
-                }
-                ForEach(0..<rows, id: \.self) { r in
-                    GridRow {
-                        ForEach(0..<7, id: \.self) { c in
-                            let i = r * 7 + c
-                            let d = i < cells.count ? cells[i] : 0
-                            let col = (ws + c) % 7 // 0 = Sunday
-                            let dim = col == 0 || col == 6 || hol.contains(d)
-                            ZStack {
-                                if d == today { RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.14)) }
-                                if d > 0 {
-                                    VStack(spacing: 1) {
-                                        Text("\(d)").font(.system(size: fs, weight: d == today ? .bold : .medium).monospacedDigit())
-                                            .foregroundStyle(dim ? Color.secondary : Color.primary)
-                                        Capsule().fill(ev.contains(d) ? Color.secondary : Color.clear).frame(width: fs, height: 1.5)
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, minHeight: compact ? 15 : 19)
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            Text("\(m)月").font(.system(size: font + 1, weight: .bold)).frame(height: cell, alignment: .bottom).padding(.leading, 4)
+            HStack(spacing: 0) {
+                ForEach(0..<7, id: \.self) { i in
+                    Text(heads[i]).font(.system(size: font - 2.5, weight: .semibold)).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                 }
             }
-        }
-    }
-}
-
-struct HibiAgendaList: View {
-    let entry: HibiEntry
-    let maxLines: Int
-    var body: some View {
-        let today = entry.items
-        let groups = (entry.data?.upcoming ?? []).filter { $0.date > entry.dayKey } // after midnight "明日" has become today
-        VStack(alignment: .leading, spacing: 3) {
-            Text(entry.dayLabel).font(.system(size: 13, weight: .bold))
-            if today.isEmpty { Text("今後の予定なし").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary) }
-            ForEach(today.prefix(maxLines), id: \.self) { it in row(it) }
-            let left = max(0, maxLines - today.count)
-            if left > 1 {
-                ForEach(groups.prefix(3), id: \.self) { g in
-                    Text(g.label).font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary).padding(.top, 3)
-                    ForEach(g.items.prefix(2), id: \.self) { it in row(it) }
+            .frame(height: cell)
+            ForEach(0..<rows, id: \.self) { r in
+                HStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { c in
+                        let i = r * 7 + c
+                        let d = i < cells.count ? cells[i] : 0
+                        let col = (ws + c) % 7 // 0 = Sunday
+                        let dim = col == 0 || col == 6 || hol.contains(d)
+                        ZStack {
+                            if d == today {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.primary.opacity(0.16)).frame(width: font * 2 + 2, height: cell + 1)
+                            }
+                            if d > 0 {
+                                Text("\(d)").font(.system(size: font, weight: d == today ? .bold : .medium).monospacedDigit())
+                                    .foregroundStyle(dim && d != today ? Color.secondary : Color.primary)
+                                if ev.contains(d) && d != today {
+                                    Capsule().fill(dim ? Color.secondary : Color.primary.opacity(0.7)).frame(width: font * 1.15, height: 1.6).offset(y: font * 0.78)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: cell)
+                    }
                 }
             }
             Spacer(minLength: 0)
-        }
-    }
-    func row(_ it: HibiItem) -> some View {
-        HStack(spacing: 6) {
-            Text(it.time).font(.system(size: 10.5, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
-            RoundedRectangle(cornerRadius: 1.5).fill(Color(hex: it.color, fallback: .primary)).frame(width: 3, height: 13)
-            Text(it.title).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
         }
     }
 }
@@ -307,20 +334,23 @@ struct HibiCalendarView: View {
     @Environment(\.widgetFamily) var family
     let entry: HibiEntry
     var body: some View {
-        if family == .systemLarge {
-            VStack(alignment: .leading, spacing: 10) {
-                HibiMonthGrid(date: entry.date, data: entry.data)
-                Divider()
-                HibiAgendaList(entry: entry, maxLines: 6)
-            }
-        } else if family == .systemSmall {
-            HibiMonthGrid(date: entry.date, data: entry.data, compact: true)
-        } else {
-            HStack(alignment: .top, spacing: 12) {
-                HibiAgendaList(entry: entry, maxLines: 4).frame(maxWidth: .infinity, alignment: .leading)
-                HibiMonthGrid(date: entry.date, data: entry.data, compact: true).frame(maxWidth: .infinity)
+        Group {
+            if family == .systemLarge {
+                VStack(alignment: .leading, spacing: 8) {
+                    HibiMonthGrid(date: entry.date, data: entry.data, cell: 24, font: 15).frame(height: 24 * 8)
+                    Rectangle().fill(Color.secondary.opacity(0.25)).frame(height: 0.5)
+                    HibiAgenda(entry: entry, budget: 7, line: 19)
+                }
+            } else if family == .systemSmall {
+                HibiMonthGrid(date: entry.date, data: entry.data, cell: 16, font: 10.5)
+            } else {
+                HStack(alignment: .top, spacing: 14) {
+                    HibiAgenda(entry: entry, budget: 7, line: 19).frame(maxWidth: .infinity, alignment: .leading)
+                    HibiMonthGrid(date: entry.date, data: entry.data, cell: 17, font: 11.5).frame(maxWidth: .infinity)
+                }
             }
         }
+        .environment(\.locale, jaLocale)
     }
 }
 
@@ -335,67 +365,122 @@ struct HibiCalendarWidget: Widget {
     }
 }
 
-// MARK: - 次の予定（タイムラインのように）
+// MARK: - 次の予定：丸いアイコンを1本の線でつなぐ、一日のタイムラインのウィジェット
+
+struct NextItem: Hashable { let it: HibiItem; let tomorrow: Bool }
+
+func nextItems(_ entry: HibiEntry, _ n: Int) -> [NextItem] {
+    let today = entry.items.filter { !($0.allDay ?? ($0.time == "終日")) }
+    let tg = entry.data?.upcoming?.first(where: { $0.date > entry.dayKey })
+    let tom = (tg?.items ?? []).filter { !($0.allDay ?? ($0.time == "終日")) }
+    return Array((today.map { NextItem(it: $0, tomorrow: false) } + tom.map { NextItem(it: $0, tomorrow: true) }).prefix(n))
+}
+
+let hmFmt: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "H:mm"; return f }()
+func timeRange(_ x: NextItem) -> String {
+    guard let s = x.it.startAt else { return x.it.time }
+    let a = hmFmt.string(from: Date(timeIntervalSince1970: s / 1000))
+    var t = a
+    if let e = x.it.endAt, e > s { t += " – " + hmFmt.string(from: Date(timeIntervalSince1970: e / 1000)) }
+    return (x.tomorrow ? "明日 " : "") + t
+}
+
+/// 予定の丸いアイコン（色の丸に白い絵）
+struct NextBubble: View {
+    let x: NextItem
+    let size: CGFloat
+    let mono: Bool
+    let live: Bool
+    var body: some View {
+        let c = mono ? Color.primary : Color(hex: x.it.color, fallback: .accentColor)
+        ZStack {
+            Circle().fill(c.opacity(live ? 1 : 0.85))
+            Image(systemName: x.it.sym ?? "circle.fill").font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(mono ? Color(UIColor.systemBackground) : .white)
+        }
+        .frame(width: size, height: size)
+    }
+}
 
 struct HibiNextView: View {
     @Environment(\.widgetFamily) var family
     let entry: HibiEntry
     var body: some View {
-        let now = entry.date.timeIntervalSince1970 * 1000
-        let todayItems = entry.items.filter { $0.time != "終日" }
-        let tg = entry.data?.upcoming?.first(where: { $0.date > entry.dayKey })
-        let tom = (tg?.items ?? []).filter { $0.time != "終日" }
-        let tl = tg?.label ?? "明日"
-        let n = family == .systemSmall ? 2 : family == .systemMedium ? 3 : 7
-        let list: [(HibiItem, Bool)] = (todayItems.map { ($0, false) } + tom.map { ($0, true) }).prefix(n).map { $0 }
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("次の予定").font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
-                Spacer()
-                if let f = list.first, !f.1, let s = f.0.startAt {
-                    if s > now { Text(Date(timeIntervalSince1970: s / 1000), style: .relative).font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundStyle(Color(hex: f.0.color, fallback: .primary)).lineLimit(1) }
-                    else { Text("進行中").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: f.0.color, fallback: .primary)) }
+        Group {
+            if family == .systemSmall { small } else { list }
+        }
+        .environment(\.locale, jaLocale)
+    }
+
+    var mono: Bool { entry.data?.mono ?? false }
+    var now: Double { entry.date.timeIntervalSince1970 * 1000 }
+    func isLive(_ x: NextItem) -> Bool { !x.tomorrow && (x.it.startAt ?? .infinity) <= now }
+
+    @ViewBuilder func remain(_ x: NextItem) -> some View {
+        if isLive(x) {
+            if let e = x.it.endAt { HStack(spacing: 3) { Text("のこり"); Text(Date(timeIntervalSince1970: e / 1000), style: .relative) } }
+        } else if let s = x.it.startAt {
+            HStack(spacing: 3) { Text("あと"); Text(Date(timeIntervalSince1970: s / 1000), style: .relative) }
+        }
+    }
+
+    // 小：いちばん近い予定をひとつ。線の上の大きな丸、右上に「済ませる」丸、下に時刻と名前
+    var small: some View {
+        let list = nextItems(entry, 1)
+        return ZStack(alignment: .topLeading) {
+            if let x = list.first {
+                Rectangle().fill(Color.secondary.opacity(0.35)).frame(width: 3).frame(height: 84).offset(x: 26.5, y: -26)
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .top) {
+                        NextBubble(x: x, size: 56, mono: mono, live: isLive(x))
+                        Spacer()
+                        Circle().strokeBorder(Color.primary.opacity(0.85), lineWidth: 2.5).frame(width: 30, height: 30).padding(.top, 13)
+                    }
+                    Spacer(minLength: 4)
+                    Text(timeRange(x)).font(.system(size: 14, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(x.it.title).font(.system(size: 19, weight: .bold)).lineLimit(2).minimumScaleFactor(0.85)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Image(systemName: "checkmark.circle").font(.system(size: 34, weight: .semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("このあとの予定はありません").font(.system(size: 15, weight: .bold))
                 }
             }
-            .padding(.bottom, 6)
-            if list.isEmpty {
+        }
+    }
+
+    // 中・大：丸いアイコンを1本の線でつないだ一覧
+    var list: some View {
+        let n = family == .systemMedium ? 3 : 7
+        let items = nextItems(entry, n)
+        let size: CGFloat = family == .systemMedium ? 34 : 38
+        let row: CGFloat = family == .systemMedium ? 44 : 50
+        return VStack(alignment: .leading, spacing: 0) {
+            if items.isEmpty {
                 Spacer()
-                Text("このあとの予定はありません").font(.subheadline).foregroundStyle(.secondary)
+                HStack { Image(systemName: "checkmark.circle").font(.title2).foregroundStyle(.secondary); Text("このあとの予定はありません").font(.system(size: 15, weight: .bold)) }
                 Spacer()
-            }
-            ForEach(Array(list.enumerated()), id: \.offset) { i, x in
-                let it = x.0, c = Color(hex: it.color, fallback: .accentColor)
-                let live = !x.1 && (it.startAt ?? .infinity) <= now
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(x.1 && (i == 0 || !list[i - 1].1) ? tl : "").lineLimit(1).minimumScaleFactor(0.6).font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
-                        Text(it.time).font(.system(size: 12, weight: .semibold).monospacedDigit())
-                    }
-                    .frame(width: 36, alignment: .trailing)
-                    VStack(spacing: 0) {
-                        Circle().fill(live ? c : Color.clear).overlay(Circle().stroke(c, lineWidth: 2)).frame(width: 9, height: 9).padding(.top, x.1 && (i == 0 || !list[i - 1].1) ? 14 : 4)
-                        if i < list.count - 1 { Rectangle().fill(Color.secondary.opacity(0.35)).frame(width: 1.5).frame(maxHeight: .infinity) }
-                    }
-                    .frame(width: 10)
-                    VStack(alignment: .leading, spacing: 1) {
-                        if x.1 && (i == 0 || !list[i - 1].1) { Text(" ").font(.system(size: 9)) }
-                        HStack(spacing: 0) {
-                            RoundedRectangle(cornerRadius: 2).fill(c).frame(width: 3)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(it.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                                if family != .systemSmall, let e = it.endAt, let s = it.startAt {
-                                    Text("\(Int((e - s) / 60000))分").font(.system(size: 10)).foregroundStyle(.secondary)
+            } else {
+                ZStack(alignment: .topLeading) {
+                    Rectangle().fill(Color.secondary.opacity(0.3)).frame(width: 2.5, height: max(0, row * CGFloat(items.count - 1)) + 8).offset(x: size / 2 - 1.25, y: size / 2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { i, x in
+                            HStack(spacing: 11) {
+                                NextBubble(x: x, size: size, mono: mono, live: isLive(x))
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(timeRange(x)).font(.system(size: 11.5, weight: .medium).monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
+                                    Text(x.it.title).font(.system(size: 15, weight: .bold)).lineLimit(1)
                                 }
+                                Spacer(minLength: 4)
+                                if i == 0 { remain(x).font(.system(size: 11.5, weight: .semibold).monospacedDigit()).foregroundStyle(.secondary).lineLimit(1) }
                             }
-                            .padding(.leading, 6).padding(.vertical, 3)
-                            Spacer(minLength: 0)
+                            .frame(height: row, alignment: .top)
                         }
-                        .background(c.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
                     }
                 }
-                .frame(maxHeight: family == .systemLarge ? 46 : .infinity, alignment: .top)
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
         }
     }
 }
@@ -406,7 +491,7 @@ struct HibiNextWidget: Widget {
             HibiNextView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("次の予定")
-        .description("このあとの予定を、タイムラインのように")
+        .description("このあとの予定を、丸いアイコンのタイムラインで")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
