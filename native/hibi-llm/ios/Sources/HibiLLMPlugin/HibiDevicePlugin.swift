@@ -4,6 +4,7 @@ import CoreLocation
 import SwiftUI
 import Capacitor
 import PhotosUI
+import AVFoundation
 #if canImport(WidgetKit)
 import WidgetKit
 #endif
@@ -33,6 +34,8 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "alarmAuth", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "alarmTest", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmRing", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alarmQuiet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "widgetSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "siriSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "takeIntent", returnType: CAPPluginReturnPromise),
@@ -295,7 +298,10 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             case .notDetermined: s = "notDetermined"
             @unknown default: s = "unknown"
             }
-            return call.resolve(["state": s, "count": AlarmStore.ids().count])
+            // what the iPhone itself has waiting (not only what ひび手帳 remembers setting)
+            let sys = (try? AlarmManager.shared.alarms) ?? []
+            let alerting = sys.filter { if case .alerting = $0.state { return true } else { return false } }.count
+            return call.resolve(["state": s, "count": AlarmStore.ids().count, "scheduled": sys.count, "alerting": alerting])
         }
         #endif
         call.resolve(["state": "unavailable", "count": 0])
@@ -357,6 +363,28 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         call.reject("アラームは iOS 26 以降で使えます", "UNAVAILABLE")
     }
 
+    /// アプリを開いているあいだ（画面がついているとき）は、iPhone のアラームが鳴らないことがあるので、ひび手帳が自分で鳴らす。
+    /// {sound}：消音モードでも鳴るように「再生」として、くり返し鳴らす
+    @objc func alarmRing(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            HibiRinger.shared.ring(call.getString("sound") ?? "")
+            call.resolve(["ok": true])
+        }
+    }
+
+    /// 鳴っているのを止める（ひび手帳の音も、iPhone のアラームで鳴っているものも）
+    @objc func alarmQuiet(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            HibiRinger.shared.stop()
+            #if canImport(AlarmKit)
+            if #available(iOS 26.0, *) {
+                for a in (try? AlarmManager.shared.alarms) ?? [] { if case .alerting = a.state { try? AlarmManager.shared.stop(id: a.id) } }
+            }
+            #endif
+            call.resolve(["ok": true])
+        }
+    }
+
     /// 鳴らしてみる：{sound, title} を数秒後に1回だけ（ほかのアラームはそのまま）
     @objc func alarmTest(_ call: CAPPluginCall) {
         #if canImport(AlarmKit)
@@ -405,6 +433,26 @@ enum HibiAlarms {
     }
 }
 #endif
+
+final class HibiRinger {
+    static let shared = HibiRinger()
+    private var player: AVAudioPlayer?
+    func ring(_ name: String) {
+        stop()
+        let n = HibiSounds.names.contains(name) ? name : "bell" // iPhone の標準の音はアプリからは鳴らせないので、ベルで
+        guard let u = Bundle.main.url(forResource: n, withExtension: "wav", subdirectory: "public/sounds") else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+        try? AVAudioSession.sharedInstance().setActive(true)
+        player = try? AVAudioPlayer(contentsOf: u)
+        player?.numberOfLoops = -1
+        player?.volume = 1
+        player?.play()
+    }
+    func stop() {
+        player?.stop(); player = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+}
 
 /// ひび手帳のアラーム音（アプリに入っている sounds/*.wav）を、iPhone が鳴らせる場所（Library/Sounds）へ置く
 enum HibiSounds {
