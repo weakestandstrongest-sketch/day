@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import CoreLocation
+import SwiftUI
 import Capacitor
 #if canImport(WidgetKit)
 import WidgetKit
@@ -34,6 +35,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "siriSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "takeIntent", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "liveSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "tabbarSet", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -135,6 +137,35 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         }
         #endif
         call.resolve(["enabled": false])
+    }
+
+
+    // MARK: - the iPhone's own bottom bar (Liquid Glass) over ひび手帳's page
+
+    /// { tabs: [{key, title, symbol}], selected, fab, fabLabel, tint, fabInk, scheme, hidden }. Taps come back as "tab" {key} / "fab".
+    @objc func tabbarSet(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let bar = HibiTabBar.shared
+            if bar.onTab == nil {
+                bar.onTab = { [weak self] k in self?.notifyListeners("tab", data: ["key": k]) }
+                bar.onFab = { [weak self] in self?.notifyListeners("fab", data: [:]) }
+            }
+            bar.install(on: vc)
+            let st = bar.state
+            if let tabs = call.getArray("tabs", JSObject.self) {
+                let list = tabs.map { HibiTab(id: ($0["key"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "circle") }
+                if list != st.tabs { st.tabs = list }
+            }
+            if let v = call.getString("selected"), v != st.selected { st.selected = v }
+            if let v = call.getString("fab"), v != st.fab { st.fab = v }
+            if let v = call.getString("fabLabel") { st.fabLabel = v }
+            if let c = Color.hibi(call.getString("tint")) { st.tint = c }
+            if let c = Color.hibi(call.getString("fabInk")) { st.fabInk = c }
+            if let v = call.getBool("hidden"), v != st.hidden { st.hidden = v }
+            bar.setScheme(call.getString("scheme") ?? "")
+            call.resolve(["ok": true])
+        }
     }
 
     // MARK: - alarms (AlarmKit, iOS 26)
