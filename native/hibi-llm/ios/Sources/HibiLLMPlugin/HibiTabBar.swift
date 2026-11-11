@@ -18,6 +18,20 @@ final class HibiTabState: ObservableObject {
     @Published var tint: Color = Color(red: 0.88, green: 0.5, blue: 0.47)
     @Published var fabInk: Color = .white
     @Published var hidden = false
+    /// false: no round button (灯 or an app opened inside ひび手帳 that has none)
+    @Published var fabShown = true
+}
+
+/// Lets touches through everywhere except where `hit` says there is a real button.
+/// (The SwiftUI host is a full-width strip; without this its empty parts, and the whole strip
+/// while the bar is hidden, swallowed taps meant for ひび手帳's own buttons under it.)
+final class HibiPassView: UIView {
+    var hit: ((CGPoint, CGSize) -> Bool)?
+    override func hitTest(_ p: CGPoint, with e: UIEvent?) -> UIView? {
+        guard isUserInteractionEnabled, !isHidden, alpha > 0.01, hit?(p, bounds.size) ?? false else { return nil }
+        return super.hitTest(p, with: e)
+    }
+    override func point(inside p: CGPoint, with e: UIEvent?) -> Bool { (hit?(p, bounds.size) ?? false) && super.point(inside: p, with: e) }
 }
 
 struct HibiBarView: View {
@@ -29,8 +43,9 @@ struct HibiBarView: View {
     var body: some View {
         HStack(spacing: 10) {
             bar
-            fabButton
+            if s.fabShown { fabButton.transition(.scale.combined(with: .opacity)) }
         }
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.fabShown)
         .padding(.horizontal, 12)
         .offset(y: s.hidden ? 140 : 0)
         .opacity(s.hidden ? 0 : 1)
@@ -88,6 +103,7 @@ final class HibiTabBar {
     static let shared = HibiTabBar()
     let state = HibiTabState()
     private var host: UIHostingController<HibiBarView>?
+    private var box: HibiPassView?
     var onTab: ((String) -> Void)?
     var onFab: (() -> Void)?
 
@@ -96,17 +112,36 @@ final class HibiTabBar {
         let h = UIHostingController(rootView: HibiBarView(s: state, onTab: { [weak self] k in self?.onTab?(k) }, onFab: { [weak self] in self?.onFab?() }))
         h.view.backgroundColor = .clear
         h.view.translatesAutoresizingMaskIntoConstraints = false
+        let b = HibiPassView()
+        b.backgroundColor = .clear
+        b.translatesAutoresizingMaskIntoConstraints = false
+        let st = state
+        // the capsule: 12pt in from each side; the round button: the last 62pt before the right margin
+        b.hit = { p, size in
+            if st.hidden || p.y < 0 || p.y > size.height { return false }
+            let right = size.width - 12
+            if st.fabShown && p.x >= right - 62 && p.x <= right { return true }
+            return p.x >= 12 && p.x <= (st.fabShown ? right - 72 : right)
+        }
         vc.addChild(h)
-        root.addSubview(h.view)
+        root.addSubview(b)
+        b.addSubview(h.view)
         NSLayoutConstraint.activate([
-            h.view.leadingAnchor.constraint(equalTo: root.leadingAnchor),
-            h.view.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            h.view.bottomAnchor.constraint(equalTo: root.safeAreaLayoutGuide.bottomAnchor, constant: -10),
-            h.view.heightAnchor.constraint(equalToConstant: 62),
+            b.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            b.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            b.bottomAnchor.constraint(equalTo: root.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+            b.heightAnchor.constraint(equalToConstant: 62),
+            h.view.leadingAnchor.constraint(equalTo: b.leadingAnchor),
+            h.view.trailingAnchor.constraint(equalTo: b.trailingAnchor),
+            h.view.topAnchor.constraint(equalTo: b.topAnchor),
+            h.view.bottomAnchor.constraint(equalTo: b.bottomAnchor),
         ])
         h.didMove(toParent: vc)
-        host = h
+        host = h; box = b
     }
+
+    /// while hidden, nothing on the strip takes a touch at all
+    func setHidden(_ v: Bool) { state.hidden = v; box?.isUserInteractionEnabled = !v }
 
     /// "light" / "dark" / "" (the iPhone's own)
     func setScheme(_ s: String) {
@@ -115,6 +150,98 @@ final class HibiTabBar {
 
     func remove() {
         host?.willMove(toParent: nil); host?.view.removeFromSuperview(); host?.removeFromParent(); host = nil
+        box?.removeFromSuperview(); box = nil
+    }
+}
+
+// MARK: - Liquid Glass の丸いボタン（予定の編集画面の ×・…・パレット、灯の × と ＋ など）
+// ひび手帳が、ページの中のボタンの場所（画面の左上からの位置と大きさ）を毎回知らせ、その上に本物を重ねる。
+// 押されたらひび手帳に伝え、ひび手帳がページのボタンを押したことにする。
+
+struct HibiGlassItem: Identifiable, Equatable {
+    let id: String
+    let frame: CGRect
+    let symbol: String
+    let ink: Color
+    let tint: Color?
+}
+
+final class HibiGlassState: ObservableObject {
+    @Published var items: [HibiGlassItem] = []
+}
+
+struct HibiGlassLayer: View {
+    @ObservedObject var s: HibiGlassState
+    var onTap: (String) -> Void
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color.clear
+            ForEach(s.items) { it in
+                button(it)
+                    .frame(width: it.frame.width, height: it.frame.height)
+                    .position(x: it.frame.midX, y: it.frame.midY)
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder private func button(_ it: HibiGlassItem) -> some View {
+        let label = Image(systemName: it.symbol)
+            .font(.system(size: max(13, min(it.frame.width, it.frame.height) * 0.42), weight: .semibold))
+            .foregroundStyle(it.ink)
+            .frame(width: it.frame.width, height: it.frame.height)
+            .contentShape(Circle())
+        if #available(iOS 26.0, *) {
+            if let t = it.tint {
+                Button { onTap(it.id) } label: { label }.buttonStyle(.plain).glassEffect(.regular.tint(t).interactive(), in: .circle)
+            } else {
+                Button { onTap(it.id) } label: { label }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .circle)
+            }
+        } else {
+            Button { onTap(it.id) } label: { label.background(it.tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.ultraThinMaterial), in: Circle()) }.buttonStyle(.plain)
+        }
+    }
+}
+
+final class HibiGlass {
+    static let shared = HibiGlass()
+    let state = HibiGlassState()
+    private var host: UIHostingController<HibiGlassLayer>?
+    private var box: HibiPassView?
+    var onTap: ((String) -> Void)?
+
+    func install(on vc: UIViewController) {
+        guard host == nil, let root = vc.view else { return }
+        let h = UIHostingController(rootView: HibiGlassLayer(s: state, onTap: { [weak self] id in self?.onTap?(id) }))
+        h.view.backgroundColor = .clear
+        h.view.translatesAutoresizingMaskIntoConstraints = false
+        if #available(iOS 16.4, *) { h.safeAreaRegions = [] }
+        let b = HibiPassView()
+        b.backgroundColor = .clear
+        b.translatesAutoresizingMaskIntoConstraints = false
+        let st = state
+        b.hit = { p, _ in st.items.contains { $0.frame.insetBy(dx: -4, dy: -4).contains(p) } }
+        vc.addChild(h)
+        // under the tab bar (if it is there), over the page
+        if let bar = root.subviews.first(where: { $0 is HibiPassView }) { root.insertSubview(b, belowSubview: bar) } else { root.addSubview(b) }
+        b.addSubview(h.view)
+        NSLayoutConstraint.activate([
+            b.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            b.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            b.topAnchor.constraint(equalTo: root.topAnchor),
+            b.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            h.view.leadingAnchor.constraint(equalTo: b.leadingAnchor),
+            h.view.trailingAnchor.constraint(equalTo: b.trailingAnchor),
+            h.view.topAnchor.constraint(equalTo: b.topAnchor),
+            h.view.bottomAnchor.constraint(equalTo: b.bottomAnchor),
+        ])
+        h.didMove(toParent: vc)
+        host = h; box = b
+    }
+
+    func setScheme(_ s: String) {
+        host?.overrideUserInterfaceStyle = s == "dark" ? .dark : s == "light" ? .light : .unspecified
     }
 }
 

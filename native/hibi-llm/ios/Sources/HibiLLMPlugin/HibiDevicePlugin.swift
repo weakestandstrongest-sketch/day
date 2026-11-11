@@ -36,6 +36,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "takeIntent", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "liveSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "tabbarSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "glassSet", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -162,8 +163,33 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             if let v = call.getString("fabLabel") { st.fabLabel = v }
             if let c = Color.hibi(call.getString("tint")) { st.tint = c }
             if let c = Color.hibi(call.getString("fabInk")) { st.fabInk = c }
-            if let v = call.getBool("hidden"), v != st.hidden { st.hidden = v }
+            if let v = call.getBool("fabShown"), v != st.fabShown { st.fabShown = v }
+            if let v = call.getBool("hidden"), v != st.hidden { bar.setHidden(v) }
             bar.setScheme(call.getString("scheme") ?? "")
+            call.resolve(["ok": true])
+        }
+    }
+
+    /// [{id, x, y, w, h, symbol, ink, tint?}] in the page's points (CSS px); [] removes them all
+    @objc func glassSet(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let g = HibiGlass.shared
+            if g.onTap == nil { g.onTap = { [weak self] id in self?.notifyListeners("glass", data: ["id": id]) } }
+            g.install(on: vc)
+            let num: (Any?) -> CGFloat = { v in CGFloat((v as? NSNumber)?.doubleValue ?? 0) }
+            let list = (call.getArray("items", JSObject.self) ?? []).map { o in
+                HibiGlassItem(id: (o["id"] as? String) ?? "",
+                              frame: CGRect(x: num(o["x"]), y: num(o["y"]), width: num(o["w"]), height: num(o["h"])),
+                              symbol: (o["symbol"] as? String) ?? "circle",
+                              ink: Color.hibi(o["ink"] as? String) ?? .primary,
+                              tint: Color.hibi(o["tint"] as? String))
+            }
+            if list != g.state.items {
+                var t = Transaction(); t.disablesAnimations = true
+                withTransaction(t) { g.state.items = list }
+            }
+            g.setScheme(call.getString("scheme") ?? "")
             call.resolve(["ok": true])
         }
     }
