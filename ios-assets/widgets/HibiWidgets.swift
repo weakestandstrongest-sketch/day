@@ -285,6 +285,7 @@ struct HibiAgenda: View {
 /// 月のカレンダー：iPhone のカレンダーアプリの小さいウィジェットと同じ形
 /// （赤い「11月」、曜日、今日は赤い丸に白い数字、土日・祝日はうすい色。行は高さいっぱいに等しく並べる）
 struct HibiMonthGrid: View {
+    @Environment(\.widgetRenderingMode) var renderingMode
     let date: Date
     let data: HibiWidgetData?
     var font: CGFloat = 12
@@ -318,11 +319,20 @@ struct HibiMonthGrid: View {
                         let d = i < cells.count ? cells[i] : 0
                         let col = (ws + c) % 7 // 0 = Sunday
                         let dim = col == 0 || col == 6 || hol.contains(d)
-                        ZStack {
-                            if d == today { Circle().fill(red).frame(width: font * 1.85, height: font * 1.85) }
-                            if d > 0 {
+                        Group {
+                            if d == today {
+                                // today: a filled circle with the number. In tinted / clear Home Screens everything becomes one color,
+                                // so there the number is cut out of the circle (it would be white on white otherwise)
+                                let num = Text("\(d)").font(.system(size: font, weight: .bold).monospacedDigit())
+                                if renderingMode == .fullColor && !mono {
+                                    ZStack { Circle().fill(red).frame(width: font * 1.85, height: font * 1.85); num.foregroundStyle(.white) }
+                                } else {
+                                    ZStack { Circle().fill(Color.primary).frame(width: font * 1.85, height: font * 1.85); num.foregroundStyle(.black).blendMode(.destinationOut) }
+                                        .compositingGroup()
+                                }
+                            } else if d > 0 {
                                 Text("\(d)").font(.system(size: font, weight: .semibold).monospacedDigit())
-                                    .foregroundStyle(d == today ? (mono ? Color(UIColor.systemBackground) : Color.white) : (dim ? Color.secondary : Color.primary))
+                                    .foregroundStyle(dim ? Color.secondary : Color.primary)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -392,6 +402,7 @@ func timeRange(_ x: NextItem) -> String {
 
 /// 予定の丸いアイコン（不透明な丸に白い絵。後ろの線は透けない）
 struct NextBubble: View {
+    @Environment(\.widgetRenderingMode) var renderingMode
     let x: NextItem
     let size: CGFloat
     let mono: Bool
@@ -399,12 +410,18 @@ struct NextBubble: View {
     var body: some View {
         // mono: 落ち着いた灰色の丸に白い絵（白い丸に白い絵で見えなくならないように）
         let c = mono ? Color(white: 0.42) : Color(hex: x.it.color, fallback: Color(white: 0.42))
-        ZStack {
-            Circle().fill(Color.black)          // fully opaque base, so the line behind never shows through
-            Circle().fill(c)
-            Image(systemName: x.it.sym ?? "circle.fill").font(.system(size: size * 0.46, weight: .semibold))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.18), radius: 1, y: 0.5)
+        let icon = Image(systemName: x.it.sym ?? "circle.fill").font(.system(size: size * 0.46, weight: .semibold))
+        Group {
+            if renderingMode == .fullColor {
+                ZStack {
+                    Circle().fill(Color.black)          // fully opaque base, so the line behind never shows through
+                    Circle().fill(c)
+                    icon.foregroundStyle(.white).shadow(color: .black.opacity(0.18), radius: 1, y: 0.5)
+                }
+            } else {
+                // tinted / clear Home Screen: one color for everything, so the picture is cut out of the circle
+                ZStack { Circle().fill(Color.primary); icon.foregroundStyle(.black).blendMode(.destinationOut) }.compositingGroup()
+            }
         }
         .frame(width: size, height: size)
         .overlay(Circle().strokeBorder(Color.white.opacity(live ? 0.9 : 0), lineWidth: 2))
