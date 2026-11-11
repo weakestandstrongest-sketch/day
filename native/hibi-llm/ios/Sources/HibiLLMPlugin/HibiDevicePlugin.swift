@@ -3,6 +3,7 @@ import UIKit
 import CoreLocation
 import SwiftUI
 import Capacitor
+import PhotosUI
 #if canImport(WidgetKit)
 import WidgetKit
 #endif
