@@ -37,6 +37,10 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "liveSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "tabbarSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "glassSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "alert", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "ctxArm", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -175,7 +179,11 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
             let g = HibiGlass.shared
-            if g.onTap == nil { g.onTap = { [weak self] id in self?.notifyListeners("glass", data: ["id": id]) } }
+            if g.onTap == nil {
+                g.onTap = { [weak self] id in self?.notifyListeners("glass", data: ["id": id]) }
+                g.onMenu = { [weak self] id, pick in self?.notifyListeners("glassMenu", data: ["id": id, "pick": pick]) }
+                g.onTime = { [weak self] id, v in self?.notifyListeners("glassTime", data: ["id": id, "value": v]) }
+            }
             g.install(on: vc)
             let num: (Any?) -> CGFloat = { v in CGFloat((v as? NSNumber)?.doubleValue ?? 0) }
             let list = (call.getArray("items", JSObject.self) ?? []).map { o in
@@ -183,13 +191,92 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                               frame: CGRect(x: num(o["x"]), y: num(o["y"]), width: num(o["w"]), height: num(o["h"])),
                               symbol: (o["symbol"] as? String) ?? "circle",
                               ink: Color.hibi(o["ink"] as? String) ?? .primary,
-                              tint: Color.hibi(o["tint"] as? String))
+                              tint: Color.hibi(o["tint"] as? String),
+                              kind: (o["kind"] as? String) ?? "btn",
+                              value: (o["value"] as? String) ?? "",
+                              menu: ((o["menu"] as? [Any]) ?? []).compactMap { $0 as? [String: Any] }.map {
+                                  HibiMenuItem(id: ($0["id"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "", destructive: ($0["destructive"] as? Bool) ?? false)
+                              })
             }
             if list != g.state.items {
                 var t = Transaction(); t.disablesAnimations = true
                 withTransaction(t) { g.state.items = list }
             }
             g.setScheme(call.getString("scheme") ?? "")
+            call.resolve(["ok": true])
+        }
+    }
+
+    // MARK: - iPhone 本物の部品：確認・選ぶ・共有・写真・長押しメニュー
+
+    /// {title, message, sheet, actions:[{title, style:"default"|"cancel"|"destructive"}]} → {index}
+    @objc func alert(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let top = HibiTop.vc(self?.bridge?.viewController) else { return call.reject("no view") }
+            let sheet = call.getBool("sheet") ?? false
+            let t = call.getString("title"), m = call.getString("message")
+            let a = UIAlertController(title: (t?.isEmpty ?? true) ? nil : t, message: (m?.isEmpty ?? true) ? nil : m, preferredStyle: sheet ? .actionSheet : .alert)
+            let acts = call.getArray("actions", JSObject.self) ?? []
+            for (i, o) in acts.enumerated() {
+                let st = (o["style"] as? String) ?? "default"
+                a.addAction(UIAlertAction(title: (o["title"] as? String) ?? "", style: st == "cancel" ? .cancel : st == "destructive" ? .destructive : .default) { _ in call.resolve(["index": i]) })
+            }
+            if acts.isEmpty { a.addAction(UIAlertAction(title: "OK", style: .default) { _ in call.resolve(["index": 0]) }) }
+            if let pop = a.popoverPresentationController { pop.sourceView = top.view; pop.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.maxY - 40, width: 1, height: 1) }
+            top.present(a, animated: true)
+        }
+    }
+
+    /// {files:[{name, data(base64), mime}], text} → iPhone の共有シート
+    @objc func share(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let top = HibiTop.vc(self?.bridge?.viewController) else { return call.reject("no view") }
+            var items: [Any] = []
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("hibi-share", isDirectory: true)
+            try? FileManager.default.removeItem(at: dir)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            for o in call.getArray("files", JSObject.self) ?? [] {
+                guard let b = o["data"] as? String, let d = Data(base64Encoded: b) else { continue }
+                let name = ((o["name"] as? String) ?? "file").replacingOccurrences(of: "/", with: "_")
+                let u = dir.appendingPathComponent(name)
+                if (try? d.write(to: u)) != nil { items.append(u) }
+            }
+            if let t = call.getString("text"), !t.isEmpty { items.append(t) }
+            guard !items.isEmpty else { return call.reject("nothing") }
+            let v = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            v.completionWithItemsHandler = { _, ok, _, _ in call.resolve(["completed": ok]) }
+            if let pop = v.popoverPresentationController { pop.sourceView = top.view; pop.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.maxY - 40, width: 1, height: 1) }
+            top.present(v, animated: true)
+        }
+    }
+
+    /// iPhone の写真ピッカーで1枚 → {data(base64 JPEG), mime, name} か {cancelled}
+    @objc func pickPhoto(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let top = HibiTop.vc(self?.bridge?.viewController) else { return call.reject("no view") }
+            var cfg = PHPickerConfiguration()
+            cfg.filter = .images
+            cfg.selectionLimit = 1
+            let p = PHPickerViewController(configuration: cfg)
+            let d = HibiPhotoPick { o in call.resolve(o) }
+            HibiPhotoPick.live = d
+            p.delegate = d
+            top.present(p, animated: true)
+        }
+    }
+
+    /// 長押しメニューの準備：{x, y, w, h, radius, items:[{id, title, symbol, destructive}]}（ページの中の場所）
+    @objc func ctxArm(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let web = self.bridge?.webView else { return call.reject("no view") }
+            let c = HibiCtx.shared
+            if c.onPick == nil { c.onPick = { [weak self] id in self?.notifyListeners("ctx", data: ["id": id]) } }
+            c.install(on: web)
+            let n: (String) -> CGFloat = { k in CGFloat(call.getDouble(k) ?? 0) }
+            let items = (call.getArray("items", JSObject.self) ?? []).map { o -> [String: Any] in
+                ["id": (o["id"] as? String) ?? "", "title": (o["title"] as? String) ?? "", "symbol": (o["symbol"] as? String) ?? "", "destructive": (o["destructive"] as? Bool) ?? false]
+            }
+            c.armed = items.isEmpty ? nil : HibiCtx.Armed(rect: CGRect(x: n("x"), y: n("y"), width: n("w"), height: n("h")), radius: n("radius"), items: items, at: Date())
             call.resolve(["ok": true])
         }
     }

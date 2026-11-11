@@ -158,12 +158,46 @@ final class HibiTabBar {
 // ひび手帳が、ページの中のボタンの場所（画面の左上からの位置と大きさ）を毎回知らせ、その上に本物を重ねる。
 // 押されたらひび手帳に伝え、ひび手帳がページのボタンを押したことにする。
 
+struct HibiMenuItem: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let symbol: String
+    let destructive: Bool
+}
+
 struct HibiGlassItem: Identifiable, Equatable {
     let id: String
     let frame: CGRect
     let symbol: String
     let ink: Color
     let tint: Color?
+    /// "btn"（押すだけ）・"menu"（押すとメニュー）・"time"（時刻のホイール）
+    var kind: String = "btn"
+    /// "time": "HH:MM"
+    var value: String = ""
+    var menu: [HibiMenuItem] = []
+}
+
+/// 時刻を選ぶ iPhone 本物のホイール（アラームの時刻）
+struct HibiTimeWheel: View {
+    let item: HibiGlassItem
+    var onChange: (String, String) -> Void
+    @State private var d = Date()
+    private static let fmt: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "HH:mm"; return f }()
+    private func parse(_ s: String) -> Date {
+        let p = s.split(separator: ":").compactMap { Int($0) }
+        return Calendar.current.date(bySettingHour: p.first ?? 7, minute: p.count > 1 ? p[1] : 0, second: 0, of: Date()) ?? Date()
+    }
+    var body: some View {
+        DatePicker("", selection: Binding(get: { d }, set: { v in d = v; onChange(item.id, Self.fmt.string(from: v)) }), displayedComponents: .hourAndMinute)
+            .datePickerStyle(.wheel)
+            .labelsHidden()
+            .environment(\.locale, Locale(identifier: "en_GB")) // 24 時間
+            .frame(width: item.frame.width, height: item.frame.height)
+            .clipped()
+            .onAppear { d = parse(item.value) }
+            .onChange(of: item.value) { v in if Self.fmt.string(from: d) != v { d = parse(v) } }
+    }
 }
 
 final class HibiGlassState: ObservableObject {
@@ -173,33 +207,60 @@ final class HibiGlassState: ObservableObject {
 struct HibiGlassLayer: View {
     @ObservedObject var s: HibiGlassState
     var onTap: (String) -> Void
+    var onMenu: (String, String) -> Void = { _, _ in }
+    var onTime: (String, String) -> Void = { _, _ in }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             Color.clear
             ForEach(s.items) { it in
-                button(it)
-                    .frame(width: it.frame.width, height: it.frame.height)
-                    .position(x: it.frame.midX, y: it.frame.midY)
+                Group {
+                    if it.kind == "time" { HibiTimeWheel(item: it, onChange: onTime) } else { button(it) }
+                }
+                .frame(width: it.frame.width, height: it.frame.height)
+                .position(x: it.frame.midX, y: it.frame.midY)
             }
         }
         .ignoresSafeArea()
     }
 
-    @ViewBuilder private func button(_ it: HibiGlassItem) -> some View {
-        let label = Image(systemName: it.symbol)
+    private func label(_ it: HibiGlassItem) -> some View {
+        Image(systemName: it.symbol)
             .font(.system(size: max(13, min(it.frame.width, it.frame.height) * 0.42), weight: .semibold))
             .foregroundStyle(it.ink)
             .frame(width: it.frame.width, height: it.frame.height)
             .contentShape(Circle())
+    }
+
+    /// a round glass button that opens a real menu from itself (like "…" in iPhone's own apps)
+    @ViewBuilder private func menuButton(_ it: HibiGlassItem) -> some View {
+        let m = Menu {
+            ForEach(it.menu) { x in
+                Button(role: x.destructive ? .destructive : nil) { onMenu(it.id, x.id) } label: {
+                    if x.symbol.isEmpty { Text(x.title) } else { Label(x.title, systemImage: x.symbol) }
+                }
+            }
+        } label: { label(it) }
+        .buttonStyle(.plain)
         if #available(iOS 26.0, *) {
+            m.glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            m.background(.ultraThinMaterial, in: Circle())
+        }
+    }
+
+    @ViewBuilder private func button(_ it: HibiGlassItem) -> some View {
+        let lb = label(it)
+        if it.kind == "menu" {
+            menuButton(it)
+        } else if #available(iOS 26.0, *) {
             if let t = it.tint {
-                Button { onTap(it.id) } label: { label }.buttonStyle(.plain).glassEffect(.regular.tint(t).interactive(), in: .circle)
+                Button { onTap(it.id) } label: { lb }.buttonStyle(.plain).glassEffect(.regular.tint(t).interactive(), in: .circle)
             } else {
-                Button { onTap(it.id) } label: { label }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .circle)
+                Button { onTap(it.id) } label: { lb }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .circle)
             }
         } else {
-            Button { onTap(it.id) } label: { label.background(it.tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.ultraThinMaterial), in: Circle()) }.buttonStyle(.plain)
+            Button { onTap(it.id) } label: { lb.background(it.tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.ultraThinMaterial), in: Circle()) }.buttonStyle(.plain)
         }
     }
 }
@@ -210,10 +271,14 @@ final class HibiGlass {
     private var host: UIHostingController<HibiGlassLayer>?
     private var box: HibiPassView?
     var onTap: ((String) -> Void)?
+    var onMenu: ((String, String) -> Void)?
+    var onTime: ((String, String) -> Void)?
 
     func install(on vc: UIViewController) {
         guard host == nil, let root = vc.view else { return }
-        let h = UIHostingController(rootView: HibiGlassLayer(s: state, onTap: { [weak self] id in self?.onTap?(id) }))
+        let h = UIHostingController(rootView: HibiGlassLayer(s: state, onTap: { [weak self] id in self?.onTap?(id) },
+                                                             onMenu: { [weak self] id, p in self?.onMenu?(id, p) },
+                                                             onTime: { [weak self] id, v in self?.onTime?(id, v) }))
         h.view.backgroundColor = .clear
         h.view.translatesAutoresizingMaskIntoConstraints = false
         if #available(iOS 16.4, *) { h.safeAreaRegions = [] }
