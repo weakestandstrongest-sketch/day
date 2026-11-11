@@ -333,6 +333,8 @@ struct HibiMonthGrid: View {
                             } else if d > 0 {
                                 Text("\(d)").font(.system(size: font, weight: .semibold).monospacedDigit())
                                     .foregroundStyle(dim ? Color.secondary : Color.primary)
+                            } else {
+                                Color.clear // an empty cell keeps its place, so a short last week stays in its columns
                             }
                         }
                         .frame(maxWidth: .infinity)
