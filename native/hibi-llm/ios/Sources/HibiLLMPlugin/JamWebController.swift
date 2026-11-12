@@ -25,7 +25,9 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
         w.scrollView.backgroundColor = .systemBackground
         return w
     }()
+    /// URL が入っていない・読み込めなかったときの案内（真っ黒の画面にしない）
     private let empty = UILabel()
+    private let spinner = UIActivityIndicatorView(style: .large)
 
     override func loadView() {
         view = UIView()
@@ -33,16 +35,52 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
         web.frame = view.bounds
         web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(web)
-        empty.text = "設定 → iPhoneとの連携 で、Jam の URL を入れてください"
+        // 文字と読み込み中の印は Auto Layout で真ん中に（作った時点では画面の大きさがまだ 0 なので、枠の数字で置くと消える）
         empty.textColor = .secondaryLabel
         empty.font = .preferredFont(forTextStyle: .body)
         empty.numberOfLines = 0
         empty.textAlignment = .center
-        empty.frame = view.bounds.insetBy(dx: 32, dy: 0)
-        empty.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        empty.translatesAutoresizingMaskIntoConstraints = false
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.hidesWhenStopped = true
         view.addSubview(empty)
-        empty.isHidden = url != nil
-        if let url { web.load(URLRequest(url: url)) } // 初めて開くときに読み込む
+        view.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            empty.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            empty.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            empty.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
+        if let url {
+            web.load(URLRequest(url: url)) // 初めて開くときに読み込む
+            showMessage(nil)
+        } else {
+            showMessage("Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。")
+        }
+    }
+
+    private func showMessage(_ text: String?) {
+        empty.text = text
+        empty.isHidden = text == nil
+        web.isHidden = text != nil
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView.url == nil || webView.backForwardList.currentItem == nil { spinner.startAnimating() }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        spinner.stopAnimating()
+        showMessage(nil)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        spinner.stopAnimating()
+        let ns = error as NSError
+        if ns.domain == NSURLErrorDomain, ns.code == NSURLErrorCancelled { return } // 次のページへ移っただけ
+        guard webView.backForwardList.currentItem == nil else { return } // 前のページが出ていれば、それを見せたまま
+        showMessage("Jam を開けませんでした。\n\n\(url?.host ?? "")\n\(error.localizedDescription)\n\nURL が正しいか、インターネットにつながっているか確かめてください。")
     }
 
     /// 開く URL（ひび手帳の設定から）。変わったときだけ読み込み直す
@@ -50,8 +88,12 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
         guard new?.absoluteString != url?.absoluteString else { return }
         url = new
         guard isViewLoaded else { return } // まだ一度も開いていなければ、開くときに読み込む
-        empty.isHidden = new != nil
-        if let new { web.load(URLRequest(url: new)) }
+        if let new {
+            showMessage(nil)
+            web.load(URLRequest(url: new))
+        } else {
+            showMessage("Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。")
+        }
     }
 
     // 別の窓（target=_blank・Google のログインの窓）も同じ画面で開く
