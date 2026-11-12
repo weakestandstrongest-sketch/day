@@ -50,6 +50,8 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "orbitArm", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitOpen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitClose", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "jamArm", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "jamClose", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -162,7 +164,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
             let web = self.bridge?.webView
             let open: Bool = MainActor.assumeIsolated {
-                let o = OrbitHost.shared
+                let o = EdgeApps.orbit
                 if o.onChange == nil { o.onChange = { [weak self] open in self?.notifyListeners("orbit", data: ["open": open]) } }
                 o.arm(call.getBool("on") ?? false, vc: vc, webView: web)
                 return o.isOpen
@@ -175,7 +177,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
             MainActor.assumeIsolated {
-                let o = OrbitHost.shared
+                let o = EdgeApps.orbit
                 if o.onChange == nil { o.onChange = { [weak self] open in self?.notifyListeners("orbit", data: ["open": open]) } }
                 o.open(vc: vc)
             }
@@ -184,7 +186,28 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func orbitClose(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { MainActor.assumeIsolated { OrbitHost.shared.close() }; call.resolve(["ok": true]) }
+        DispatchQueue.main.async { MainActor.assumeIsolated { EdgeApps.orbit.close() }; call.resolve(["ok": true]) }
+    }
+
+    /// { on, url }：「ふりかえり」を見ているあいだだけ、左端からのスワイプで Jam（communication）を開けるようにする
+    @objc func jamArm(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let web = self.bridge?.webView
+            let url = call.getString("url").flatMap { URL(string: $0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0.scheme == nil ? nil : $0 }
+            let open: Bool = MainActor.assumeIsolated {
+                let j = EdgeApps.jam
+                if j.onChange == nil { j.onChange = { [weak self] open in self?.notifyListeners("jam", data: ["open": open]) } }
+                JamWebController.shared.setURL(url)
+                j.arm(call.getBool("on") ?? false, vc: vc, webView: web)
+                return j.isOpen
+            }
+            call.resolve(["ok": true, "open": open])
+        }
+    }
+
+    @objc func jamClose(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { MainActor.assumeIsolated { EdgeApps.jam.close() }; call.resolve(["ok": true]) }
     }
 
     // MARK: - the iPhone's own bottom bar (Liquid Glass) over ひび手帳's page
@@ -404,7 +427,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     /// {sound}：消音モードでも鳴るように「再生」として、くり返し鳴らす
     @objc func alarmRing(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            MainActor.assumeIsolated { OrbitHost.shared.close() } // アラームを止める画面が Orbit の下に隠れないように
+            MainActor.assumeIsolated { EdgeApps.orbit.close(); EdgeApps.jam.close() } // アラームを止める画面が Orbit の下に隠れないように
             HibiRinger.shared.ring(call.getString("sound") ?? "")
             call.resolve(["ok": true])
         }

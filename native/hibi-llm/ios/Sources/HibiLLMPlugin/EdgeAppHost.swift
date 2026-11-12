@@ -1,18 +1,25 @@
 import UIKit
 import SwiftUI
 
-/// ひび手帳の中の Orbit（ブラウザ）。コードは Orbit/（リポジトリ browser2 から scripts/sync-orbit.sh で写したもの）。
+/// ひび手帳の上に、別のアプリを画面いっぱいに重ねる（Orbit：日記の左端から／Jam：ふりかえりの左端から）。
+/// Orbit のコードは Orbit/（リポジトリ browser2 から scripts/sync-orbit.sh で写したもの）、Jam はウェブアプリ（JamWebController）。
 ///
-/// - 「日記」で左端から右へスワイプすると、指について Orbit が左から出てくる（画面いっぱい。ひび手帳の下のバーも隠れる）
+/// - 左端から右へスワイプすると、指についてアプリが左から出てくる（画面いっぱい。ひび手帳の下のバーも隠れる）
 /// - Orbit のどの画面でも、右端から左へスワイプすると、Orbit が左へ戻ってひび手帳に戻る
 /// - 閉じても Orbit は裏で生きているので、次に開くと同じところから。アプリを閉じたあとも、Orbit が前の
 ///   タブを覚えている。しばらく見ていないタブは Orbit の「自動でしまう」でしまわれ、ホームから始まる
 @MainActor
-final class OrbitHost: NSObject, UIGestureRecognizerDelegate {
-    static let shared = OrbitHost()
+final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
+    /// 中に入れる画面を作る（初めて開くときに1回だけ）
+    private let build: @MainActor () -> UIViewController
+    /// 開くたびに呼ぶ（Orbit：しばらく見ていないタブをしまう）
+    var onShow: (@MainActor () -> Void)?
 
-    private var model: AppModel?
-    private var host: UIHostingController<OrbitRoot>?
+    init(build: @escaping @MainActor () -> UIViewController) {
+        self.build = build
+    }
+
+    private var host: UIViewController?
     private var openPan: UIScreenEdgePanGestureRecognizer?
     private var closePan: UIScreenEdgePanGestureRecognizer?
     private weak var vc: UIViewController?
@@ -50,11 +57,7 @@ final class OrbitHost: NSObject, UIGestureRecognizerDelegate {
     private func ensure() -> UIView? {
         if let h = host { return h.view }
         guard let vc, let root = vc.view else { return nil }
-        OrbitEmbed.embedded = true // 設定の保存先を分ける（AppModel を作る前に）
-        let m = AppModel()
-        model = m
-        let h = UIHostingController(rootView: OrbitRoot(model: m))
-        h.view.backgroundColor = .black
+        let h = build()
         h.view.frame = root.bounds
         h.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         h.view.isHidden = true
@@ -79,7 +82,7 @@ final class OrbitHost: NSObject, UIGestureRecognizerDelegate {
         if v.isHidden {
             v.transform = CGAffineTransform(translationX: -root.bounds.width, y: 0)
             v.isHidden = false
-            model?.becameActive() // しばらく見ていないタブをしまう（日にちが経っていればホームから）
+            onShow?()
         }
         root.endEditing(true)
     }
@@ -145,6 +148,28 @@ final class OrbitHost: NSObject, UIGestureRecognizerDelegate {
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
         g === openPan || g === closePan
     }
+}
+
+/// 画面いっぱいに重ねるアプリ（Orbit・Jam）
+@MainActor
+enum EdgeApps {
+    /// Orbit（ブラウザ）
+    static let orbit: EdgeAppHost = {
+        var model: AppModel?
+        let host = EdgeAppHost {
+            OrbitEmbed.embedded = true // 設定の保存先を分ける（AppModel を作る前に）
+            let m = AppModel()
+            model = m
+            let h = UIHostingController(rootView: OrbitRoot(model: m))
+            h.view.backgroundColor = .black
+            return h
+        }
+        host.onShow = { model?.becameActive() } // しばらく見ていないタブをしまう（日にちが経っていればホームから）
+        return host
+    }()
+
+    /// Jam（リポジトリ communication のウェブアプリ）
+    static let jam = EdgeAppHost { JamWebController.shared }
 }
 
 /// Orbit の画面（単独のアプリの OrbitApp と同じ組み方）。
