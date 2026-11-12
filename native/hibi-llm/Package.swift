@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "HibiLlm",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS(.v17)], // Orbit（ブラウザ）が iOS 17 の @Observable を使う
     products: [
         .library(name: "HibiLlm", targets: ["HibiLLMPlugin"])
     ],

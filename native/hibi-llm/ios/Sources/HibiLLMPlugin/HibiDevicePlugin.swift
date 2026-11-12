@@ -47,6 +47,9 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "ctxArm", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "orbitArm", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "orbitOpen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "orbitClose", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -150,6 +153,39 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["enabled": false])
     }
 
+
+    // MARK: - Orbit（ブラウザ）を ひび手帳 の上に重ねて開く
+
+    /// { on }：「日記」を見ているあいだだけ、左端からのスワイプで Orbit を開けるようにする。開いた・閉じたは "orbit" {open} で知らせる
+    @objc func orbitArm(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let web = self.bridge?.webView
+            let open: Bool = MainActor.assumeIsolated {
+                let o = OrbitHost.shared
+                if o.onChange == nil { o.onChange = { [weak self] open in self?.notifyListeners("orbit", data: ["open": open]) } }
+                o.arm(call.getBool("on") ?? false, vc: vc, webView: web)
+                return o.isOpen
+            }
+            call.resolve(["ok": true, "open": open])
+        }
+    }
+
+    @objc func orbitOpen(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            MainActor.assumeIsolated {
+                let o = OrbitHost.shared
+                if o.onChange == nil { o.onChange = { [weak self] open in self?.notifyListeners("orbit", data: ["open": open]) } }
+                o.open(vc: vc)
+            }
+            call.resolve(["ok": true])
+        }
+    }
+
+    @objc func orbitClose(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { MainActor.assumeIsolated { OrbitHost.shared.close() }; call.resolve(["ok": true]) }
+    }
 
     // MARK: - the iPhone's own bottom bar (Liquid Glass) over ひび手帳's page
 
@@ -368,6 +404,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     /// {sound}：消音モードでも鳴るように「再生」として、くり返し鳴らす
     @objc func alarmRing(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            MainActor.assumeIsolated { OrbitHost.shared.close() } // アラームを止める画面が Orbit の下に隠れないように
             HibiRinger.shared.ring(call.getString("sound") ?? "")
             call.resolve(["ok": true])
         }

@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>one</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="今日やることを1つだけ決めるアプリ">
+<meta name="apple-mobile-web-app-title" content="one">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
+<style>
+  /* 中央の一列。光の点、見出し、ひとつの操作だけを縦に積む */
+  :root {
+    --bg: #f5f5f7;
+    --fg: #1d1d1f;
+    --muted: #86868b;
+    --line: #d2d2d7;
+    --field: #ffffff;
+    --accent: #4f5bd5;
+    --on-accent: #ffffff;
+    --halo: rgba(79, 91, 213, 0.16);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+    --gap: 32px;
+    --pill: rgba(0, 0, 0, 0.06);
+    --sep-strong: rgba(0, 0, 0, 0.16);
+    --intro-bg: #000000;
+    --intro-fg: #f5f5f7;
+    --intro-glow: #8fa0ff;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000;
+      --fg: #f5f5f7;
+      --muted: #86868b;
+      --line: #38383a;
+      --field: #1c1c1e;
+      --accent: #8fa0ff;
+      --on-accent: #000000;
+      --halo: rgba(143, 160, 255, 0.2);
+      --shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+      --pill: rgba(255, 255, 255, 0.12);
+      --sep-strong: rgba(255, 255, 255, 0.2);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --fg: #f5f5f7;
+    --muted: #86868b;
+    --line: #38383a;
+    --field: #1c1c1e;
+    --accent: #8fa0ff;
+    --on-accent: #000000;
+    --halo: rgba(143, 160, 255, 0.2);
+    --shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --pill: rgba(255, 255, 255, 0.12);
+    --sep-strong: rgba(255, 255, 255, 0.2);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--ui);
+    padding-top: max(24px, env(safe-area-inset-top, 0px));
+    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [hidden] { display: none !important; }
+
+  /* ホーム画面から開いたとき、iPhoneは画面の上端（時計の帯）をぼかす。カレンダーはその下から始める。
+     iPhoneでは display-mode が効かないことがあるので、起動時に html へ付ける .standalone で判定する */
+  .standalone #calScreen { padding-top: 56px; }
+
+  /* 光の点はどの画面でも同じ高さに置く。中身の高さで位置が変わると、切り替えのたびに点が動いてしまう */
+  main {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding-top: calc(36vh - 13px);
+    padding-top: calc(36svh - 13px);
+    display: grid;
+    justify-items: center;
+    gap: var(--gap);
+    text-align: center;
+  }
+
+  /* 光の点。起動時の点がここへ収まる。輪まで含めた大きさを箱にして、上下の間隔をそろえる */
+  .mark {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--halo);
+    box-shadow: 0 0 22px 4px var(--halo);
+  }
+  .mark::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .intro .mark { opacity: 0; }
+
+  section { width: 100%; display: grid; justify-items: center; }
+
+  .eyebrow {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  /* 入力画面 */
+  #form { width: 100%; display: grid; justify-items: center; gap: var(--gap); }
+
+  #form label {
+    font-size: clamp(26px, 7vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .field {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  input {
+    width: 100%;
+    height: 64px;
+    font: inherit;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--fg);
+    background: var(--field);
+    border: 1px solid transparent;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 0 64px 0 22px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--halo); }
+  input::placeholder { color: var(--muted); }
+
+  #submitBtn {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    margin-top: -20px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--on-accent);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  .has-text #submitBtn { opacity: 1; transform: scale(1); pointer-events: auto; }
+  #submitBtn svg { width: 18px; height: 18px; }
+
+  /* 表示画面 */
+  #view { gap: 16px; }
+
+  #task {
+    font-size: clamp(36px, 10vw, 68px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+  #task span {
+    background: linear-gradient(var(--accent), var(--accent)) no-repeat 0 55% / 0% 0.07em;
+    transition: background-size 0.8s cubic-bezier(0.65, 0, 0.35, 1), color 0.8s;
+  }
+  .done #task span {
+    background-size: 100% 0.07em;
+    color: var(--muted);
+  }
+
+  .actions {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px 24px;
+  }
+
+  button {
+    font: inherit;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--accent);
+    background: none;
+    border: none;
+    padding: 10px 4px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s, background-color 0.2s;
+  }
+  button:active { transform: scale(0.96); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 999px; }
+  #editBtn:hover { opacity: 0.7; }
+
+  #doneBtn {
+    min-width: 160px;
+    height: 50px;
+    padding: 0 32px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+  #doneBtn:hover { opacity: 0.88; }
+  .done #doneBtn { display: none; }
+
+  /* 完了の印 */
+  #message {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent);
+    min-height: 28px;
+  }
+  #message svg { width: 28px; height: 28px; }
+  #message circle { stroke-dasharray: 76; stroke-dashoffset: 76; transition: stroke-dashoffset 0.6s 0.4s cubic-bezier(0.65, 0, 0.35, 1); }
+  #message path { stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset 0.35s 0.9s ease-out; }
+  #message span { opacity: 0; transform: translateX(-6px); transition: opacity 0.4s 1s, transform 0.4s 1s; }
+  .done #message circle, .done #message path { stroke-dashoffset: 0; }
+  .done #message span { opacity: 1; transform: none; }
+  #view:not(.done) #message { visibility: hidden; position: absolute; }
+
+  /* 起動アニメーション：暗転の中に光の点がひとつ灯り、見出しの上へ収まる */
+  #intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--intro-bg);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  #intro .orb, #intro .halo, #intro .ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+  }
+  #intro .orb {
+    width: 72px;
+    height: 72px;
+    margin: -36px 0 0 -36px;
+    background: var(--intro-glow);
+    box-shadow: 0 0 36px 6px rgba(143, 160, 255, 0.5), 0 0 110px 30px rgba(143, 160, 255, 0.16);
+  }
+  #intro .halo {
+    width: 320px;
+    height: 320px;
+    margin: -160px 0 0 -160px;
+    background: radial-gradient(circle, rgba(143, 160, 255, 0.22) 0%, rgba(143, 160, 255, 0.06) 40%, transparent 70%);
+  }
+  #intro .ripple {
+    width: 72px;
+    height: 72px;
+    margin: -36px 0 0 -36px;
+    border: 1px solid rgba(143, 160, 255, 0.7);
+  }
+  #intro .word {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% + 56px);
+    text-align: center;
+    font-size: 72px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--intro-fg);
+  }
+
+  /* マッチカットの紙面は matchcut.js が組む */
+  #intro .stage { position: absolute; inset: 0; }
+  /* 光の点と名前は、マッチカットが終わるまで隠しておく */
+  #intro .orb, #intro .halo, #intro .ripple, #intro .word { opacity: 0; }
+  #intro .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+
+  /* 下のタブバー：jam（communication）と同じ、透明感のある丸いガラスのバー */
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    justify-content: center;
+    padding: 0 12px max(10px, env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
+  .intro .tabbar { opacity: 0; }
+  .glass-bar {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    /* タブは2つだけなので、幅はタブ2つ分にとどめる */
+    width: 200px;
+    height: 62px;
+    padding: 4px;
+    border-radius: 31px;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--bg) 58%, transparent);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    transform: translateZ(0);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), inset 0 0 0 0.5px var(--sep-strong), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  /* 選んだタブへ、伸び縮みしながら滑っていく丸いハイライト */
+  .tab-pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 2);
+    pointer-events: none;
+    transition: transform 620ms cubic-bezier(0.34, 1.45, 0.5, 1);
+  }
+  .tab-pill span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    box-shadow: inset 0 0 0 0.5px var(--sep-strong);
+  }
+  .glass-bar .tab {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border-radius: 999px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: color 0.2s, transform 0.2s;
+  }
+  .glass-bar .tab:active { transform: scale(0.9); }
+  .glass-bar .tab svg { width: 22px; height: 22px; stroke-width: 1.8; }
+  .glass-bar .tab[aria-selected="true"] { color: var(--fg); }
+  .glass-bar .tab[aria-selected="true"] svg { stroke-width: 2.3; }
+
+  /* カレンダー：iPhoneの「カレンダー」の月表示に寄せる */
+  .cal {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    display: grid;
+    justify-items: stretch;
+    gap: 14px;
+  }
+  .cal-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .cal-year { display: inline-flex; align-items: center; gap: 2px; font-size: 17px; color: var(--accent); padding: 8px 4px 8px 0; }
+  .cal-year svg { width: 20px; height: 20px; }
+  .cal-year[hidden] { display: none; }
+  .cal-view { display: grid; gap: 14px; }
+  #monthView > h2 { font: inherit; }
+  .cal-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .cal-nav button { width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; }
+  .cal-nav button svg { width: 20px; height: 20px; }
+  .cal-nav #todayBtn { width: auto; padding: 0 14px; border-radius: 999px; background: var(--pill); font-size: 15px; font-weight: 600; }
+  .cal-month { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; color: var(--fg); padding: 0; text-align: left; }
+  button.cal-month:active { transform: none; opacity: 0.6; }
+
+  /* 年の表示：12か月を小さく並べ、タップでその月へ */
+  .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px 14px; touch-action: pan-y; }
+  .mini { display: grid; gap: 6px; align-content: start; padding: 4px 0; text-align: left; color: var(--fg); border-radius: 12px; }
+  .mini:active { transform: scale(0.97); }
+  .mini-name { font-size: 17px; font-weight: 700; }
+  .mini.now .mini-name { color: var(--accent); }
+  .mini-days { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; font-size: 9.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .mini-days span { height: 15px; display: grid; place-items: center; border-radius: 50%; }
+  .mini-days .has { color: var(--accent); font-weight: 700; }
+  .mini-days .t { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+  .cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-week span { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .cal-grid { touch-action: pan-y; }
+  .cal-day {
+    height: 58px;
+    padding: 6px 0 0;
+    border-top: 0.5px solid var(--line);
+    border-radius: 0;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 5px;
+    color: var(--fg);
+    font-size: 19px;
+  }
+  .cal-day:active { transform: none; }
+  .cal-day .num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.25s, color 0.25s;
+  }
+  .cal-day.weekend { color: var(--muted); }
+  .cal-day.is-today .num { color: var(--accent); font-weight: 600; }
+  .cal-day.selected .num { background: var(--fg); color: var(--bg); font-weight: 600; }
+  .cal-day.selected.is-today .num { background: var(--accent); color: var(--on-accent); }
+  .cal-day .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .cal-day .dot.done { background: var(--accent); }
+  .cal-day .dot.undone { box-shadow: inset 0 0 0 1.5px var(--muted); }
+  .cal-blank { border-top: 0.5px solid var(--line); }
+
+  .cal-detail {
+    margin-top: 6px;
+    padding: 20px;
+    border-radius: 22px;
+    background: var(--field);
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 10px;
+  }
+  .cal-detail .when { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .cal-detail .what { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .cal-detail .what.none { font-size: 17px; font-weight: 400; color: var(--muted); }
+  .chip {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .chip svg { width: 16px; height: 16px; }
+  .chip.done { background: var(--accent); color: var(--on-accent); }
+  .chip.undone { background: var(--pill); color: var(--muted); }
+  .chip.pending { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+
+  /* 画面を切り替えるときの波紋 */
+  .fx-wave, .fx-ring {
+    position: fixed;
+    left: 0;
+    top: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .fx-wave { background: radial-gradient(circle, var(--halo) 0%, var(--halo) 35%, transparent 70%); }
+  .fx-ring { border: 1.5px solid var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body class="intro">
+<script>
+  try {
+    if (navigator.standalone || matchMedia("(display-mode: standalone)").matches) {
+      document.documentElement.classList.add("standalone");
+    }
+  } catch (e) {}
+</script>
+<div id="intro" aria-hidden="true">
+  <div class="stage"></div>
+  <div class="flash"></div>
+  <div class="halo"></div>
+  <div class="ripple"></div>
+  <div class="orb"></div>
+  <div class="word">one</div>
+</div>
+
+<main id="todayScreen">
+  <span class="mark" aria-hidden="true"></span>
+
+  <form id="form" hidden>
+    <label for="input">今日やることを、<br>1つだけ。</label>
+    <div class="field">
+      <input id="input" type="text" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="ひとつだけ書く" required>
+      <button id="submitBtn" type="submit" aria-label="決める">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+      </button>
+    </div>
+  </form>
+
+  <section id="view" hidden>
+    <p class="eyebrow">今日の1つ</p>
+    <h1 id="task"><span></span></h1>
+    <div class="actions">
+      <button id="doneBtn" type="button">やった</button>
+      <p id="message">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="12" transform="rotate(-90 14 14)"/><path d="M9 14.5l3.4 3.4L19 11"/></svg>
+        <span>今日はもう十分。</span>
+      </p>
+      <button id="editBtn" type="button">書き直す</button>
+    </div>
+  </section>
+</main>
+
+<section id="calScreen" class="cal" hidden>
+  <div class="cal-top">
+    <button class="cal-year" id="calYear" type="button" aria-label="年の表示へ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      <span></span>
+    </button>
+    <div class="cal-nav">
+      <button id="todayBtn" type="button">今日</button>
+      <button id="prevBtn" type="button" aria-label="前へ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <button id="nextBtn" type="button" aria-label="次へ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="cal-view" id="monthView">
+    <h2><button class="cal-month" id="calMonth" type="button" aria-label="年の表示へ"></button></h2>
+    <div class="cal-week" aria-hidden="true"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-detail" id="calDetail" aria-live="polite"></div>
+  </div>
+  <div class="cal-view" id="yearView" hidden>
+    <h2 class="cal-month" id="yearTitle"></h2>
+    <div class="year-grid" id="yearGrid"></div>
+  </div>
+</section>
+
+<nav class="tabbar" aria-label="画面">
+  <div class="glass-bar" role="tablist">
+    <span class="tab-pill" aria-hidden="true"><span></span></span>
+    <button class="tab" id="tabToday" type="button" role="tab" aria-selected="true" aria-controls="todayScreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      今日
+    </button>
+    <button class="tab" id="tabCal" type="button" role="tab" aria-selected="false" aria-controls="calScreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+      カレンダー
+    </button>
+  </div>
+</nav>
+
+<script src="matchcut.js"></script>
+<script>
+  const KEY = "hitotsu";
+  const form = document.getElementById("form");
+  const field = document.querySelector(".field");
+  const input = document.getElementById("input");
+  const view = document.getElementById("view");
+  const task = document.querySelector("#task span");
+
+  // 日付が変わったらリセットするため、ローカル日付をキーにする
+  function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }
+
+  // iPhoneではlocalStorageが消えることがあるので、Cookie と IndexedDB にも同じ内容を書く
+  const stores = {
+    local: {
+      get: () => localStorage.getItem(KEY),
+      set: (v) => (v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY)),
+    },
+    cookie: {
+      get: () => {
+        const m = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]*)`));
+        return m ? decodeURIComponent(m[1]) : null;
+      },
+      set: (v) => {
+        document.cookie = v
+          ? `${KEY}=${encodeURIComponent(v)}; max-age=${60 * 60 * 24 * 3}; path=/; SameSite=Lax`
+          : `${KEY}=; max-age=0; path=/; SameSite=Lax`;
+      },
+    },
+  };
+
+  function idb(mode, fn) {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open(KEY, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("kv");
+        req.onerror = () => resolve(null);
+        req.onsuccess = () => {
+          const tx = req.result.transaction("kv", mode);
+          const r = fn(tx.objectStore("kv"));
+          tx.oncomplete = () => resolve(r && r.result);
+          tx.onerror = () => resolve(null);
+        };
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  }
+
+  // 前の日の分は「今日の1つ」としては使わず、履歴に回す
+  let stale = null;
+  function parse(raw) {
+    try {
+      const data = JSON.parse(raw);
+      if (data && data.date === today()) return data;
+      if (data && data.date && data.text) stale = data;
+    } catch (e) {}
+    return null;
+  }
+
+  // ---- 履歴（カレンダー用） ----
+  // { "2026-10-30": { text, done }, ... }。localStorage と IndexedDB の両方に書く
+  const HKEY = "hitotsu-history";
+  let history = {};
+
+  async function loadHistory() {
+    try {
+      const h = JSON.parse(localStorage.getItem(HKEY));
+      if (h && typeof h === "object") return h;
+    } catch (e) {}
+    const timeout = new Promise((r) => setTimeout(() => r(null), 500));
+    try {
+      const h = JSON.parse(await Promise.race([idb("readonly", (os) => os.get(HKEY)), timeout]));
+      if (h && typeof h === "object") return h;
+    } catch (e) {}
+    return {};
+  }
+
+  function saveHistory() {
+    const raw = JSON.stringify(history);
+    try { localStorage.setItem(HKEY, raw); } catch (e) {}
+    idb("readwrite", (os) => os.put(raw, HKEY));
+  }
+
+  function record(data) {
+    history[data.date] = { text: data.text, done: !!data.done };
+    saveHistory();
+  }
+
+  function forget(date) {
+    delete history[date];
+    saveHistory();
+  }
+
+  async function load() {
+    for (const s of Object.values(stores)) {
+      let data = null;
+      try { data = parse(s.get()); } catch (e) {}
+      if (data) return data;
+    }
+    const timeout = new Promise((r) => setTimeout(() => r(null), 500));
+    return parse(await Promise.race([idb("readonly", (os) => os.get(KEY)), timeout]));
+  }
+
+  function save(data) {
+    const raw = data ? JSON.stringify(data) : null;
+    for (const s of Object.values(stores)) {
+      try { s.set(raw); } catch (e) {}
+    }
+    idb("readwrite", (os) => (raw ? os.put(raw, KEY) : os.delete(KEY)));
+    if (data) record(data);
+  }
+
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+  let state = null;
+
+  function render() {
+    if (!state) {
+      view.hidden = true;
+      form.hidden = false;
+      input.value = "";
+      field.classList.remove("has-text");
+      if (!document.body.classList.contains("intro")) input.focus();
+      return;
+    }
+    form.hidden = true;
+    view.hidden = false;
+    task.textContent = state.text;
+    view.classList.toggle("done", state.done);
+  }
+
+  input.addEventListener("input", () => {
+    field.classList.toggle("has-text", input.value.trim() !== "");
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    state = { date: today(), text, done: false };
+    save(state);
+    input.blur();
+    transition(document.getElementById("submitBtn"), render);
+  });
+
+  document.getElementById("doneBtn").addEventListener("click", () => {
+    state.done = true;
+    save(state);
+    render();
+  });
+
+  document.getElementById("editBtn").addEventListener("click", (e) => {
+    const prev = state.text;
+    state = null;
+    save(null);
+    forget(today());
+    transition(e.currentTarget, () => {
+      render();
+      input.value = prev;
+      field.classList.add("has-text");
+      input.select();
+    });
+  });
+
+  // ---- 画面の切り替え ----
+  // 押したボタンから波紋が広がり、光の点が脈打つ。いまの画面がにじんで消え、次の画面が浮かび上がる
+  let switching = false;
+
+  function wave(cls, x, y, size, frames, opts) {
+    const el = document.createElement("div");
+    el.className = cls;
+    el.style.width = el.style.height = `${size}px`;
+    el.style.left = `${x - size / 2}px`;
+    el.style.top = `${y - size / 2}px`;
+    document.body.append(el);
+    el.animate(frames, { fill: "both", ...opts }).finished.then(() => el.remove());
+  }
+
+  function center(el) {
+    const r = el.getBoundingClientRect();
+    return [r.left + r.width / 2, r.top + r.height / 2];
+  }
+
+  function transition(origin, change) {
+    if (switching) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || !document.body.animate) {
+      change();
+      return;
+    }
+    switching = true;
+    const soft = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+
+    // 押したところから画面いっぱいに広がる波紋
+    const [x, y] = center(origin);
+    const reach = 2 * Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    wave("fx-wave", x, y, reach, [
+      { transform: "scale(0)", opacity: 1 },
+      { transform: "scale(1)", opacity: 0 },
+    ], { duration: 1100, easing: "cubic-bezier(0.1, 0.7, 0.3, 1)" });
+    wave("fx-ring", x, y, 60, [
+      { transform: "scale(0.6)", opacity: 0.9 },
+      { transform: `scale(${reach / 60})`, opacity: 0 },
+    ], { duration: 1200, easing: "cubic-bezier(0.1, 0.6, 0.3, 1)" });
+
+    // 光の点から波紋がひとつ広がる（点そのものは動かさない）
+    const mark = document.querySelector(".mark");
+    const [mx, my] = center(mark);
+    wave("fx-ring", mx, my, 26, [
+      { transform: "scale(1)", opacity: 0.8 },
+      { transform: "scale(5)", opacity: 0 },
+    ], { delay: 180, duration: 1000, easing: "cubic-bezier(0.1, 0.6, 0.3, 1)" });
+
+    // いまの画面がにじんで消える
+    const before = form.hidden ? view : form;
+    const outs = [...before.children].map((el, i) => el.animate([
+      { opacity: 1, transform: "none", filter: "blur(0)" },
+      { opacity: 0, transform: "translateY(-10px) scale(0.98)", filter: "blur(8px)" },
+    ], { delay: i * 40, duration: 320, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }));
+
+    Promise.all(outs.map((a) => a.finished)).then(() => {
+      change();
+      outs.forEach((a) => a.cancel());
+      // 次の画面が浮かび上がる
+      const after = form.hidden ? view : form;
+      const ins = [...after.children].map((el, i) => el.animate([
+        { opacity: 0, transform: "translateY(18px)", filter: "blur(10px)" },
+        { opacity: 1, transform: "none", filter: "blur(0)" },
+      ], { delay: 60 + i * 110, duration: 800, easing: soft, fill: "backwards" }));
+      Promise.all(ins.map((a) => a.finished)).then(() => { switching = false; });
+    });
+  }
+
+  // タブを開きっぱなしで日付をまたいだ場合に備える
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && state && state.date !== today()) {
+      state = null;
+      save(null);
+      render();
+    }
+  });
+
+  Promise.all([load(), loadHistory()]).then(([data, h]) => {
+    history = h;
+    if (stale && !history[stale.date]) record(stale);
+    state = data;
+    if (state) save(state);
+    render();
+    playIntro();
+  });
+
+  // ---- カレンダー ----
+  const calScreen = document.getElementById("calScreen");
+  const calGrid = document.getElementById("calGrid");
+  const calDetail = document.getElementById("calDetail");
+  const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+  const viewMonth = new Date();
+  viewMonth.setDate(1);
+  let selected = today();
+
+  const keyOf = (y, m, d) => `${y}-${m + 1}-${d}`;
+  const dateOf = (key) => { const [y, m, d] = key.split("-").map(Number); return new Date(y, m - 1, d); };
+
+  function entryOf(key) {
+    if (key === today() && state) return { text: state.text, done: state.done };
+    return history[key] || null;
+  }
+
+  function renderCal(dir = 0) {
+    const y = viewMonth.getFullYear();
+    const m = viewMonth.getMonth();
+    document.querySelector("#calYear span").textContent = `${y}年`;
+    document.getElementById("calMonth").textContent = `${m + 1}月`;
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    let html = "";
+    for (let i = 0; i < first; i++) html += '<span class="cal-blank"></span>';
+    for (let d = 1; d <= days; d++) {
+      const key = keyOf(y, m, d);
+      const wd = (first + d - 1) % 7;
+      const e = entryOf(key);
+      const cls = ["cal-day"];
+      if (wd === 0 || wd === 6) cls.push("weekend");
+      if (key === today()) cls.push("is-today");
+      if (key === selected) cls.push("selected");
+      const dot = e ? `<span class="dot ${e.done ? "done" : "undone"}"></span>` : '<span class="dot"></span>';
+      const label = `${m + 1}月${d}日${e ? (e.done ? "、やった" : "、記録あり") : ""}`;
+      html += `<button type="button" class="${cls.join(" ")}" data-key="${key}" aria-label="${label}"><span class="num">${d}</span>${dot}</button>`;
+    }
+    const rest = (7 - ((first + days) % 7)) % 7;
+    for (let i = 0; i < rest; i++) html += '<span class="cal-blank"></span>';
+    calGrid.innerHTML = html;
+    if (dir && calGrid.animate) {
+      calGrid.animate([
+        { opacity: 0, transform: `translateX(${dir * 28}px)` },
+        { opacity: 1, transform: "none" },
+      ], { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+    }
+  }
+
+  function renderDetail() {
+    const date = dateOf(selected);
+    const e = entryOf(selected);
+    const isToday = selected === today();
+    const when = `${date.getMonth() + 1}月${date.getDate()}日 ${WEEK[date.getDay()]}曜日${isToday ? "・今日" : ""}`;
+    const check = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+    let body;
+    if (e) {
+      const chip = e.done
+        ? `<span class="chip done">${check}やった</span>`
+        : isToday ? '<span class="chip pending">これから</span>' : '<span class="chip undone">やれなかった</span>';
+      body = `<p class="what"></p>${chip}`;
+    } else {
+      const future = date > new Date();
+      body = `<p class="what none">${future ? "まだ先の日です。" : isToday ? "今日の1つは、まだ決めていません。" : "この日の1つはありません。"}</p>`;
+    }
+    calDetail.innerHTML = `<p class="when">${when}</p>${body}`;
+    if (e) calDetail.querySelector(".what").textContent = e.text;
+    if (calDetail.animate) {
+      calDetail.animate([
+        { opacity: 0, transform: "translateY(6px)" },
+        { opacity: 1, transform: "none" },
+      ], { duration: 300, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+    }
+  }
+
+  function moveMonth(step) {
+    if (calMode === "year") {
+      viewMonth.setFullYear(viewMonth.getFullYear() + step);
+      renderYear(step);
+      return;
+    }
+    viewMonth.setMonth(viewMonth.getMonth() + step);
+    renderCal(step);
+  }
+
+  // ---- 年の表示 ----
+  const monthView = document.getElementById("monthView");
+  const yearView = document.getElementById("yearView");
+  const yearGrid = document.getElementById("yearGrid");
+  let calMode = "month";
+
+  function renderYear(dir = 0) {
+    const y = viewMonth.getFullYear();
+    const now = new Date();
+    document.getElementById("yearTitle").textContent = `${y}年`;
+    let html = "";
+    for (let m = 0; m < 12; m++) {
+      const first = new Date(y, m, 1).getDay();
+      const days = new Date(y, m + 1, 0).getDate();
+      let cells = "<span></span>".repeat(first);
+      for (let d = 1; d <= days; d++) {
+        const key = keyOf(y, m, d);
+        const cls = key === today() ? "t" : entryOf(key) ? "has" : "";
+        cells += `<span class="${cls}">${d}</span>`;
+      }
+      const isNow = y === now.getFullYear() && m === now.getMonth();
+      html += `<button type="button" class="mini${isNow ? " now" : ""}" data-m="${m}" aria-label="${y}年${m + 1}月"><span class="mini-name">${m + 1}月</span><span class="mini-days" aria-hidden="true">${cells}</span></button>`;
+    }
+    yearGrid.innerHTML = html;
+    if (dir && yearGrid.animate) {
+      yearGrid.animate([
+        { opacity: 0, transform: `translateX(${dir * 28}px)` },
+        { opacity: 1, transform: "none" },
+      ], { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+    }
+  }
+
+  // 月 ⇄ 年 は、iPhoneのカレンダーのように拡大・縮小して切り替える
+  function setMode(mode, from) {
+    if (mode === calMode) return;
+    calMode = mode;
+    const toYear = mode === "year";
+    document.getElementById("calYear").hidden = toYear;
+    document.getElementById("prevBtn").setAttribute("aria-label", toYear ? "前の年" : "前の月");
+    document.getElementById("nextBtn").setAttribute("aria-label", toYear ? "次の年" : "次の月");
+    if (toYear) renderYear(); else { renderCal(); renderDetail(); }
+    const show = toYear ? yearView : monthView;
+    const hide = toYear ? monthView : yearView;
+    hide.hidden = true;
+    show.hidden = false;
+    if (!show.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (from) {
+      const r = from.getBoundingClientRect();
+      const c = show.getBoundingClientRect();
+      show.style.transformOrigin = `${r.left + r.width / 2 - c.left}px ${r.top + r.height / 2 - c.top}px`;
+    } else {
+      show.style.transformOrigin = "50% 0";
+    }
+    show.animate([
+      { opacity: 0, transform: `scale(${toYear ? 1.12 : 0.4})` },
+      { opacity: 1, transform: "none" },
+    ], { duration: 460, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+  }
+
+  yearGrid.addEventListener("click", (e) => {
+    const mini = e.target.closest(".mini");
+    if (!mini || swiped) return;
+    const y = viewMonth.getFullYear();
+    const m = Number(mini.dataset.m);
+    viewMonth.setFullYear(y, m, 1);
+    // その月が今月なら今日を、それ以外は1日を選んでおく
+    const now = new Date();
+    selected = y === now.getFullYear() && m === now.getMonth() ? today() : keyOf(y, m, 1);
+    setMode("month", mini);
+  });
+  document.getElementById("calYear").addEventListener("click", () => setMode("year"));
+  document.getElementById("calMonth").addEventListener("click", () => setMode("year"));
+
+  calGrid.addEventListener("click", (e) => {
+    const day = e.target.closest(".cal-day");
+    if (!day || swiped) return;
+    selected = day.dataset.key;
+    renderCal();
+    renderDetail();
+  });
+  document.getElementById("prevBtn").addEventListener("click", () => moveMonth(-1));
+  document.getElementById("nextBtn").addEventListener("click", () => moveMonth(1));
+  document.getElementById("todayBtn").addEventListener("click", () => {
+    const now = new Date();
+    const step = Math.sign((now.getFullYear() - viewMonth.getFullYear()) * 12 + now.getMonth() - viewMonth.getMonth());
+    viewMonth.setFullYear(now.getFullYear(), now.getMonth(), 1);
+    selected = today();
+    if (calMode === "year") {
+      setMode("month");
+      return;
+    }
+    renderCal(step);
+    renderDetail();
+  });
+
+  // 左右にスワイプで月を移動
+  let swipeX = null;
+  let swiped = false;
+  for (const el of [calGrid, yearGrid]) {
+    el.addEventListener("pointerdown", (e) => { swipeX = e.clientX; });
+    el.addEventListener("pointerup", (e) => {
+      if (swipeX === null) return;
+      const dx = e.clientX - swipeX;
+      swipeX = null;
+      if (Math.abs(dx) > 50) {
+        // スワイプの直後に来るクリックで、日や月を選んでしまわないようにする
+        swiped = true;
+        setTimeout(() => { swiped = false; }, 0);
+        moveMonth(dx < 0 ? 1 : -1);
+      }
+    });
+  }
+
+  // ---- タブ ----
+  const tabs = { today: document.getElementById("tabToday"), cal: document.getElementById("tabCal") };
+  const screens = { today: document.getElementById("todayScreen"), cal: calScreen };
+  let currentTab = "today";
+
+  function showTab(name) {
+    if (name === currentTab) return;
+    currentTab = name;
+    for (const k of Object.keys(tabs)) {
+      tabs[k].setAttribute("aria-selected", String(k === name));
+      screens[k].hidden = k !== name;
+    }
+    const pill = document.querySelector(".tab-pill");
+    pill.style.transform = name === "cal" ? "translateX(100%)" : "none";
+    // ぷにっと伸びて縮む（jam と同じ動き）
+    if (pill.firstElementChild.animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      pill.firstElementChild.animate([
+        { transform: "scale(1, 1)" },
+        { transform: "scale(1.32, 0.84)", offset: 0.28 },
+        { transform: "scale(0.94, 1.1)", offset: 0.58 },
+        { transform: "scale(1.03, 0.98)", offset: 0.8 },
+        { transform: "scale(1, 1)" },
+      ], { duration: 560, easing: "cubic-bezier(0.3, 0.9, 0.4, 1)" });
+    }
+    if (name === "cal") {
+      if (calMode === "year") renderYear();
+      else { renderCal(); renderDetail(); }
+    }
+    if (screens[name].animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      screens[name].animate([
+        { opacity: 0, transform: "translateY(10px) scale(0.99)", filter: "blur(6px)" },
+        { opacity: 1, transform: "none", filter: "blur(0)" },
+      ], { duration: 420, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+    }
+  }
+
+  tabs.today.addEventListener("click", () => showTab("today"));
+  tabs.cal.addEventListener("click", () => showTab("cal"));
+
+  // ---- 起動アニメーション ----
+  // 1) テキストのマッチカット（140BPMで加速） 2) 暗転の中に「one」と光の点 3) 点が見出しの上へ収まる
+  // タップかキー入力で最後まで飛ばせる
+  const BEAT = 60 / 140;
+  const CUT_SECTIONS = [
+    { n: 16, step: BEAT / 4 },
+    { n: 16, step: BEAT / 6 },
+    { n: 16, step: BEAT / 8 },
+  ];
+
+  async function playIntro() {
+    const intro = document.getElementById("intro");
+    const mark = document.querySelector(".mark");
+    const finish = () => {
+      intro.remove();
+      document.body.classList.remove("intro");
+      if (!form.hidden) input.focus();
+    };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || !intro.animate) {
+      finish();
+      return;
+    }
+
+    await MatchCut.ready();
+
+    const $ = (s) => intro.querySelector(s);
+    const stage = $(".stage");
+
+    const cutTimes = [];
+    let t = 0.15;
+    for (const sec of CUT_SECTIONS) {
+      for (let i = 0; i < sec.n; i++) {
+        cutTimes.push({ t, fast: sec.step < BEAT / 4 });
+        t += sec.step;
+      }
+    }
+    const cutsEnd = t;
+    const cuts = MatchCut.build(stage, cutTimes.length);
+
+    const ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+    const swift = "cubic-bezier(0.45, 0, 0.15, 1)";
+    const anims = [];
+    const play = (el, frames, opts) => {
+      const a = el.animate(frames, { fill: "both", easing: ease, ...opts });
+      anims.push(a);
+      return a;
+    };
+    const ms = (sec) => Math.round(sec * 1000);
+
+    // マッチカット中は、カメラがじわっと「one」へ寄っていく
+    play(stage, [{ transform: "scale(1)" }, { transform: "scale(1.55)" }],
+      { duration: ms(cutsEnd), easing: "cubic-bezier(0.5, 0, 0.9, 0.6)", fill: "forwards" });
+    play(stage, [{ opacity: 1 }, { opacity: 0 }], { delay: ms(cutsEnd), duration: 1, fill: "forwards" });
+
+    let skipped = false;
+    const t0 = performance.now();
+    let shown = null;
+    let next = 0;
+    const tick = () => {
+      if (skipped || !intro.isConnected) return;
+      const now = (performance.now() - t0) / 1000;
+      while (next < cutTimes.length && cutTimes[next].t <= now) {
+        if (shown) shown.classList.remove("on");
+        shown = cuts[next];
+        shown.classList.add("on");
+        if (cutTimes[next].fast && next % 4 === 0) {
+          $(".flash").animate([{ opacity: 0.5 }, { opacity: 0 }], { duration: 90 });
+        }
+        next++;
+      }
+      if (now < cutsEnd) requestAnimationFrame(tick);
+      else if (shown) shown.classList.remove("on");
+    };
+    requestAnimationFrame(tick);
+
+    // カットが止まり、暗転の中に光の点と「one」が現れる
+    const T = ms(cutsEnd) + 200;
+    play($(".orb"), [
+      { transform: "scale(0.15)", opacity: 0, filter: "blur(14px)" },
+      { transform: "scale(1.12)", opacity: 1, filter: "blur(0)", offset: 0.6 },
+      { transform: "scale(1)", opacity: 1, filter: "blur(0)" },
+    ], { delay: T, duration: 900 });
+    play($(".halo"), [
+      { transform: "scale(0.4)", opacity: 0 },
+      { transform: "scale(1)", opacity: 1 },
+    ], { delay: T, duration: 1200 });
+    play($(".ripple"), [
+      { transform: "scale(1)", opacity: 0.8 },
+      { transform: "scale(6)", opacity: 0 },
+    ], { delay: T + 150, duration: 1400, easing: "cubic-bezier(0.1, 0.6, 0.3, 1)", fill: "forwards" });
+    play($(".word"), [
+      { opacity: 0, filter: "blur(16px)", transform: "scale(1.08)" },
+      { opacity: 1, filter: "blur(0)", transform: "scale(1)" },
+    ], { delay: T + 100, duration: 1000 });
+
+    // 暗転が明けて、点が見出しの上の定位置へ収まる
+    const out = T + 1700;
+    play($(".word"), [{ opacity: 1 }, { opacity: 0, filter: "blur(6px)" }],
+      { delay: out, duration: 400, fill: "forwards" });
+    play($(".halo"), [{ opacity: 1 }, { opacity: 0 }], { delay: out, duration: 500, fill: "forwards" });
+    play(intro, [{ backgroundColor: getComputedStyle(intro).backgroundColor }, { backgroundColor: "transparent" }],
+      { delay: out + 100, duration: 900, easing: swift, fill: "forwards" });
+
+    // 着地先は飛んでいる間も毎フレーム測り直す。フォントの読み込みや画面の高さの変化で
+    // 見出しの位置が動いても、点が古い位置に降りて「しるし」と二重に見えないようにする
+    const orb = $(".orb");
+    const orbFrom = { backgroundColor: getComputedStyle(orb).backgroundColor, boxShadow: getComputedStyle(orb).boxShadow };
+    const dot = getComputedStyle(mark, "::after").backgroundColor;
+    const flyFrames = () => {
+      const r = mark.getBoundingClientRect();
+      const c = intro.getBoundingClientRect();
+      const dx = r.left + r.width / 2 - (c.left + c.width / 2);
+      const dy = r.top + r.height / 2 - (c.top + c.height / 2);
+      // 大きさは描画中の値ではなくレイアウト上の値で測る（拡大アニメーション中の大きさを拾わないため）
+      const s = (mark.offsetWidth - 12) / orb.offsetWidth;
+      return [
+        { transform: "translate(0, 0) scale(1)", ...orbFrom },
+        { transform: `translate(${dx}px, ${dy}px) scale(${s})`, backgroundColor: dot, boxShadow: "0 0 0 0 rgba(143, 160, 255, 0)" },
+      ];
+    };
+    const flyAt = out + 100, flyFor = 1300;
+    const fly = play(orb, flyFrames(), { delay: flyAt, duration: flyFor, easing: swift, fill: "forwards" });
+    const track = () => {
+      if (!intro.isConnected || fly.playState === "finished") return;
+      fly.effect.setKeyframes(flyFrames());
+      requestAnimationFrame(track);
+    };
+    requestAnimationFrame(track);
+    // 点がしるしにぴったり重なった瞬間に入れ替える
+    play(mark, [{ opacity: 0 }, { opacity: 1 }], { delay: flyAt + flyFor - 120, duration: 120, easing: "linear" });
+
+    // 下のバーも一緒に浮かび上がる
+    play(document.querySelector(".tabbar"), [
+      { opacity: 0, transform: "translateY(24px)" },
+      { opacity: 1, transform: "none" },
+    ], { delay: out + 900, duration: 800 });
+
+    // 中身がふわりと立ち上がる
+    const section = form.hidden ? view : form;
+    [...section.children].forEach((el, i) => {
+      play(el, [
+        { opacity: 0, transform: "translateY(20px)", filter: "blur(8px)" },
+        { opacity: 1, transform: "none", filter: "blur(0)" },
+      ], { delay: out + 600 + i * 110, duration: 900 });
+    });
+
+    // マッチカット中のタップは、波紋と「one」が出る場面まで早送りする。
+    // その場面に入ってからのタップは、アプリの画面まで飛ばす
+    const skip = () => {
+      skipped = true;
+      stage.remove();
+      if (anims[0].currentTime < T) {
+        anims.forEach((a) => { if (a.currentTime < T) a.currentTime = T; });
+      } else {
+        anims.forEach((a) => a.finish());
+      }
+    };
+    intro.addEventListener("pointerdown", skip);
+    addEventListener("keydown", skip);
+
+    fly.finished.then(() => {
+      removeEventListener("keydown", skip);
+      finish();
+      // 中身の表示が終わったらアニメーションの指定を外し、元のスタイルに戻す
+      Promise.all(anims.map((a) => a.finished)).then(() => anims.forEach((a) => a.cancel()));
+    });
+  }
+</script>
+</body>
+</html>

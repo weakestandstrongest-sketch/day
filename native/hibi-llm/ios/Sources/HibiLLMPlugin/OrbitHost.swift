@@ -1,0 +1,164 @@
+import UIKit
+import SwiftUI
+
+/// ひび手帳の中の Orbit（ブラウザ）。コードは Orbit/（リポジトリ browser2 から scripts/sync-orbit.sh で写したもの）。
+///
+/// - 「日記」で左端から右へスワイプすると、指について Orbit が左から出てくる（画面いっぱい。ひび手帳の下のバーも隠れる）
+/// - Orbit のどの画面でも、右端から左へスワイプすると、Orbit が左へ戻ってひび手帳に戻る
+/// - 閉じても Orbit は裏で生きているので、次に開くと同じところから。アプリを閉じたあとも、Orbit が前の
+///   タブを覚えている。しばらく見ていないタブは Orbit の「自動でしまう」でしまわれ、ホームから始まる
+@MainActor
+final class OrbitHost: NSObject, UIGestureRecognizerDelegate {
+    static let shared = OrbitHost()
+
+    private var model: AppModel?
+    private var host: UIHostingController<OrbitRoot>?
+    private var openPan: UIScreenEdgePanGestureRecognizer?
+    private var closePan: UIScreenEdgePanGestureRecognizer?
+    private weak var vc: UIViewController?
+    private(set) var isOpen = false
+    /// 開いた・閉じた（ひび手帳の JS へ知らせる）
+    var onChange: ((Bool) -> Void)?
+
+    /// 左端からのスワイプで開けるようにする（「日記」を見ているときだけ on）。
+    func arm(_ on: Bool, vc: UIViewController, webView: UIView?) {
+        self.vc = vc
+        if openPan == nil, let web = webView {
+            let g = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(openPanned(_:)))
+            g.edges = .left
+            g.delegate = self
+            web.addGestureRecognizer(g)
+            openPan = g
+        }
+        openPan?.isEnabled = on && !isOpen
+    }
+
+    func open(vc: UIViewController) {
+        self.vc = vc
+        guard let v = ensure(), let root = vc.view else { return }
+        prepareToShow(v, in: root)
+        settle(open: true, velocity: 0)
+    }
+
+    func close() {
+        guard isOpen else { return }
+        settle(open: false, velocity: 0)
+    }
+
+    // MARK: Building the Orbit screen (once; it stays alive while hidden)
+
+    private func ensure() -> UIView? {
+        if let h = host { return h.view }
+        guard let vc, let root = vc.view else { return nil }
+        OrbitEmbed.embedded = true // 設定の保存先を分ける（AppModel を作る前に）
+        let m = AppModel()
+        model = m
+        let h = UIHostingController(rootView: OrbitRoot(model: m))
+        h.view.backgroundColor = .black
+        h.view.frame = root.bounds
+        h.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        h.view.isHidden = true
+        h.view.layer.shadowColor = UIColor.black.cgColor
+        h.view.layer.shadowOpacity = 0.35
+        h.view.layer.shadowRadius = 24
+        vc.addChild(h)
+        root.addSubview(h.view)
+        h.didMove(toParent: vc)
+        let g = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(closePanned(_:)))
+        g.edges = .right
+        g.delegate = self
+        h.view.addGestureRecognizer(g)
+        closePan = g
+        host = h
+        return h.view
+    }
+
+    private func prepareToShow(_ v: UIView, in root: UIView) {
+        root.bringSubviewToFront(v) // ひび手帳の下のバー・ガラスのボタンより上に
+        v.frame = root.bounds
+        if v.isHidden {
+            v.transform = CGAffineTransform(translationX: -root.bounds.width, y: 0)
+            v.isHidden = false
+            model?.becameActive() // しばらく見ていないタブをしまう（日にちが経っていればホームから）
+        }
+        root.endEditing(true)
+    }
+
+    // MARK: Gestures
+
+    @objc private func openPanned(_ g: UIScreenEdgePanGestureRecognizer) {
+        guard let root = vc?.view else { return }
+        let w = max(1, root.bounds.width)
+        let x = g.translation(in: root).x
+        switch g.state {
+        case .began:
+            guard let v = ensure() else { return }
+            prepareToShow(v, in: root)
+        case .changed:
+            host?.view.transform = CGAffineTransform(translationX: min(0, -w + x), y: 0)
+        case .ended, .cancelled, .failed:
+            let vx = g.velocity(in: root).x
+            settle(open: g.state == .ended && (vx > 600 || (x > w * 0.35 && vx > -300)), velocity: vx)
+        default: break
+        }
+    }
+
+    @objc private func closePanned(_ g: UIScreenEdgePanGestureRecognizer) {
+        guard let root = vc?.view, isOpen else { return }
+        let w = max(1, root.bounds.width)
+        let x = g.translation(in: root).x // 左へ動かすとマイナス
+        switch g.state {
+        case .began:
+            root.endEditing(true)
+        case .changed:
+            host?.view.transform = CGAffineTransform(translationX: max(-w, min(0, x)), y: 0)
+        case .ended, .cancelled, .failed:
+            let vx = g.velocity(in: root).x
+            let close = g.state == .ended && (vx < -600 || (x < -w * 0.3 && vx < 300))
+            settle(open: !close, velocity: vx)
+        default: break
+        }
+    }
+
+    /// 指を離したあと：開ききる／閉じきる。速さを引きついで、iPhone のシートのように止まる。
+    private func settle(open: Bool, velocity: CGFloat) {
+        guard let v = host?.view, let root = vc?.view else { return }
+        let w = max(1, root.bounds.width)
+        let target: CGFloat = open ? 0 : -w
+        let distance = abs(target - v.transform.tx)
+        let spring = distance > 1 ? min(8, abs(velocity) / distance) : 0
+        UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: spring,
+                       options: [.allowUserInteraction, .beginFromCurrentState]) {
+            v.transform = CGAffineTransform(translationX: target, y: 0)
+        } completion: { [weak self] _ in
+            guard let self else { return }
+            if !open { v.isHidden = true; v.transform = .identity }
+            let changed = self.isOpen != open
+            self.isOpen = open
+            self.openPan?.isEnabled = !open
+            if open { UIAccessibility.post(notification: .screenChanged, argument: v) }
+            if changed { self.onChange?(open) }
+        }
+    }
+
+    // 画面の端からのスワイプは、ページのスクロールより先にとる
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        g === openPan || g === closePan
+    }
+}
+
+/// Orbit の画面（単独のアプリの OrbitApp と同じ組み方）。
+struct OrbitRoot: View {
+    let model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        BrowserView()
+            .environment(model)
+            .tint(Theme.accent)
+            .preferredColorScheme(model.settings.appearance == .system ? nil : (model.settings.appearance == .dark ? .dark : .light))
+            .onChange(of: scenePhase) {
+                if scenePhase == .active { model.becameActive() }
+            }
+    }
+}

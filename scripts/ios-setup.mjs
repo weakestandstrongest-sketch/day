@@ -43,13 +43,15 @@ const keys = {
   NSCalendarsFullAccessUsageDescription: '<string>iPhoneのカレンダーの予定をひび手帳に表示し、ひび手帳の予定を「ひび手帳」カレンダーに書き出すために使います。</string>',
   NSCalendarsWriteOnlyAccessUsageDescription: '<string>ひび手帳の予定を、iPhoneのカレンダーに書き出すために使います。</string>',
   NSRemindersFullAccessUsageDescription: '<string>ひび手帳のやること・課題を「ひび手帳」リマインダーに入れて、完了を両方でそろえるために使います。</string>',
+  // ひび手帳の中の Orbit（ブラウザ）：http のページも WebView では開けるように（ふだんは HTTPS に切り替えて開く）
+  NSAppTransportSecurity: '<dict><key>NSAllowsArbitraryLoadsInWebContent</key><true/></dict>',
   NSAlarmKitUsageDescription: '<string>目覚ましと、出発時刻のアラームを鳴らすために使います。</string>',
 };
 const plistPath = join(app, 'Info.plist');
 let plist = await readFile(plistPath, 'utf8');
 for (const [k, v] of Object.entries(keys)) {
   // remove an older copy of the key (so running twice changes nothing), then add it before the closing </dict>
-  plist = plist.replace(new RegExp(`\\s*<key>${k}</key>\\s*(<true/>|<false/>|<string>[\\s\\S]*?</string>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
+  plist = plist.replace(new RegExp(`\\s*<key>${k}</key>\\s*(<true/>|<false/>|<string>[\\s\\S]*?</string>|<dict>[\\s\\S]*?</dict>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
   plist = plist.replace(/\n?<\/dict>\s*<\/plist>\s*$/, `\n\t<key>${k}</key>\n\t${v}\n</dict>\n</plist>\n`);
 }
 await writeFile(plistPath, plist);

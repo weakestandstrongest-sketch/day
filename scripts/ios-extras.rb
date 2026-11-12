@@ -20,6 +20,15 @@ Dir[File.join(root, 'ios-assets/app-extra/*.swift')].each do |src|
   app.add_file_references([ref]) unless app.source_build_phase.files_references.include?(ref)
 end
 
+# ---- iOS 17 から（ひび手帳の中の Orbit が @Observable を使う）。アプリ本体と、cap sync が作る CapApp-SPM のパッケージの両方を上げる
+app.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0' }
+proj.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0' }
+capspm = File.join(root, 'ios/App/CapApp-SPM/Package.swift')
+if File.exist?(capspm)
+  t = File.read(capspm)
+  File.write(capspm, t.gsub(/\.iOS\(\.v1[3-6]\)/, '.iOS(.v17)'))
+end
+
 # ---- widget extension
 wdir = File.join(root, 'ios/App/HibiWidgets')
 FileUtils.mkdir_p(wdir)
