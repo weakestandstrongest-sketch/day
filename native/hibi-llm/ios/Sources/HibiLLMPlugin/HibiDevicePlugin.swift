@@ -52,6 +52,8 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "orbitClose", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "jamArm", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "jamClose", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "gyoukaiArm", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "gyoukaiClose", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -198,12 +200,31 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             let open: Bool = MainActor.assumeIsolated {
                 let j = EdgeApps.jam
                 if j.onChange == nil { j.onChange = { [weak self] open in self?.notifyListeners("jam", data: ["open": open]) } }
-                JamWebController.shared.setURL(url)
+                EdgeWebController.jam.setURL(url)
                 j.arm(call.getBool("on") ?? false, vc: vc, webView: web)
                 return j.isOpen
             }
             call.resolve(["ok": true, "open": open])
         }
+    }
+
+    /// { on }：「日記」を見ているあいだだけ、右端からのスワイプで Gyoukai（業界研究）を開けるようにする
+    @objc func gyoukaiArm(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let web = self.bridge?.webView
+            let open: Bool = MainActor.assumeIsolated {
+                let g = EdgeApps.gyoukai
+                if g.onChange == nil { g.onChange = { [weak self] open in self?.notifyListeners("gyoukai", data: ["open": open]) } }
+                g.arm(call.getBool("on") ?? false, vc: vc, webView: web)
+                return g.isOpen
+            }
+            call.resolve(["ok": true, "open": open])
+        }
+    }
+
+    @objc func gyoukaiClose(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { MainActor.assumeIsolated { EdgeApps.gyoukai.close() }; call.resolve(["ok": true]) }
     }
 
     @objc func jamClose(_ call: CAPPluginCall) {
@@ -427,7 +448,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     /// {sound}：消音モードでも鳴るように「再生」として、くり返し鳴らす
     @objc func alarmRing(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            MainActor.assumeIsolated { EdgeApps.orbit.close(); EdgeApps.jam.close() } // アラームを止める画面が Orbit の下に隠れないように
+            MainActor.assumeIsolated { EdgeApps.orbit.close(); EdgeApps.jam.close(); EdgeApps.gyoukai.close() } // アラームを止める画面が Orbit の下に隠れないように
             HibiRinger.shared.ring(call.getString("sound") ?? "")
             call.resolve(["ok": true])
         }

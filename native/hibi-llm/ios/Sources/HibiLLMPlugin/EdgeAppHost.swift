@@ -1,8 +1,9 @@
 import UIKit
 import SwiftUI
 
-/// ひび手帳の上に、別のアプリを画面いっぱいに重ねる（Orbit：日記の左端から／Jam：ふりかえりの左端から）。
-/// Orbit のコードは Orbit/（リポジトリ browser2 から scripts/sync-orbit.sh で写したもの）、Jam はウェブアプリ（JamWebController）。
+/// ひび手帳の上に、別のアプリを画面いっぱいに重ねる（Orbit：日記の左端から／Jam：ふりかえりの左端から／Gyoukai：日記の右端から）。
+/// 右から出るアプリ（Gyoukai）は、左右がすべて逆（右端から左へで開き、左端から右へで戻る）。
+/// Orbit のコードは Orbit/（リポジトリ browser2 から scripts/sync-orbit.sh で写したもの）、Jam・Gyoukai はウェブアプリ（EdgeWebController）。
 ///
 /// - 左端から右へスワイプすると、指についてアプリが左から出てくる（画面いっぱい。ひび手帳の下のバーも隠れる）
 /// - Orbit のどの画面でも、右端から左へスワイプすると、Orbit が左へ戻ってひび手帳に戻る
@@ -15,7 +16,13 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     /// 開くたびに呼ぶ（Orbit：しばらく見ていないタブをしまう）
     var onShow: (@MainActor () -> Void)?
 
-    init(build: @escaping @MainActor () -> UIViewController) {
+    /// どちらの端から出てくるか
+    let fromRight: Bool
+    /// 出てくる側の符号（左から：-1、右から：+1）。閉じている位置は この符号 × 画面の幅
+    private var sign: CGFloat { fromRight ? 1 : -1 }
+
+    init(fromRight: Bool = false, build: @escaping @MainActor () -> UIViewController) {
+        self.fromRight = fromRight
         self.build = build
     }
 
@@ -32,7 +39,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         self.vc = vc
         if openPan == nil, let web = webView {
             let g = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(openPanned(_:)))
-            g.edges = .left
+            g.edges = fromRight ? .right : .left
             g.delegate = self
             web.addGestureRecognizer(g)
             openPan = g
@@ -68,7 +75,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         root.addSubview(h.view)
         h.didMove(toParent: vc)
         let g = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(closePanned(_:)))
-        g.edges = .right
+        g.edges = fromRight ? .left : .right
         g.delegate = self
         h.view.addGestureRecognizer(g)
         closePan = g
@@ -80,7 +87,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         root.bringSubviewToFront(v) // ひび手帳の下のバー・ガラスのボタンより上に
         v.frame = root.bounds
         if v.isHidden {
-            v.transform = CGAffineTransform(translationX: -root.bounds.width, y: 0)
+            v.transform = CGAffineTransform(translationX: sign * root.bounds.width, y: 0)
             v.isHidden = false
             onShow?()
         }
@@ -98,10 +105,13 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
             guard let v = ensure() else { return }
             prepareToShow(v, in: root)
         case .changed:
-            host?.view.transform = CGAffineTransform(translationX: min(0, -w + x), y: 0)
+            // 指が進んだぶんだけ、閉じた位置から出てくる（左からなら右へ、右からなら左へ）
+            let moved = max(0, -sign * x)
+            host?.view.transform = CGAffineTransform(translationX: sign * max(0, w - moved), y: 0)
         case .ended, .cancelled, .failed:
-            let vx = g.velocity(in: root).x
-            settle(open: g.state == .ended && (vx > 600 || (x > w * 0.35 && vx > -300)), velocity: vx)
+            let vx = -sign * g.velocity(in: root).x // 開く向きをプラスに
+            let moved = -sign * x
+            settle(open: g.state == .ended && (vx > 600 || (moved > w * 0.35 && vx > -300)), velocity: g.velocity(in: root).x)
         default: break
         }
     }
@@ -109,16 +119,19 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     @objc private func closePanned(_ g: UIScreenEdgePanGestureRecognizer) {
         guard let root = vc?.view, isOpen else { return }
         let w = max(1, root.bounds.width)
-        let x = g.translation(in: root).x // 左へ動かすとマイナス
+        let x = g.translation(in: root).x
         switch g.state {
         case .began:
             root.endEditing(true)
         case .changed:
-            host?.view.transform = CGAffineTransform(translationX: max(-w, min(0, x)), y: 0)
+            // 閉じる向き（左から出たものは左へ、右から出たものは右へ）にだけ動く
+            let moved = max(0, min(w, sign * x))
+            host?.view.transform = CGAffineTransform(translationX: sign * moved, y: 0)
         case .ended, .cancelled, .failed:
-            let vx = g.velocity(in: root).x
-            let close = g.state == .ended && (vx < -600 || (x < -w * 0.3 && vx < 300))
-            settle(open: !close, velocity: vx)
+            let vx = sign * g.velocity(in: root).x // 閉じる向きをプラスに
+            let moved = sign * x
+            let close = g.state == .ended && (vx > 600 || (moved > w * 0.3 && vx > -300))
+            settle(open: !close, velocity: g.velocity(in: root).x)
         default: break
         }
     }
@@ -127,7 +140,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     private func settle(open: Bool, velocity: CGFloat) {
         guard let v = host?.view, let root = vc?.view else { return }
         let w = max(1, root.bounds.width)
-        let target: CGFloat = open ? 0 : -w
+        let target: CGFloat = open ? 0 : sign * w
         let distance = abs(target - v.transform.tx)
         let spring = distance > 1 ? min(8, abs(velocity) / distance) : 0
         UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: spring,
@@ -169,7 +182,10 @@ enum EdgeApps {
     }()
 
     /// Jam（リポジトリ communication のウェブアプリ）
-    static let jam = EdgeAppHost { JamWebController.shared }
+    static let jam = EdgeAppHost { EdgeWebController.jam }
+
+    /// Gyoukai（業界研究。リポジトリ gyoukai の GitHub Pages）：日記の右端から
+    static let gyoukai = EdgeAppHost(fromRight: true) { EdgeWebController.gyoukai }
 }
 
 /// Orbit の画面（単独のアプリの OrbitApp と同じ組み方）。

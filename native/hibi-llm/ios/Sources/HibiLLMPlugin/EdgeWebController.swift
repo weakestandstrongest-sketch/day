@@ -1,14 +1,28 @@
 import UIKit
 import WebKit
 
-/// Jam（リポジトリ communication：サークル・部活の連絡アプリ）を、ひび手帳の上に画面いっぱいで開く WebView。
+/// ひび手帳の上に画面いっぱいで開くウェブアプリの WebView（Jam：リポジトリ communication／Gyoukai：リポジトリ gyoukai）。
 /// ログイン（Google）を覚えておけるように、ふつうの（消えない）データ置き場を使う。
 /// Google のログインは「アプリの中の WebView」を断ることがあるので、Safari と同じ名乗り方にする（Orbit と同じ）。
 @MainActor
-final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelegate {
-    static let shared = JamWebController()
+final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDelegate {
+    /// Jam：URL は ひび手帳の設定から
+    static let jam = EdgeWebController(name: "Jam", url: nil, hint: "Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。")
+    /// Gyoukai：公開ページ（GitHub Pages）
+    static let gyoukai = EdgeWebController(name: "Gyoukai", url: URL(string: "https://weakestandstrongest-sketch.github.io/gyoukai/"), hint: "")
 
+    private let name: String
+    private let hint: String
     private(set) var url: URL?
+
+    init(name: String, url: URL?, hint: String) {
+        self.name = name
+        self.url = url
+        self.hint = hint
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     private lazy var web: WKWebView = {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
@@ -56,7 +70,7 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
             web.load(URLRequest(url: url)) // 初めて開くときに読み込む
             showMessage(nil)
         } else {
-            showMessage("Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。")
+            showMessage(hint)
         }
     }
 
@@ -80,7 +94,7 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
         let ns = error as NSError
         if ns.domain == NSURLErrorDomain, ns.code == NSURLErrorCancelled { return } // 次のページへ移っただけ
         guard webView.backForwardList.currentItem == nil else { return } // 前のページが出ていれば、それを見せたまま
-        showMessage("Jam を開けませんでした。\n\n\(url?.host ?? "")\n\(error.localizedDescription)\n\nURL が正しいか、インターネットにつながっているか確かめてください。")
+        showMessage("\(name) を開けませんでした。\n\n\(url?.host ?? "")\n\(error.localizedDescription)\n\nURL が正しいか、インターネットにつながっているか確かめてください。")
     }
 
     /// 開く URL（ひび手帳の設定から）。変わったときだけ読み込み直す
@@ -92,7 +106,7 @@ final class JamWebController: UIViewController, WKNavigationDelegate, WKUIDelega
             showMessage(nil)
             web.load(URLRequest(url: new))
         } else {
-            showMessage("Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。")
+            showMessage(hint)
         }
     }
 
