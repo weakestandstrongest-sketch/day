@@ -18,6 +18,8 @@ final class HibiTabState: ObservableObject {
     @Published var tint: Color = Color(red: 0.88, green: 0.5, blue: 0.47)
     @Published var fabInk: Color = .white
     @Published var hidden = false
+    /// 出入りのときに下へしまう（Jam・Gyoukai のバー。ひび手帳のバーと入れかわる）
+    @Published var tucked = false
     /// false: no round button (灯 or an app opened inside ひび手帳 that has none)
     @Published var fabShown = true
     /// バーの幅の上限（タブが少ないアプリ：one は 200。nil なら画面いっぱい）
@@ -51,9 +53,9 @@ struct HibiBarView: View {
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.maxWidth)
-        .offset(y: s.hidden ? 140 : 0)
-        .opacity(s.hidden ? 0 : 1)
-        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.hidden)
+        .offset(y: s.hidden || s.tucked ? 140 : 0)
+        .opacity(s.hidden || s.tucked ? 0 : 1)
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.hidden || s.tucked)
     }
 
     private var items: some View {
@@ -126,7 +128,7 @@ final class HibiTabBar {
         let st = state
         // the capsule: 12pt in from each side; the round button: the last 62pt before the right margin
         b.hit = { p, size in
-            if st.hidden || p.y < 0 || p.y > size.height { return false }
+            if st.hidden || st.tucked || p.y < 0 || p.y > size.height { return false }
             if let mw = st.maxWidth, !st.fabShown { return abs(p.x - size.width / 2) <= mw / 2 } // 真ん中の小さいバー
             let right = size.width - 12
             if st.fabShown && p.x >= right - 62 && p.x <= right { return true }
@@ -162,6 +164,32 @@ final class HibiTabBar {
 
     /// while hidden, nothing on the strip takes a touch at all
     func setHidden(_ v: Bool) { state.hidden = v; box?.isUserInteractionEnabled = !v }
+
+    // ひび手帳のバー：ページ（JS）が隠したいときと、Orbit・Jam・Gyoukai が上に出ているとき（covered）に隠す。
+    // 出ているあいだは下へ沈み、閉じきったらまた下から出てくる（one を開くときと同じ動き）
+    private var jsHidden = false
+    private var covered = false
+    func setJSHidden(_ v: Bool) { jsHidden = v; applyHidden() }
+    func setCovered(_ v: Bool) { covered = v; applyHidden() }
+    private func applyHidden() { let h = jsHidden || covered; if h != state.hidden { setHidden(h) } }
+
+    /// 下へしまう／出す。animated が false なら、すぐに（その場で写真を撮るため、画面にもすぐ反映する）
+    func setTucked(_ v: Bool, animated: Bool) {
+        guard state.tucked != v else { return }
+        if animated { state.tucked = v; return }
+        var t = Transaction(); t.disablesAnimations = true
+        withTransaction(t) { state.tucked = v }
+        host?.view.setNeedsLayout(); host?.view.layoutIfNeeded()
+    }
+
+    /// いま見えているバーのガラスの形（画面全体の座標）と角の丸み。隠れているときは nil
+    var capsule: (CGRect, CGFloat)? {
+        guard let b = box, b.window != nil, !state.hidden, !state.tucked else { return nil }
+        let r = b.convert(b.bounds, to: nil)
+        let f = state.maxWidth.map { CGRect(x: r.midX - $0 / 2, y: r.minY, width: $0, height: r.height) }
+            ?? CGRect(x: r.minX + 12, y: r.minY, width: r.width - 24 - (state.fabShown ? 72 : 0), height: r.height)
+        return (f, f.height / 2)
+    }
 
     /// "light" / "dark" / "" (the iPhone's own)
     func setScheme(_ s: String) {

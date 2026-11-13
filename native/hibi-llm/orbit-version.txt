@@ -1,1 +1,1 @@
-f8f501bdf147b5dd1070fe28d77215421921f472 Launch animation: the dot orbits once, drawing the ring, then the wordmark lands on the start page
+64722f8f852dade9438920847e55a174520fc676 Bottom bar can tuck away while the app slides in or out of ひび手帳; expose the embedded defaults suite name

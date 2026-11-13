@@ -110,6 +110,18 @@ struct BrowserView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
                 CommandCapsule()
+                    .background(GeometryReader { g in
+                        // ガラスの形（左右の 4pt の余白を除く）の位置を知らせる
+                        let full = app.tabs.pickingTabID == nil && !app.tabs.chromeCollapsed
+                        let f = g.frame(in: .global).insetBy(dx: full ? 4 : 0, dy: 0)
+                        Color.clear
+                            .onAppear { app.barFrame = f; app.barCorner = full ? 34 : f.height / 2 }
+                            .onChange(of: f) { app.barFrame = f; app.barCorner = full ? 34 : f.height / 2 }
+                    })
+                    // 出入りのとき（と、開いたときのアニメーションのあいだ）は下にしまう
+                    .offset(y: app.barTucked || app.introCover ? 160 : 0)
+                    .opacity(app.barTucked || app.introCover ? 0 : 1)
+                    .animation(.spring(response: 0.34, dampingFraction: 0.86), value: app.barTucked || app.introCover)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

@@ -7,7 +7,9 @@ enum OrbitEmbed {
     /// ほかのアプリの中で動いている（AppModel を作る前に決める）
     static var embedded = false
 
-    private static let suite = UserDefaults(suiteName: "dev.orbit.embedded") ?? .standard
+    /// 中に入れたときの設定の保存先の名前（ひび手帳のバックアップにも使う）
+    static let suiteName = "dev.orbit.embedded"
+    private static let suite = UserDefaults(suiteName: suiteName) ?? .standard
 
     /// 設定の保存先
     static var defaults: UserDefaults { embedded ? suite : .standard }

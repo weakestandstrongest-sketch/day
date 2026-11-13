@@ -17,6 +17,12 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     var onShow: (@MainActor () -> Void)?
     /// 出きったときに呼ぶ（Orbit：開いたときのアニメーションを始める）
     var onOpened: (@MainActor () -> Void)?
+    /// アプリの下のバー：いま見えているガラスの形（画面全体の座標）と角の丸み／下へしまう・出す（しまう, アニメーション）。
+    /// 出入りのとき、ひび手帳のバーと入れかわる（開く：ひび手帳のバーが沈み、出きったらアプリのバーが下から出る。閉じる：その逆）
+    var barRect: (@MainActor () -> (CGRect, CGFloat)?)?
+    var tuckBar: (@MainActor (Bool, Bool) -> Void)?
+    /// どれかのアプリが上に出はじめた（true）／すべて閉じきった（false）：ひび手帳のバーを沈める・戻す
+    static var coverChanged: (@MainActor (Bool) -> Void)?
 
     /// どちらの端から出てくるか
     let fromRight: Bool
@@ -53,14 +59,35 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
     }
 
-    /// 本物を写真に置きかえる（閉じはじめ）
+    /// 本物を写真に置きかえる（閉じはじめ）。
+    /// アプリの下のバーは、バーの形だけの写真にして下へ沈め、残りはバーをしまった画面の写真にする
+    /// （閉じた写真は次に開くときにも使うので、バーのない写真にしておくと、開いてからバーが下から出てくる）
     private func beginSnapshot() {
-        guard snap == nil, let v = host?.view, let root = vc?.view, !v.isHidden,
-              let sv = v.snapshotView(afterScreenUpdates: false) else { return }
+        guard snap == nil, let v = host?.view, let root = vc?.view, !v.isHidden else { return }
+        var piece: UIView?
+        if let tuck = tuckBar, let (r, radius) = barRect?(), r.width > 0, r.height > 0 {
+            let local = v.convert(r, from: nil)
+            if let p = v.resizableSnapshotView(from: local, afterScreenUpdates: false, withCapInsets: .zero) {
+                p.frame = local
+                p.layer.cornerRadius = radius
+                p.layer.cornerCurve = .continuous
+                p.clipsToBounds = true
+                piece = p
+            }
+            tuck(true, false)
+        }
+        guard let sv = v.snapshotView(afterScreenUpdates: piece != nil) else { return }
         sv.frame = root.bounds
         sv.transform = v.transform
         styleShadow(sv)
         root.addSubview(sv)
+        if let p = piece {
+            sv.addSubview(p)
+            UIView.animate(withDuration: 0.34, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0, options: [.curveEaseIn]) {
+                p.transform = CGAffineTransform(translationX: 0, y: 140)
+                p.alpha = 0
+            } completion: { _ in p.removeFromSuperview() }
+        }
         v.alpha = 0 // 隠す（isHidden にすると、指で動かしている途中のスワイプが止まる）
         snap = sv
     }
@@ -97,6 +124,20 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         settle(open: false, velocity: 0)
     }
 
+    /// 中の画面を捨てる（次に開くときに作り直す。Orbit をバックアップから戻したとき）。出ている・動いているときはしない → false
+    func reset() -> Bool {
+        if isOpen || moving { return false }
+        guard let h = host else { return true }
+        h.willMove(toParent: nil)
+        h.view.removeFromSuperview()
+        h.removeFromParent()
+        host = nil
+        closePan = nil
+        lastSnap = nil
+        snap = nil
+        return true
+    }
+
     // MARK: Building the Orbit screen (once; it stays alive while hidden)
 
     private func ensure() -> UIView? {
@@ -127,6 +168,8 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
         if v.isHidden {
             onShow?()
+            tuckBar?(true, false) // アプリのバーは、出きってから下から出す
+            EdgeAppHost.coverChanged?(true) // ひび手帳のバーを沈める
             if let ls = lastSnap {
                 // 前に閉じたときの写真を出し、出きったら本物に入れかえる
                 ls.frame = root.bounds
@@ -234,6 +277,8 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
             self.openPan?.isEnabled = !open
             if open { UIAccessibility.post(notification: .screenChanged, argument: real) }
             if changed { self.onChange?(open) }
+            if open { self.tuckBar?(false, true) } // アプリのバーが下から出てくる（閉じかけて戻したときも）
+            else { EdgeAppHost.coverChanged?(EdgeAppHost.anyBusy) } // すべて閉じきったら、ひび手帳のバーが下から出てくる
             if changed && open { self.onOpened?() }
         }
     }
@@ -257,24 +302,44 @@ enum EdgeApps {
     /// Orbit（ブラウザ）
     static let orbit: EdgeAppHost = {
         var model: AppModel?
+        weak var hosting: UIViewController?
         let host = EdgeAppHost {
             OrbitEmbed.embedded = true // 設定の保存先を分ける（AppModel を作る前に）
             let m = AppModel()
             model = m
             let h = UIHostingController(rootView: OrbitRoot(model: m))
+            hosting = h
             h.view.backgroundColor = .black
             return h
         }
         host.onShow = { model?.becameActive() } // しばらく見ていないタブをしまう（日にちが経っていればホームから）
+        host.barRect = { () -> (CGRect, CGFloat)? in
+            guard let m = model, !m.barTucked, !m.introCover, !m.barFrame.isEmpty else { return nil }
+            return (m.barFrame, m.barCorner)
+        }
+        host.tuckBar = { tucked, animated in
+            guard let m = model else { return }
+            if animated { m.barTucked = tucked; return }
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) { m.barTucked = tucked }
+            if let v = hosting?.view { v.setNeedsLayout(); v.layoutIfNeeded() }
+        }
         host.onOpened = { model?.startIntro() } // 初めて出きったときだけ、開いたときのアニメーション（2回目からは何もしない）
         return host
     }()
 
     /// Jam（リポジトリ communication のウェブアプリ）
-    static let jam = EdgeAppHost { EdgeWebController.jam }
+    static let jam = withBar(EdgeAppHost { EdgeWebController.jam }, EdgeWebController.jam)
 
     /// Gyoukai（業界研究。リポジトリ gyoukai の GitHub Pages）：日記の右端から
-    static let gyoukai = EdgeAppHost(fromRight: true) { EdgeWebController.gyoukai }
+    static let gyoukai = withBar(EdgeAppHost(fromRight: true) { EdgeWebController.gyoukai }, EdgeWebController.gyoukai)
+
+    /// ウェブアプリの下のバー（HibiTabBar）を、出入りのときにしまう・出す
+    private static func withBar(_ host: EdgeAppHost, _ web: EdgeWebController) -> EdgeAppHost {
+        host.barRect = { web.bar?.capsule }
+        host.tuckBar = { tucked, animated in web.bar?.setTucked(tucked, animated: animated) }
+        return host
+    }
 }
 
 /// Orbit の画面（単独のアプリの OrbitApp と同じ組み方）。

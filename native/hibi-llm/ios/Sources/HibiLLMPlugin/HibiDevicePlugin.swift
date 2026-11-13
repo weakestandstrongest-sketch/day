@@ -56,6 +56,8 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "gyoukaiArm", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "saveMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "gyoukaiClose", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "orbitData", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -189,6 +191,28 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    /// Orbit に保存してあるもの（お気に入り・タブ・スペース・設定など。API キーは Keychain なので入らない）を、
+    /// ひび手帳のバックアップ・Googleドライブに入れるために渡す → { data: base64（plist）} / { data: "" }
+    @objc func orbitData(_ call: CAPPluginCall) {
+        let dom = UserDefaults.standard.persistentDomain(forName: OrbitEmbed.suiteName) ?? [:]
+        guard !dom.isEmpty, let d = try? PropertyListSerialization.data(fromPropertyList: dom, format: .binary, options: 0) else {
+            return call.resolve(["data": ""])
+        }
+        call.resolve(["data": d.base64EncodedString()])
+    }
+
+    /// { data }：バックアップから Orbit を戻す。Orbit は閉じていれば作り直す（次に開くと、戻したタブ・お気に入りから）
+    @objc func orbitRestore(_ call: CAPPluginCall) {
+        guard let b64 = call.getString("data"), let d = Data(base64Encoded: b64),
+              let dom = (try? PropertyListSerialization.propertyList(from: d, options: [], format: nil)) as? [String: Any] else { return call.reject("bad data") }
+        DispatchQueue.main.async {
+            let ok: Bool = MainActor.assumeIsolated { EdgeApps.orbit.reset() }
+            guard ok else { return call.resolve(["ok": false, "open": true]) }
+            UserDefaults.standard.setPersistentDomain(dom, forName: OrbitEmbed.suiteName)
+            call.resolve(["ok": true])
+        }
+    }
+
     @objc func orbitClose(_ call: CAPPluginCall) {
         DispatchQueue.main.async { MainActor.assumeIsolated { EdgeApps.orbit.close() }; call.resolve(["ok": true]) }
     }
@@ -269,6 +293,9 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                 bar.onFab = { [weak self] in self?.notifyListeners("fab", data: [:]) }
             }
             bar.install(on: vc)
+            MainActor.assumeIsolated {
+                if EdgeAppHost.coverChanged == nil { EdgeAppHost.coverChanged = { HibiTabBar.shared.setCovered($0) } }
+            }
             let st = bar.state
             if let tabs = call.getArray("tabs", JSObject.self) {
                 let list = tabs.map { HibiTab(id: ($0["key"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "circle") }
@@ -283,7 +310,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             let mw = call.getDouble("barWidth").map { CGFloat($0) }
             if mw != st.maxWidth { st.maxWidth = mw }
             bar.setLift(CGFloat(call.getDouble("barLift") ?? 0))
-            if let v = call.getBool("hidden"), v != st.hidden { bar.setHidden(v) }
+            if let v = call.getBool("hidden") { bar.setJSHidden(v) } // Orbit などが上に出ているあいだは、ほかにも隠す（EdgeAppHost.coverChanged）
             bar.setScheme(call.getString("scheme") ?? "")
             call.resolve(["ok": true])
         }

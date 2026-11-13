@@ -34,6 +34,8 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
     private let barSpec: TabSpec?
     private(set) var url: URL?
     private var tabBar: HibiTabBar?
+    /// 下のバー（出入りのときに下へしまう：EdgeAppHost）
+    var bar: HibiTabBar? { tabBar }
 
     init(name: String, url: URL?, hint: String, bar: TabSpec? = nil) {
         self.name = name

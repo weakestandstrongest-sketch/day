@@ -35,7 +35,13 @@ final class AppModel {
     /// 始まりのページのロゴの位置（画面全体の座標）。始まりのページが出ていないときは .zero
     var wordmarkFrame: CGRect = .zero
 
-    /// 開いたときのアニメーションを始める（1回だけ。2回目からは何もしない）
+    /// 下のバー（CommandCapsule）を下にしまっている（ひび手帳の中で、出入りするとき。ひび手帳のバーと入れかわる）
+    var barTucked = false
+    /// 下のバーのガラスの形の位置（画面全体の座標）と角の丸み。しまうときに、この形だけを写真にして下へ動かす
+    var barFrame: CGRect = .zero
+    var barCorner: CGFloat = 34
+
+        /// 開いたときのアニメーションを始める（1回だけ。2回目からは何もしない）
     func startIntro() { if introCover { introGo = true } }
     @ObservationIgnored private var toastTask: Task<Void, Never>?
 
