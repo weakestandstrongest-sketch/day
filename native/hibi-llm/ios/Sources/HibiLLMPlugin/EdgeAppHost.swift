@@ -36,6 +36,32 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     private static let shadowOpacity: Float = 0.28
 
     private var host: UIViewController?
+    /// 動かしているあいだだけ使う「写真」（スナップショット）。
+    /// iOS 26 の Liquid Glass の部品は、画面全体を動かしても別に描かれて置いていかれる（端に残る・がくっと戻る）ので、
+    /// 指で動かすあいだは写真を動かし、止まったら本物に戻す
+    private var snap: UIView?
+    /// 閉じたときの写真（次に開くとき、出てくるあいだに使う）
+    private var lastSnap: UIView?
+    /// いま動かしているもの（写真があれば写真、なければ本物）
+    private var mover: UIView? { snap ?? host?.view }
+
+    private func styleShadow(_ v: UIView) {
+        v.layer.shadowColor = UIColor.black.cgColor
+        v.layer.shadowRadius = 18
+        v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
+    }
+
+    /// 本物を写真に置きかえる（閉じはじめ）
+    private func beginSnapshot() {
+        guard snap == nil, let v = host?.view, let root = vc?.view, !v.isHidden,
+              let sv = v.snapshotView(afterScreenUpdates: false) else { return }
+        sv.frame = root.bounds
+        sv.transform = v.transform
+        styleShadow(sv)
+        root.addSubview(sv)
+        v.alpha = 0 // 隠す（isHidden にすると、指で動かしている途中のスワイプが止まる）
+        snap = sv
+    }
     private var openPan: UIScreenEdgePanGestureRecognizer?
     private var closePan: UIScreenEdgePanGestureRecognizer?
     private weak var vc: UIViewController?
@@ -65,6 +91,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
 
     func close() {
         guard isOpen else { return }
+        beginSnapshot()
         settle(open: false, velocity: 0)
     }
 
@@ -97,9 +124,20 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         v.frame = root.bounds
         v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
         if v.isHidden {
-            v.transform = CGAffineTransform(translationX: sign * root.bounds.width, y: 0)
-            v.isHidden = false
             onShow?()
+            if let ls = lastSnap {
+                // 前に閉じたときの写真を出し、出きったら本物に入れかえる
+                ls.frame = root.bounds
+                ls.transform = CGAffineTransform(translationX: sign * root.bounds.width, y: 0)
+                styleShadow(ls)
+                root.addSubview(ls)
+                snap = ls
+                lastSnap = nil
+                v.transform = .identity
+            } else {
+                v.transform = CGAffineTransform(translationX: sign * root.bounds.width, y: 0)
+                v.isHidden = false
+            }
         }
         root.endEditing(true)
     }
@@ -118,7 +156,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         case .changed:
             // 指が進んだぶんだけ、閉じた位置から出てくる（左からなら右へ、右からなら左へ）
             let moved = max(0, -sign * x)
-            host?.view.transform = CGAffineTransform(translationX: sign * max(0, w - moved), y: 0)
+            mover?.transform = CGAffineTransform(translationX: sign * max(0, w - moved), y: 0)
         case .ended, .cancelled, .failed:
             let vx = -sign * g.velocity(in: root).x // 開く向きをプラスに
             let moved = -sign * x
@@ -136,12 +174,13 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         case .began:
             moving = true
             root.endEditing(true)
+            beginSnapshot()
         case .changed:
             // 閉じる向き（左から出たものは左へ、右から出たものは右へ）にだけ動く
             let moved = max(0, min(w, sign * x))
-            host?.view.transform = CGAffineTransform(translationX: sign * moved, y: 0)
+            mover?.transform = CGAffineTransform(translationX: sign * moved, y: 0)
             // 影は、ほとんど閉じたところで消えていく（端に黒い帯が残って見えないように）
-            host?.view.layer.shadowOpacity = EdgeAppHost.shadowOpacity * Float(min(1, (w - moved) / 60))
+            mover?.layer.shadowOpacity = EdgeAppHost.shadowOpacity * Float(min(1, (w - moved) / 60))
         case .ended, .cancelled, .failed:
             let vx = sign * g.velocity(in: root).x // 閉じる向きをプラスに
             let moved = sign * x
@@ -155,7 +194,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
 
     /// 指を離したあと：開ききる／閉じきる。速さを引きついで、iPhone のシートのように止まる。
     private func settle(open: Bool, velocity: CGFloat) {
-        guard let v = host?.view, let root = vc?.view else { return }
+        guard let real = host?.view, let v = mover, let root = vc?.view else { return }
         let w = max(1, root.bounds.width)
         let target: CGFloat = open ? 0 : sign * w
         let distance = abs(target - v.transform.tx)
@@ -178,11 +217,20 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         } completion: { [weak self] _ in
             guard let self else { return }
             self.moving = false
-            if !open { v.isHidden = true; v.transform = .identity }
+            // 写真を片づけて、本物を元に戻す
+            if let sv = self.snap {
+                sv.removeFromSuperview()
+                self.snap = nil
+                if !open { sv.transform = .identity; self.lastSnap = sv }
+            }
+            real.alpha = 1
+            real.transform = .identity
+            if open { real.isHidden = false; root.bringSubviewToFront(real); real.layer.shadowOpacity = 0 }
+            else { real.isHidden = true }
             let changed = self.isOpen != open
             self.isOpen = open
             self.openPan?.isEnabled = !open
-            if open { UIAccessibility.post(notification: .screenChanged, argument: v) }
+            if open { UIAccessibility.post(notification: .screenChanged, argument: real) }
             if changed { self.onChange?(open) }
         }
     }

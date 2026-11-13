@@ -282,6 +282,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             if let v = call.getBool("fabShown"), v != st.fabShown { st.fabShown = v }
             let mw = call.getDouble("barWidth").map { CGFloat($0) }
             if mw != st.maxWidth { st.maxWidth = mw }
+            bar.setLift(CGFloat(call.getDouble("barLift") ?? 0))
             if let v = call.getBool("hidden"), v != st.hidden { bar.setHidden(v) }
             bar.setScheme(call.getString("scheme") ?? "")
             call.resolve(["ok": true])

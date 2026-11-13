@@ -110,6 +110,8 @@ final class HibiTabBar {
     let state = HibiTabState()
     private var host: UIHostingController<HibiBarView>?
     private var box: HibiPassView?
+    /// 下からの位置（ふだんは画面の下のあき＋10。one はホーム画面から開いたときと同じ高さまで上げる）
+    private var bottom: NSLayoutConstraint?
     var onTab: ((String) -> Void)?
     var onFab: (() -> Void)?
 
@@ -136,7 +138,11 @@ final class HibiTabBar {
         NSLayoutConstraint.activate([
             b.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             b.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            b.bottomAnchor.constraint(equalTo: root.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+            {
+                let c = b.bottomAnchor.constraint(equalTo: root.safeAreaLayoutGuide.bottomAnchor, constant: -10)
+                self.bottom = c
+                return c
+            }(),
             b.heightAnchor.constraint(equalToConstant: 62),
             h.view.leadingAnchor.constraint(equalTo: b.leadingAnchor),
             h.view.trailingAnchor.constraint(equalTo: b.trailingAnchor),
@@ -145,6 +151,13 @@ final class HibiTabBar {
         ])
         h.didMove(toParent: vc)
         host = h; box = b
+    }
+
+    /// バーを、ふだんの位置からさらに上げる（pt）
+    func setLift(_ lift: CGFloat) {
+        guard let bottom, bottom.constant != -10 - lift else { return }
+        bottom.constant = -10 - lift
+        UIView.animate(withDuration: 0.25) { self.box?.superview?.layoutIfNeeded() }
     }
 
     /// while hidden, nothing on the strip takes a touch at all

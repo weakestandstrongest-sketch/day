@@ -11,7 +11,8 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         name: "Jam", url: nil,
         hint: "Jam の URL がまだ入っていません。\n\nひび手帳に戻って（右端から左へスワイプ）、\n設定 → iPhoneとの連携 →「Jam の URL」に入れてください。",
         bar: TabSpec(bar: "nav.fixed[aria-label=\"メインナビゲーション\"]", items: "nav.fixed[aria-label=\"メインナビゲーション\"] a[href]", key: "href",
-                     symbols: ["/": "house", "/talk": "bubble.left.and.bubble.right", "/calendar": "calendar", "/polls": "chart.bar.xaxis", "/groups": "person.3"]))
+                     symbols: ["/": "house", "/talk": "bubble.left.and.bubble.right", "/calendar": "calendar", "/polls": "chart.bar.xaxis", "/groups": "person.3"],
+                     hideWhen: ".jam-splash")) // 起動のアニメーション（Jam のロゴ）のあいだは隠す
     /// Gyoukai：公開ページ（GitHub Pages）。下のバー：ホーム・ニュース・業界・地方
     static let gyoukai = EdgeWebController(
         name: "Gyoukai", url: URL(string: "https://weakestandstrongest-sketch.github.io/gyoukai/"), hint: "",
@@ -25,6 +26,7 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         let items: String     // タブひとつひとつ
         let key: String       // タブを見分ける属性
         let symbols: [String: String] // タブ → SF Symbols
+        var hideWhen: String? = nil   // これが見えているあいだはバーを隠す（起動のアニメーションなど）
     }
 
     private let name: String
@@ -110,7 +112,7 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
 
     /// ページに入れるスクリプト：タブの名前・選んでいるタブを知らせ、ページのバーを見えなくする
     private static func barScript(_ spec: TabSpec) -> String {
-        let cfg: [String: Any] = ["bar": spec.bar, "items": spec.items, "key": spec.key, "sym": spec.symbols]
+        let cfg: [String: Any] = ["bar": spec.bar, "items": spec.items, "key": spec.key, "sym": spec.symbols, "hide": spec.hideWhen ?? ""]
         let json = (try? JSONSerialization.data(withJSONObject: cfg)).map { String(decoding: $0, as: UTF8.self) } ?? "{}"
         return """
         (function (C) {
@@ -124,6 +126,10 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
             raf = 0;
             var bar = document.querySelector(C.bar), list = items();
             var hidden = !bar || !list.length || !bar.getClientRects().length || getComputedStyle(bar).display === 'none';
+            if (!hidden && C.hide) {
+              var cover = document.querySelector(C.hide);
+              if (cover) { var cs = getComputedStyle(cover); if (cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0.05) hidden = true; }
+            }
             var sel = '', tabs = list.map(function (el) {
               var k = keyOf(el);
               if (el.getAttribute('aria-current') === 'page' || el.getAttribute('aria-selected') === 'true') sel = k;
@@ -135,7 +141,7 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
           function soon() { if (!raf) raf = requestAnimationFrame(send); }
           new MutationObserver(soon).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-current', 'aria-selected', 'hidden', 'style'] });
           window.__edgeTap = function (k) { var el = items().filter(function (e) { return keyOf(e) === k; })[0]; if (el) el.click(); };
-          addEventListener('popstate', soon); setInterval(soon, 800); soon();
+          addEventListener('popstate', soon); addEventListener('animationend', soon, true); setInterval(soon, 500); soon();
         })(\(json));
         """
     }
