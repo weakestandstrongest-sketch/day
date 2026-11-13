@@ -24,7 +24,16 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     init(fromRight: Bool = false, build: @escaping @MainActor () -> UIViewController) {
         self.fromRight = fromRight
         self.build = build
+        super.init()
+        EdgeAppHost.all.append(self)
     }
+
+    /// すべての重ねるアプリ（どれかが出ているあいだ・動いているあいだは、ほかのアプリの端のスワイプを受けない）
+    private static var all: [EdgeAppHost] = []
+    /// 指で動かしている・指を離して動いているとちゅう
+    private var moving = false
+    private static var anyBusy: Bool { all.contains { $0.isOpen || $0.moving } }
+    private static let shadowOpacity: Float = 0.28
 
     private var host: UIViewController?
     private var openPan: UIScreenEdgePanGestureRecognizer?
@@ -69,8 +78,8 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         h.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         h.view.isHidden = true
         h.view.layer.shadowColor = UIColor.black.cgColor
-        h.view.layer.shadowOpacity = 0.35
-        h.view.layer.shadowRadius = 24
+        h.view.layer.shadowOpacity = 0
+        h.view.layer.shadowRadius = 18
         vc.addChild(h)
         root.addSubview(h.view)
         h.didMove(toParent: vc)
@@ -86,6 +95,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     private func prepareToShow(_ v: UIView, in root: UIView) {
         root.bringSubviewToFront(v) // ひび手帳の下のバー・ガラスのボタンより上に
         v.frame = root.bounds
+        v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
         if v.isHidden {
             v.transform = CGAffineTransform(translationX: sign * root.bounds.width, y: 0)
             v.isHidden = false
@@ -103,6 +113,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         switch g.state {
         case .began:
             guard let v = ensure() else { return }
+            moving = true
             prepareToShow(v, in: root)
         case .changed:
             // 指が進んだぶんだけ、閉じた位置から出てくる（左からなら右へ、右からなら左へ）
@@ -122,11 +133,14 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         let x = g.translation(in: root).x
         switch g.state {
         case .began:
+            moving = true
             root.endEditing(true)
         case .changed:
             // 閉じる向き（左から出たものは左へ、右から出たものは右へ）にだけ動く
             let moved = max(0, min(w, sign * x))
             host?.view.transform = CGAffineTransform(translationX: sign * moved, y: 0)
+            // 影は、ほとんど閉じたところで消えていく（端に黒い帯が残って見えないように）
+            host?.view.layer.shadowOpacity = EdgeAppHost.shadowOpacity * Float(min(1, (w - moved) / 60))
         case .ended, .cancelled, .failed:
             let vx = sign * g.velocity(in: root).x // 閉じる向きをプラスに
             let moved = sign * x
@@ -142,12 +156,25 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         let w = max(1, root.bounds.width)
         let target: CGFloat = open ? 0 : sign * w
         let distance = abs(target - v.transform.tx)
-        let spring = distance > 1 ? min(8, abs(velocity) / distance) : 0
-        UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: spring,
-                       options: [.allowUserInteraction, .beginFromCurrentState]) {
+        // 指の速さを引きつぐが、残りが短いときに一瞬で消えないよう上限をつける。はね返らない（iPhone のシートと同じ）
+        let spring = distance > 1 ? min(2.5, abs(velocity) / distance) : 0
+        moving = true
+        if !open {
+            let fade = CABasicAnimation(keyPath: "shadowOpacity")
+            fade.fromValue = v.layer.shadowOpacity
+            fade.toValue = 0
+            fade.duration = 0.3
+            v.layer.add(fade, forKey: "fade")
+            v.layer.shadowOpacity = 0
+        } else {
+            v.layer.shadowOpacity = EdgeAppHost.shadowOpacity
+        }
+        UIView.animate(withDuration: 0.42, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: spring,
+                       options: [.allowUserInteraction, .beginFromCurrentState, .curveEaseOut]) {
             v.transform = CGAffineTransform(translationX: target, y: 0)
         } completion: { [weak self] _ in
             guard let self else { return }
+            self.moving = false
             if !open { v.isHidden = true; v.transform = .identity }
             let changed = self.isOpen != open
             self.isOpen = open
@@ -155,6 +182,13 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
             if open { UIAccessibility.post(notification: .screenChanged, argument: v) }
             if changed { self.onChange?(open) }
         }
+    }
+
+    /// 別のアプリが出ている・動いているあいだは、ひび手帳の端のスワイプで開かない
+    /// （ひび手帳の WebView の上に重ねているので、重ねたアプリの上のスワイプも、ひび手帳の WebView に届いてしまう）
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if g === openPan { return !EdgeAppHost.anyBusy }
+        return true
     }
 
     // 画面の端からのスワイプは、ページのスクロールより先にとる
