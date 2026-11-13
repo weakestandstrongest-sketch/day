@@ -1,0 +1,1 @@
+d9f7751cb5a8d9416a24e76d62f00b54b5f3fc96 Refit the viewfinder when the stage resizes or the app comes back; hand captures to ひび手帳

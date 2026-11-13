@@ -4,6 +4,7 @@ import CoreLocation
 import SwiftUI
 import Capacitor
 import PhotosUI
+import Photos
 import AVFoundation
 import MediaPlayer
 #if canImport(WidgetKit)
@@ -53,6 +54,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "jamArm", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "jamClose", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "gyoukaiArm", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "saveMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "gyoukaiClose", returnType: CAPPluginReturnPromise),
     ]
 
@@ -205,6 +207,30 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                 return j.isOpen
             }
             call.resolve(["ok": true, "open": open])
+        }
+    }
+
+    /// { data (base64), mime }：写真・ビデオを iPhone の「写真」に入れる（無音カメラで撮ったもの）。
+    /// 「写真を追加のみ」の許可で足りる。→ { ok } / { ok: false, denied: true }
+    @objc func saveMedia(_ call: CAPPluginCall) {
+        guard let b64 = call.getString("data"), let data = Data(base64Encoded: b64) else { return call.reject("no data") }
+        let mime = (call.getString("mime") ?? "image/jpeg").lowercased()
+        let video = mime.hasPrefix("video/")
+        let ext = video ? (mime.contains("quicktime") ? "mov" : "mp4") : (mime.contains("png") ? "png" : mime.contains("heic") ? "heic" : "jpg")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("hibi-\(UUID().uuidString).\(ext)")
+        do { try data.write(to: file) } catch { return call.reject("write failed") }
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized || status == .limited else {
+                try? FileManager.default.removeItem(at: file)
+                return call.resolve(["ok": false, "denied": true])
+            }
+            PHPhotoLibrary.shared().performChanges({
+                let req = PHAssetCreationRequest.forAsset()
+                req.addResource(with: video ? .video : .photo, fileURL: file, options: nil)
+            }, completionHandler: { done, error in
+                try? FileManager.default.removeItem(at: file)
+                if done { call.resolve(["ok": true]) } else { call.resolve(["ok": false, "error": error?.localizedDescription ?? ""]) }
+            })
         }
     }
 
