@@ -32,6 +32,8 @@ struct StartPageView: View {
                             .onChange(of: g.frame(in: .global)) { app.wordmarkFrame = g.frame(in: .global) }
                     })
                     .onDisappear { app.wordmarkFrame = .zero }
+                    // 開いたときのアニメーションのあいだは出さない（アニメーションのロゴがここへ収まり、終わったら入れかわる）
+                    .opacity(app.introCover ? 0 : 1)
                 Spacer()
                 circleButton("eyeglasses", "プライベートタブ") { app.tabs.newTab(in: BrowserSpace.privateID) }
                 circleButton("square.on.square", "タブ") { app.showSidebar = true }

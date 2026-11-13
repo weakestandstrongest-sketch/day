@@ -1,1 +1,1 @@
-64722f8f852dade9438920847e55a174520fc676 Bottom bar can tuck away while the app slides in or out of ひび手帳; expose the embedded defaults suite name
+454a44e794ef3dc6645f6f701835ff1559c01728 Launch animation: the start page's own wordmark stays hidden until the animated one has landed
