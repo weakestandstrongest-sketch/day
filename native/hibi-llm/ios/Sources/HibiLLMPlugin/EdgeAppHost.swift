@@ -122,7 +122,8 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         case .ended, .cancelled, .failed:
             let vx = -sign * g.velocity(in: root).x // 開く向きをプラスに
             let moved = -sign * x
-            settle(open: g.state == .ended && (vx > 600 || (moved > w * 0.35 && vx > -300)), velocity: g.velocity(in: root).x)
+            // 取り消し（.cancelled）でも、指の位置と勢いで決める（「開く前に戻す」と、がくっと戻って見える）
+            settle(open: vx > 600 || (moved > w * 0.35 && vx > -300), velocity: g.velocity(in: root).x)
         default: break
         }
     }
@@ -144,7 +145,9 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
         case .ended, .cancelled, .failed:
             let vx = sign * g.velocity(in: root).x // 閉じる向きをプラスに
             let moved = sign * x
-            let close = g.state == .ended && (vx > 600 || (moved > w * 0.3 && vx > -300))
+            // iPhone が途中でスワイプを取り消すこと（.cancelled）がある。そのときも指の位置と勢いで決める
+            // （前は「開いたままに戻す」にしていたので、閉じかけで少し残ってから、がくっと開き直していた）
+            let close = vx > 600 || (moved > w * 0.3 && vx > -300)
             settle(open: !close, velocity: g.velocity(in: root).x)
         default: break
         }

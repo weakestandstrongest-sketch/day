@@ -138,9 +138,11 @@ struct SidebarView: View {
                     Circle().fill(space.theme.gradient).frame(width: 8, height: 8)
                     Image(systemName: space.icon).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                 }
+                // iPhone の「メモ」「写真」などと同じ、大きなタイトルの書体（SF Pro の太字）
                 Text(space.name)
-                    .font(.system(size: 28, weight: .regular))
+                    .font(.largeTitle.weight(.bold))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(space.isPrivate ? "履歴を残しません" : "\(count)個のタブ")
                     .font(.caption)
                     .foregroundStyle(.secondary)

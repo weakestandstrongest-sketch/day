@@ -20,6 +20,8 @@ final class HibiTabState: ObservableObject {
     @Published var hidden = false
     /// false: no round button (灯 or an app opened inside ひび手帳 that has none)
     @Published var fabShown = true
+    /// バーの幅の上限（タブが少ないアプリ：one は 200。nil なら画面いっぱい）
+    @Published var maxWidth: CGFloat? = nil
 }
 
 /// Lets touches through everywhere except where `hit` says there is a real button.
@@ -42,11 +44,13 @@ struct HibiBarView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            bar
+            bar.frame(maxWidth: s.maxWidth)
             if s.fabShown { fabButton.transition(.scale.combined(with: .opacity)) }
         }
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.fabShown)
         .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity)
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.maxWidth)
         .offset(y: s.hidden ? 140 : 0)
         .opacity(s.hidden ? 0 : 1)
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.hidden)
@@ -57,7 +61,9 @@ struct HibiBarView: View {
             ForEach(s.tabs) { t in
                 Button { onTab(t.id) } label: {
                     VStack(spacing: 2) {
+                        // アイコンの形（家・吹き出し・カレンダー）で高さが変わると文字の高さもずれるので、枠の高さをそろえる
                         Image(systemName: t.symbol).font(.system(size: 19, weight: .medium))
+                            .frame(height: 24)
                         Text(t.title).font(.system(size: 10, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, minHeight: 52)
@@ -119,6 +125,7 @@ final class HibiTabBar {
         // the capsule: 12pt in from each side; the round button: the last 62pt before the right margin
         b.hit = { p, size in
             if st.hidden || p.y < 0 || p.y > size.height { return false }
+            if let mw = st.maxWidth, !st.fabShown { return abs(p.x - size.width / 2) <= mw / 2 } // 真ん中の小さいバー
             let right = size.width - 12
             if st.fabShown && p.x >= right - 62 && p.x <= right { return true }
             return p.x >= 12 && p.x <= (st.fabShown ? right - 72 : right)
