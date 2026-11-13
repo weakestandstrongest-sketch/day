@@ -140,6 +140,10 @@
     line-height: 1.2;
     text-wrap: balance;
   }
+  /* 「、」「。」は字の左半分にしか形がなく、右半分が空いている。そのぶん行が左に寄って見えるので、
+     右の空きを行の幅に数えない（形のある部分で真ん中にそろう） */
+  #form label { white-space: nowrap; } /* 改行は <br> のところだけ（右の空きを数えないぶん、幅が足りないと勘ちがいして折り返さないように） */
+  #form label .kp { margin-right: -0.45em; }
 
   .field {
     position: relative;
@@ -515,7 +519,7 @@
   <span class="mark" aria-hidden="true"></span>
 
   <form id="form" hidden>
-    <label for="input">今日やることを、<br>1つだけ。</label>
+    <label for="input">今日やることを<span class="kp">、</span><br>1つだけ<span class="kp">。</span></label>
     <div class="field">
       <input id="input" type="text" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="ひとつだけ書く" required>
       <button id="submitBtn" type="submit" aria-label="決める">

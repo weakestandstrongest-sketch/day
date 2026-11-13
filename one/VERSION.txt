@@ -1,1 +1,1 @@
-449b36cee6a41ce65f7711f93cd9df5251f3b7d5 ホーム画面から開いたとき、カレンダーを上端のぼかしの下まで下げる
+dcf46b5c9d491adf98201f3b528db5dec2395879 Heading: don't count the empty right half of 、 and 。 so the lines look centred
