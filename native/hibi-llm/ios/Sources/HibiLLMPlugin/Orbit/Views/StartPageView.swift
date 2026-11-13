@@ -25,6 +25,13 @@ struct StartPageView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 Wordmark(text: space.isPrivate ? "private" : "orbit", muted: space.isPrivate)
+                    // 開いたときのアニメーションが、このロゴの位置へ収まる
+                    .background(GeometryReader { g in
+                        Color.clear
+                            .onAppear { app.wordmarkFrame = g.frame(in: .global) }
+                            .onChange(of: g.frame(in: .global)) { app.wordmarkFrame = g.frame(in: .global) }
+                    })
+                    .onDisappear { app.wordmarkFrame = .zero }
                 Spacer()
                 circleButton("eyeglasses", "プライベートタブ") { app.tabs.newTab(in: BrowserSpace.privateID) }
                 circleButton("square.on.square", "タブ") { app.showSidebar = true }

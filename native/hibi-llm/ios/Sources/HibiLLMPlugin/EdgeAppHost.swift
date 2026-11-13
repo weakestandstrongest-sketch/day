@@ -15,6 +15,8 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
     private let build: @MainActor () -> UIViewController
     /// 開くたびに呼ぶ（Orbit：しばらく見ていないタブをしまう）
     var onShow: (@MainActor () -> Void)?
+    /// 出きったときに呼ぶ（Orbit：開いたときのアニメーションを始める）
+    var onOpened: (@MainActor () -> Void)?
 
     /// どちらの端から出てくるか
     let fromRight: Bool
@@ -232,6 +234,7 @@ final class EdgeAppHost: NSObject, UIGestureRecognizerDelegate {
             self.openPan?.isEnabled = !open
             if open { UIAccessibility.post(notification: .screenChanged, argument: real) }
             if changed { self.onChange?(open) }
+            if changed && open { self.onOpened?() }
         }
     }
 
@@ -263,6 +266,7 @@ enum EdgeApps {
             return h
         }
         host.onShow = { model?.becameActive() } // しばらく見ていないタブをしまう（日にちが経っていればホームから）
+        host.onOpened = { model?.startIntro() } // 初めて出きったときだけ、開いたときのアニメーション（2回目からは何もしない）
         return host
     }()
 

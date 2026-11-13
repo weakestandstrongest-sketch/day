@@ -40,6 +40,11 @@ struct BrowserView: View {
                     .transition(.opacity)
                     .zIndex(10)
             }
+
+            if app.introCover {
+                LaunchIntroView()
+                    .zIndex(100)
+            }
         }
         .animation(spring, value: app.showSidebar)
         .animation(spring, value: app.showAssistant)
@@ -59,6 +64,8 @@ struct BrowserView: View {
             }
         }
         .animation(.snappy, value: app.toast)
+        // 単独のアプリでは、画面が出たらすぐ開いたときのアニメーション（ひび手帳の中では、Orbit が出きってから）
+        .onAppear { if !OrbitEmbed.embedded { app.startIntro() } }
         .animation(.easeOut(duration: 0.2), value: app.showCommandBar)
         .animation(.snappy(duration: 0.25), value: app.tabs.chromeCollapsed)
         .sheet(isPresented: $app.showSettings) {

@@ -27,6 +27,16 @@ final class AppModel {
     var toast: String?
     /// 知らせの絵（SF Symbols）。nil なら星（お気に入り）
     var toastIcon: String?
+
+    /// 開いたときのアニメーション（LaunchIntroView）の黒い幕を出している
+    var introCover = true
+    /// アニメーションを始める（ひび手帳の中では Orbit が出きってから。単独のアプリでは画面が出たらすぐ）
+    var introGo = false
+    /// 始まりのページのロゴの位置（画面全体の座標）。始まりのページが出ていないときは .zero
+    var wordmarkFrame: CGRect = .zero
+
+    /// 開いたときのアニメーションを始める（1回だけ。2回目からは何もしない）
+    func startIntro() { if introCover { introGo = true } }
     @ObservationIgnored private var toastTask: Task<Void, Never>?
 
     init() {
