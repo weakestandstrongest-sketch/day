@@ -38,9 +38,12 @@ const BUILD = {
   // くさり：2つの輪が、ななめに組み合わさる
   url() {
     // 2つの輪を同じ向きで、ななめにずらして重ねる（前後に少しずらして、組み合わさって見えるように少しひねる）
-    const g1 = tube(stadium(14, 7), 3.3, 140, true), g2 = tube(stadium(14, 7), 3.3, 140, true);
-    g1.rotateX(0.35); g1.rotateZ(Math.PI / 4); g1.translate(-7, 7, 2);
-    g2.rotateX(-0.35); g2.rotateZ(Math.PI / 4); g2.translate(7, -7, -2);
+    // 本物のくさりのように組み合わせる：2つの輪を直角にひねり（それぞれ ±45°）、片方の端がもう片方の穴を通るように重ねる。
+    // そのあと、左下から右上へななめに置く
+    const g1 = tube(stadium(13, 7.6), 2.9, 140, true), g2 = tube(stadium(13, 7.6), 2.9, 140, true);
+    g1.rotateX(Math.PI / 4); g1.translate(-9.5, 0, 0);
+    g2.rotateX(-Math.PI / 4); g2.translate(9.5, 0, 0);
+    for (const g of [g1, g2]) g.rotateZ(Math.PI / 4);
     return [g1, g2];
   },
   // 受話器：ゆるく曲がった持ち手と、両はしの丸い耳あて・口あて
@@ -143,7 +146,7 @@ export async function render3DIcons(keys, size = 192) {
     const box = new THREE.Box3().setFromObject(group), c = box.getCenter(new THREE.Vector3());
     group.children.forEach((m) => m.position.sub(c));
     const holder = new THREE.Group(); holder.add(group);
-    holder.rotation.set(-0.42, 0.55, 0.06, 'YXZ');
+    holder.rotation.set(-0.4, -0.55, -0.05, 'YXZ'); // 左を向く（右側の厚みが見える）、上から少し見下ろす
     r.scene.add(holder);
     holder.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(holder), half = Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y) / 2;
