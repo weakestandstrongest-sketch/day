@@ -156,10 +156,21 @@ final class HibiTabBar {
     }
 
     /// バーを、ふだんの位置からさらに上げる（pt）
-    func setLift(_ lift: CGFloat) {
+    func setLift(_ lift: CGFloat, animated: Bool = true) {
         guard let bottom, bottom.constant != -10 - lift else { return }
         bottom.constant = -10 - lift
-        UIView.animate(withDuration: 0.25) { self.box?.superview?.layoutIfNeeded() }
+        if animated { UIView.animate(withDuration: 0.25) { self.box?.superview?.layoutIfNeeded() } }
+        else { box?.superview?.layoutIfNeeded() }
+    }
+
+    /// 少しあとにする（沈みきってから中身を変える）。nil でやめる。新しく頼むと前のはやめる
+    private var pending: DispatchWorkItem?
+    func later(_ seconds: Double?, _ work: (() -> Void)? = nil) {
+        pending?.cancel(); pending = nil
+        guard let seconds, let work else { return }
+        let w = DispatchWorkItem { [weak self] in self?.pending = nil; work() }
+        pending = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: w)
     }
 
     /// while hidden, nothing on the strip takes a touch at all

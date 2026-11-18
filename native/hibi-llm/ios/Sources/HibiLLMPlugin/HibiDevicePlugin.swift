@@ -297,21 +297,33 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                 if EdgeAppHost.coverChanged == nil { EdgeAppHost.coverChanged = { HibiTabBar.shared.setCovered($0) } }
             }
             let st = bar.state
-            if let tabs = call.getArray("tabs", JSObject.self) {
-                let list = tabs.map { HibiTab(id: ($0["key"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "circle") }
-                if list != st.tabs { st.tabs = list }
+            // 中身（タブ・選んでいるもの・幅・高さ・色）を変える。
+            // バーが出ているときにそのまま変えると、沈みながら・出てきながら中身や幅や高さが変わって、バーが動いて見えた（one の出入りなど）。
+            // 隠れるときは、沈みきってから変える。隠れているところから出るときは、変えてから出す。出たままなら、そのまま変える
+            let tabs = call.getArray("tabs", JSObject.self).map { $0.map { HibiTab(id: ($0["key"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "circle") } }
+            let selected = call.getString("selected"), fab = call.getString("fab"), fabLabel = call.getString("fabLabel")
+            let tint = Color.hibi(call.getString("tint")), fabInk = Color.hibi(call.getString("fabInk")), fabShown = call.getBool("fabShown")
+            let mw = call.getDouble("barWidth").map { CGFloat($0) }, lift = CGFloat(call.getDouble("barLift") ?? 0), scheme = call.getString("scheme") ?? ""
+            let apply: (Bool) -> Void = { animated in
+                let set = {
+                    if let list = tabs, list != st.tabs { st.tabs = list }
+                    if let v = selected, v != st.selected { st.selected = v }
+                    if let v = fab, v != st.fab { st.fab = v }
+                    if let v = fabLabel { st.fabLabel = v }
+                    if let c = tint { st.tint = c }
+                    if let c = fabInk { st.fabInk = c }
+                    if let v = fabShown, v != st.fabShown { st.fabShown = v }
+                    if mw != st.maxWidth { st.maxWidth = mw }
+                }
+                if animated { set() } else { var t = Transaction(); t.disablesAnimations = true; withTransaction(t) { set() } }
+                bar.setLift(lift, animated: animated)
+                bar.setScheme(scheme)
             }
-            if let v = call.getString("selected"), v != st.selected { st.selected = v }
-            if let v = call.getString("fab"), v != st.fab { st.fab = v }
-            if let v = call.getString("fabLabel") { st.fabLabel = v }
-            if let c = Color.hibi(call.getString("tint")) { st.tint = c }
-            if let c = Color.hibi(call.getString("fabInk")) { st.fabInk = c }
-            if let v = call.getBool("fabShown"), v != st.fabShown { st.fabShown = v }
-            let mw = call.getDouble("barWidth").map { CGFloat($0) }
-            if mw != st.maxWidth { st.maxWidth = mw }
-            bar.setLift(CGFloat(call.getDouble("barLift") ?? 0))
+            let wasHidden = st.hidden
             if let v = call.getBool("hidden") { bar.setJSHidden(v) } // Orbit などが上に出ているあいだは、ほかにも隠す（EdgeAppHost.coverChanged）
-            bar.setScheme(call.getString("scheme") ?? "")
+            let nowHidden = st.hidden
+            if !wasHidden && nowHidden { bar.later(0.4) { apply(false) } } // 沈みきってから
+            else { bar.later(nil); apply(!wasHidden && !nowHidden) } // 出たまま：動かして変える／隠れている・これから出る：すぐ変える
             call.resolve(["ok": true])
         }
     }

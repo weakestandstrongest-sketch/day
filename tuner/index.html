@@ -215,9 +215,8 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radiu
 .tabbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tabbar button[aria-current=page] svg{stroke-width:2.3}
 
-.embed{display:none;position:fixed;left:0;right:0;bottom:0;top:env(safe-area-inset-top);background:#000;z-index:1}
-.embed.active{display:block}
-.embed iframe{display:block;width:100%;height:100%;border:0;background:#000}
+.embed{display:none;min-height:100vh;padding-top:env(safe-area-inset-top);background:#000}
+.embed.active{display:block;animation:fade .25s ease} /* チューナー・サウンド・メトロノームと同じ出方 */
 body.embedded .app{display:none}
  /* launch animation: the icon assembles itself, then the app fades in */
 #splash{position:fixed;inset:0;z-index:100;background:#000;transform:translateZ(0);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .38s ease}
@@ -482,15 +481,15 @@ html:not(.ready) .app,html:not(.ready) .tabbar,html:not(.ready) .embed{visibilit
     <li><button data-tab="just"><svg viewBox="0 0 24 24"><path d="M8 2v7a4 4 0 0 0 8 0V2"/><path d="M12 13v9"/><path d="M9 22h6"/></svg>純正律</button></li>
   </ul>
 </nav>
-<div class="embed" data-page="chords"><iframe data-src="chords/index.html?v=20261118070919" title="Chord Wheel"></iframe></div>
-<div class="embed" data-page="just"><iframe data-src="just/index.html?v=20261118070919" title="コード名検索 × 純正律"></iframe></div>
+<div class="embed" data-page="chords" data-dir="chords/" aria-label="Chord Wheel"></div>
+<div class="embed" data-page="just" data-dir="just/" aria-label="コード名検索 × 純正律"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
 'use strict';
 // Bumped by tools/bump-version.sh on every release; must match version.json.
-const APP_VERSION = '20261118070919';
+const APP_VERSION = '20261118075910';
 // GitHub Pages lets browsers reuse files for 10 minutes and home-screen apps keep them longer,
 // so ask for version.json uncached and, if a newer release is out, reopen under a fresh URL.
 async function checkForUpdate() {
@@ -1209,12 +1208,96 @@ function buildNameDependent() {
 }
 function refreshAll() { refreshHeader(); refreshDrone(); }
 
+// ---------- コード・純正律：同じページの中に組み込む ----------
+// 前は iframe の中に別のページ（chords/・just/）を開いていたので、開くのが遅く、出方もほかのタブとちがい、
+// 前に見ていた位置のまま開いた。いまは起動のあとに、それぞれのページの中身・見た目・動きを読み込んで、
+// このページの中（シャドウ DOM：見た目と id がチューナーとまざらない）に組み込む。
+const subJobs = new Map();
+function scopeCss(css, dir) {
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  css = css.replace(/url\((['"]?)(?!data:|https?:|#|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${dir}${u}${q})`);
+  const rootRe = /(^|[\s>+~(,])(?:html|:root)((?:\.[\w-]+|\[[^\]]+\]|#[\w-]+|:not\([^)]*\))*)/g;
+  const sel = (p) => p.split(',').map((x) => x
+    .replace(rootRe, (m, pre, q) => pre + (q ? `:host(${q})` : ':host'))
+    .replace(/(^|[\s>+~(,])body(?=[\s.:#\[>+~),]|$)/g, '$1.sub-body')).join(',');
+  let out = '', buf = '';
+  for (const ch of css) {
+    if (ch === '{') { const t = buf.trim(); out += (t.startsWith('@') ? buf : sel(buf)) + '{'; buf = ''; }
+    else if (ch === '}' || ch === ';') { out += buf + ch; buf = ''; }
+    else buf += ch;
+  }
+  return out + buf;
+}
+function mountSub(host) {
+  if (subJobs.has(host)) return subJobs.get(host);
+  const job = (async () => {
+    const dir = host.dataset.dir, v = '?v=' + APP_VERSION;
+    const doc = new DOMParser().parseFromString(await (await fetch(dir + 'index.html' + v)).text(), 'text/html');
+    const root = host.attachShadow({ mode: 'open' });
+    for (const a of doc.documentElement.attributes) if (a.name !== 'lang') host.setAttribute(a.name, a.value);
+    // 見た目：<style> と <link rel=stylesheet> を順に（Google Fonts はこのページの <head> へ）
+    const styles = [];
+    for (const el of doc.querySelectorAll('style, link[rel="stylesheet"]')) {
+      if (el.tagName === 'STYLE') { styles.push(Promise.resolve(el.textContent)); continue; }
+      const href = el.getAttribute('href');
+      if (/^https?:/.test(href)) { if (!document.head.querySelector(`link[href="${href}"]`)) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.append(l); } continue; }
+      styles.push(fetch(dir + href.replace(/\?.*$/, '') + v).then((r) => r.text()));
+    }
+    const css = (await Promise.all(styles)).map((c) => scopeCss(c, dir)).join('\n');
+    const st = document.createElement('style');
+    st.textContent = ':host{display:block}.sub-body{min-height:100%}\n' + css;
+    // 中身：<body> の中身（スクリプト・見た目の指定を除く）を、body の代わりの .sub-body に
+    const body = document.createElement('div');
+    body.className = ('sub-body ' + (doc.body.className || '')).trim();
+    const scripts = [...doc.querySelectorAll('script')];
+    for (const el of doc.body.querySelectorAll('script, style, link')) el.parentNode.removeChild(el);
+    body.innerHTML = doc.body.innerHTML;
+    root.append(st, body);
+    // 動き：document をこのシャドウ DOM に向けた代わりのものを渡して、元の順に動かす
+    const wrapped = new WeakMap();
+    const shim = new Proxy(document, {
+      get(t, k) {
+        if (k === 'getElementById') return (id) => root.getElementById(id);
+        if (k === 'querySelector') return (q) => root.querySelector(q);
+        if (k === 'querySelectorAll') return (q) => root.querySelectorAll(q);
+        if (k === 'body') return body;
+        if (k === 'documentElement') return host;
+        if (k === 'addEventListener') return (type, fn, opt) => {
+          // キー操作は、そのタブが出ていて、ほかの入力欄に打っていないときだけ（ほかのタブのショートカットがまざらないように）
+          const w = function (e) {
+            if (type.startsWith('key')) {
+              if (!host.classList.contains('active')) return;
+              const t0 = e.composedPath()[0];
+              if (t0 && t0.matches && t0.matches('input, select, textarea') && !root.contains(t0)) return;
+            }
+            return fn.call(this, e);
+          };
+          wrapped.set(fn, w); document.addEventListener(type, w, opt);
+        };
+        if (k === 'removeEventListener') return (type, fn, opt) => document.removeEventListener(type, wrapped.get(fn) || fn, opt);
+        const val = Reflect.get(t, k);
+        return typeof val === 'function' ? val.bind(t) : val;
+      },
+    });
+    for (const sc of scripts) {
+      const src = sc.getAttribute('src');
+      let code = src ? await (await fetch(dir + src.replace(/\?.*$/, '') + v)).text() : sc.textContent;
+      code = code.replace(/(['"`])(samples|audio)\//g, `$1${dir}$2/`); // 音のファイルは、それぞれのフォルダから
+      try { new Function('document', code + `\n//# sourceURL=${dir}${src || 'inline.js'}`)(shim); } catch (e) { console.error(dir, e); }
+    }
+  })();
+  subJobs.set(host, job);
+  return job;
+}
+// 起動のあと、手がすいたときに組み込んでおく（タブを押したときにすぐ出るように）
+setTimeout(() => { for (const h of $$('.embed[data-dir]')) mountSub(h).catch((e) => console.error(e)); }, 1200);
+
 function selectTab(name) {
   const btns = $$('#tabs button'), idx = btns.findIndex(b => b.dataset.tab === name);
   btns.forEach((b, i) => i === idx ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   $$('.page, .embed').forEach(p => p.classList.toggle('active', p.dataset.page === name));
-  const embed = $(`.embed[data-page="${name}"] iframe`);
-  if (embed && !embed.src) embed.src = embed.dataset.src; // load each sub-app on first visit
+  const embed = $(`.embed[data-page="${name}"]`);
+  if (embed) mountSub(embed); // まだなら、いま組み込む（ふだんは起動のあとに組み込みずみ）
   document.body.classList.toggle('embedded', !!embed);
   document.body.classList.toggle('ymode', name === 'metro');
   const hl = $('#tab-hl'), blob = hl.firstElementChild;

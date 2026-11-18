@@ -1,1 +1,1 @@
-755f021dcaa2ce8f98dbe3436fe63d7b9a25bd2b Sound: same breathing room above the A4 card as below it; keep the metronome's play triangle inside its circle
+4977b5024408449d69a5c82fba4ae0e553b79126 コード・純正律 are now part of this page (shadow DOM) instead of pages inside iframes: they open like the other tabs, at the top, without the load wait
