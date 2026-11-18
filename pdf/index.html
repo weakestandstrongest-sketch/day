@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>写真をPDFに</title>
+<!-- 写真を1つの PDF にまとめる（リポジトリ pdf を元に、見た目を ひび手帳 に合わせたもの。PDF を作る部分は元のまま）。
+     ひび手帳で、タイムラインのカメラを出した状態から、もう一度右端から左へスワイプすると開く -->
+<style>
+  :root {
+    --bg:#F5EFEB; --surface:#FFFFFF; --surface-2:#FAF6F3; --ink:#232A5C; --ink-2:#6D7092; --ink-3:#A9AABD;
+    --line:#E9E1DB; --accent:#E07F78; --accent-ink:#FFFFFF; --danger:#D45850; --shadow:0 6px 22px rgba(35,42,92,.08); --sel:#FFFFFF;
+    --f-body:ui-rounded,"SF Pro Rounded","Hiragino Sans","Zen Maru Gothic","Noto Sans JP",system-ui,sans-serif;
+    --f-script:"Allura","Snell Roundhand","Apple Chancery",cursive;
+    --sa-top: var(--hibi-sa-top, env(safe-area-inset-top, 0px));
+    --sa-bottom: var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px));
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#000000; --surface:#101012; --surface-2:#1C1C1D; --ink:#F2F1F4; --ink-2:#BDBDC6; --ink-3:#A0A0AA;
+      --line:#303034; --accent:#EF8A82; --accent-ink:#1A1414; --danger:#F07D74; --shadow:none; --sel:#2C2C2E; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#000000; --surface:#101012; --surface-2:#1C1C1D; --ink:#F2F1F4; --ink-2:#BDBDC6; --ink-3:#A0A0AA;
+    --line:#303034; --accent:#EF8A82; --accent-ink:#1A1414; --danger:#F07D74; --shadow:none; --sel:#2C2C2E; color-scheme: dark;
+  }
+  /* ひび手帳のモノクロモード */
+  :root.mono { --sel:#FFFFFF; --accent:#000000; --accent-ink:#FFFFFF; --danger:#000000; --bg:#FFFFFF; --surface:#F3F3F3; --surface-2:#EAEAEA; --ink:#000000; --ink-2:#5A5A5A; --ink-3:#9B9B9B; --line:#E0E0E0; }
+  @media (prefers-color-scheme: dark) { :root.mono:not([data-theme="light"]) { --sel:#262626; --accent:#FFFFFF; --accent-ink:#000000; --danger:#FFFFFF; --bg:#000000; --surface:#111111; --surface-2:#1C1C1C; --ink:#FFFFFF; --ink-2:#B3B3B3; --ink-3:#7E7E7E; --line:#2B2B2B; } }
+  :root.mono[data-theme="dark"] { --sel:#262626; --accent:#FFFFFF; --accent-ink:#000000; --danger:#FFFFFF; --bg:#000000; --surface:#111111; --surface-2:#1C1C1C; --ink:#FFFFFF; --ink-2:#B3B3B3; --ink-3:#7E7E7E; --line:#2B2B2B; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); }
+  body { color: var(--ink); font-family: var(--f-body); -webkit-text-size-adjust: 100%; }
+  main {
+    max-width: 640px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: calc(14px + var(--sa-top)) max(16px, env(safe-area-inset-right, 0px)) calc(28px + var(--sa-bottom)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  /* 見出し：ひび手帳の各画面と同じ、太い日本語に筆記体の英語を添える形 */
+  header { display: flex; align-items: baseline; gap: 10px; padding: 10px 4px 2px; }
+  h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .01em; }
+  .script { font-family: var(--f-script); font-weight: 400; font-size: 30px; color: var(--accent); line-height: 1; }
+  .lead { margin: -6px 4px 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+
+  .card { background: var(--surface); border-radius: 22px; padding: 16px; box-shadow: var(--shadow); }
+  .card-h { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 10px; }
+  h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .card-h small { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  /* 写真を選ぶ：点線の大きなボタン */
+  .pick {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    min-height: 132px; border-radius: 18px; border: 1.5px dashed var(--line);
+    background: var(--surface-2); color: var(--ink-2); font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .pick .ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+  .pick .ic svg { width: 26px; height: 26px; }
+  .pick small { font-weight: 400; font-size: 12px; color: var(--ink-3); }
+  body.has .pick { min-height: 64px; flex-direction: row; gap: 10px; }
+  body.has .pick .ic { width: 34px; height: 34px; }
+  body.has .pick .ic svg { width: 18px; height: 18px; }
+  body.has .pick small { display: none; }
+  input[type=file] { display: none; }
+  svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  #list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  #list li { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; background: var(--surface-2); }
+  #list img { width: 58px; height: 58px; object-fit: cover; border-radius: 12px; background: var(--line); flex: none; }
+  #list .meta { flex: 1; min-width: 0; font-size: 13px; }
+  #list .meta .page { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  #list .meta .name { margin-top: 2px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #list .ops { display: flex; gap: 6px; flex: none; }
+  #list .ops button { width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--ink-2); cursor: pointer; }
+  #list .ops button svg { width: 18px; height: 18px; }
+  #list .ops button.del { color: var(--danger); }
+  #list .ops button:disabled { opacity: .3; }
+  .empty { color: var(--ink-3); text-align: center; padding: 18px 0 8px; font-size: 14px; }
+
+  .field { display: block; margin: 0 2px 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field > span { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+  .name-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 14px; padding: 0 14px; }
+  .name-row input { flex: 1; min-width: 0; font: inherit; font-size: 17px; /* 16px 未満だと iPhone で拡大される */ padding: 12px 0; border: 0; background: transparent; color: var(--ink); outline: none; }
+  .name-row span { color: var(--ink-3); font-size: 15px; }
+  select { display: none; }
+  .seg { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: var(--surface-2); }
+  .seg button { flex: 1; border: 0; border-radius: 999px; padding: 9px 6px; font: inherit; font-size: 13px; font-weight: 700; background: transparent; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--sel); color: var(--ink); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+
+  .actions { display: grid; gap: 10px; padding-top: 2px; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 999px; padding: 15px; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--ink-2); padding: 10px; font-size: 14px; }
+  .btn:disabled { opacity: .35; }
+  .in-hibi #download { display: none; } /* アプリの中ではダウンロードできないので、共有シートの「"ファイル"に保存」で */
+  #status { min-height: 1.4em; font-size: 13px; color: var(--ink-2); text-align: center; margin: 2px 0 0; }
+  .note { margin: 0 6px; font-size: 12px; line-height: 1.6; color: var(--ink-3); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>写真をPDFに</h1><span class="script">PDF</span></header>
+  <p class="lead">写真を選んで並べると、1つの PDF にまとめます。</p>
+
+  <section class="card">
+    <label class="pick" for="picker"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></span>写真を選ぶ<small>何枚でも。あとから足せます</small></label>
+    <input id="picker" type="file" accept="image/*" multiple>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h2>ページ</h2><small id="count"></small></div>
+    <ul id="list"></ul>
+    <div class="empty" id="empty">まだ写真がありません</div>
+  </section>
+
+  <section class="card">
+    <label class="field"><span>ファイル名</span>
+      <div class="name-row"><input id="filename" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"><span>.pdf</span></div>
+    </label>
+    <div class="field"><span>ページの大きさ</span>
+      <div class="seg" data-for="pagesize"><button type="button" data-v="fit">写真に合わせる</button><button type="button" data-v="a4">A4（余白あり）</button></div>
+      <select id="pagesize"><option value="fit">写真に合わせる</option><option value="a4">A4(余白あり)</option></select>
+    </div>
+    <div class="field"><span>画質</span>
+      <div class="seg" data-for="quality"><button type="button" data-v="high">高画質</button><button type="button" data-v="normal">ふつう</button><button type="button" data-v="small">軽く</button></div>
+      <select id="quality"><option value="high">高画質</option><option value="normal" selected>標準</option><option value="small">軽量</option></select>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button id="share" class="btn primary" disabled>PDFを作って保存・送る</button>
+    <button id="download" class="btn ghost" disabled>PDFをダウンロード</button>
+    <button id="clear" class="btn ghost" disabled>すべてクリア</button>
+  </div>
+  <p id="status" role="status"></p>
+  <p class="note">写真はこの iPhone の中だけで PDF にします。どこにも送りません。</p>
+</main>
+
+<script>
+'use strict';
+
+// ひび手帳の中で開いているとき（アプリ版）：PDF は ひび手帳 に渡して、iPhone の共有シートで保存・送る
+const HIBI = (() => { try { return window.parent !== window && typeof window.parent.hibiShareFile === 'function' ? window.parent.hibiShareFile : null; } catch (e) { return null; } })();
+if (HIBI) document.documentElement.classList.add('in-hibi');
+
+// 「ページサイズ」「画質」は、ひび手帳 と同じ丸い切り替えボタンで選ぶ（中身は今までどおりの select）
+for (const seg of document.querySelectorAll('.seg[data-for]')) {
+  const sel = document.getElementById(seg.dataset.for);
+  const paint = () => seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === sel.value)));
+  seg.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; sel.value = b.dataset.v; paint(); });
+  paint();
+}
+
+// ---------- 状態 ----------
+const items = []; // { file, url }
+
+const $ = (id) => document.getElementById(id);
+const picker = $('picker');
+const list = $('list');
+const filenameInput = $('filename');
+
+filenameInput.value = defaultName();
+
+function defaultName() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `写真_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+// ---------- 写真リスト ----------
+picker.addEventListener('change', () => {
+  for (const file of picker.files) {
+    if (!file.type.startsWith('image/') && !/\.(png|jpe?g|heic|heif|webp|gif)$/i.test(file.name)) continue;
+    items.push({ file, url: URL.createObjectURL(file) });
+  }
+  picker.value = ''; // 同じ写真を再選択できるように
+  render();
+});
+
+function render() {
+  list.textContent = '';
+  items.forEach((item, i) => {
+    const li = document.createElement('li');
+
+    const img = document.createElement('img');
+    img.src = item.url;
+    img.alt = '';
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const page = document.createElement('div');
+    page.className = 'page';
+    page.textContent = `${i + 1}`;
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = item.file.name;
+    meta.append(page, name);
+
+    const ops = document.createElement('div');
+    ops.className = 'ops';
+    ops.append(
+      opButton('↑', '上へ', i === 0, () => move(i, -1)),
+      opButton('↓', '下へ', i === items.length - 1, () => move(i, 1)),
+      opButton('✕', '削除', false, () => remove(i), 'del'),
+    );
+
+    li.append(img, meta, ops);
+    list.append(li);
+  });
+
+  const has = items.length > 0;
+  $('count').textContent = items.length ? `${items.length}ページ` : '';
+  $('empty').hidden = has;
+  $('share').disabled = !has;
+  $('download').disabled = !has;
+  $('clear').disabled = !has;
+  document.body.classList.toggle('has', has);
+}
+
+const ICON = {
+  '↑': '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  '↓': '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  '✕': '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+};
+function opButton(label, aria, disabled, onClick, cls) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = ICON[label] || label;
+  b.setAttribute('aria-label', aria);
+  b.disabled = disabled;
+  if (cls) b.className = cls;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function move(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= items.length) return;
+  [items[i], items[j]] = [items[j], items[i]];
+  render();
+}
+
+function remove(i) {
+  URL.revokeObjectURL(items[i].url);
+  items.splice(i, 1);
+  render();
+}
+
+$('clear').addEventListener('click', () => {
+  items.forEach((it) => URL.revokeObjectURL(it.url));
+  items.length = 0;
+  render();
+  setStatus('');
+});
+
+// ---------- 保存 ----------
+$('share').addEventListener('click', () => run(async (file) => {
+  // ひび手帳のアプリの中：iPhone の共有シートは ひび手帳 に出してもらう（「"ファイル"に保存」・AirDrop など）
+  if (HIBI) { const r = await HIBI(file); if (r) return r; }
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: file.name });
+      return '共有しました';
+    } catch (e) {
+      if (e.name === 'AbortError') return 'キャンセルしました';
+      throw e;
+    }
+  }
+  download(file);
+  return 'この環境では共有できないため、ダウンロードしました';
+}));
+
+$('download').addEventListener('click', () => run(async (file) => {
+  download(file);
+  return 'ダウンロードしました';
+}));
+
+async function run(save) {
+  const buttons = ['share', 'download', 'clear'].map($);
+  buttons.forEach((b) => (b.disabled = true));
+  try {
+    const name = outputName();
+    const blob = await createPdf();
+    const file = new File([blob], name, { type: 'application/pdf' });
+    setStatus(`${await save(file)}:${name}(${formatSize(blob.size)})`);
+  } catch (e) {
+    console.error(e);
+    setStatus(`エラー:${e.message || e}`);
+  } finally {
+    render();
+  }
+}
+
+function download(file) {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+function outputName() {
+  let name = filenameInput.value
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+    .replace(/\.pdf$/i, '')
+    .trim();
+  if (!name) {
+    name = defaultName();
+    filenameInput.value = name;
+  }
+  return name + '.pdf';
+}
+
+function setStatus(text) { $('status').textContent = text; }
+
+function formatSize(bytes) {
+  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))}KB` : `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
+// ---------- 画像 → JPEG ----------
+const QUALITY = {
+  high:   { maxSide: 4096, jpeg: 0.92 },
+  normal: { maxSide: 2400, jpeg: 0.85 },
+  small:  { maxSide: 1600, jpeg: 0.75 },
+};
+// iOS Safari のキャンバス上限(約1677万画素)を超えないようにする
+const MAX_PIXELS = 16_000_000;
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('写真を読み込めませんでした'));
+    img.src = url; // <img> は EXIF の向きを反映して描画される
+  });
+}
+
+async function toJpeg(item, preset) {
+  const img = await loadImage(item.url);
+  const w0 = img.naturalWidth, h0 = img.naturalHeight;
+  let scale = Math.min(1, preset.maxSide / Math.max(w0, h0));
+  scale = Math.min(scale, Math.sqrt(MAX_PIXELS / (w0 * h0)));
+  const w = Math.max(1, Math.round(w0 * scale));
+  const h = Math.max(1, Math.round(h0 * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff'; // PNGの透明部分は白にする
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const blob = await new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('画像の変換に失敗しました'))), 'image/jpeg', preset.jpeg));
+  // iOSのメモリを早めに解放
+  canvas.width = canvas.height = 0;
+  return { data: new Uint8Array(await blob.arrayBuffer()), w, h };
+}
+
+async function createPdf() {
+  const preset = QUALITY[$('quality').value];
+  const images = [];
+  for (let i = 0; i < items.length; i++) {
+    setStatus(`変換中… ${i + 1} / ${items.length}`);
+    images.push(await toJpeg(items[i], preset));
+  }
+  setStatus('PDFを作成中…');
+  return buildPdf(images, { pageSize: $('pagesize').value, title: outputName().replace(/\.pdf$/, '') });
+}
+
+// ---------- PDF 生成(JPEGをそのまま埋め込む最小構成) ----------
+const A4 = { w: 595.28, h: 841.89 };
+const A4_MARGIN = 28.35; // 10mm
+const FIT_LONG_SIDE = A4.h; // 「写真に合わせる」時は長辺をA4の長辺に揃える
+
+function pageLayout(img, pageSize) {
+  if (pageSize === 'a4') {
+    const landscape = img.w > img.h;
+    const pw = landscape ? A4.h : A4.w;
+    const ph = landscape ? A4.w : A4.h;
+    const s = Math.min((pw - 2 * A4_MARGIN) / img.w, (ph - 2 * A4_MARGIN) / img.h);
+    const dw = img.w * s, dh = img.h * s;
+    return { pw, ph, x: (pw - dw) / 2, y: (ph - dh) / 2, dw, dh };
+  }
+  const s = FIT_LONG_SIDE / Math.max(img.w, img.h);
+  const pw = img.w * s, ph = img.h * s;
+  return { pw, ph, x: 0, y: 0, dw: pw, dh: ph };
+}
+
+function pdfNum(n) { return (Math.round(n * 100) / 100).toString(); }
+
+// PDF の文字列として UTF-16BE(BOM付き)の16進表記にする
+function pdfTextString(s) {
+  let hex = 'FEFF';
+  for (let i = 0; i < s.length; i++) hex += s.charCodeAt(i).toString(16).padStart(4, '0').toUpperCase();
+  return `<${hex}>`;
+}
+
+function buildPdf(images, { pageSize, title }) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const offsets = [];
+  let pos = 0;
+  const push = (part) => {
+    const bytes = typeof part === 'string' ? enc.encode(part) : part;
+    chunks.push(bytes);
+    pos += bytes.length;
+  };
+  const startObj = (id) => { offsets[id] = pos; push(`${id} 0 obj\n`); };
+
+  // 1: Catalog, 2: Pages, 3: Info, 以降ページごとに Page / Contents / Image
+  const pageIds = images.map((_, i) => 4 + i * 3);
+  const objCount = 3 + images.length * 3;
+
+  push('%PDF-1.4\n');
+  push(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a])); // バイナリを含むことを示すコメント
+
+  startObj(1);
+  push('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+  startObj(2);
+  push(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${images.length} >>\nendobj\n`);
+
+  startObj(3);
+  push(`<< /Title ${pdfTextString(title)} /Producer (photo-to-pdf) >>\nendobj\n`);
+
+  images.forEach((img, i) => {
+    const pageId = pageIds[i], contentId = pageId + 1, imageId = pageId + 2;
+    const L = pageLayout(img, pageSize);
+    const content = `q ${pdfNum(L.dw)} 0 0 ${pdfNum(L.dh)} ${pdfNum(L.x)} ${pdfNum(L.y)} cm /Im0 Do Q\n`;
+
+    startObj(pageId);
+    push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pdfNum(L.pw)} ${pdfNum(L.ph)}] ` +
+         `/Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>\nendobj\n`);
+
+    startObj(contentId);
+    push(`<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream\nendobj\n`);
+
+    startObj(imageId);
+    push(`<< /Type /XObject /Subtype /Image /Width ${img.w} /Height ${img.h} /ColorSpace /DeviceRGB ` +
+         `/BitsPerComponent 8 /Filter /DCTDecode /Length ${img.data.length} >>\nstream\n`);
+    push(img.data);
+    push('\nendstream\nendobj\n');
+  });
+
+  const xref = pos;
+  let table = `xref\n0 ${objCount + 1}\n0000000000 65535 f \n`;
+  for (let id = 1; id <= objCount; id++) table += `${String(offsets[id]).padStart(10, '0')} 00000 n \n`;
+  push(table);
+  push(`trailer\n<< /Size ${objCount + 1} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+
+  return new Blob(chunks, { type: 'application/pdf' });
+}
+
+render();
+</script>
+</body>
+</html>
