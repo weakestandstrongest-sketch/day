@@ -34,7 +34,9 @@ final class BrowserConfiguration {
     let securityBridge = SecurityBridge()
     private var baseList: WKContentRuleList?
     private var strongList: WKContentRuleList?
-    private var onlineList: WKContentRuleList?
+    private var onlineLists: [WKContentRuleList] = []
+    /// それぞれの userContentController に、いま入れている「あとから出る広告を消す」スクリプトの強さ
+    private var scriptLevel: [ObjectIdentifier: AdBlockLevel] = [:]
     /// オンラインのリストから読み込んだドメインの数（設定に表示）
     private(set) var onlineDomainCount = 0
     private(set) var onlineUpdatedAt: Date?
@@ -95,19 +97,30 @@ final class BrowserConfiguration {
         }
         guard level == .strong else { return }
         if strongList == nil {
-            strongList = await compileOrLoad("orbit-adblock-strong-v3", ContentBlocker.strongRulesJSON())
+            strongList = await compileOrLoad("orbit-adblock-strong-v4", ContentBlocker.strongRulesJSON())
         }
-        if onlineList == nil || refreshOnline {
+        if onlineLists.isEmpty || refreshOnline {
             let stale = ContentBlocker.onlineFileDate().map { Date().timeIntervalSince($0) >= 7 * 24 * 3600 } ?? true
-            if !refreshOnline, !stale, let list = await cached("orbit-adblock-online-v2") {
+            let ids = (0..<ContentBlocker.onlineChunks).map { "orbit-adblock-online-v3-\($0)" }
+            if !refreshOnline, !stale {
                 // 1週間以内に作ったものはそのまま使う
-                onlineList = list
-                onlineDomainCount = ContentBlocker.onlineCountSaved
-            } else {
+                var found: [WKContentRuleList] = []
+                for id in ids { if let l = await cached(id) { found.append(l) } }
+                if !found.isEmpty { onlineLists = found; onlineDomainCount = ContentBlocker.onlineCountSaved }
+            }
+            if onlineLists.isEmpty || refreshOnline || stale {
                 let domains = await ContentBlocker.onlineDomains(forceRefresh: refreshOnline)
                 if !domains.isEmpty {
-                    onlineList = await compile("orbit-adblock-online-v2", ContentBlocker.rulesJSON(domains: domains, selectors: []))
-                    if onlineList != nil {
+                    // WebKit の1つのリストは 15 万件まで。重くならないよう、5 万件ずつに分けて作る
+                    var lists: [WKContentRuleList] = []
+                    let size = ContentBlocker.onlineChunkSize
+                    for (i, id) in ids.enumerated() {
+                        let part = Array(domains.dropFirst(i * size).prefix(size))
+                        if part.isEmpty { WKContentRuleListStore.default().removeContentRuleList(forIdentifier: id) { _ in }; continue }
+                        if let l = await compile(id, ContentBlocker.rulesJSON(domains: part, selectors: [])) { lists.append(l) }
+                    }
+                    if !lists.isEmpty {
+                        onlineLists = lists
                         onlineDomainCount = domains.count
                         ContentBlocker.onlineCountSaved = domains.count
                     }
@@ -120,16 +133,95 @@ final class BrowserConfiguration {
     func applyBlocking(_ level: AdBlockLevel, to webView: WKWebView) {
         let controller = webView.configuration.userContentController
         controller.removeAllContentRuleLists()
+        applyCleanScript(level, to: controller)
         guard level != .off else { return }
         if let baseList { controller.add(baseList) }
         if level == .strong {
             if let strongList { controller.add(strongList) }
-            if let onlineList { controller.add(onlineList) }
+            for l in onlineLists { controller.add(l) }
         }
     }
 }
 
+extension BrowserConfiguration {
+    /// 「強力」：あとから差しこまれる広告の枠も消すスクリプトを入れる（入れ直すときは、ほかのスクリプトも入れ直す）
+    func applyCleanScript(_ level: AdBlockLevel, to controller: WKUserContentController) {
+        let key = ObjectIdentifier(controller), want: AdBlockLevel = level == .strong ? .strong : .off
+        guard scriptLevel[key] != want else { return }
+        let had = scriptLevel[key] == .strong
+        scriptLevel[key] = want
+        if want == .strong {
+            controller.addUserScript(WKUserScript(source: AdCleanScript.source, injectionTime: .atDocumentEnd, forMainFrameOnly: false, in: .defaultClient))
+        } else if had {
+            controller.removeAllUserScripts()
+            controller.addUserScript(WKUserScript(source: SecurityScript.source, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
+        }
+    }
+}
+
+/// 「強力」で入れる、ページの中の広告の枠を消すスクリプト（ページのスクリプトからは見えない別の世界で動く）。
+/// ブロックしても空いたまま残る枠・あとから差しこまれる広告・「広告」「PR」の札がついた枠・画面の下に貼りつく広告を消す
+enum AdCleanScript {
+    static let source = #"""
+    (function () {
+      if (window.__orbitAdClean) return; window.__orbitAdClean = 1;
+      var LABEL = /^(広告|PR|AD|Ad|Ads|Sponsored|SPONSORED|スポンサー|スポンサーリンク|Advertisement|ADVERTISEMENT|プロモーション)$/;
+      var NAME = /(^|[-_\s])(ad|ads|adv|advert|advertisement|adsense|adunit|adslot|ad-slot|ad-unit|sponsored|dfp|gpt-ad|banner-ad|pr-ad)([-_\s\d]|$)/i;
+      var HOST = /doubleclick|googlesyndication|adservice|amazon-adsystem|taboola|outbrain|criteo|adnxs|microad|i-mobile|nend\.net|fout\.jp|socdm|yads|logly|popin\.cc|uzou|adingo|zucks|ad-stir|impact-ad|a8\.net|valuecommerce|accesstrade|moshimo|geniee|fluct|adsrvr|pubmatic|rubiconproject|openx|smartadserver|teads|seedtag|primis|vidazoo|aniview|connatix|exoclick|adsterra|propeller|mgid|revcontent/;
+      function hide(el) { if (!el || el === document.body || el === document.documentElement || el.__oh) return; el.__oh = 1; el.style.setProperty('display', 'none', 'important'); }
+      function rect(el) { try { return el.getBoundingClientRect(); } catch (e) { return { width: 0, height: 0, top: 0, bottom: 0 }; } }
+      // 広告の部分から、まわりの小さな箱まで（記事やページ全体は消さない）
+      function box(el) {
+        var c = el;
+        for (var i = 0; i < 4 && c.parentElement && c.parentElement !== document.body; i++) {
+          var p = c.parentElement, r = rect(p);
+          if (r.height > 640 || p.children.length > 4 || /^(MAIN|ARTICLE|BODY|HTML)$/.test(p.tagName)) break;
+          c = p;
+        }
+        return c;
+      }
+      function adLike(el) { return el.querySelector && (el.querySelector('iframe, ins, img, video') || el.tagName === 'IFRAME'); }
+      function check(el) {
+        if (!el || el.nodeType !== 1 || el.__os) return; el.__os = 1;
+        var tag = el.tagName;
+        if (tag === 'IFRAME') { var s = el.src || el.getAttribute('data-src') || ''; if (HOST.test(s)) hide(box(el)); return; }
+        if (tag === 'INS' && /adsbygoogle/.test(el.className)) { hide(box(el)); return; }
+        var n = (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
+        if (n.length > 1 && NAME.test(n)) { var r = rect(el); if (r.height < 700 && (adLike(el) || r.height < 400)) { hide(el); return; } }
+        // 「広告」「PR」の札
+        if (el.children.length === 0 && /^(SPAN|DIV|P|SMALL|LABEL|EM|B|I|STRONG|FIGCAPTION)$/.test(tag)) {
+          var t = (el.textContent || '').trim();
+          if (t.length <= 12 && LABEL.test(t)) { var b = box(el.parentElement || el); if (b !== el && adLike(b)) hide(b); }
+        }
+      }
+      // 画面の下（または上）に貼りつく広告
+      function sticky() {
+        var all = document.querySelectorAll('body *'), H = innerHeight;
+        for (var i = 0; i < all.length && i < 4000; i++) {
+          var el = all[i]; if (el.__oh || el.__ok) continue;
+          var cs = getComputedStyle(el); if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+          el.__ok = 1;
+          var r = rect(el); if (r.height < 30 || r.height > 260) continue;
+          if ((r.bottom >= H - 4 || r.top <= 4) && el.querySelector('iframe, ins.adsbygoogle') && !el.querySelector('nav, input, form')) hide(el);
+        }
+      }
+      function scan(root) { check(root); if (root.querySelectorAll) { var l = root.querySelectorAll('iframe, ins, [id], [class], span, small, p, div'); for (var i = 0; i < l.length && i < 6000; i++) check(l[i]); } }
+      var queue = [], t = 0;
+      function flush() { t = 0; var q = queue; queue = []; for (var i = 0; i < q.length; i++) scan(q[i]); sticky(); }
+      new MutationObserver(function (ms) {
+        for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) queue.push(ms[i].addedNodes[j]);
+        if (!t) t = setTimeout(flush, 250);
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      scan(document.body || document.documentElement); sticky();
+      var n = 0, iv = setInterval(function () { sticky(); if (++n > 8) clearInterval(iv); }, 1500);
+    })();
+    """#
+}
+
 enum ContentBlocker {
+    /// オンラインの一覧を何件ずつ、いくつに分けてリストにするか（WebKit の1つのリストは 15 万件まで）
+    static let onlineChunkSize = 48_000
+    static let onlineChunks = 3
     /// 内蔵の広告・トラッキングのドメイン。
     static let domains = [
         // Google
@@ -263,6 +355,9 @@ enum ContentBlocker {
             "/pagead/", "/adsbygoogle", "/ads\\.js", "/ad\\.js", "/adframe\\.", "/adserver/", "/adsense/", "/advert/",
             "/banner_ad", "/prebid", "/gpt\\.js", "/pubads", "/adrequest", "/adview\\?", "/ad_iframe", "/popunder",
             "/tracking\\.js", "/tracker\\.js", "/pixel\\.gif", "/beacon\\.gif", "/collect\\?v=", "/analytics\\.js",
+            "/ads/", "/adv/", "/adx/", "/adsystem", "/ad-server", "/adserve", "/ad_server", "/adclick", "/adlink", "/adunit",
+            "/sponsored/", "/sponsor\\.", "/vast\\?", "/vast/", "/vpaid", "/ima3\\.js", "/prebid\\.js", "/pbjs", "/header-bidding",
+            "/usersync", "/cookie-sync", "/rtb/", "/openrtb", "/bid\\?", "/bidder",
         ]
         var rules: [[String: Any]] = patterns.map { pattern in
             ["trigger": ["url-filter": pattern, "load-type": ["third-party"],
@@ -283,8 +378,8 @@ enum ContentBlocker {
     /// 広告サーバーの一覧。取れたものをすべて合わせる（1つが落ちていても動く）。
     private static let onlineURLs = [
         "https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext",
-        "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/light.txt",
-        "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/light.txt",
+        "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.txt",
+        "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/pro.txt",
     ]
 
     static var onlineCountSaved: Int {
@@ -315,7 +410,7 @@ enum ContentBlocker {
                 request.timeoutInterval = 25
                 if let (data, response) = try? await URLSession.shared.data(for: request),
                    (response as? HTTPURLResponse)?.statusCode == 200, data.count > 1000 {
-                    merged += HostList.parse(String(decoding: data, as: UTF8.self), limit: 120_000)
+                    merged += HostList.parse(String(decoding: data, as: UTF8.self), limit: 300_000)
                     if source.contains("hagezi") { seenMirror = true }
                 }
             }
@@ -332,8 +427,8 @@ enum ContentBlocker {
             guard host.count >= 4, host.count <= 80, host.contains("."), !known.contains(host), seen.insert(host).inserted,
                   host.range(of: "^[a-z0-9.-]+$", options: .regularExpression) != nil else { continue }
             result.append(host)
-            // WebKit の1つのリストは 15 万件まで。コンパイルの重さも考えて 5 万件で止める
-            if result.count >= 50_000 { break }
+            // いくつかのリストに分けて入れる（合わせて 14.4 万件まで）
+            if result.count >= onlineChunkSize * onlineChunks { break }
         }
         return result
     }

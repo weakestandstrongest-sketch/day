@@ -1,1 +1,1 @@
-337a8ebeb52fc4525a19ae8dbca99915486296ad QR mode: read QR codes in the middle square (URL, Wi-Fi, phone, mail, map, contact, text) with open and copy
+ba51ddc2957ba90b4636f6b1dea93ebd3ec6cb1d SCAN mode: photograph a document, find its corners (adjustable), straighten it and whiten it (clean, mono, color); in ひび手帳 the iPhone document scanner is used

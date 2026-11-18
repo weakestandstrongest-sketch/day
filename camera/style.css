@@ -96,6 +96,7 @@ svg {
 }
 
 #camera.mode-video .photo-only,
+#camera.mode-doc .photo-only,
 #camera.mode-qr .photo-only {
   visibility: hidden;
 }
@@ -1258,3 +1259,28 @@ body.booted #frame {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- 書類スキャン ---------- */
+#doc-guide { display: none; }
+#camera.mode-doc #doc-guide { display: block; position: absolute; inset: 9% 10%; border-radius: 18px; border: 2px dashed rgba(255, 255, 255, 0.55); pointer-events: none; }
+#doc-guide span { position: absolute; left: 50%; bottom: -1px; transform: translate(-50%, 50%); padding: 6px 12px; border-radius: 999px; font-size: 12px; color: var(--fg); background: var(--glass-strong); white-space: nowrap; }
+#camera.mode-doc #btn-shutter .core { background: radial-gradient(circle at 35% 30%, #fff, #dff4ff 70%, #bfe6ff); }
+#doc-edit { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: auto 1fr auto; background: #060509; padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px calc(env(safe-area-inset-bottom, 0px) + 14px); }
+#doc-edit[hidden] { display: none; }
+.doc-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
+.doc-bar .btn { height: 40px; padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: var(--fg); border: 0; }
+.doc-bar .btn.primary { background: var(--fg); color: var(--bg); }
+#doc-title { font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; color: var(--muted); }
+#doc-stage { position: relative; display: grid; place-items: center; min-height: 0; margin: 10px 0; }
+#doc-src, #doc-out { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+#doc-out { background: #fff; }
+#doc-quad { position: absolute; overflow: visible; touch-action: none; }
+#doc-quad polygon { fill: rgba(94, 231, 255, 0.14); stroke: var(--cyan); stroke-width: 2; }
+#doc-quad circle { fill: rgba(6, 5, 9, 0.55); stroke: #fff; stroke-width: 3; cursor: grab; }
+#doc-busy { position: absolute; padding: 10px 16px; border-radius: 999px; background: var(--glass-strong); color: var(--fg); font-size: 14px; }
+.doc-foot { display: grid; gap: 10px; justify-items: center; }
+#doc-modes { display: flex; gap: 8px; }
+#doc-modes[hidden] { display: none; }
+#doc-modes button { height: 38px; padding: 0 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: var(--fg); font-size: 14px; font-weight: 600; border: 0; }
+#doc-modes button[aria-checked="true"] { background: var(--fg); color: var(--bg); }
+#doc-hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }

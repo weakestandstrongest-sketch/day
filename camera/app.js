@@ -245,7 +245,7 @@ async function startCamera() {
 // （落ち着くまでの時間はまちまち）。それに合わせて枠を変えると縮んでから伸びてがくっとするので、
 // 枠はモードの形（写真 3:4、ビデオ 9:16）へすぐに変え、その形に合わない途中のサイズは無視する。
 // 切り替えの間はぼかしで隠す。
-const MODE_ASPECT = { photo: 4 / 3, video: 16 / 9, qr: 4 / 3 }; // 長辺 / 短辺
+const MODE_ASPECT = { photo: 4 / 3, video: 16 / 9, qr: 4 / 3, doc: 4 / 3 }; // 長辺 / 短辺
 const SETTLE_FALLBACK_MS = 1500;
 const SETTLE_GIVE_UP_MS = 4000;
 let settleTimer = null;
@@ -498,10 +498,11 @@ function setMode(next) {
   mode = next;
   els.modes.forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
   els.shutter.classList.toggle('video-mode', mode === 'video');
-  els.shutter.setAttribute('aria-label', mode === 'video' ? '録画開始' : '撮影');
+  els.shutter.setAttribute('aria-label', mode === 'video' ? '録画開始' : mode === 'doc' ? '書類をスキャン' : '撮影');
   els.camera.classList.toggle('mode-photo', mode === 'photo');
   els.camera.classList.toggle('mode-video', mode === 'video');
   els.camera.classList.toggle('mode-qr', mode === 'qr');
+  els.camera.classList.toggle('mode-doc', mode === 'doc');
   qrReset();
   applyLook();
   drawPreviewStamp();
@@ -941,6 +942,222 @@ function qrClose() {
   setTimeout(() => { if (els.qrCard.hidden) qrShown = ''; }, 2500);
 }
 
+/* ---------- 書類スキャン（vFlat のように、撮った書類をまっすぐ・白くして保存）----------
+ * ひび手帳のアプリ版：iPhone の書類スキャナー（VisionKit）で撮る。四すみを自動で見つけ、まっすぐにして、何枚でも続けて撮れる。
+ * ブラウザ：撮った写真から書類の四すみを見つけ（指で直せる）、まっすぐに引きのばし、影を消して白くする */
+const DOC = { src: null, quad: null, filter: 'clean', drag: -1, scale: 1 };
+
+async function docShoot() {
+  // ひび手帳のアプリ版：iPhone の書類スキャナー
+  try {
+    if (window.parent !== window && window.parent.hibiScanDoc && window.parent.hibiScanDoc.ok) {
+      stopCamera(); // iPhone のスキャナーがカメラを使うので、こちらはいったん止める
+      let pages = null;
+      try { pages = await window.parent.hibiScanDoc(); } finally { startCamera(); }
+      if (pages && pages.length) {
+        for (const b64 of pages) await docSaveDataURL('data:image/jpeg;base64,' + b64);
+        toast(`${pages.length}枚の書類を保存しました`);
+      }
+      if (pages) return; // null：スキャナーが使えなかった → ブラウザと同じやり方で
+    }
+  } catch (e) { console.error(e); }
+  if (!track) return;
+  const v = els.video, w = v.videoWidth, h = v.videoHeight;
+  if (!w || !h) return;
+  const c = document.createElement('canvas');
+  const k = Math.min(1, 2400 / Math.max(w, h));
+  c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  blink();
+  DOC.src = c;
+  DOC.quad = docDetect(c);
+  DOC.filter = 'clean';
+  docOpen();
+}
+
+async function docSaveDataURL(url) {
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+  const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+  await docSaveCanvas(c);
+}
+async function docSaveCanvas(c) {
+  const blob = await canvasToBlob(c, 'image/jpeg', 0.9);
+  const thumb = await makeThumb(c, c.width, c.height);
+  await addItem({ type: 'photo', blob, mime: 'image/jpeg', thumb, width: c.width, height: c.height, look: 'scan', createdAt: Date.now(), saved: false });
+}
+
+// 書類の四すみを見つける：小さくして明るさで2つに分け（大津の方法）、いちばん大きな明るいかたまりの角をとる
+function docDetect(c) {
+  const W = 220, H = Math.round(c.height * W / c.width), t = document.createElement('canvas');
+  t.width = W; t.height = H;
+  const x = t.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data, g = new Uint8Array(W * H), hist = new Array(256).fill(0);
+  for (let i = 0; i < W * H; i++) { const v = (d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11) | 0; g[i] = v; hist[v]++; }
+  let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sB = 0, wB = 0, best = 0, th = 128;
+  for (let i = 0; i < 256; i++) { wB += hist[i]; if (!wB) continue; const wF = W * H - wB; if (!wF) break; sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, b = wB * wF * (mB - mF) ** 2; if (b > best) { best = b; th = i; } }
+  const lab = new Int32Array(W * H).fill(-1); let bestN = 0, bestId = -1, id = 0;
+  const stack = [];
+  for (let i = 0; i < W * H; i++) {
+    if (g[i] <= th || lab[i] >= 0) continue;
+    let n = 0; stack.push(i); lab[i] = id;
+    while (stack.length) { const p = stack.pop(); n++; const px = p % W, py = (p / W) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const qx = px + dx, qy = py + dy; if (qx < 0 || qy < 0 || qx >= W || qy >= H) continue; const q = qy * W + qx; if (lab[q] < 0 && g[q] > th) { lab[q] = id; stack.push(q); } } }
+    if (n > bestN) { bestN = n; bestId = id; }
+    id++;
+  }
+  const area = bestN / (W * H);
+  const fallback = () => [[0.1, 0.08], [0.9, 0.08], [0.9, 0.92], [0.1, 0.92]].map(([u, v]) => [u * c.width, v * c.height]);
+  if (bestId < 0 || area < 0.12 || area > 0.97) return fallback();
+  let tl = [0, 0, Infinity], tr = [0, 0, -Infinity], br = [0, 0, -Infinity], bl = [0, 0, Infinity];
+  for (let i = 0; i < W * H; i++) {
+    if (lab[i] !== bestId) continue; const px = i % W, py = (i / W) | 0;
+    if (px + py < tl[2]) tl = [px, py, px + py];
+    if (px + py > br[2]) br = [px, py, px + py];
+    if (px - py > tr[2]) tr = [px, py, px - py];
+    if (px - py < bl[2]) bl = [px, py, px - py];
+  }
+  const k = c.width / W;
+  return [tl, tr, br, bl].map(([px, py]) => [px * k, py * k]);
+}
+
+function docOpen() {
+  const ed = document.getElementById('doc-edit'), src = document.getElementById('doc-src');
+  src.width = DOC.src.width; src.height = DOC.src.height;
+  src.getContext('2d').drawImage(DOC.src, 0, 0);
+  src.hidden = false; document.getElementById('doc-out').hidden = true;
+  document.getElementById('doc-quad').style.display = '';
+  document.getElementById('doc-modes').hidden = true;
+  document.getElementById('doc-title').textContent = '四すみを合わせる';
+  document.getElementById('doc-hint').textContent = '丸を動かして、書類の四すみに合わせてください';
+  document.getElementById('doc-next').textContent = '次へ';
+  document.getElementById('doc-back').textContent = '撮り直す';
+  ed.hidden = false; ed.dataset.step = 'crop';
+  requestAnimationFrame(docDraw);
+}
+function docDraw() {
+  const src = document.getElementById('doc-src'), svg = document.getElementById('doc-quad'), stage = document.getElementById('doc-stage');
+  const r = src.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  DOC.scale = r.width / src.width;
+  svg.style.left = (r.left - sr.left) + 'px'; svg.style.top = (r.top - sr.top) + 'px';
+  svg.setAttribute('width', r.width); svg.setAttribute('height', r.height);
+  const pts = DOC.quad.map(([x, y]) => [x * DOC.scale, y * DOC.scale]);
+  svg.querySelector('polygon').setAttribute('points', pts.map((p) => p.join(',')).join(' '));
+  svg.querySelectorAll('circle').forEach((c, i) => { c.setAttribute('cx', pts[i][0]); c.setAttribute('cy', pts[i][1]); });
+}
+function docPointer(e) {
+  const svg = document.getElementById('doc-quad'), r = svg.getBoundingClientRect();
+  const x = (e.clientX - r.left) / DOC.scale, y = (e.clientY - r.top) / DOC.scale;
+  if (e.type === 'pointerdown') {
+    let best = -1, bd = 1e9;
+    DOC.quad.forEach(([qx, qy], i) => { const d = Math.hypot(qx - x, qy - y); if (d < bd) { bd = d; best = i; } });
+    if (bd * DOC.scale < 60) { DOC.drag = best; svg.setPointerCapture(e.pointerId); }
+    return;
+  }
+  if (e.type === 'pointermove' && DOC.drag >= 0) {
+    DOC.quad[DOC.drag] = [Math.max(0, Math.min(DOC.src.width, x)), Math.max(0, Math.min(DOC.src.height, y))];
+    docDraw();
+    return;
+  }
+  if (e.type === 'pointerup' || e.type === 'pointercancel') DOC.drag = -1;
+}
+
+// 四すみ → まっすぐな長方形（射影変換）。できあがりの各点から、元の写真のどこかを逆に求めて色をとる
+function docHomography(src, dst) {
+  // dst[i] → src[i] の 3x3（8つの未知数をガウスの消去法で）
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = dst[i], [u, v] = src[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  for (let c = 0; c < 8; c++) {
+    let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+    for (let r = 0; r < 8; r++) { if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  const h = b.map((v, i) => v / A[i][i]);
+  return [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1];
+}
+function docWarp() {
+  const q = DOC.quad, dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  let W = Math.round(Math.max(dist(q[0], q[1]), dist(q[3], q[2]))), H = Math.round(Math.max(dist(q[0], q[3]), dist(q[1], q[2])));
+  const k = Math.min(1, 2400 / Math.max(W, H)); W = Math.max(50, Math.round(W * k)); H = Math.max(50, Math.round(H * k));
+  const m = docHomography(q, [[0, 0], [W, 0], [W, H], [0, H]]);
+  const sd = DOC.src.getContext('2d').getImageData(0, 0, DOC.src.width, DOC.src.height), S = sd.data, SW = DOC.src.width, SH = DOC.src.height;
+  const out = new ImageData(W, H), O = out.data;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const z = m[6] * x + m[7] * y + 1, u = (m[0] * x + m[1] * y + m[2]) / z, v = (m[3] * x + m[4] * y + m[5]) / z;
+    const x0 = Math.max(0, Math.min(SW - 2, u | 0)), y0 = Math.max(0, Math.min(SH - 2, v | 0)), fx = Math.min(1, Math.max(0, u - x0)), fy = Math.min(1, Math.max(0, v - y0));
+    const i00 = (y0 * SW + x0) * 4, i10 = i00 + 4, i01 = i00 + SW * 4, i11 = i01 + 4, o = (y * W + x) * 4;
+    for (let ch = 0; ch < 3; ch++) O[o + ch] = (S[i00 + ch] * (1 - fx) + S[i10 + ch] * fx) * (1 - fy) + (S[i01 + ch] * (1 - fx) + S[i11 + ch] * fx) * fy;
+    O[o + 3] = 255;
+  }
+  return out;
+}
+// 仕上げ：紙の明るさ（大きくぼかしたもの）で割って、影とむらを消して白くする
+function docFinish(img, f) {
+  const W = img.width, H = img.height, D = new Uint8ClampedArray(img.data);
+  if (f !== 'color') {
+    const sw = Math.max(8, Math.round(W / 24)), sh = Math.max(8, Math.round(H / 24));
+    const a = document.createElement('canvas'); a.width = W; a.height = H; a.getContext('2d').putImageData(img, 0, 0);
+    const b = document.createElement('canvas'); b.width = sw; b.height = sh;
+    const bx = b.getContext('2d'); bx.filter = 'blur(2px)'; bx.drawImage(a, 0, 0, sw, sh);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const cx = c.getContext('2d'); cx.imageSmoothingQuality = 'high'; cx.drawImage(b, 0, 0, W, H);
+    // 文字（暗いところ）に引っぱられないよう、ぼかした明るさは少し上げて紙の色とみなす
+    const bg = cx.getImageData(0, 0, W, H).data;
+    for (let i = 0; i < D.length; i += 4) {
+      for (let ch = 0; ch < 3; ch++) { const p = Math.max(40, bg[i + ch] * 1.04); D[i + ch] = Math.min(255, (D[i + ch] / p) * 255); }
+      if (f === 'mono') { const y = D[i] * 0.3 + D[i + 1] * 0.59 + D[i + 2] * 0.11, v = y > 200 ? 255 : y < 110 ? Math.max(0, y * 0.6) : (y - 110) / 90 * 255; D[i] = D[i + 1] = D[i + 2] = v; }
+      else { for (let ch = 0; ch < 3; ch++) { const v = D[i + ch] / 255; D[i + ch] = Math.min(255, Math.pow(v, 1.6) * 268); } } // くっきり：紙はより白く、文字はより濃く
+    }
+  } else {
+    // カラー：明るさの幅を広げるだけ
+    let lo = 255, hi = 0; for (let i = 0; i < D.length; i += 16) { const y = D[i] * 0.3 + D[i + 1] * 0.59 + D[i + 2] * 0.11; if (y < lo) lo = y; if (y > hi) hi = y; }
+    const s2 = 255 / Math.max(40, hi - lo); for (let i = 0; i < D.length; i += 4) for (let ch = 0; ch < 3; ch++) D[i + ch] = (D[i + ch] - lo) * s2;
+  }
+  return new ImageData(D, W, H);
+}
+let docFlat = null;
+function docRender() {
+  const out = document.getElementById('doc-out'), busy = document.getElementById('doc-busy');
+  busy.hidden = false;
+  setTimeout(() => {
+    if (!docFlat) docFlat = docWarp();
+    const img = docFinish(docFlat, DOC.filter);
+    out.width = img.width; out.height = img.height; out.getContext('2d').putImageData(img, 0, 0);
+    busy.hidden = true;
+  }, 30);
+}
+function docStep2() {
+  const ed = document.getElementById('doc-edit');
+  ed.dataset.step = 'finish'; docFlat = null;
+  document.getElementById('doc-src').hidden = true; document.getElementById('doc-quad').style.display = 'none';
+  document.getElementById('doc-out').hidden = false; document.getElementById('doc-modes').hidden = false;
+  document.getElementById('doc-title').textContent = '仕上がり';
+  document.getElementById('doc-hint').textContent = '「くっきり」は影を消して、紙を白くします';
+  document.getElementById('doc-next').textContent = '保存';
+  document.getElementById('doc-back').textContent = '四すみに戻る';
+  document.querySelectorAll('#doc-modes button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.f === DOC.filter)));
+  docRender();
+}
+async function docSave() {
+  const out = document.getElementById('doc-out');
+  try { await docSaveCanvas(out); toast('書類を保存しました'); } catch (e) { console.error(e); toast('保存できませんでした'); }
+  docClose();
+}
+function docClose() { document.getElementById('doc-edit').hidden = true; DOC.src = null; docFlat = null; }
+function docInit() {
+  const svg = document.getElementById('doc-quad');
+  for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) svg.addEventListener(t, docPointer);
+  document.getElementById('doc-next').addEventListener('click', () => { if (document.getElementById('doc-edit').dataset.step === 'crop') docStep2(); else docSave(); });
+  document.getElementById('doc-back').addEventListener('click', () => { if (document.getElementById('doc-edit').dataset.step === 'finish') docOpen(); else docClose(); });
+  document.getElementById('doc-modes').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (!b) return; DOC.filter = b.dataset.f; document.querySelectorAll('#doc-modes button').forEach((x) => x.setAttribute('aria-checked', String(x === b))); docRender(); });
+  addEventListener('resize', () => { if (!document.getElementById('doc-edit').hidden && document.getElementById('doc-edit').dataset.step === 'crop') docDraw(); });
+}
+
 /* ---------- 撮影 ---------- */
 
 let countdownTimer = null;
@@ -954,6 +1171,7 @@ function onShutter() {
     stopRecording();
     return;
   }
+  if (mode === 'doc') { docShoot(); return; }
   if (!track || mode === 'qr') return;
   const action = mode === 'photo' ? takePhoto : startRecording;
   if (prefs.timer > 0) startCountdown(prefs.timer, action);
@@ -1516,6 +1734,7 @@ function bindEvents() {
   els.qrOpen.addEventListener('click', qrOpen);
   els.qrCopy.addEventListener('click', qrCopy);
   els.qrClose.addEventListener('click', qrClose);
+  docInit();
   els.btnFlip.addEventListener('click', flipCamera);
   els.btnGallery.addEventListener('click', openGallery);
   els.btnRetry.addEventListener('click', startCamera);

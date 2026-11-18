@@ -59,6 +59,9 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "orbitData", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "dineOpen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "kbdLock", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "scanDoc", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "scanCode", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "brightness", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
@@ -306,6 +309,43 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                     if sv.contentOffset != .zero { sv.contentOffset = .zero }
                 }
             }
+            call.resolve()
+        }
+    }
+
+    /// 書類スキャン（カメラの SCAN）→ {pages: [JPEG の base64]}（やめたら []、使えない端末では reject）
+    @objc func scanDoc(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let top = HibiTop.vc(self?.bridge?.viewController), HibiScan.docSupported else { return call.reject("unsupported") }
+                HibiScan.shared.scanDocument(from: top) { pages in
+                    if let pages { call.resolve(["pages": pages]) } else { call.reject("failed") }
+                }
+            }
+        }
+    }
+
+    /// バーコードを読む（財布）→ {value, format}（やめたら {}、使えない端末では reject）
+    @objc func scanCode(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let top = HibiTop.vc(self?.bridge?.viewController), HibiScan.codeSupported else { return call.reject("unsupported") }
+                HibiScan.shared.scanCode(from: top) { r in
+                    if let r { call.resolve(["value": r.0, "format": r.1]) } else { call.resolve([:]) }
+                }
+            }
+        }
+    }
+
+    /// 財布のバーコードを見せるあいだ、画面を一番明るくする（on: false で元の明るさに戻す）
+    private var savedBrightness: CGFloat?
+    @objc func brightness(_ call: CAPPluginCall) {
+        let on = call.getBool("on") ?? false
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return call.resolve() }
+            let screen = self.bridge?.viewController?.view.window?.windowScene?.screen ?? UIScreen.main
+            if on { if self.savedBrightness == nil { self.savedBrightness = screen.brightness }; screen.brightness = 1 }
+            else if let b = self.savedBrightness { screen.brightness = b; self.savedBrightness = nil }
             call.resolve()
         }
     }

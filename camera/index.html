@@ -79,6 +79,7 @@
         <canvas id="datestamp" hidden></canvas>
         <div id="hud"><span id="hud-res"></span><span id="hud-zoom"></span></div>
         <div id="flash"></div>
+        <div id="doc-guide" aria-hidden="true"><span>書類を枠に入れて撮る</span></div>
         <div id="qr-scope" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="scan"></span></div>
         <div id="qr-hint" class="glass">QRコードを、四角の中に入れてください</div>
         <div id="qr-card" class="glass" role="dialog" aria-label="読み取ったQRコード" hidden>
@@ -107,6 +108,7 @@
       <div id="modes" class="boot" style="--d: 0.28s">
         <button class="mode active" data-mode="photo" aria-label="写真">PHOTO</button>
         <button class="mode" data-mode="video" aria-label="ビデオ">VIDEO</button>
+        <button class="mode" data-mode="doc" aria-label="書類をスキャン">SCAN</button>
         <button class="mode" data-mode="qr" aria-label="QRコードを読む">QR</button>
       </div>
       <div id="shutter-row" class="boot" style="--d: 0.34s">
@@ -153,6 +155,29 @@
     <footer class="sheet-actions glass">
       <button id="btn-viewer-save" class="btn primary"><svg><use href="#i-share"/></svg>保存</button>
       <button id="btn-viewer-delete" class="btn ghost-danger" aria-label="削除"><svg><use href="#i-trash"/></svg></button>
+    </footer>
+  </section>
+
+  <!-- 書類スキャン：四すみを合わせる → 仕上がりを選ぶ → 保存 -->
+  <section id="doc-edit" hidden aria-label="書類スキャン">
+    <header class="doc-bar">
+      <button id="doc-back" class="btn">撮り直す</button>
+      <span id="doc-title">四すみを合わせる</span>
+      <button id="doc-next" class="btn primary">次へ</button>
+    </header>
+    <div id="doc-stage">
+      <canvas id="doc-src"></canvas>
+      <svg id="doc-quad"><polygon/><circle data-i="0" r="14"/><circle data-i="1" r="14"/><circle data-i="2" r="14"/><circle data-i="3" r="14"/></svg>
+      <canvas id="doc-out" hidden></canvas>
+      <div id="doc-busy" hidden>仕上げています…</div>
+    </div>
+    <footer class="doc-foot">
+      <div id="doc-modes" hidden role="radiogroup" aria-label="仕上がり">
+        <button data-f="clean" aria-checked="true">くっきり</button>
+        <button data-f="mono" aria-checked="false">白黒</button>
+        <button data-f="color" aria-checked="false">カラー</button>
+      </div>
+      <p id="doc-hint">丸を動かして、書類の四すみに合わせてください</p>
     </footer>
   </section>
 
