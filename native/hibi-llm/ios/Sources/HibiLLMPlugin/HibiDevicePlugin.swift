@@ -64,6 +64,18 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     override public func load() {
         // the app may have been started in the background by a visit: keep recording
         DispatchQueue.main.async { if PlaceRecorder.shared.enabled { PlaceRecorder.shared.start() } }
+        // キーボードが出る・高さが変わる（日本語の候補の列など）・しまう を、高さと動く時間つきでページに知らせる。
+        // one の入力欄を、LINE の入力欄のようにキーボードの上にぴったり合わせ、同じ速さで一緒に動かすため
+        let nc = NotificationCenter.default
+        for name in [UIResponder.keyboardWillChangeFrameNotification, UIResponder.keyboardWillHideNotification] {
+            nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] n in
+                guard let self, let end = (n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+                let dur = (n.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.25
+                let screenH = self.bridge?.viewController?.view.window?.bounds.height ?? UIScreen.main.bounds.height
+                let height = name == UIResponder.keyboardWillHideNotification ? 0 : max(0, screenH - end.minY)
+                self.notifyListeners("keyboard", data: ["height": height, "duration": dur])
+            }
+        }
     }
 
     // MARK: - places in the background
