@@ -154,6 +154,20 @@ export function mount(root) {
     if (again === 'again') restart();
   }
 
+  // 小計は、63点への輪で見せる
+  function subRing(v) {
+    const r = 12, c = 2 * Math.PI * r, f = Math.min(1, v / Y.BONUS_THRESHOLD);
+    return `<svg class="sub-ring${f >= 1 ? ' done' : ''}" viewBox="0 0 30 30" role="img" aria-label="${v} / ${Y.BONUS_THRESHOLD}">`
+      + `<circle class="bg" cx="15" cy="15" r="${r}"/>${f > 0 ? `<circle class="fg" cx="15" cy="15" r="${r}" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 15 15)"/>` : ''}`
+      + `<text x="15" y="18.5" text-anchor="middle">${v}</text></svg>`;
+  }
+  // 表の左上：今の節気と候の名前（「候」の画面に出ているもの）
+  function seasonTitle() {
+    const sk = document.getElementById('sekki'), kn = document.getElementById('koName');
+    const a = sk ? sk.textContent.trim().split(/\s+/)[0] : '', b = kn ? kn.textContent.trim() : '';
+    head.firstChild.textContent = a || b ? [a, b].filter(Boolean).join(' · ') : 'SCORE';
+  }
+
   function render() {
     const canScore = !over && rollsLeft < 3 && !rolling;
     for (const cat of Y.CATEGORIES) {
@@ -167,10 +181,11 @@ export function mount(root) {
     }
     [0, 1].forEach((p) => {
       const t = Y.totals(sheets[p]);
-      subtotalTds[p].textContent = `${t.upper}/${Y.BONUS_THRESHOLD}`;
-      bonusTds[p].textContent = t.bonus ? `+${t.bonus}` : '';
+      subtotalTds[p].innerHTML = subRing(t.upper);
+      bonusTds[p].innerHTML = t.bonus ? `<span class="bonus-on">+${t.bonus}</span>` : '';
       totalTds[p].textContent = t.total;
     });
+    seasonTitle();
     table.dataset.turn = turn;
     diceEls.forEach((el, i) => {
       if (!rolling || held[i]) dieFace(el, dice[i]);

@@ -1,1 +1,1 @@
-dd6cb7feeb19ad349d9d5f696da942ed90ad0eca Make the games look real: 3D pieces, rolling dice, natural materials
+62d5a9f2e0a8e3f592b9b12867160d51c021b16a Yacht: score sheet in the 季節の帳 style — glass tinted with this 節気's colour, season name in the corner, a ring towards 63, big italic totals
