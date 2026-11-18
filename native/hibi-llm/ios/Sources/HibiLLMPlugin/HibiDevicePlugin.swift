@@ -331,14 +331,15 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             let list = (call.getArray("items", JSObject.self) ?? []).map { o in
                 HibiGlassItem(id: (o["id"] as? String) ?? "",
                               frame: CGRect(x: num(o["x"]), y: num(o["y"]), width: num(o["w"]), height: num(o["h"])),
-                              symbol: (o["symbol"] as? String) ?? "circle",
+                              symbol: (o["symbol"] as? String) ?? ((o["title"] as? String ?? "").isEmpty ? "circle" : ""),
                               ink: Color.hibi(o["ink"] as? String) ?? .primary,
                               tint: Color.hibi(o["tint"] as? String),
                               kind: (o["kind"] as? String) ?? "btn",
                               value: (o["value"] as? String) ?? "",
                               menu: ((o["menu"] as? [Any]) ?? []).compactMap { $0 as? [String: Any] }.map {
                                   HibiMenuItem(id: ($0["id"] as? String) ?? "", title: ($0["title"] as? String) ?? "", symbol: ($0["symbol"] as? String) ?? "", destructive: ($0["destructive"] as? Bool) ?? false)
-                              })
+                              },
+                              title: (o["title"] as? String) ?? "")
             }
             if list != g.state.items {
                 var t = Transaction(); t.disablesAnimations = true

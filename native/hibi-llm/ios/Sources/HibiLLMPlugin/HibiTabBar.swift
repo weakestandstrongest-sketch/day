@@ -224,6 +224,8 @@ struct HibiGlassItem: Identifiable, Equatable {
     /// "time": "HH:MM"
     var value: String = ""
     var menu: [HibiMenuItem] = []
+    /// 文字のボタン（Mathspace の「▶ 2ⁿ DROP」など）。空でなければ、丸ではなくカプセルの形に文字（と記号）を出す
+    var title: String = ""
 }
 
 /// 時刻を選ぶ iPhone 本物のホイール（アラームの時刻）
@@ -272,12 +274,23 @@ struct HibiGlassLayer: View {
         .ignoresSafeArea()
     }
 
-    private func label(_ it: HibiGlassItem) -> some View {
-        Image(systemName: it.symbol)
-            .font(.system(size: max(13, min(it.frame.width, it.frame.height) * 0.42), weight: .semibold))
+    @ViewBuilder private func label(_ it: HibiGlassItem) -> some View {
+        if it.title.isEmpty {
+            Image(systemName: it.symbol)
+                .font(.system(size: max(13, min(it.frame.width, it.frame.height) * 0.42), weight: .semibold))
+                .foregroundStyle(it.ink)
+                .frame(width: it.frame.width, height: it.frame.height)
+                .contentShape(Circle())
+        } else {
+            HStack(spacing: 5) {
+                if !it.symbol.isEmpty { Image(systemName: it.symbol).font(.system(size: 12, weight: .semibold)) }
+                Text(it.title).font(.system(size: min(15, it.frame.height * 0.4), weight: .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+            }
             .foregroundStyle(it.ink)
+            .padding(.horizontal, 8)
             .frame(width: it.frame.width, height: it.frame.height)
-            .contentShape(Circle())
+            .contentShape(Capsule())
+        }
     }
 
     /// a round glass button that opens a real menu from itself (like "…" in iPhone's own apps)
@@ -301,6 +314,17 @@ struct HibiGlassLayer: View {
         let lb = label(it)
         if it.kind == "menu" {
             menuButton(it)
+        } else if !it.title.isEmpty {
+            // 文字のボタン：カプセルのガラス
+            if #available(iOS 26.0, *) {
+                if let t = it.tint {
+                    Button { onTap(it.id) } label: { lb }.buttonStyle(.plain).glassEffect(.regular.tint(t).interactive(), in: .capsule)
+                } else {
+                    Button { onTap(it.id) } label: { lb }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .capsule)
+                }
+            } else {
+                Button { onTap(it.id) } label: { lb.background(it.tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.ultraThinMaterial), in: Capsule()) }.buttonStyle(.plain)
+            }
         } else if #available(iOS 26.0, *) {
             if let t = it.tint {
                 Button { onTap(it.id) } label: { lb }.buttonStyle(.plain).glassEffect(.regular.tint(t).interactive(), in: .circle)
