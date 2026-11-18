@@ -58,6 +58,13 @@ const els = {
   viewerInfo: $('#viewer-info'),
   viewerMedia: $('#viewer-media'),
   btnViewerClose: $('#btn-viewer-close'),
+  qrScope: $('#qr-scope'),
+  qrCard: $('#qr-card'),
+  qrKind: $('#qr-kind'),
+  qrText: $('#qr-text'),
+  qrOpen: $('#qr-open'),
+  qrCopy: $('#qr-copy'),
+  qrClose: $('#qr-close'),
   btnViewerSave: $('#btn-viewer-save'),
   btnViewerDelete: $('#btn-viewer-delete'),
   toast: $('#toast'),
@@ -157,6 +164,7 @@ let zoomFrame = null;
 let torchOn = false;
 
 function stopCamera() {
+  qrStop();
   stopMic();
   if (stream) stream.getTracks().forEach((t) => t.stop());
   stream = null;
@@ -226,6 +234,7 @@ async function startCamera() {
   els.video.classList.toggle('mirror', facing === 'user');
 
   if (mode === 'video') ensureMic();
+  if (mode === 'qr') qrStart();
   scheduleSettle();
   setupCapabilities();
   updateHud();
@@ -236,7 +245,7 @@ async function startCamera() {
 // （落ち着くまでの時間はまちまち）。それに合わせて枠を変えると縮んでから伸びてがくっとするので、
 // 枠はモードの形（写真 3:4、ビデオ 9:16）へすぐに変え、その形に合わない途中のサイズは無視する。
 // 切り替えの間はぼかしで隠す。
-const MODE_ASPECT = { photo: 4 / 3, video: 16 / 9 }; // 長辺 / 短辺
+const MODE_ASPECT = { photo: 4 / 3, video: 16 / 9, qr: 4 / 3 }; // 長辺 / 短辺
 const SETTLE_FALLBACK_MS = 1500;
 const SETTLE_GIVE_UP_MS = 4000;
 let settleTimer = null;
@@ -263,7 +272,7 @@ function matchesMode(w, h) {
 // 前のモードの形のままか、画面と縦横が逆なら、まだ切り替えの途中とみなす
 function looksTransient(w, h) {
   const a = Math.max(w, h) / Math.min(w, h);
-  const other = MODE_ASPECT[mode === 'photo' ? 'video' : 'photo'];
+  const other = MODE_ASPECT[mode === 'video' ? 'photo' : 'video'];
   return Math.abs(a - other) < 0.06 || (h >= w) !== isPortraitScreen();
 }
 
@@ -313,6 +322,7 @@ function settle(dims) {
 }
 
 function videoConstraints() {
+  if (mode === 'qr') return { width: { ideal: 1920 }, height: { ideal: 1440 } }; // QR は読めれば十分（大きすぎると読むのが遅い）
   return mode === 'photo'
     ? { width: { ideal: 4032 }, height: { ideal: 3024 } }
     : { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } };
@@ -491,6 +501,8 @@ function setMode(next) {
   els.shutter.setAttribute('aria-label', mode === 'video' ? '録画開始' : '撮影');
   els.camera.classList.toggle('mode-photo', mode === 'photo');
   els.camera.classList.toggle('mode-video', mode === 'video');
+  els.camera.classList.toggle('mode-qr', mode === 'qr');
+  qrReset();
   applyLook();
   drawPreviewStamp();
   // モードが変わったら、カメラも映像の部品もいったん捨てて 1 から作り直す
@@ -803,6 +815,132 @@ function drawPreviewStamp() {
   drawDateStamp(els.datestamp.getContext('2d'), w, h);
 }
 
+/* ---------- QR コードを読む ----------
+ * 映像の真ん中（四角の中）を少しずつ小さな絵にして、jsQR（vendor/jsqr.js：Apache License 2.0）で読む。
+ * 読めたら、中身の種類（URL・Wi-Fi・電話・メール・テキスト）と「開く」「コピー」を出す。
+ * jsQR は QR モードにしたときにだけ読み込む */
+let qrTimer = null;
+let qrCanvas = null;
+let qrLib = null;
+let qrShown = '';
+
+function loadQrLib() {
+  if (window.jsQR) return Promise.resolve(window.jsQR);
+  if (qrLib) return qrLib;
+  qrLib = new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = 'vendor/jsqr.js';
+    sc.onload = () => resolve(window.jsQR);
+    sc.onerror = () => { qrLib = null; reject(new Error('jsQR')); };
+    document.head.append(sc);
+  });
+  return qrLib;
+}
+
+function qrStop() {
+  clearTimeout(qrTimer);
+  qrTimer = null;
+}
+
+function qrReset() {
+  qrStop();
+  qrShown = '';
+  els.qrCard.hidden = true;
+  els.qrScope.classList.remove('hit');
+}
+
+async function qrStart() {
+  qrStop();
+  let read;
+  try { read = await loadQrLib(); } catch { toast('QRコードを読む部品を読み込めませんでした'); return; }
+  const loop = () => {
+    if (mode !== 'qr' || !stream) return;
+    if (els.qrCard.hidden && !document.hidden) qrScan(read);
+    qrTimer = setTimeout(loop, 160);
+  };
+  loop();
+}
+
+function qrScan(read) {
+  const v = els.video, w = v.videoWidth, h = v.videoHeight;
+  if (!w || !h) return;
+  const side = Math.min(w, h) * 0.8, size = 480;
+  if (!qrCanvas) qrCanvas = document.createElement('canvas');
+  qrCanvas.width = qrCanvas.height = size;
+  const cx = qrCanvas.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(v, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+  const img = cx.getImageData(0, 0, size, size);
+  const code = read(img.data, size, size, { inversionAttempts: 'attemptBoth' });
+  if (code && code.data && code.data !== qrShown) qrShow(code.data);
+}
+
+function qrParse(t) {
+  const s = t.trim();
+  if (/^https?:\/\//i.test(s)) return { kind: 'URL', text: s, open: s, label: '開く' };
+  if (/^WIFI:/i.test(s)) {
+    const f = (k) => (s.match(new RegExp(`[:;]${k}:((?:\\\\.|[^;])*)`, 'i')) || [])[1]?.replace(/\\(.)/g, '$1') || '';
+    const ssid = f('S'), pass = f('P');
+    return { kind: 'WI-FI', text: `ネットワーク：${ssid}${pass ? `\nパスワード：${pass}` : ''}`, copy: pass || ssid, copyLabel: pass ? 'パスワードをコピー' : 'コピー' };
+  }
+  if (/^tel:/i.test(s)) return { kind: 'TEL', text: s.slice(4), open: s, label: '電話をかける' };
+  if (/^mailto:/i.test(s)) return { kind: 'MAIL', text: s.slice(7).split('?')[0], open: s, label: 'メールを書く' };
+  if (/^smsto?:/i.test(s)) return { kind: 'SMS', text: s.replace(/^smsto?:/i, ''), open: s.replace(/^smsto:/i, 'sms:'), label: 'メッセージ' };
+  if (/^geo:/i.test(s)) { const q = s.slice(4).split('?')[0]; return { kind: 'MAP', text: q, open: `https://maps.apple.com/?q=${encodeURIComponent(q)}`, label: '地図で開く' }; }
+  if (/^BEGIN:VCARD/i.test(s)) { const n = (s.match(/\nFN:(.*)/i) || s.match(/\nN:(.*)/i) || [])[1] || '連絡先'; return { kind: 'CONTACT', text: n.trim(), copy: s }; }
+  if (/^[\w.-]+\.[a-z]{2,}(\/\S*)?$/i.test(s)) return { kind: 'URL', text: s, open: 'https://' + s, label: '開く' };
+  return { kind: 'TEXT', text: s };
+}
+
+function qrShow(data) {
+  qrShown = data;
+  const q = qrParse(data);
+  els.qrScope.classList.add('hit');
+  els.qrKind.textContent = q.kind;
+  els.qrText.textContent = q.text;
+  els.qrOpen.hidden = !q.open;
+  els.qrOpen.textContent = q.label || '開く';
+  els.qrOpen.dataset.url = q.open || '';
+  els.qrCopy.textContent = q.copyLabel || 'コピー';
+  els.qrCopy.dataset.text = q.copy || q.text;
+  els.qrCard.hidden = false;
+  try { navigator.vibrate?.(30); } catch {}
+  // ひび手帳の中：iPhone の本物のふるえ
+  try { window.parent !== window && window.parent.hibiHaptic?.('success'); } catch {}
+}
+
+function qrOpen() {
+  const url = els.qrOpen.dataset.url;
+  if (!url) return;
+  // ひび手帳の中では、ひび手帳がアプリ内のブラウザ（または電話・メールのアプリ）で開く
+  try { if (window.parent !== window && window.parent.hibiOpenURL) { window.parent.hibiOpenURL(url); return; } } catch {}
+  if (/^https?:/i.test(url)) window.open(url, '_blank', 'noopener');
+  else location.href = url;
+}
+
+async function qrCopy() {
+  const text = els.qrCopy.dataset.text || '';
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+  if (!ok) {
+    try { if (window.parent !== window && window.parent.hibiCopy) ok = await window.parent.hibiCopy(text); } catch {}
+  }
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.append(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  toast(ok ? 'コピーしました' : 'コピーできませんでした');
+}
+
+function qrClose() {
+  els.qrCard.hidden = true;
+  els.qrScope.classList.remove('hit');
+  // 同じコードをすぐにまた出さないよう、少しのあいだは覚えておく
+  setTimeout(() => { if (els.qrCard.hidden) qrShown = ''; }, 2500);
+}
+
 /* ---------- 撮影 ---------- */
 
 let countdownTimer = null;
@@ -816,7 +954,7 @@ function onShutter() {
     stopRecording();
     return;
   }
-  if (!track) return;
+  if (!track || mode === 'qr') return;
   const action = mode === 'photo' ? takePhoto : startRecording;
   if (prefs.timer > 0) startCountdown(prefs.timer, action);
   else action();
@@ -1375,6 +1513,9 @@ function toast(text) {
 
 function bindEvents() {
   els.shutter.addEventListener('click', onShutter);
+  els.qrOpen.addEventListener('click', qrOpen);
+  els.qrCopy.addEventListener('click', qrCopy);
+  els.qrClose.addEventListener('click', qrClose);
   els.btnFlip.addEventListener('click', flipCamera);
   els.btnGallery.addEventListener('click', openGallery);
   els.btnRetry.addEventListener('click', startCamera);

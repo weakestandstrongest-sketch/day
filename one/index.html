@@ -481,6 +481,33 @@
   .chip.undone { background: var(--pill); color: var(--muted); }
   .chip.pending { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
 
+  /* カレンダーの日：その日の1つを書く・やった／やれなかったを決める */
+  .day-form { display: flex; gap: 8px; }
+  .day-form input {
+    flex: 1; min-width: 0; height: 44px; padding: 0 14px; border: 0; border-radius: 14px;
+    background: var(--pill); color: var(--fg); font: inherit; font-size: 16px; outline: none;
+  }
+  .day-form input:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .day-form button, .judge button, .day-tools button {
+    border: 0; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .day-form button {
+    height: 44px; padding: 0 16px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 15px;
+  }
+  .judge { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .judge button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 42px; border-radius: 999px; background: var(--pill); color: var(--muted); font-size: 15px; font-weight: 600;
+    transition: background-color 0.25s, color 0.25s, transform 0.15s;
+  }
+  .judge button:active { transform: scale(0.96); }
+  .judge button svg { width: 16px; height: 16px; }
+  .judge button.on.yes { background: var(--accent); color: var(--on-accent); }
+  .judge button.on.no { background: var(--fg); color: var(--bg); }
+  .day-tools { display: flex; gap: 16px; }
+  .day-tools button { background: none; padding: 4px 0; color: var(--accent); font-size: 14px; font-weight: 600; }
+  .day-tools button.del { color: var(--muted); }
+
   /* 画面を切り替えるときの波紋 */
   .fx-wave, .fx-ring {
     position: fixed;
@@ -672,7 +699,7 @@
   }
 
   function record(data) {
-    history[data.date] = { text: data.text, done: !!data.done };
+    history[data.date] = { text: data.text, done: !!data.done, ...(data.judged ? { judged: true } : {}) };
     saveHistory();
   }
 
@@ -833,6 +860,8 @@
     history = h;
     if (stale && !history[stale.date]) record(stale);
     state = data;
+    // 前もってカレンダーで決めておいた今日の1つ
+    if (!state && history[today()]) state = { date: today(), text: history[today()].text, done: !!history[today()].done };
     if (state) save(state);
     render();
     playIntro();
@@ -887,24 +916,35 @@
     }
   }
 
+  // 選んだ日の1つ：今日以外の日も、あとから・前もって書ける。過ぎた日は「やった／やれなかった」を決められる
+  let editing = false;
   function renderDetail() {
     const date = dateOf(selected);
     const e = entryOf(selected);
     const isToday = selected === today();
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const future = date > now;
     const when = `${date.getMonth() + 1}月${date.getDate()}日 ${WEEK[date.getDay()]}曜日${isToday ? "・今日" : ""}`;
     const check = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+    const cross = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>';
     let body;
-    if (e) {
-      const chip = e.done
-        ? `<span class="chip done">${check}やった</span>`
-        : isToday ? '<span class="chip pending">これから</span>' : '<span class="chip undone">やれなかった</span>';
-      body = `<p class="what"></p>${chip}`;
+    if (e && !editing) {
+      let mid;
+      if (future) mid = '<span class="chip pending">この日にやる</span>';
+      else {
+        const no = !e.done && (e.judged || !isToday);
+        mid = `<div class="judge"><button type="button" class="yes${e.done ? " on" : ""}" data-judge="yes">${check}やった</button><button type="button" class="no${no ? " on" : ""}" data-judge="no">${cross}やれなかった</button></div>`;
+      }
+      body = `<p class="what"></p>${mid}<div class="day-tools"><button type="button" data-day="edit">書き直す</button><button type="button" class="del" data-day="del">消す</button></div>`;
     } else {
-      const future = date > new Date();
-      body = `<p class="what none">${future ? "まだ先の日です。" : isToday ? "今日の1つは、まだ決めていません。" : "この日の1つはありません。"}</p>`;
+      const hint = future ? "この日にやる1つを、前もって決めておけます。" : isToday ? "今日の1つは、まだ決めていません。" : "この日の1つを、あとから書いておけます。";
+      body = `${e ? "" : `<p class="what none">${hint}</p>`}<form class="day-form"><input type="text" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="${future ? "この日にやる1つ" : "この日の1つ"}" aria-label="この日の1つ"><button type="submit">${editing ? "なおす" : "決める"}</button></form>`;
     }
     calDetail.innerHTML = `<p class="when">${when}</p>${body}`;
-    if (e) calDetail.querySelector(".what").textContent = e.text;
+    const what = calDetail.querySelector(".what:not(.none)");
+    if (what) what.textContent = e.text;
+    const box = calDetail.querySelector(".day-form input");
+    if (box && e) box.value = e.text;
     if (calDetail.animate) {
       calDetail.animate([
         { opacity: 0, transform: "translateY(6px)" },
@@ -912,6 +952,47 @@
       ], { duration: 300, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
     }
   }
+
+  // 選んだ日の1つを書きかえる（今日なら「今日」の画面も同じものにする）
+  function setDay(key, entry) {
+    if (key === today()) {
+      state = entry ? { date: key, ...entry } : null;
+      save(state);
+      if (!entry) forget(key);
+      render();
+    } else if (entry) {
+      history[key] = entry;
+      saveHistory();
+    } else forget(key);
+    renderCal();
+    renderDetail();
+  }
+
+  calDetail.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const box = calDetail.querySelector(".day-form input");
+    const text = box && box.value.trim();
+    if (!text) return;
+    const old = entryOf(selected);
+    box.blur();
+    editing = false;
+    setDay(selected, { text, done: old ? !!old.done : false, ...(old && old.judged ? { judged: true } : {}) });
+  });
+  calDetail.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-judge], button[data-day]");
+    if (!b) return;
+    const e = entryOf(selected);
+    if (b.dataset.judge && e) {
+      const yes = b.dataset.judge === "yes";
+      setDay(selected, { text: e.text, done: yes, judged: true });
+    } else if (b.dataset.day === "edit") {
+      editing = true;
+      renderDetail();
+    } else if (b.dataset.day === "del") {
+      editing = false;
+      setDay(selected, null);
+    }
+  });
 
   function moveMonth(step) {
     if (calMode === "year") {
@@ -1000,6 +1081,7 @@
     const day = e.target.closest(".cal-day");
     if (!day || swiped) return;
     selected = day.dataset.key;
+    editing = false;
     renderCal();
     renderDetail();
   });

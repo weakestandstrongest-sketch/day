@@ -79,6 +79,16 @@
         <canvas id="datestamp" hidden></canvas>
         <div id="hud"><span id="hud-res"></span><span id="hud-zoom"></span></div>
         <div id="flash"></div>
+        <div id="qr-scope" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="scan"></span></div>
+        <div id="qr-hint" class="glass">QRコードを、四角の中に入れてください</div>
+        <div id="qr-card" class="glass" role="dialog" aria-label="読み取ったQRコード" hidden>
+          <div class="qr-head"><span id="qr-kind"></span><button id="qr-close" aria-label="閉じて、続けて読む">×</button></div>
+          <p id="qr-text"></p>
+          <div class="qr-acts">
+            <button id="qr-open" class="btn primary">開く</button>
+            <button id="qr-copy" class="btn">コピー</button>
+          </div>
+        </div>
       </div>
       <div id="look-name" aria-live="polite"></div>
       <div id="countdown" hidden></div>
@@ -97,6 +107,7 @@
       <div id="modes" class="boot" style="--d: 0.28s">
         <button class="mode active" data-mode="photo" aria-label="写真">PHOTO</button>
         <button class="mode" data-mode="video" aria-label="ビデオ">VIDEO</button>
+        <button class="mode" data-mode="qr" aria-label="QRコードを読む">QR</button>
       </div>
       <div id="shutter-row" class="boot" style="--d: 0.34s">
         <button id="btn-gallery" aria-label="ライブラリ">

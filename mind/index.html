@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1028">
+<title>しずく</title>
+<style>
+  :root {
+    --bg: #0b1028;
+    --bg2: #141a3d;
+    --fg: #f3f1fb;
+    --muted: rgba(243, 241, 251, .62);
+    --faint: rgba(243, 241, 251, .38);
+    --card: rgba(255, 255, 255, .07);
+    --card-2: rgba(255, 255, 255, .11);
+    --line: rgba(255, 255, 255, .12);
+    --lav: #a99bff;
+    --teal: #6fd6cc;
+    --peach: #ffb89c;
+    --rose: #f58fb4;
+    --gold: #f6d58a;
+    --sa-top: var(--hibi-sa-top, env(safe-area-inset-top, 0px));
+    --sa-bottom: var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px));
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--ui); }
+  body { overflow: hidden; -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+
+  /* 夜空のような、ゆっくり動く色のにじみ */
+  .sky { position: fixed; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(120% 80% at 50% 0%, #1d2459 0%, var(--bg) 62%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; animation: drift 26s ease-in-out infinite alternate; }
+  .blob.a { width: 340px; height: 340px; background: #5b4bd8; left: -120px; top: -60px; }
+  .blob.b { width: 300px; height: 300px; background: #1f8f99; right: -140px; top: 220px; animation-duration: 32s; animation-delay: -8s; }
+  .blob.c { width: 260px; height: 260px; background: #b35a83; left: 10%; bottom: -120px; opacity: .35; animation-duration: 38s; animation-delay: -14s; }
+  @keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(40px, 50px) scale(1.15); } }
+
+  /* 画面 */
+  .screen { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--sa-top) + 64px) 20px calc(var(--sa-bottom) + 110px); }
+  .screen[hidden] { display: none; }
+  .screen.in { animation: rise .5s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: .02em; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  h2 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; letter-spacing: .03em; }
+  .card { background: var(--card); border: .5px solid var(--line); border-radius: 26px; padding: 18px; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+
+  /* ホーム：いまの状態 */
+  .check { position: relative; overflow: hidden; padding: 22px; display: grid; gap: 14px; }
+  .check .label { font-size: 12px; letter-spacing: .2em; color: var(--muted); }
+  .check .big { display: flex; align-items: center; gap: 18px; }
+  .gauge { width: 92px; height: 92px; flex: none; }
+  .gauge circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+  .gauge .bg { stroke: rgba(255, 255, 255, .1); }
+  .gauge .fg { stroke: url(#gg); transition: stroke-dasharray 1s cubic-bezier(.2, .8, .2, 1); }
+  .gauge text { fill: var(--fg); font-size: 26px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .check .state { font-size: 18px; font-weight: 700; line-height: 1.4; }
+  .check .when { font-size: 12px; color: var(--faint); margin-top: 4px; }
+  .pill {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 50px; padding: 0 22px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--lav), #7b8cff); color: #120f2e; font-weight: 700; font-size: 16px;
+    box-shadow: 0 10px 30px rgba(123, 140, 255, .35); transition: transform .15s;
+  }
+  .pill:active, .tile:active, .sess:active, .snd:active, .mood button:active { transform: scale(.96); }
+  .pill.ghost { background: var(--card-2); color: var(--fg); box-shadow: none; }
+  .pill svg { width: 20px; height: 20px; }
+
+  .mood { display: flex; justify-content: space-between; margin-top: 4px; }
+  .mood button { display: grid; justify-items: center; gap: 6px; font-size: 11px; color: var(--muted); transition: transform .15s; width: 60px; }
+  .mood .face { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--card-2); border: .5px solid var(--line); transition: background .3s, box-shadow .3s; }
+  .mood .face svg { width: 26px; height: 26px; }
+  .mood button.on .face { background: var(--c); box-shadow: 0 0 22px var(--c); }
+  .mood button.on { color: var(--fg); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { border-radius: 24px; padding: 16px; min-height: 120px; display: grid; align-content: space-between; text-align: left; position: relative; overflow: hidden; transition: transform .15s; }
+  .tile .k { font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .tile .v { font-size: 28px; font-weight: 700; }
+  .tile .v small { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+  .tile .t { font-size: 16px; font-weight: 700; line-height: 1.35; }
+  .tile .m { font-size: 12px; color: var(--muted); }
+  .tile.today { grid-column: 1 / -1; min-height: 150px; background: linear-gradient(135deg, rgba(169, 155, 255, .35), rgba(111, 214, 204, .22)); border: .5px solid var(--line); }
+  .tile.today::after { content: ""; position: absolute; right: -30px; bottom: -40px; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 70%); animation: breathe 8s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { transform: scale(.75); opacity: .5; } 50% { transform: scale(1.05); opacity: 1; } }
+  .quote { margin-top: 26px; padding: 4px 4px 0; color: var(--muted); font-size: 14px; line-height: 1.9; text-align: center; letter-spacing: .05em; }
+
+  /* 瞑想の一覧 */
+  .cats { display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px 6px; padding: 0 20px 4px; scrollbar-width: none; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cats button { flex: none; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--card); border: .5px solid var(--line); font-size: 14px; font-weight: 600; color: var(--muted); }
+  .cats button.on { background: var(--fg); color: var(--bg); }
+  .list { display: grid; gap: 12px; margin-top: 14px; }
+  .sess { display: flex; align-items: center; gap: 14px; text-align: left; padding: 12px; border-radius: 24px; background: var(--card); border: .5px solid var(--line); transition: transform .15s; }
+  .art { width: 76px; height: 76px; flex: none; border-radius: 20px; position: relative; overflow: hidden; background: linear-gradient(140deg, var(--c1), var(--c2)); }
+  .art::before { content: ""; position: absolute; width: 60%; height: 60%; left: 20%; top: 20%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, .85), rgba(255, 255, 255, .15) 60%, transparent 70%); }
+  .art::after { content: ""; position: absolute; inset: auto -10% -30% -10%; height: 60%; border-radius: 50%; background: rgba(255, 255, 255, .14); }
+  .sess .t { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .sess .d { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .sess .meta { font-size: 11.5px; color: var(--faint); margin-top: 6px; letter-spacing: .05em; }
+
+  /* 睡眠：音 */
+  .sounds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .snd { height: 84px; border-radius: 22px; background: var(--card); border: .5px solid var(--line); display: flex; align-items: center; gap: 12px; padding: 0 14px; text-align: left; font-weight: 700; font-size: 14px; line-height: 1.3; transition: transform .15s, background .3s; }
+  .snd .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card-2); flex: none; }
+  .snd .ic svg { width: 22px; height: 22px; }
+  .snd.on { background: linear-gradient(135deg, rgba(169, 155, 255, .45), rgba(111, 214, 204, .3)); }
+  .snd.on .ic { background: var(--fg); color: var(--bg); }
+  .mixer { margin-top: 14px; display: grid; gap: 14px; }
+  .slider { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+  .slider svg { width: 20px; height: 20px; flex: none; }
+  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .15); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--fg); box-shadow: 0 2px 8px rgba(0, 0, 0, .3); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chips button { height: 34px; padding: 0 14px; border-radius: 999px; background: var(--card); border: .5px solid var(--line); font-size: 13px; font-weight: 600; color: var(--muted); }
+  .chips button.on { background: var(--fg); color: var(--bg); }
+  .left { font-size: 13px; color: var(--muted); text-align: center; min-height: 18px; margin: 0; }
+  .left:empty { display: none; }
+
+  /* 記録 */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { padding: 14px 12px; border-radius: 20px; background: var(--card); border: .5px solid var(--line); }
+  .stat .k { font-size: 11px; color: var(--muted); }
+  .stat .v { font-size: 24px; font-weight: 700; margin-top: 6px; }
+  .stat .v small { font-size: 12px; color: var(--muted); margin-left: 2px; }
+  .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 130px; margin-top: 8px; }
+  .bar { display: grid; justify-items: center; gap: 6px; height: 100%; align-content: end; }
+  .bar i { display: block; width: 100%; max-width: 26px; border-radius: 9px; background: linear-gradient(180deg, var(--lav), rgba(169, 155, 255, .35)); min-height: 4px; transition: height .8s cubic-bezier(.2, .8, .2, 1); }
+  .bar.today i { background: linear-gradient(180deg, var(--teal), rgba(111, 214, 204, .35)); }
+  .bar span { font-size: 11px; color: var(--faint); }
+  .spark { width: 100%; height: 110px; display: block; }
+  .empty { color: var(--faint); font-size: 13px; text-align: center; padding: 18px 0 6px; }
+  .moodline { display: flex; gap: 6px; flex-wrap: wrap; }
+  .moodline i { width: 16px; height: 16px; border-radius: 50%; display: block; }
+  .note { font-size: 11.5px; color: var(--faint); line-height: 1.6; margin-top: 10px; }
+
+  /* 下のタブ */
+  .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--sa-bottom) + 12px); display: flex; gap: 4px; padding: 6px; border-radius: 999px; background: rgba(20, 24, 58, .72); border: .5px solid var(--line); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); box-shadow: 0 12px 40px rgba(0, 0, 0, .35); z-index: 10; }
+  .tabbar button { width: 74px; height: 52px; border-radius: 999px; display: grid; justify-items: center; align-content: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: var(--faint); transition: background .3s, color .3s; }
+  .tabbar button svg { width: 23px; height: 23px; }
+  .tabbar button.on { background: rgba(255, 255, 255, .12); color: var(--fg); }
+
+  /* 全画面：瞑想中・計測中・おわり */
+  .sheet { position: fixed; inset: 0; z-index: 20; display: grid; grid-template-rows: auto 1fr auto; padding: calc(var(--sa-top) + 16px) 22px calc(var(--sa-bottom) + 26px); background: radial-gradient(130% 90% at 50% 30%, #262c6e 0%, #0b1028 70%); opacity: 0; pointer-events: none; transition: opacity .5s; }
+  .sheet.open { opacity: 1; pointer-events: auto; }
+  .sheet .top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+  .round { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--card-2); border: .5px solid var(--line); }
+  .round svg { width: 20px; height: 20px; }
+  .sheet .ttl { font-size: 15px; font-weight: 700; color: var(--muted); letter-spacing: .06em; }
+  .stage { display: grid; place-items: center; align-content: center; gap: 30px; text-align: center; }
+  .orb { width: 210px; height: 210px; border-radius: 50%; position: relative; display: grid; place-items: center; }
+  .orb .core { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fff 0%, #cfc6ff 28%, #8c7cf0 58%, #4b3fb0 100%); box-shadow: 0 0 80px rgba(169, 155, 255, .55); transform: scale(var(--s, .62)); transition: transform var(--d, 4s) cubic-bezier(.45, 0, .55, 1); }
+  .orb .ring { position: absolute; inset: -26px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .16); transform: scale(var(--s, .62)); transition: transform var(--d, 4s) cubic-bezier(.45, 0, .55, 1); }
+  .orb .ring.r2 { inset: -58px; border-color: rgba(255, 255, 255, .07); }
+  .orb .word { position: relative; font-size: 17px; font-weight: 700; color: #1b1650; letter-spacing: .2em; }
+  .guide { min-height: 64px; max-width: 320px; font-size: 18px; line-height: 1.7; letter-spacing: .04em; transition: opacity .6s; }
+  .guide.fade { opacity: 0; }
+  .ctrl { display: grid; gap: 16px; justify-items: center; }
+  .prog { width: 100%; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--lav), var(--teal)); }
+  .ctrlrow { display: flex; align-items: center; gap: 22px; }
+  .play { width: 72px; height: 72px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; }
+  .play svg { width: 28px; height: 28px; }
+  .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; letter-spacing: .08em; }
+
+  /* 計測 */
+  .lens { width: 200px; height: 200px; border-radius: 50%; position: relative; display: grid; place-items: center; }
+  .lens video { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: .55; }
+  .lens svg.prog-ring { position: absolute; inset: -12px; width: calc(100% + 24px); height: calc(100% + 24px); transform: rotate(-90deg); }
+  .lens svg.prog-ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+  .lens .bpm { position: relative; font-size: 44px; font-weight: 700; text-shadow: 0 2px 20px rgba(0, 0, 0, .5); }
+  .lens .bpm small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .2em; }
+  .wave { width: 100%; max-width: 320px; height: 70px; }
+  .hint { font-size: 15px; line-height: 1.8; color: var(--muted); max-width: 300px; }
+  .hint b { color: var(--fg); }
+  .heart { animation: beat 1s ease-in-out infinite; }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } 30% { transform: scale(1); } }
+
+  /* おわり */
+  .done-big { font-size: 26px; font-weight: 700; }
+  .done-sub { color: var(--muted); font-size: 14px; line-height: 1.8; }
+  .result { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 320px; }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
+
+<!-- ホーム -->
+<main class="screen" id="home">
+  <h1 id="hello">こんばんは</h1>
+  <p class="sub" id="today"></p>
+
+  <section class="card check" id="checkCard">
+    <span class="label">いまの こころとからだ</span>
+    <div class="big">
+      <svg class="gauge" viewBox="0 0 100 100" aria-hidden="true">
+        <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a99bff"/><stop offset="1" stop-color="#6fd6cc"/></linearGradient></defs>
+        <circle class="bg" cx="50" cy="50" r="42"/>
+        <circle class="fg" id="gaugeFg" cx="50" cy="50" r="42" stroke-dasharray="0 264" transform="rotate(-90 50 50)"/>
+        <text x="50" y="50" id="gaugeNum">–</text>
+      </svg>
+      <div>
+        <div class="state" id="stateTxt">まだはかっていません</div>
+        <div class="when" id="stateWhen">指をカメラにのせて、30秒</div>
+      </div>
+    </div>
+    <button class="pill" id="measureBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-9.3-9A5.2 5.2 0 0 1 12 6.6 5.2 5.2 0 0 1 21.3 12C19 16.6 12 21 12 21z"/><path d="M3.5 12h4l2-3 3 6 2-3h6"/></svg>はかる</button>
+  </section>
+
+  <h2>いまの気分は？</h2>
+  <div class="mood" id="moodRow"></div>
+
+  <h2>きょうの時間</h2>
+  <div class="row2">
+    <button class="tile today" id="todayTile" type="button">
+      <span class="k">きょうの2分</span>
+      <span><span class="t" id="todayName">呼吸に戻る</span><br><span class="m" id="todayMeta">2分・はじめての人にも</span></span>
+    </button>
+    <div class="tile card"><span class="k">続けた日</span><span class="v" id="streakV">0<small>日</small></span></div>
+    <div class="tile card"><span class="k">きょう</span><span class="v" id="todayMin">0<small>分</small></span></div>
+  </div>
+  <p class="quote" id="quote"></p>
+</main>
+
+<!-- 瞑想 -->
+<main class="screen" id="medit" hidden>
+  <h1>瞑想</h1>
+  <p class="sub">目を閉じて、声と呼吸についていくだけ</p>
+  <div class="cats" id="cats"></div>
+  <div class="list" id="sessList"></div>
+</main>
+
+<!-- 睡眠 -->
+<main class="screen" id="sleep" hidden>
+  <h1>眠り</h1>
+  <p class="sub">やさしい音で、頭の音を小さくする</p>
+  <div class="sounds" id="sounds"></div>
+  <div class="card mixer">
+    <div class="slider"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/></svg><input type="range" id="vol" min="0" max="100" value="60" aria-label="音の大きさ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></div>
+    <div class="chips" id="sleepTimer"></div>
+    <p class="left" id="sleepLeft"></p>
+  </div>
+  <h2>眠る前に</h2>
+  <div class="list" id="sleepList"></div>
+</main>
+
+<!-- 記録 -->
+<main class="screen" id="log" hidden>
+  <h1>記録</h1>
+  <p class="sub">小さく続けた時間が、ここに残ります</p>
+  <div class="stats">
+    <div class="stat"><div class="k">合計</div><div class="v" id="sumMin">0<small>分</small></div></div>
+    <div class="stat"><div class="k">回数</div><div class="v" id="sumN">0<small>回</small></div></div>
+    <div class="stat"><div class="k">続けた日</div><div class="v" id="sumStreak">0<small>日</small></div></div>
+  </div>
+  <h2>この1週間</h2>
+  <div class="card"><div class="bars" id="bars"></div></div>
+  <h2>ゆったり度のうつりかわり</h2>
+  <div class="card"><svg class="spark" id="spark" viewBox="0 0 320 110" preserveAspectRatio="none"></svg><p class="note">カメラと指ではかった、心拍のゆらぎ（HRV）からの目安です。医療の検査ではありません。</p></div>
+  <h2>気分</h2>
+  <div class="card"><div class="moodline" id="moodLine"></div></div>
+</main>
+
+<nav class="tabbar" id="tabbar" aria-label="画面">
+  <button type="button" data-tab="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>きょう</button>
+  <button type="button" data-tab="medit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3 4 5.6 4 8a4 4 0 0 1-8 0c0-2.4 1.5-5 4-8z"/><path d="M4 21c2-2.5 5-3.5 8-3.5s6 1 8 3.5"/></svg>瞑想</button>
+  <button type="button" data-tab="sleep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>眠り</button>
+  <button type="button" data-tab="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>記録</button>
+</nav>
+
+<!-- 瞑想中 -->
+<section class="sheet" id="player" aria-label="瞑想">
+  <div class="top">
+    <button class="round" id="plClose" type="button" aria-label="やめる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <span class="ttl" id="plTitle"></span>
+    <button class="round" id="plVoice" type="button" aria-label="声の案内"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+  </div>
+  <div class="stage">
+    <div class="orb" id="orb"><div class="ring r2"></div><div class="ring"></div><div class="core"></div><span class="word" id="orbWord"></span></div>
+    <p class="guide" id="guide"></p>
+  </div>
+  <div class="ctrl">
+    <div class="chips" id="plSound"></div>
+    <div class="prog"><i id="plProg"></i></div>
+    <div class="ctrlrow">
+      <span class="time" id="plTime">0:00</span>
+      <button class="play" id="plPlay" type="button" aria-label="一時停止"></button>
+      <span class="time" id="plLeft">0:00</span>
+    </div>
+  </div>
+</section>
+
+<!-- 計測 -->
+<section class="sheet" id="meter" aria-label="はかる">
+  <div class="top">
+    <button class="round" id="mtClose" type="button" aria-label="やめる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <span class="ttl">いまの こころとからだ</span>
+    <span style="width:44px"></span>
+  </div>
+  <div class="stage">
+    <div class="lens">
+      <video id="cam" playsinline muted autoplay></video>
+      <svg class="prog-ring" viewBox="0 0 224 224"><circle cx="112" cy="112" r="106" stroke="rgba(255,255,255,.12)"/><circle id="mtRing" cx="112" cy="112" r="106" stroke="url(#gg)" stroke-dasharray="0 666"/></svg>
+      <div class="bpm" id="bpm">–<small>拍/分</small></div>
+    </div>
+    <svg class="wave" id="wave" viewBox="0 0 320 70" preserveAspectRatio="none"><polyline fill="none" stroke="#f58fb4" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points=""/></svg>
+    <p class="hint" id="mtHint"></p>
+  </div>
+  <div class="ctrl"><button class="pill" id="mtStart" type="button">はじめる</button></div>
+</section>
+
+<!-- おわり -->
+<section class="sheet" id="finish" aria-label="おわり">
+  <div class="top"><span></span><span class="ttl" id="fnTtl">おつかれさまでした</span><span style="width:44px"></span></div>
+  <div class="stage" id="fnStage"></div>
+  <div class="ctrl"><button class="pill" id="fnOk" type="button">とじる</button></div>
+</section>
+
+<canvas id="cv" width="40" height="40" hidden></canvas>
+<script src="../sounds/ambient.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const KEY = 'shizuku';
+  const load = () => { try { return Object.assign({ sessions: [], moods: [], scores: [], voice: true }, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { return { sessions: [], moods: [], scores: [], voice: true }; } };
+  let D = load();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} };
+  const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  // ---------- 瞑想のメニュー ----------
+  // breath: [吸う, 止める, 吐く, 止める]（秒）。guide: [秒, ことば]
+  const SESS = [
+    { id: 'first', cat: 'はじめて', title: '呼吸に戻る', desc: 'いそがしい日の、たった2分。息の出入りを感じるだけ。', min: 2, c: ['#8c7cf0', '#5fc3d6'], breath: [4, 0, 6, 0],
+      guide: [[0, '楽な姿勢で座って、目をそっと閉じましょう'], [8, '鼻から吸って、口からゆっくり吐きます'], [24, '光の玉が大きくなったら吸って、小さくなったら吐く'], [50, '考えごとが浮かんでも大丈夫。また息に戻ります'], [80, 'おなかがふくらんで、しぼむのを感じて'], [105, 'あと少し。ここにいる自分を感じます'], [118, 'ゆっくり目を開けましょう']] },
+    { id: 'calm', cat: '不安', title: '不安をほどく', desc: '胸のざわざわに名前をつけて、少しだけ距離をとる。', min: 5, c: ['#b35a83', '#8c7cf0'], breath: [4, 2, 6, 0],
+      guide: [[0, 'いま感じている不安を、そのまま置いておきましょう'], [14, '吸って、少し止めて、長く吐きます'], [40, '不安は、からだのどこにありますか'], [70, 'そこに手を当てるつもりで、息を送ります'], [110, '「いま、不安を感じている」と心の中で言ってみます'], [150, '感じていることと、自分は同じではありません'], [200, '吐く息といっしょに、肩の力を抜いて'], [260, '戻ってきたら、手を軽く動かしてみましょう'], [292, 'ゆっくり目を開けます']] },
+    { id: 'box', cat: '集中', title: '箱の呼吸', desc: '4秒ずつ、吸う・止める・吐く・止める。頭がすっきりする。', min: 3, c: ['#2f6fd6', '#6fd6cc'], breath: [4, 4, 4, 4],
+      guide: [[0, '四角い箱の辺をなぞるように、息をします'], [10, '4つ数えて吸う、4つ止める'], [20, '4つ吐いて、4つ止める'], [60, '数えることだけに、気持ちを向けて'], [120, '頭の中が、少しずつ静かになっていきます'], [170, '最後のひと回り。ゆっくり戻りましょう']] },
+    { id: 'reset', cat: '集中', title: '作業の合間に', desc: '肩と目の力を抜いて、次の作業へ戻る前の3分。', min: 3, c: ['#d98c4a', '#f6d58a'], breath: [4, 0, 6, 0],
+      guide: [[0, '画面から目をはなして、遠くをぼんやり見ます'], [12, '肩をすっと上げて……ストンと落とします'], [30, '目のまわりの力をゆるめて'], [60, '吸う息で背すじをのばし、吐く息で力を抜く'], [120, 'いま手の中にある作業を、ひとつだけ思い浮かべて'], [165, 'それに戻る準備ができました']] },
+    { id: 'body', cat: 'からだ', title: 'ボディスキャン', desc: '足の先から頭まで、からだに順番に光を当てていく。', min: 8, c: ['#1f8f99', '#8c7cf0'], breath: [4, 0, 6, 0],
+      guide: [[0, 'あおむけでも、座ったままでもかまいません'], [15, '足の指先に、意識を向けます'], [60, '足の裏、かかと、足首。重さを感じて'], [110, 'ふくらはぎ、ひざ、太もも'], [170, 'おしり、腰、おなか。息で上下しています'], [230, '胸、背中、肩'], [290, '腕から、手のひら、指先まで'], [340, '首、あご、目のまわり、おでこ'], [400, 'からだ全体を、ひとつの大きな呼吸として感じます'], [460, 'ゆっくり指を動かして、戻ってきましょう']] },
+    { id: 'kind', cat: 'やさしさ', title: '自分にやさしく', desc: 'がんばった自分に、ねぎらいのことばを送る。', min: 5, c: ['#f58fb4', '#ffb89c'], breath: [4, 0, 6, 0],
+      guide: [[0, '胸のあたりに、あたたかい光を思い浮かべます'], [20, '心の中で、自分にこう言ってみます'], [30, '「きょうも、よくやっているね」'], [70, '「うまくいかない日があっても、だいじょうぶ」'], [120, '大切な人の顔を、ひとり思い浮かべて'], [150, 'その人にも、同じことばを送ります'], [220, '光が、まわりの人へゆっくり広がっていきます'], [280, 'ゆっくり目を開けましょう']] },
+    { id: '478', cat: '眠り', title: '4-7-8の呼吸', desc: '4秒吸って、7秒止めて、8秒吐く。眠りに入る前に。', min: 4, c: ['#3b3f9e', '#1f8f99'], breath: [4, 7, 8, 0],
+      guide: [[0, '横になって、全身の力を抜きましょう'], [12, '鼻から4つ吸って、7つ止めて、口から8つで吐きます'], [60, '吐く息が、からだを布団に沈めていきます'], [140, '数がわからなくなっても、そのままで'], [200, 'このまま、眠ってしまってかまいません']] },
+    { id: 'night', cat: '眠り', title: '一日をおろす', desc: 'きょうあったことを、ひとつずつ棚にしまっていく。', min: 8, c: ['#14183f', '#5b4bd8'], breath: [4, 0, 7, 0],
+      guide: [[0, 'きょう一日、おつかれさまでした'], [20, '朝から順に、きょうの場面を思い出します'], [80, 'ひとつ思い出したら、そっと棚にしまいます'], [160, '気がかりなことも、明日の自分にあずけましょう'], [240, 'からだが、ふとんに少しずつ沈んでいきます'], [320, '吐く息のたびに、まぶたが重くなっていく'], [400, 'このまま、眠りにおりていきます']] },
+  ];
+  const CATS = ['すべて', 'はじめて', '不安', '集中', 'からだ', 'やさしさ', '眠り'];
+  const QUOTES = ['いまの一呼吸は、いつでもやり直せる。', '急がなくていい。息は、ちゃんと戻ってくる。', '考えは雲。あなたは空。', '「何もしない」も、ひとつの練習。', '小さな静けさを、きょうのどこかに。', '気づいたら、戻る。それで十分。', 'がんばるのと同じくらい、ゆるめるのも大事。'];
+  const MOODS = [
+    { v: 1, name: 'しずむ', c: '#5b6ab8', mouth: 'M8 16.5c1.2-1.6 2.6-2.3 4-2.3s2.8.7 4 2.3' },
+    { v: 2, name: 'もやもや', c: '#7a86c9', mouth: 'M8.5 15.5c1-.7 2.2-.7 3.5 0s2.5.7 3.5 0' },
+    { v: 3, name: 'ふつう', c: '#8fb7c9', mouth: 'M8.5 15.5h7' },
+    { v: 4, name: 'おだやか', c: '#6fd6cc', mouth: 'M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2' },
+    { v: 5, name: 'かるい', c: '#f6d58a', mouth: 'M8 14c1.1 1.9 2.4 2.8 4 2.8s2.9-.9 4-2.8' },
+  ];
+  const face = (m) => `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="10" r=".9" fill="#fff"/><circle cx="15" cy="10" r=".9" fill="#fff"/><path d="${m.mouth}"/></svg>`;
+  const ICON = {
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>',
+    rain: '<path d="M7 15a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 8a3.5 3.5 0 0 1 .5 7"/><path d="M9 18l-1 2M13 18l-1 2M17 18l-1 2"/>',
+    waves: '<path d="M2 9c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/>',
+    fire: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-4-9-1 2-2 3-3 3 0-2-1-4-2-5-1 4-3 6-3 11a6 6 0 0 0 6 6z"/>',
+    wind: '<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+    stream: '<path d="M4 4c4 3 4 5 0 8s-4 5 0 8M12 4c4 3 4 5 0 8s-4 5 0 8M20 4c-2 2-2 4 0 6"/>',
+    white: '<path d="M3 12h2l2-6 3 12 3-9 2 5 2-3h4"/>',
+    pink: '<path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>',
+    brown: '<path d="M3 13c3-3 6-3 9 0s6 3 9 0"/>',
+  };
+  const svg = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+  // ---------- ホーム ----------
+  function streak() {
+    const days = new Set(D.sessions.map((s) => dayKey(s.t)));
+    let n = 0; const d = new Date();
+    if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1);
+    while (days.has(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function scoreName(v) { return v >= 65 ? 'ゆったりしています' : v >= 40 ? 'ほどよいバランス' : v >= 20 ? '少し張りつめています' : '緊張が強めです'; }
+  function renderHome() {
+    const h = new Date().getHours();
+    $('#hello').textContent = h < 5 ? 'こんばんは' : h < 11 ? 'おはようございます' : h < 17 ? 'こんにちは' : 'こんばんは';
+    const now = new Date();
+    $('#today').textContent = `${now.getMonth() + 1}月${now.getDate()}日 ${'日月火水木金土'[now.getDay()]}曜日`;
+    const last = D.scores[D.scores.length - 1];
+    if (last) {
+      $('#gaugeNum').textContent = last.score;
+      $('#gaugeFg').setAttribute('stroke-dasharray', `${(last.score / 100) * 264} 264`);
+      $('#stateTxt').textContent = scoreName(last.score);
+      const ago = Math.round((Date.now() - last.t) / 60000);
+      $('#stateWhen').textContent = `心拍 ${last.hr} ・ ${ago < 1 ? 'いま' : ago < 60 ? ago + '分前' : ago < 1440 ? Math.round(ago / 60) + '時間前' : Math.round(ago / 1440) + '日前'}`;
+      $('#measureBtn').lastChild.textContent = 'もう一度はかる';
+    }
+    const tm = D.moods.filter((m) => dayKey(m.t) === dayKey(Date.now())).pop();
+    $('#moodRow').innerHTML = MOODS.map((m) => `<button type="button" data-mood="${m.v}" class="${tm && tm.v === m.v ? 'on' : ''}" style="--c:${m.c}"><span class="face">${face(m)}</span>${m.name}</button>`).join('');
+    const mins = D.sessions.filter((s) => dayKey(s.t) === dayKey(Date.now())).reduce((a, s) => a + s.min, 0);
+    $('#todayMin').innerHTML = `${Math.round(mins)}<small>分</small>`;
+    $('#streakV').innerHTML = `${streak()}<small>日</small>`;
+    // きょうのおすすめ：はかった結果と時間から
+    const pick = recommend();
+    $('#todayTile').dataset.sess = pick.id;
+    $('#todayTile .k').textContent = last && Date.now() - last.t < 3 * 3600e3 && last.score < 40 ? 'いまのあなたに' : 'きょうのおすすめ';
+    $('#todayName').textContent = pick.title;
+    $('#todayMeta').textContent = `${pick.min}分・${pick.desc.split('。')[0]}`;
+    $('#quote').textContent = QUOTES[new Date().getDate() % QUOTES.length];
+  }
+  function recommend() {
+    const h = new Date().getHours(), last = D.scores[D.scores.length - 1];
+    if (last && Date.now() - last.t < 3 * 3600e3 && last.score < 40) return SESS.find((s) => s.id === 'calm');
+    if (h >= 22 || h < 4) return SESS.find((s) => s.id === '478');
+    if (h >= 13 && h < 18) return SESS.find((s) => s.id === 'reset');
+    return SESS.find((s) => s.id === 'first');
+  }
+  $('#moodRow').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mood]'); if (!b) return;
+    const v = +b.dataset.mood, k = dayKey(Date.now());
+    D.moods = D.moods.filter((m) => dayKey(m.t) !== k).concat({ t: Date.now(), v });
+    save(); renderHome(); tick(10);
+  });
+  $('#todayTile').addEventListener('click', () => startSession(SESS.find((s) => s.id === $('#todayTile').dataset.sess) || SESS[0]));
+
+  // ---------- 一覧 ----------
+  let cat = 'すべて';
+  const sessCard = (s) => `<button type="button" class="sess" data-sess="${s.id}"><span class="art" style="--c1:${s.c[0]};--c2:${s.c[1]}"></span><span><div class="t">${s.title}</div><div class="d">${s.desc}</div><div class="meta">${s.min}分 ・ ${s.breath.filter(Boolean).join('-')} の呼吸</div></span></button>`;
+  function renderMedit() {
+    $('#cats').innerHTML = CATS.map((c) => `<button type="button" class="${c === cat ? 'on' : ''}" data-cat="${c}">${c}</button>`).join('');
+    $('#sessList').innerHTML = SESS.filter((s) => cat === 'すべて' || s.cat === cat).map(sessCard).join('');
+  }
+  $('#cats').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; cat = b.dataset.cat; renderMedit(); tick(8); });
+  document.addEventListener('click', (e) => { const b = e.target.closest('.sess[data-sess]'); if (b) startSession(SESS.find((s) => s.id === b.dataset.sess)); });
+
+  // ---------- 眠り：環境音 ----------
+  const A = window.HibiAmbient;
+  let sleepEnd = 0, sleepT = 0;
+  function renderSleep() {
+    $('#sounds').innerHTML = A ? A.kinds.map((k) => `<button type="button" class="snd${A.kind === k.id ? ' on' : ''}" data-snd="${k.id}"><span class="ic">${svg(ICON[k.id] || ICON.white)}</span>${k.name}</button>`).join('') : '<p class="empty">音を出せませんでした</p>';
+    $('#sleepTimer').innerHTML = [[15, '15分'], [30, '30分'], [60, '1時間'], [0, 'ずっと']].map(([m, n]) => `<button type="button" data-min="${m}" class="${(sleepEnd ? Math.round((sleepEnd - sleepStart) / 60000) : 0) === m ? 'on' : ''}">${n}</button>`).join('');
+    $('#sleepList').innerHTML = SESS.filter((s) => s.cat === '眠り').map(sessCard).join('');
+    sleepLeft();
+  }
+  let sleepStart = 0;
+  function sleepLeft() {
+    clearTimeout(sleepT);
+    if (!A || !A.kind) { $('#sleepLeft').textContent = ''; return; }
+    if (!sleepEnd) { $('#sleepLeft').textContent = `${A.kinds.find((k) => k.id === A.kind).name}を流しています`; return; }
+    const left = sleepEnd - Date.now();
+    if (left <= 0) { A.stop(8); sleepEnd = 0; renderSleep(); return; }
+    $('#sleepLeft').textContent = `あと ${mmss(left / 1000)} で、ゆっくり小さくなって止まります`;
+    sleepT = setTimeout(sleepLeft, 1000);
+  }
+  $('#sounds').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-snd]'); if (!b || !A) return;
+    if (A.kind === b.dataset.snd) { A.stop(); sleepEnd = 0; } else A.play(b.dataset.snd, $('#vol').value / 100);
+    renderSleep(); tick(10);
+  });
+  $('#vol').addEventListener('input', (e) => A && A.volume(e.target.value / 100));
+  $('#sleepTimer').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-min]'); if (!b) return;
+    const m = +b.dataset.min; sleepStart = Date.now(); sleepEnd = m ? sleepStart + m * 60000 : 0;
+    if (A && !A.kind) A.play('rain', $('#vol').value / 100);
+    renderSleep();
+  });
+
+  // ---------- 記録 ----------
+  function renderLog() {
+    const total = D.sessions.reduce((a, s) => a + s.min, 0);
+    $('#sumMin').innerHTML = `${Math.round(total)}<small>分</small>`;
+    $('#sumN').innerHTML = `${D.sessions.length}<small>回</small>`;
+    $('#sumStreak').innerHTML = `${streak()}<small>日</small>`;
+    const days = []; const d = new Date(); d.setDate(d.getDate() - 6);
+    for (let i = 0; i < 7; i++) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+    const mins = days.map((x) => D.sessions.filter((s) => dayKey(s.t) === dayKey(x)).reduce((a, s) => a + s.min, 0));
+    const max = Math.max(10, ...mins);
+    $('#bars').innerHTML = days.map((x, i) => `<div class="bar${i === 6 ? ' today' : ''}"><i style="height:${Math.max(4, Math.round((mins[i] / max) * 100))}px"></i><span>${'日月火水木金土'[x.getDay()]}</span></div>`).join('');
+    const sc = D.scores.slice(-14);
+    const sp = $('#spark');
+    if (sc.length < 2) sp.innerHTML = `<text x="160" y="58" text-anchor="middle" fill="rgba(243,241,251,.38)" font-size="13">${sc.length ? 'あと1回はかると、線になります' : 'まだ記録がありません'}</text>`;
+    else {
+      const pts = sc.map((s, i) => [10 + (i / (sc.length - 1)) * 300, 100 - (s.score / 100) * 88]);
+      const line = pts.map((p) => p.join(',')).join(' ');
+      sp.innerHTML = `<defs><linearGradient id="sf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a99bff" stop-opacity=".45"/><stop offset="1" stop-color="#a99bff" stop-opacity="0"/></linearGradient></defs>
+        <polygon points="10,104 ${line} 310,104" fill="url(#sf)"/><polyline points="${line}" fill="none" stroke="#a99bff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        ${pts.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#f3f1fb"/>`).join('')}`;
+    }
+    const ml = D.moods.slice(-42);
+    $('#moodLine').innerHTML = ml.length ? ml.map((m) => `<i style="background:${MOODS[m.v - 1].c}" title="${MOODS[m.v - 1].name}"></i>`).join('') : '<p class="empty" style="width:100%">きょうの気分を、ホームで選んでみましょう</p>';
+  }
+
+  // ---------- タブ ----------
+  const RENDER = { home: renderHome, medit: renderMedit, sleep: renderSleep, log: renderLog };
+  let tab = 'home';
+  function showTab(t) {
+    if (t === tab) return;
+    tab = t;
+    for (const b of document.querySelectorAll('#tabbar button')) b.classList.toggle('on', b.dataset.tab === t);
+    for (const k of Object.keys(RENDER)) { const s = document.getElementById(k); s.hidden = k !== t; s.classList.remove('in'); }
+    RENDER[t]();
+    const s = document.getElementById(t); void s.offsetWidth; s.classList.add('in'); s.scrollTop = 0;
+    tick(8);
+  }
+  $('#tabbar').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
+
+  // ---------- 音・ふるえ ----------
+  let bellCtx = null;
+  function bell(f = 528) {
+    try {
+      bellCtx = bellCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (bellCtx.state === 'suspended') bellCtx.resume();
+      const t = bellCtx.currentTime;
+      [1, 2.76, 5.4].forEach((m, i) => {
+        const o = bellCtx.createOscillator(), g = bellCtx.createGain();
+        o.frequency.value = f * m; o.type = 'sine';
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18 / (i + 1), t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 4.5 / (i + 1));
+        o.connect(g); g.connect(bellCtx.destination); o.start(t); o.stop(t + 5);
+      });
+    } catch (e) {}
+  }
+  function tick(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
+
+  // ---------- 声の案内 ----------
+  let voice = null;
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const vs = speechSynthesis.getVoices().filter((v) => /^ja/i.test(v.lang));
+    voice = vs.find((v) => /Kyoko|O-ren|Hattori|Siri/i.test(v.name)) || vs[0] || null;
+  }
+  if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+  function say(text) {
+    if (!D.voice || !('speechSynthesis' in window)) return;
+    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ja-JP'; if (voice) u.voice = voice; u.rate = 0.82; u.pitch = 0.95; u.volume = 0.9; speechSynthesis.speak(u); } catch (e) {}
+  }
+
+  // ---------- 瞑想中 ----------
+  let P = null;
+  const PHASE = ['吸って', '止めて', '吐いて', '止めて'];
+  function setVoiceBtn() { $('#plVoice').style.opacity = D.voice ? 1 : 0.4; }
+  function startSession(s) {
+    if (!s) return;
+    if (A && A.kind && !sleepEnd) {} // 流している音はそのまま
+    P = { s, t: 0, total: s.min * 60, run: true, gi: -1, last: performance.now(), phase: -1, pt: 0, sound: A && A.kind ? A.kind : null };
+    $('#plTitle').textContent = s.title;
+    $('#guide').textContent = '';
+    $('#plSound').innerHTML = A ? [['', '音なし'], ['rain', '雨'], ['waves', '波'], ['stream', '小川'], ['fire', '焚き火']].map(([k, n]) => `<button type="button" data-ps="${k}" class="${(P.sound || '') === k ? 'on' : ''}">${n}</button>`).join('') : '';
+    setVoiceBtn();
+    $('#player').classList.add('open');
+    bell(528);
+    requestAnimationFrame(loop);
+    renderPlay();
+  }
+  function renderPlay() { $('#plPlay').innerHTML = P && P.run ? ICON.pause : ICON.play; $('#plPlay').setAttribute('aria-label', P && P.run ? '一時停止' : '再開'); }
+  function loop(now) {
+    if (!P) return;
+    const dt = Math.min(0.25, (now - P.last) / 1000); P.last = now;
+    if (P.run) {
+      P.t += dt;
+      // 呼吸の玉
+      const b = P.s.breath, cyc = b.reduce((a, x) => a + x, 0);
+      let x = P.t % cyc, ph = 0;
+      while (x >= b[ph] || b[ph] === 0) { x -= b[ph]; ph = (ph + 1) % 4; if (ph === 0 && x < 0) break; }
+      if (ph !== P.phase) {
+        P.phase = ph;
+        const orb = $('#orb');
+        orb.style.setProperty('--d', `${b[ph]}s`);
+        orb.style.setProperty('--s', ph === 0 ? 1 : ph === 2 ? 0.62 : ph === 1 ? 1 : 0.62);
+        $('#orbWord').textContent = PHASE[ph];
+        tick(ph === 0 ? 18 : 8);
+      }
+      // 案内のことば
+      const g = P.s.guide;
+      let gi = -1; for (let i = 0; i < g.length; i++) if (P.t >= g[i][0]) gi = i;
+      if (gi !== P.gi && gi >= 0) {
+        P.gi = gi; const el = $('#guide');
+        el.classList.add('fade');
+        setTimeout(() => { el.textContent = g[gi][1]; el.classList.remove('fade'); }, 500);
+        say(g[gi][1]);
+      }
+      $('#plProg').style.width = `${Math.min(100, (P.t / P.total) * 100)}%`;
+      $('#plTime').textContent = mmss(P.t);
+      $('#plLeft').textContent = '-' + mmss(Math.max(0, P.total - P.t));
+      if (P.t >= P.total) { endSession(true); return; }
+    }
+    requestAnimationFrame(loop);
+  }
+  function endSession(done) {
+    if (!P) return;
+    const s = P.s, min = P.t / 60;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    $('#player').classList.remove('open');
+    if (P.sound && A && !sleepEnd) A.stop(3);
+    P = null;
+    if (min >= 0.5) { D.sessions.push({ t: Date.now(), id: s.id, min: Math.round(min * 10) / 10 }); save(); }
+    if (done) {
+      bell(396);
+      showFinish(`<div class="orb" style="width:120px;height:120px"><div class="core" style="--s:1"></div></div>
+        <div><p class="done-big">${s.title}</p><p class="done-sub">${Math.round(min)}分、ここにいました。<br>続けて ${streak()} 日目です。</p></div>
+        <div style="width:100%;max-width:330px"><p class="done-sub" style="margin:0 0 12px">いまの気分は？</p><div class="mood" id="afterMood">${MOODS.map((m) => `<button type="button" data-mood="${m.v}" style="--c:${m.c}"><span class="face">${face(m)}</span>${m.name}</button>`).join('')}</div></div>`);
+    }
+    RENDER[tab]();
+  }
+  $('#plPlay').addEventListener('click', () => {
+    if (!P) return; P.run = !P.run; P.last = performance.now();
+    if (!P.run) { try { speechSynthesis.pause(); } catch (e) {} $('#orb').style.setProperty('--d', '1.2s'); $('#orb').style.setProperty('--s', 0.7); P.phase = -1; }
+    else { try { speechSynthesis.resume(); } catch (e) {} }
+    renderPlay(); tick(10);
+  });
+  $('#plClose').addEventListener('click', () => endSession(false));
+  $('#plVoice').addEventListener('click', () => { D.voice = !D.voice; save(); setVoiceBtn(); if (!D.voice) try { speechSynthesis.cancel(); } catch (e) {} });
+  $('#plSound').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ps]'); if (!b || !P || !A) return;
+    const k = b.dataset.ps; P.sound = k || null;
+    if (k) A.play(k, 0.45); else A.stop();
+    for (const x of document.querySelectorAll('#plSound button')) x.classList.toggle('on', x === b);
+  });
+
+  // ---------- おわりの画面 ----------
+  function showFinish(html, title) {
+    $('#fnTtl').textContent = title || 'おつかれさまでした';
+    $('#fnStage').innerHTML = html;
+    $('#finish').classList.add('open');
+  }
+  $('#fnStage').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mood]'); if (!b) return;
+    const k = dayKey(Date.now());
+    D.moods = D.moods.filter((m) => dayKey(m.t) !== k).concat({ t: Date.now(), v: +b.dataset.mood }); save();
+    for (const x of document.querySelectorAll('#fnStage [data-mood]')) x.classList.toggle('on', x === b);
+    tick(10);
+  });
+  $('#fnOk').addEventListener('click', () => { $('#finish').classList.remove('open'); RENDER[tab](); });
+
+  // ---------- 計測：指をカメラにのせて、心拍とそのゆらぎ（HRV）をはかる ----------
+  // 指を通った光の明るさが、脈にあわせてわずかに変わる（光電容積脈波）。30秒の波から拍と拍の間隔を取り出し、
+  // 間隔のゆらぎ（RMSSD）が大きいほど「ゆったり」とする。参考の目安で、医療の検査ではない。
+  const MEASURE = 30;
+  let M = null;
+  const hintIdle = '背面のカメラのレンズに、<b>人差し指の腹をそっと</b>のせてください。<br>押しつけず、明るい場所で、じっとしたまま30秒。';
+  function openMeter() {
+    $('#mtHint').innerHTML = hintIdle;
+    $('#bpm').innerHTML = '–<small>拍/分</small>';
+    $('#mtRing').setAttribute('stroke-dasharray', '0 666');
+    $('#wave polyline').setAttribute('points', '');
+    $('#mtStart').hidden = false; $('#mtStart').textContent = 'はじめる';
+    $('#meter').classList.add('open');
+  }
+  async function startMeter() {
+    $('#mtStart').hidden = true;
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30 } }, audio: false });
+    } catch (e) {
+      $('#mtHint').innerHTML = 'カメラを使えませんでした。<br>iPhone の設定で、カメラの使用を許可してください。';
+      $('#mtStart').hidden = false; $('#mtStart').textContent = 'もう一度';
+      return;
+    }
+    const v = $('#cam'); v.srcObject = stream; try { await v.play(); } catch (e) {}
+    // ライトをつけられる端末ではつける（つけられなくても、明るい場所なら測れる）
+    try { const tr = stream.getVideoTracks()[0]; const cap = tr.getCapabilities ? tr.getCapabilities() : {}; if (cap.torch) await tr.applyConstraints({ advanced: [{ torch: true }] }); } catch (e) {}
+    M = { stream, sig: [], got: 0, last: performance.now(), on: false };
+    $('#mtHint').innerHTML = '指をのせると、はかりはじめます';
+    requestAnimationFrame(sample);
+  }
+  const cv = $('#cv'), cx = cv.getContext('2d', { willReadFrequently: true });
+  function sample(now) {
+    if (!M) return;
+    const v = $('#cam');
+    if (v.readyState >= 2) {
+      cx.drawImage(v, v.videoWidth / 2 - 60, v.videoHeight / 2 - 60, 120, 120, 0, 0, 40, 40);
+      const px = cx.getImageData(0, 0, 40, 40).data;
+      let r = 0, g = 0, b = 0;
+      for (let i = 0; i < px.length; i += 4) { r += px[i]; g += px[i + 1]; b += px[i + 2]; }
+      const n = px.length / 4; r /= n; g /= n; b /= n;
+      // 指がのっていると、画面は赤一色になる
+      const finger = r > 60 && r > g * 1.5 && r > b * 1.5;
+      const dt = (now - M.last) / 1000; M.last = now;
+      if (finger) {
+        if (!M.on) { M.on = true; $('#mtHint').innerHTML = 'そのまま、じっとしていてください<br><b>ゆっくり呼吸して</b>'; tick(15); }
+        M.got += dt;
+        M.sig.push([now / 1000, r]);
+      } else if (M.on) {
+        M.on = false; $('#mtHint').innerHTML = '指がはなれました。<b>もう一度そっとのせてください</b>';
+      }
+      drawWave();
+      const p = Math.min(1, M.got / MEASURE);
+      $('#mtRing').setAttribute('stroke-dasharray', `${p * 666} 666`);
+      if (M.sig.length > 90 && Math.round(M.got * 2) % 2 === 0) { const a = analyze(M.sig.slice(-240)); if (a) $('#bpm').innerHTML = `<span class="heart" style="display:inline-block;animation-duration:${60 / a.hr}s">${a.hr}</span><small>拍/分</small>`; }
+      if (M.got >= MEASURE) { finishMeter(); return; }
+    }
+    requestAnimationFrame(sample);
+  }
+  function drawWave() {
+    const s = M.sig.slice(-120); if (s.length < 10) return;
+    const ys = detrend(s.map((x) => x[1]), 15);
+    const lo = Math.min(...ys), hi = Math.max(...ys), span = hi - lo || 1;
+    // 血が多いと暗くなるので、上下を逆にして脈の形にする
+    $('#wave polyline').setAttribute('points', ys.map((y, i) => `${(i / (ys.length - 1)) * 320},${6 + ((y - lo) / span) * 58}`).join(' '));
+  }
+  function detrend(a, w) {
+    const out = [];
+    for (let i = 0; i < a.length; i++) { let s = 0, n = 0; for (let j = Math.max(0, i - w); j <= Math.min(a.length - 1, i + w); j++) { s += a[j]; n++; } out.push(a[i] - s / n); }
+    return out;
+  }
+  // 波から拍の位置を見つけ、拍と拍の間隔（秒）から心拍とゆらぎを出す
+  function analyze(sig) {
+    if (sig.length < 60) return null;
+    const t = sig.map((x) => x[0]);
+    let y = detrend(sig.map((x) => -x[1]), 12);
+    y = y.map((_, i) => (y[i - 2] || y[i]) * 0.1 + (y[i - 1] || y[i]) * 0.2 + y[i] * 0.4 + (y[i + 1] || y[i]) * 0.2 + (y[i + 2] || y[i]) * 0.1);
+    const sd = Math.sqrt(y.reduce((a, v) => a + v * v, 0) / y.length) || 1;
+    const peaks = [];
+    for (let i = 2; i < y.length - 2; i++) {
+      if (y[i] > y[i - 1] && y[i] >= y[i + 1] && y[i] > y[i - 2] && y[i] >= y[i + 2] && y[i] > sd * 0.3) {
+        if (peaks.length && t[i] - t[peaks[peaks.length - 1]] < 0.33) { if (y[i] > y[peaks[peaks.length - 1]]) peaks[peaks.length - 1] = i; }
+        else peaks.push(i);
+      }
+    }
+    let ibi = [];
+    for (let i = 1; i < peaks.length; i++) { const d = t[peaks[i]] - t[peaks[i - 1]]; if (d > 0.33 && d < 1.6) ibi.push(d); }
+    if (ibi.length < 5) return null;
+    const med = [...ibi].sort((a, b) => a - b)[Math.floor(ibi.length / 2)];
+    ibi = ibi.filter((d) => Math.abs(d - med) < med * 0.25);
+    if (ibi.length < 5) return null;
+    const mean = ibi.reduce((a, b) => a + b, 0) / ibi.length;
+    let ss = 0, n = 0;
+    for (let i = 1; i < ibi.length; i++) { ss += (ibi[i] - ibi[i - 1]) ** 2; n++; }
+    const rmssd = Math.sqrt(ss / Math.max(1, n)) * 1000;
+    return { hr: Math.round(60 / mean), rmssd: Math.round(rmssd), beats: ibi.length };
+  }
+  function stopCam() { if (M && M.stream) M.stream.getTracks().forEach((t) => t.stop()); $('#cam').srcObject = null; M = null; }
+  function finishMeter() {
+    const a = analyze(M.sig); stopCam();
+    $('#meter').classList.remove('open');
+    if (!a || a.beats < 12 || a.hr < 40 || a.hr > 160) {
+      showFinish(`<div><p class="done-big">うまく はかれませんでした</p><p class="done-sub">指を強く押しつけず、そっとのせて、<br>明るい場所でもう一度ためしてみてください。</p></div>`, 'もう一度');
+      return;
+    }
+    const score = Math.max(0, Math.min(100, Math.round(((Math.log(Math.max(5, a.rmssd)) - 2.5) / (4.5 - 2.5)) * 100)));
+    D.scores.push({ t: Date.now(), hr: a.hr, rmssd: a.rmssd, score }); save();
+    bell(528); tick(30);
+    const sugg = score < 40 ? SESS.find((s) => s.id === 'calm') : score < 65 ? SESS.find((s) => s.id === 'first') : SESS.find((s) => s.id === 'kind');
+    showFinish(`<svg class="gauge" viewBox="0 0 100 100" style="width:150px;height:150px"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="${(score / 100) * 264} 264" transform="rotate(-90 50 50)"/><text x="50" y="50">${score}</text></svg>
+      <div><p class="done-big">${scoreName(score)}</p><p class="done-sub">ゆったり度 ${score}（0〜100）</p></div>
+      <div class="result"><div class="stat"><div class="k">心拍</div><div class="v">${a.hr}<small>拍/分</small></div></div><div class="stat"><div class="k">ゆらぎ（RMSSD）</div><div class="v">${a.rmssd}<small>ms</small></div></div></div>
+      <button type="button" class="sess" data-sess="${sugg.id}" style="width:100%;max-width:330px"><span class="art" style="--c1:${sugg.c[0]};--c2:${sugg.c[1]}"></span><span><div class="t">${sugg.title}</div><div class="d">いまのあなたへ・${sugg.min}分</div></span></button>
+      <p class="note">カメラと指ではかった目安です。医療の検査ではありません。</p>`, 'けっか');
+  }
+  $('#measureBtn').addEventListener('click', openMeter);
+  $('#mtStart').addEventListener('click', startMeter);
+  $('#mtClose').addEventListener('click', () => { stopCam(); $('#meter').classList.remove('open'); });
+  $('#fnStage').addEventListener('click', (e) => { if (e.target.closest('.sess')) $('#finish').classList.remove('open'); });
+
+  // ひび手帳から閉じられたとき（画面が隠れたとき）：音と声・カメラを止める
+  window.__an = analyze;
+  window.shizukuPause = () => { if (P) endSession(false); if (M) { stopCam(); $('#meter').classList.remove('open'); } try { speechSynthesis.cancel(); } catch (e) {} };
+  document.addEventListener('visibilitychange', () => { if (document.hidden && M) { stopCam(); $('#meter').classList.remove('open'); } });
+
+  renderHome();
+})();
+</script>
+</body>
+</html>

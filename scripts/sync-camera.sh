@@ -5,9 +5,10 @@ set -eu
 SRC="${1:-$(dirname "$0")/../../camera}"
 DST="$(dirname "$0")/../camera"
 test -f "$SRC/app.js" || { echo "camera が見つかりません: $SRC" >&2; exit 1; }
-rm -rf "$DST"; mkdir -p "$DST/icons"
+rm -rf "$DST"; mkdir -p "$DST/icons" "$DST/vendor"
 for f in index.html app.js style.css manifest.webmanifest; do cp "$SRC/$f" "$DST/$f"; done
 cp "$SRC"/icons/*.png "$DST/icons/"
+cp "$SRC"/vendor/*.js "$DST/vendor/" 2>/dev/null || true # QR コードを読む jsQR
 # ひび手帳の中では、カメラ用のオフライン（sw.js）は使わない（ひび手帳がまとめて持っている。写さないので 404 になっていた）
 sed -i.bak "s#navigator.serviceWorker.register('sw.js')#Promise.resolve()#" "$DST/app.js" && rm -f "$DST/app.js.bak"
 ( cd "$SRC" && git log -1 --format='%H %s' ) > "$DST/VERSION.txt" 2>/dev/null || true

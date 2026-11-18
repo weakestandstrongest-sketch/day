@@ -1,1 +1,1 @@
-dcf46b5c9d491adf98201f3b528db5dec2395879 Heading: don't count the empty right half of 、 and 。 so the lines look centred
+ea34d83bf98e7fa0c05317618755f54df1be4e8a Calendar: write the one thing for any day (ahead or afterwards) and mark past days done or not done; a day set ahead becomes today's when it comes

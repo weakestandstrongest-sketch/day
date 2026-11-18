@@ -95,9 +95,90 @@ svg {
     var(--bg);
 }
 
-#camera.mode-video .photo-only {
+#camera.mode-video .photo-only,
+#camera.mode-qr .photo-only {
   visibility: hidden;
 }
+
+/* ---------- QR コードを読む ---------- */
+#qr-scope, #qr-hint, #qr-card { display: none; }
+#camera.mode-qr #qr-scope { display: block; }
+#camera.mode-qr #qr-hint { display: block; }
+#camera.mode-qr #btn-shutter { visibility: hidden; }
+#camera.mode-qr #btn-timer, #camera.mode-qr #btn-grid { visibility: hidden; }
+#qr-scope {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(68vw, 280px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 28px;
+  box-shadow: 0 0 0 100vmax rgba(6, 5, 9, 0.45);
+  pointer-events: none;
+  transition: box-shadow 0.3s;
+}
+#qr-scope i {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border: 3px solid var(--fg);
+  border-radius: 4px;
+}
+#qr-scope i:nth-child(1) { left: -2px; top: -2px; border-right: 0; border-bottom: 0; border-top-left-radius: 26px; }
+#qr-scope i:nth-child(2) { right: -2px; top: -2px; border-left: 0; border-bottom: 0; border-top-right-radius: 26px; }
+#qr-scope i:nth-child(3) { left: -2px; bottom: -2px; border-right: 0; border-top: 0; border-bottom-left-radius: 26px; }
+#qr-scope i:nth-child(4) { right: -2px; bottom: -2px; border-left: 0; border-top: 0; border-bottom-right-radius: 26px; }
+#qr-scope .scan {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  top: 10%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--violet), transparent);
+  box-shadow: 0 0 14px var(--cyan);
+  animation: qr-scan 2.2s var(--ease) infinite alternate;
+}
+@keyframes qr-scan { to { top: 90%; } }
+#qr-scope.hit i { border-color: var(--cyan); }
+#qr-scope.hit .scan { opacity: 0; }
+#qr-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--fg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+#camera.mode-qr #qr-card:not([hidden]) { display: grid; }
+#camera.mode-qr #qr-card:not([hidden]) ~ #qr-hint, #camera.mode-qr #stage:has(#qr-card:not([hidden])) #qr-hint { display: none; }
+#qr-card {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 24px;
+  background: var(--glass-strong);
+  animation: qr-in 0.4s var(--ease);
+}
+@keyframes qr-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+.qr-head { display: flex; align-items: center; justify-content: space-between; }
+#qr-kind { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: var(--cyan); }
+#qr-close { width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); color: var(--fg); font-size: 18px; line-height: 1; }
+#qr-text { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-line; color: var(--fg); word-break: break-all; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; -webkit-user-select: text; user-select: text; }
+.qr-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.qr-acts .btn { height: 46px; border-radius: 14px; font-size: 15px; font-weight: 600; background: rgba(255, 255, 255, 0.1); color: var(--fg); border: 0; }
+.qr-acts .btn.primary { background: var(--fg); color: var(--bg); }
+.qr-acts .btn[hidden] { display: none; }
+.qr-acts:has(#qr-open[hidden]) { grid-template-columns: 1fr; }
 
 #topbar {
   display: flex;
