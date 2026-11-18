@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mathspace</title>
+  <meta name="description" content="数字・数式・条件・可能性を自由に操作できる、自分だけの計算空間。">
+  <meta name="theme-color" content="#020205">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    // 起動アニメーションを「なし」にしている人は、最初の黒い画面も出さない
+    try { if (localStorage.getItem('mathscape-intro') === 'off') document.documentElement.classList.add('no-intro'); } catch (e) {}
+  </script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mathspace">
+  <link rel="stylesheet" href="style.css?v=202611050526">
+</head>
+<body>
+  <div class="intro" id="intro" aria-hidden="true">
+    <canvas></canvas>
+    <div class="intro-logo">
+      <div class="il-name"><span>M</span><span>A</span><span>T</span><span>H</span><span>S</span><span>P</span><span>A</span><span>C</span><span>E</span></div>
+      <div class="il-tag">A new way to interact with numbers.</div>
+    </div>
+    <div class="intro-skip">タップでスキップ</div>
+  </div>
+
+  <div class="bg" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="platform"><div class="grid"></div><div class="rim"></div></div>
+  </div>
+
+  <header class="top">
+    <div class="brand">
+      <span class="logo">MATHSPACE</span>
+      <span class="tag">A new way to interact with numbers.</span>
+    </div>
+    <div class="tools">
+      <button type="button" id="btnGame" class="tbtn game-btn" title="2ⁿ DROP で遊ぶ">▶ 2ⁿ DROP</button>
+      <button type="button" id="btnHolo" class="tbtn holo-btn" aria-pressed="false" title="ホログラム表示">◇ ホログラム</button>
+      <button type="button" id="btnGravity" class="tbtn" aria-pressed="false" title="重力のオン/オフ">⟡ 無重力</button>
+      <button type="button" id="btnSpawn" class="tbtn" title="ぷにを出す">＋ ぷに</button>
+      <button type="button" id="btnClear" class="tbtn" title="ぷにを全部消す">全部消す</button>
+      <button type="button" id="btnHelp" class="tbtn round" aria-label="使い方">?</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel calc" id="calc" aria-label="計算機">
+      <div class="sheet-handle" id="sheetHandle" role="button" tabindex="0" aria-label="計算機を開く/閉じる">
+        <span></span><small><b class="up">↑ 引っ張ると計算機</b><b class="down">↓ 下げると空間へ</b></small>
+      </div>
+      <div class="display">
+        <button type="button" class="hist-btn" id="btnHistory" aria-label="履歴を開く" aria-expanded="false">🕘<span id="histCount"></span></button>
+        <div class="expr" id="expr">&nbsp;</div>
+        <div class="result" id="result" role="button" tabindex="0" title="タップで分析 / ドラッグで空間へ">0</div>
+      </div>
+      <div class="display-actions">
+        <button type="button" class="btn" id="btnInspect">🔍 この数を調べる</button>
+        <button type="button" class="btn glow" id="btnPuni">◉ ぷに化</button>
+      </div>
+      <div class="keys" id="keys"></div>
+      <div class="hist-panel" id="histPanel" hidden>
+        <div class="hp-head">
+          <b>履歴</b>
+          <span class="hp-note">タップで式を計算機に戻す</span>
+          <button type="button" class="hp-clear" id="histClear">消す</button>
+          <button type="button" class="hp-close" id="histClose" aria-label="履歴を閉じる">✕</button>
+        </div>
+        <div class="hp-list" id="histList"></div>
+      </div>
+      <div class="hist-wrap">
+        <div class="hist-title">HISTORY <span>— タップで分析 · ドラッグで空間へ</span></div>
+        <div class="history" id="history"></div>
+      </div>
+    </section>
+
+    <section class="stage" id="stage" aria-label="計算空間">
+      <canvas id="space"></canvas>
+      <canvas id="holo" hidden></canvas>
+      <button type="button" class="holo-close" id="holoClose" aria-label="ホログラムを閉じる">✕</button>
+      <div class="holo-hud" id="holoHud" hidden>
+        <div class="holo-read"><span>FOCUS</span><b id="holoFocus">100</b></div>
+        <div class="holo-tip">結晶をタップで選ぶ · ドラッグで回転 · 計算すると結果が映る</div>
+        <div class="holo-acts">
+          <button type="button" class="btn holo-tilt" id="holoTilt" aria-pressed="false">📱 傾き</button>
+          <button type="button" class="btn" id="holoInspect">🔍 調べる</button>
+          <button type="button" class="btn glow" id="holoBack">◉ ぷに空間へ</button>
+        </div>
+      </div>
+      <div class="hint" id="hint">
+        <span><b>ぷに</b>をタップ → その数を調べる</span>
+        <span>ぷにを<b>別のぷにに重ねる</b> → その場で計算</span>
+      </div>
+      <div class="trash" id="trash" aria-hidden="true">ここに捨てる</div>
+      <div class="op-picker" id="opPicker" hidden></div>
+    </section>
+  </main>
+
+  <aside class="panel inspector" id="inspector" hidden aria-label="数字インスペクタ"></aside>
+
+  <section class="game" id="game" hidden aria-label="2ⁿ DROP" tabindex="-1">
+    <div class="g-top">
+      <div class="g-title"><b>2ⁿ DROP</b><small>同じ数をくっつけて、大きな 2 の累乗へ</small></div>
+      <button type="button" class="g-close" id="gClose" aria-label="ゲームを閉じる">✕</button>
+    </div>
+    <div class="g-hud">
+      <div><span>SCORE</span><b id="gScore">0</b></div>
+      <div><span>BEST</span><b id="gBest">0</b></div>
+      <div class="g-next"><span>NEXT</span><i id="gNext">2</i></div>
+      <button type="button" class="btn" id="gRestart">↻ 最初から</button>
+    </div>
+    <div class="g-box">
+      <canvas id="gameCanvas"></canvas>
+      <div class="g-over" id="gOver" hidden>
+        <div class="g-over-card panel">
+          <h2>GAME OVER</h2>
+          <dl>
+            <dt>スコア</dt><dd id="gFinal">0</dd>
+            <dt>いちばん大きい数</dt><dd id="gMax">2</dd>
+            <dt>ベスト</dt><dd id="gFinalBest">0</dd>
+          </dl>
+          <button type="button" class="btn glow" id="gRetry">もう一度</button>
+        </div>
+      </div>
+    </div>
+    <p class="g-hint">左右に動かして、離すと落ちる · 同じ数がふれると 2 倍に合体 · 点線より上に積み上がるとおしまい</p>
+  </section>
+
+  <div class="help" id="help" hidden>
+    <div class="help-card panel">
+      <h2>Mathspace の遊び方</h2>
+      <ol>
+        <li><b>計算する</b> — 普通の計算機として使えます。キーボード入力も OK。</li>
+        <li><b>ぷに化</b> — 答えを「ぷに」にして空間に浮かべます。答えの数字や履歴は、ドラッグで空間へ直接投げ込めます。</li>
+        <li><b>タップして調べる</b> — ぷにや答えをタップすると、その数を<em>分解・変換・生成・シミュレーション・可視化</em>できます。</li>
+        <li><b>重ねて計算</b> — ぷにを別のぷにの上に落とすと、＋ − × ÷ などを選んで合体。新しいぷにが生まれます。</li>
+        <li><b>計算機へ戻す</b> — ぷにを計算機パネルへドラッグすると、式に数字が入ります。</li>
+      </ol>
+      <div class="intro-pref">
+        <b>起動アニメーション</b>
+        <div class="seg" id="introPref"></div>
+        <button type="button" class="btn" id="introPreview">▶ 見てみる</button>
+      </div>
+      <button type="button" class="btn glow" id="btnHelpClose">はじめる</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="ghost" id="ghost" hidden></div>
+
+  <script src="js/format.js?v=202611050526"></script>
+  <script src="js/numlab.js?v=202611050526"></script>
+  <script src="js/calc.js?v=202611050526"></script>
+  <script src="js/blobs.js?v=202611050526"></script>
+  <script src="js/inspector.js?v=202611050526"></script>
+  <script src="js/holo.js?v=202611050526"></script>
+  <script src="js/game.js?v=202611050526"></script>
+  <script src="js/intro.js?v=202611050526"></script>
+  <script src="js/app.js?v=202611050526"></script>
+</body>
+</html>
