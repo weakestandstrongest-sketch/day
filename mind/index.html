@@ -345,7 +345,7 @@
   <div class="top">
     <button class="round" id="plClose" type="button" aria-label="やめる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <span class="ttl" id="plTitle"></span>
-    <button class="round" id="plVoice" type="button" aria-label="声の案内"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+    <span style="width:44px"></span>
   </div>
   <div class="stage">
     <div class="orbp" id="orb"><div class="ring r2"></div><div class="ring"></div><div class="core"></div><span class="word" id="orbWord"></span></div>
@@ -394,7 +394,7 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const KEY = 'shizuku';
-  const base = () => ({ sessions: [], moods: [], scores: [], voice: true, prog: {} });
+  const base = () => ({ sessions: [], moods: [], scores: [], prog: {} });
   const load = () => { try { return Object.assign(base(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { return base(); } };
   let D = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} };
@@ -714,18 +714,10 @@
     try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {}
     try { window.parent !== window && window.parent.hibiHaptic && window.parent.hibiHaptic(ms > 20 ? 'success' : 'light'); } catch (e) {}
   }
-  let voice = null;
-  function pickVoice() { if (!('speechSynthesis' in window)) return; const vs = speechSynthesis.getVoices().filter((v) => /^ja/i.test(v.lang)); voice = vs.find((v) => /Kyoko|O-ren|Hattori|Siri/i.test(v.name)) || vs[0] || null; }
-  if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-  function say(text) {
-    if (!D.voice || !('speechSynthesis' in window)) return;
-    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ja-JP'; if (voice) u.voice = voice; u.rate = 0.82; u.pitch = 0.95; u.volume = 0.9; speechSynthesis.speak(u); } catch (e) {}
-  }
 
   // ---------- 瞑想中 ----------
   let P = null;
   const PHASE = ['吸って', '止めて', '吐いて', '止めて'];
-  const setVoiceBtn = () => { $('#plVoice').style.opacity = D.voice ? 1 : 0.45; };
   function startSession(s, prog) {
     if (!s) return;
     $('#article').classList.remove('open');
@@ -737,7 +729,6 @@
     $('#orbWord').classList.toggle('num', !!s.stretch);
     $('#orbWord').textContent = '';
     $('#plSound').innerHTML = A ? [['', '音なし'], ['rain', '雨'], ['waves', '波'], ['stream', '小川'], ['fire', '焚き火']].map(([k, n]) => `<button type="button" data-ps="${k}" class="${(P.sound || '') === k ? 'on' : ''}">${n}</button>`).join('') : '';
-    setVoiceBtn();
     $('#player').classList.add('open');
     bell(528);
     requestAnimationFrame(loop);
@@ -770,7 +761,6 @@
         P.gi = gi; const el = $('#guide');
         el.classList.add('fade');
         setTimeout(() => { el.textContent = g[gi][1]; el.classList.remove('fade'); }, 500);
-        say(g[gi][1]);
         if (P.s.stretch && gi > 0) tick(25);
       }
       $('#plProg').style.width = `${Math.min(100, (P.t / P.total) * 100)}%`;
@@ -783,7 +773,6 @@
   function endSession(done) {
     if (!P) return;
     const s = P.s, min = P.t / 60, prog = P.prog;
-    try { speechSynthesis.cancel(); } catch (e) {}
     $('#player').classList.remove('open');
     if (P.sound && A && !sleepEnd) A.stop(3);
     P = null;
@@ -799,12 +788,10 @@
   }
   $('#plPlay').addEventListener('click', () => {
     if (!P) return; P.run = !P.run; P.last = performance.now();
-    if (!P.run) { try { speechSynthesis.pause(); } catch (e) {} $('#orb').style.setProperty('--d', '1.2s'); $('#orb').style.setProperty('--s', 0.7); P.phase = -1; }
-    else { try { speechSynthesis.resume(); } catch (e) {} }
+    if (!P.run) { $('#orb').style.setProperty('--d', '1.2s'); $('#orb').style.setProperty('--s', 0.7); P.phase = -1; }
     renderPlay(); tick(10);
   });
   $('#plClose').addEventListener('click', () => endSession(false));
-  $('#plVoice').addEventListener('click', () => { D.voice = !D.voice; save(); setVoiceBtn(); if (!D.voice) try { speechSynthesis.cancel(); } catch (e) {} });
   $('#plSound').addEventListener('click', (e) => {
     const b = e.target.closest('[data-ps]'); if (!b || !P || !A) return;
     const k = b.dataset.ps; P.sound = k || null;
@@ -919,8 +906,8 @@
   $('#mtClose').addEventListener('click', () => { stopCam(); $('#meter').classList.remove('open'); });
 
   window.__an = analyze;
-  // ひび手帳から閉じられたとき：音と声・カメラを止める
-  window.shizukuPause = () => { if (P) endSession(false); if (M) { stopCam(); $('#meter').classList.remove('open'); } try { speechSynthesis.cancel(); } catch (e) {} };
+  // ひび手帳から閉じられたとき：音・カメラを止める
+  window.shizukuPause = () => { if (P) endSession(false); if (M) { stopCam(); $('#meter').classList.remove('open'); } };
   document.addEventListener('visibilitychange', () => { if (document.hidden && M) { stopCam(); $('#meter').classList.remove('open'); } });
 
   renderHome();
