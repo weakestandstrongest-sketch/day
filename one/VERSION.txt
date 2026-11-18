@@ -1,1 +1,1 @@
-ea34d83bf98e7fa0c05317618755f54df1be4e8a Calendar: write the one thing for any day (ahead or afterwards) and mark past days done or not done; a day set ahead becomes today's when it comes
+aed2b438fbb2ce9be0fe64eb4170929c490b48cc Words tab between today and calendar: keep words you came across with a memo and links, on any day (also earlier days), look them up on Google, Wikipedia or a dictionary; days with words get a small amber square in the calendar

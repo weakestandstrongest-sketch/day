@@ -35,6 +35,7 @@
     --intro-bg: #000000;
     --intro-fg: #f5f5f7;
     --intro-glow: #8fa0ff;
+    --word: #e39b2d;
     --ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
@@ -45,6 +46,7 @@
       --line: #38383a;
       --field: #1c1c1e;
       --accent: #8fa0ff;
+      --word: #ffbe5c;
       --on-accent: #000000;
       --halo: rgba(143, 160, 255, 0.2);
       --shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -336,8 +338,8 @@
     position: relative;
     display: flex;
     align-items: stretch;
-    /* タブは2つだけなので、幅はタブ2つ分にとどめる */
-    width: 200px;
+    /* タブは3つ（今日・言葉・カレンダー）。幅はタブ3つ分 */
+    width: 288px;
     height: 62px;
     padding: 4px;
     border-radius: 31px;
@@ -354,7 +356,7 @@
     top: 4px;
     bottom: 4px;
     left: 4px;
-    width: calc((100% - 8px) / 2);
+    width: calc((100% - 8px) / 3);
     pointer-events: none;
     transition: transform 620ms cubic-bezier(0.34, 1.45, 0.5, 1);
   }
@@ -409,6 +411,57 @@
   .cal-nav #todayBtn { width: auto; padding: 0 14px; border-radius: 999px; background: var(--pill); font-size: 15px; font-weight: 600; }
   .cal-month { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; color: var(--fg); padding: 0; text-align: left; }
   button.cal-month:active { transform: none; opacity: 0.6; }
+
+  /* ---- 言葉（気になった言葉を、日ごとに残す）---- */
+  .words .cal-top { align-items: center; }
+  .w-add { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--pill); color: var(--fg); margin-left: auto; }
+  .w-add svg { width: 22px; height: 22px; }
+  .w-stats { margin: -6px 0 4px; color: var(--muted); font: 500 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .04em; display: flex; gap: 22px; }
+  .w-stats b { color: var(--fg); font-weight: 600; margin-left: 8px; }
+  .w-list { display: grid; gap: 18px; padding-bottom: 20px; }
+  .w-day { display: grid; gap: 8px; }
+  .w-date { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .w-date i { width: 7px; height: 7px; border-radius: 2px; background: var(--word); }
+  .w-item { text-align: left; padding: 14px 16px; border-radius: 18px; background: var(--field); box-shadow: var(--shadow); display: grid; gap: 4px; width: 100%; }
+  .w-item b { font-size: 18px; font-weight: 700; color: var(--fg); overflow-wrap: anywhere; }
+  .w-item small { font-size: 13.5px; color: var(--muted); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .w-item .lk { font-size: 12px; color: var(--word); }
+  .w-empty { text-align: center; color: var(--muted); padding: 50px 10px; line-height: 1.8; font-size: 15px; }
+  .w-empty b { display: block; color: var(--fg); font-size: 17px; margin-bottom: 4px; }
+  /* カレンダー：今日の1つ（丸）の横に、言葉の印（小さな四角） */
+  .cal-day .marks { display: flex; gap: 4px; align-items: center; height: 7px; }
+  .cal-day .wm { width: 6px; height: 6px; border-radius: 2px; background: var(--word); }
+  .cal-detail .dw { display: grid; gap: 6px; margin-top: 4px; }
+  .cal-detail .dw-h { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .cal-detail .dw-h button { color: var(--word); font-size: 14px; font-weight: 600; padding: 4px 0; }
+  .cal-detail .dw-i { text-align: left; padding: 10px 12px; border-radius: 12px; background: var(--pill); display: flex; gap: 8px; align-items: baseline; width: 100%; }
+  .cal-detail .dw-i b { font-size: 15px; color: var(--fg); flex: none; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-detail .dw-i small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 追加・なおすシート */
+  .wsheet { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .45); display: flex; align-items: flex-end; }
+  .wsheet[hidden] { display: none; }
+  .ws-panel { width: 100%; max-height: calc(100% - 40px - env(safe-area-inset-top, 0px)); display: grid; grid-template-rows: auto 1fr auto; background: var(--bg); border-radius: 26px 26px 0 0; box-shadow: 0 -10px 40px rgba(0, 0, 0, .25); animation: wsUp .38s cubic-bezier(.2, .9, .25, 1); }
+  @keyframes wsUp { from { transform: translateY(100%); } }
+  .ws-head { position: relative; display: grid; place-items: center; height: 64px; }
+  .ws-title { font: 500 14px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .06em; color: var(--muted); }
+  .ws-x { position: absolute; right: 14px; top: 10px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--pill); color: var(--fg); }
+  .ws-x svg { width: 20px; height: 20px; }
+  .ws-body { overflow-y: auto; padding: 4px 16px 20px; display: grid; gap: 8px; align-content: start; }
+  .ws-lb { font-size: 14px; color: var(--fg); margin-top: 10px; }
+  .ws-row { display: flex; justify-content: space-between; align-items: center; }
+  .ws-plus { width: 32px; height: 32px; display: grid; place-items: center; color: var(--fg); }
+  .ws-plus svg { width: 20px; height: 20px; }
+  .ws-in { width: 100%; box-sizing: border-box; border: 0.5px solid var(--line); border-radius: 18px; background: var(--field); color: var(--fg); font: inherit; font-size: 17px; padding: 14px 16px; outline: none; -webkit-appearance: none; appearance: none; }
+  .ws-in:focus { border-color: var(--word); box-shadow: 0 0 0 1px var(--word); }
+  input.ws-in { height: 54px; }
+  .ws-memo { resize: none; line-height: 1.6; }
+  #wsUrls { display: grid; gap: 8px; }
+  .ws-look { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .ws-look button { height: 48px; border-radius: 999px; border: 0.5px solid var(--sep-strong); color: var(--fg); font-size: 15px; }
+  .ws-foot { display: flex; gap: 10px; padding: 12px 16px max(14px, env(safe-area-inset-bottom, 0px)); border-top: 0.5px solid var(--line); }
+  .ws-save { flex: 1; height: 56px; border-radius: 999px; background: var(--fg); color: var(--bg); font-size: 16px; font-weight: 700; }
+  .ws-del { height: 56px; padding: 0 20px; border-radius: 999px; background: var(--pill); color: #e5484d; font-size: 15px; font-weight: 600; }
+  .ws-del[hidden] { display: none; }
 
   /* 年の表示：12か月を小さく並べ、タップでその月へ */
   .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px 14px; touch-action: pan-y; }
@@ -569,6 +622,35 @@
   </section>
 </main>
 
+<section id="wordsScreen" class="cal words" hidden>
+  <div class="cal-top">
+    <h2 class="cal-month">言葉</h2>
+    <button class="w-add" id="wordAddBtn" type="button" aria-label="言葉を追加"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+  <p class="w-stats" id="wordStats"></p>
+  <div class="w-list" id="wordList"></div>
+</section>
+
+<!-- 言葉を追加・なおす -->
+<div class="wsheet" id="wordSheet" hidden role="dialog" aria-modal="true" aria-label="言葉">
+  <div class="ws-panel">
+    <div class="ws-head"><span class="ws-title" id="wsTitle">[ 言葉を追加 ]</span><button class="ws-x" id="wsClose" type="button" aria-label="閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="ws-body">
+      <label class="ws-lb" for="wsDate">日付</label>
+      <input class="ws-in" id="wsDate" type="date">
+      <label class="ws-lb" for="wsWord">言葉</label>
+      <input class="ws-in" id="wsWord" type="text" maxlength="80" autocomplete="off" enterkeyhint="next" placeholder="気になった言葉">
+      <label class="ws-lb" for="wsMemo">メモ</label>
+      <textarea class="ws-in ws-memo" id="wsMemo" rows="5" placeholder="意味・どこで知ったか・感じたこと"></textarea>
+      <div class="ws-lb ws-row"><span>URL</span><button class="ws-plus" id="wsUrlAdd" type="button" aria-label="URL をふやす"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+      <div id="wsUrls"></div>
+      <span class="ws-lb">しらべる</span>
+      <div class="ws-look"><button type="button" data-look="google">Google</button><button type="button" data-look="wiki">Wikipedia</button><button type="button" data-look="dict">辞書</button></div>
+    </div>
+    <div class="ws-foot"><button class="ws-del" id="wsDel" type="button" hidden>削除</button><button class="ws-save" id="wsSave" type="button">言葉を登録</button></div>
+  </div>
+</div>
+
 <section id="calScreen" class="cal" hidden>
   <div class="cal-top">
     <button class="cal-year" id="calYear" type="button" aria-label="年の表示へ">
@@ -603,6 +685,10 @@
     <button class="tab" id="tabToday" type="button" role="tab" aria-selected="true" aria-controls="todayScreen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
       今日
+    </button>
+    <button class="tab" id="tabWords" type="button" role="tab" aria-selected="false" aria-controls="wordsScreen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 11.5h5"/></svg>
+      言葉
     </button>
     <button class="tab" id="tabCal" type="button" role="tab" aria-selected="false" aria-controls="calScreen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
@@ -901,9 +987,9 @@
       if (wd === 0 || wd === 6) cls.push("weekend");
       if (key === today()) cls.push("is-today");
       if (key === selected) cls.push("selected");
-      const dot = e ? `<span class="dot ${e.done ? "done" : "undone"}"></span>` : '<span class="dot"></span>';
+      const dot = (e ? `<span class="dot ${e.done ? "done" : "undone"}"></span>` : '<span class="dot"></span>') + (wordsOn(key).length ? '<span class="wm" aria-hidden="true"></span>' : '');
       const label = `${m + 1}月${d}日${e ? (e.done ? "、やった" : "、記録あり") : ""}`;
-      html += `<button type="button" class="${cls.join(" ")}" data-key="${key}" aria-label="${label}"><span class="num">${d}</span>${dot}</button>`;
+      html += `<button type="button" class="${cls.join(" ")}" data-key="${key}" aria-label="${label}${wordsOn(key).length ? `、言葉${wordsOn(key).length}つ` : ""}"><span class="num">${d}</span><span class="marks">${dot}</span></button>`;
     }
     const rest = (7 - ((first + days) % 7)) % 7;
     for (let i = 0; i < rest; i++) html += '<span class="cal-blank"></span>';
@@ -940,7 +1026,10 @@
       const hint = future ? "この日にやる1つを、前もって決めておけます。" : isToday ? "今日の1つは、まだ決めていません。" : "この日の1つを、あとから書いておけます。";
       body = `${e ? "" : `<p class="what none">${hint}</p>`}<form class="day-form"><input type="text" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="${future ? "この日にやる1つ" : "この日の1つ"}" aria-label="この日の1つ"><button type="submit">${editing ? "なおす" : "決める"}</button></form>`;
     }
+    const dw = wordsOn(selected);
+    body += `<div class="dw"><div class="dw-h"><span>言葉${dw.length ? ` ${dw.length}` : ""}</span><button type="button" data-wadd="${selected}">＋ 言葉を追加</button></div>${dw.map((w) => `<button type="button" class="dw-i" data-wid="${w.id}"><b></b><small></small></button>`).join("")}</div>`;
     calDetail.innerHTML = `<p class="when">${when}</p>${body}`;
+    calDetail.querySelectorAll(".dw-i").forEach((b, i) => { b.querySelector("b").textContent = dw[i].word; b.querySelector("small").textContent = dw[i].memo || ""; });
     const what = calDetail.querySelector(".what:not(.none)");
     if (what) what.textContent = e.text;
     const box = calDetail.querySelector(".day-form input");
@@ -979,6 +1068,9 @@
     setDay(selected, { text, done: old ? !!old.done : false, ...(old && old.judged ? { judged: true } : {}) });
   });
   calDetail.addEventListener("click", (ev) => {
+    const wa = ev.target.closest("[data-wadd]"), wi = ev.target.closest("[data-wid]");
+    if (wa) { openWord(null, wa.dataset.wadd); return; }
+    if (wi) { openWord(wi.dataset.wid); return; }
     const b = ev.target.closest("button[data-judge], button[data-day]");
     if (!b) return;
     const e = entryOf(selected);
@@ -1119,8 +1211,9 @@
   }
 
   // ---- タブ ----
-  const tabs = { today: document.getElementById("tabToday"), cal: document.getElementById("tabCal") };
-  const screens = { today: document.getElementById("todayScreen"), cal: calScreen };
+  const tabs = { today: document.getElementById("tabToday"), words: document.getElementById("tabWords"), cal: document.getElementById("tabCal") };
+  const screens = { today: document.getElementById("todayScreen"), words: document.getElementById("wordsScreen"), cal: calScreen };
+  const TAB_ORDER = ["today", "words", "cal"];
   let currentTab = "today";
 
   function showTab(name) {
@@ -1131,7 +1224,7 @@
       screens[k].hidden = k !== name;
     }
     const pill = document.querySelector(".tab-pill");
-    pill.style.transform = name === "cal" ? "translateX(100%)" : "none";
+    pill.style.transform = `translateX(${TAB_ORDER.indexOf(name) * 100}%)`;
     // ぷにっと伸びて縮む（jam と同じ動き）
     if (pill.firstElementChild.animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       pill.firstElementChild.animate([
@@ -1146,6 +1239,7 @@
       if (calMode === "year") renderYear();
       else { renderCal(); renderDetail(); }
     }
+    if (name === "words") renderWords();
     if (screens[name].animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       screens[name].animate([
         { opacity: 0, transform: "translateY(10px) scale(0.99)", filter: "blur(6px)" },
@@ -1156,6 +1250,71 @@
 
   tabs.today.addEventListener("click", () => showTab("today"));
   tabs.cal.addEventListener("click", () => showTab("cal"));
+  tabs.words.addEventListener("click", () => showTab("words"));
+
+  // ---- 言葉：気になった言葉を、日ごとに残す（あとの日からでも、前の日に足せる）----
+  // [{ id, date: "2026-11-19", word, memo, urls: [], at }]。localStorage と IndexedDB の両方に
+  const WKEY = "hitotsu-words";
+  let words = [];
+  try { words = JSON.parse(localStorage.getItem(WKEY) || "[]") || []; } catch (e) { words = []; }
+  idb("readonly", (os) => os.get(WKEY)).then((raw) => { if (!words.length && raw) { try { words = JSON.parse(raw) || []; renderWords(); } catch (e) {} } });
+  const saveWords = () => { const raw = JSON.stringify(words); try { localStorage.setItem(WKEY, raw); } catch (e) {} idb("readwrite", (os) => os.put(raw, WKEY)); };
+  function wordsOn(key) { return words.filter((w) => w.date === key); }
+  const keyToISO = (k) => { const [y, m, d] = k.split("-").map(Number); return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`; };
+  const isoToKey = (s) => { const [y, m, d] = s.split("-").map(Number); return `${y}-${m}-${d}`; };
+  function renderWords() {
+    const list = document.getElementById("wordList"), stats = document.getElementById("wordStats");
+    const days = [...new Set(words.map((w) => w.date))].sort((a, b) => dateOf(b) - dateOf(a));
+    stats.innerHTML = `<span>Words<b>${words.length}</b></span><span>Days<b>${days.length}</b></span>`;
+    if (!words.length) { list.innerHTML = '<div class="w-empty"><b>まだ言葉がありません</b>本やニュース、会話で気になった言葉を、<br>右上の ＋ から残しておけます。</div>'; return; }
+    list.innerHTML = days.map((k) => {
+      const d = dateOf(k);
+      return `<div class="w-day"><div class="w-date"><i></i>${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${WEEK[d.getDay()]}曜日</div>${wordsOn(k).sort((a, b) => b.at - a.at).map((w) => `<button type="button" class="w-item" data-wid="${w.id}"><b></b>${w.memo ? "<small></small>" : ""}${w.urls && w.urls.length ? `<span class="lk">🔗 ${w.urls.length}</span>` : ""}</button>`).join("")}</div>`;
+    }).join("");
+    list.querySelectorAll(".w-item").forEach((b) => { const w = words.find((x) => x.id === b.dataset.wid); b.querySelector("b").textContent = w.word; const sm = b.querySelector("small"); if (sm) sm.textContent = w.memo; });
+  }
+  document.getElementById("wordList").addEventListener("click", (e) => { const b = e.target.closest("[data-wid]"); if (b) openWord(b.dataset.wid); });
+  document.getElementById("wordAddBtn").addEventListener("click", () => openWord(null, today()));
+  // シート
+  const sheet = document.getElementById("wordSheet"), wsDate = document.getElementById("wsDate"), wsWord = document.getElementById("wsWord"), wsMemo = document.getElementById("wsMemo"), wsUrls = document.getElementById("wsUrls");
+  let editing2 = null;
+  function urlRow(v = "") { const i = document.createElement("input"); i.className = "ws-in"; i.type = "url"; i.inputMode = "url"; i.autocapitalize = "off"; i.placeholder = "https://"; i.value = v; wsUrls.append(i); return i; }
+  function openWord(id, dateKey) {
+    const w = id && words.find((x) => x.id === id);
+    editing2 = w ? w.id : null;
+    document.getElementById("wsTitle").textContent = w ? "[ 言葉をなおす ]" : "[ 言葉を追加 ]";
+    document.getElementById("wsSave").textContent = w ? "保存" : "言葉を登録";
+    document.getElementById("wsDel").hidden = !w;
+    wsDate.value = keyToISO(w ? w.date : dateKey || today());
+    wsDate.max = keyToISO(today());
+    wsWord.value = w ? w.word : ""; wsMemo.value = w ? w.memo || "" : "";
+    wsUrls.innerHTML = ""; ((w && w.urls) || [""]).forEach((u) => urlRow(u)); if (w && !w.urls.length) urlRow();
+    sheet.hidden = false;
+  }
+  const closeWord = () => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); sheet.hidden = true; editing2 = null; };
+  document.getElementById("wsClose").addEventListener("click", closeWord);
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) closeWord(); });
+  document.getElementById("wsUrlAdd").addEventListener("click", () => urlRow());
+  document.getElementById("wsSave").addEventListener("click", () => {
+    const word = wsWord.value.trim(); if (!word) { wsWord.focus(); return; }
+    const date = wsDate.value ? isoToKey(wsDate.value) : today();
+    const urls = [...wsUrls.querySelectorAll("input")].map((i) => i.value.trim()).filter(Boolean).map((u) => /^[a-z]+:/i.test(u) ? u : "https://" + u);
+    if (editing2) Object.assign(words.find((x) => x.id === editing2), { date, word, memo: wsMemo.value.trim(), urls });
+    else words.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date, word, memo: wsMemo.value.trim(), urls, at: Date.now() });
+    saveWords(); closeWord(); renderWords(); renderCal(); renderDetail();
+  });
+  document.getElementById("wsDel").addEventListener("click", () => {
+    if (!editing2 || !confirm("この言葉を消しますか？")) return;
+    words = words.filter((x) => x.id !== editing2); saveWords(); closeWord(); renderWords(); renderCal(); renderDetail();
+  });
+  // しらべる：Google・Wikipedia・辞書（ひび手帳の中では、ひび手帳のブラウザで開く）
+  document.querySelector(".ws-look").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-look]"); if (!b) return;
+    const q = encodeURIComponent(wsWord.value.trim()); if (!q) { wsWord.focus(); return; }
+    const url = { google: `https://www.google.com/search?q=${q}`, wiki: `https://ja.wikipedia.org/wiki/Special:Search?search=${q}`, dict: `https://www.weblio.jp/content/${q}` }[b.dataset.look];
+    try { if (window.parent !== window && window.parent.hibiOpenURL) { window.parent.hibiOpenURL(url); return; } } catch (err) {}
+    window.open(url, "_blank", "noopener");
+  });
 
   // ---- 起動アニメーション ----
   // 1) テキストのマッチカット（140BPMで加速） 2) 暗転の中に「one」と光の点 3) 点が見出しの上へ収まる
