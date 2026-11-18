@@ -57,6 +57,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "saveMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "gyoukaiClose", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitData", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "dineOpen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
@@ -275,6 +276,21 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func gyoukaiClose(_ call: CAPPluginCall) {
         DispatchQueue.main.async { MainActor.assumeIsolated { EdgeApps.gyoukai.close() }; call.resolve(["ok": true]) }
+    }
+
+    /// { url }：Dine（ごはん探し）を右から画面いっぱいに開く。閉じたら "dine" {open:false}
+    @objc func dineOpen(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
+            let url = call.getString("url").flatMap { URL(string: $0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0.scheme == nil ? nil : $0 }
+            MainActor.assumeIsolated {
+                let d = EdgeApps.dine
+                if d.onChange == nil { d.onChange = { [weak self] open in self?.notifyListeners("dine", data: ["open": open]) } }
+                EdgeWebController.dine.setURL(url)
+                d.open(vc: vc)
+            }
+            call.resolve(["ok": true])
+        }
     }
 
     @objc func jamClose(_ call: CAPPluginCall) {
@@ -519,7 +535,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     /// {sound}：消音モードでも鳴るように「再生」として、くり返し鳴らす
     @objc func alarmRing(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            MainActor.assumeIsolated { EdgeApps.orbit.close(); EdgeApps.jam.close(); EdgeApps.gyoukai.close() } // アラームを止める画面が Orbit の下に隠れないように
+            MainActor.assumeIsolated { EdgeApps.orbit.close(); EdgeApps.jam.close(); EdgeApps.gyoukai.close(); EdgeApps.dine.close() } // アラームを止める画面が Orbit の下に隠れないように
             HibiRinger.shared.ring(call.getString("sound") ?? "")
             call.resolve(["ok": true])
         }

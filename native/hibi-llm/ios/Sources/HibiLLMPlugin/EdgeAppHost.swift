@@ -334,6 +334,9 @@ enum EdgeApps {
     /// Gyoukai（業界研究。リポジトリ gyoukai の GitHub Pages）：日記の右端から
     static let gyoukai = withBar(EdgeAppHost(fromRight: true) { EdgeWebController.gyoukai }, EdgeWebController.gyoukai)
 
+    /// Dine（ごはん探し）：日記のフォークとナイフのボタンで、右から画面いっぱいに出る。左端から右へで戻る
+    static let dine = EdgeAppHost(fromRight: true) { EdgeWebController.dine }
+
     /// ウェブアプリの下のバー（HibiTabBar）を、出入りのときにしまう・出す
     private static func withBar(_ host: EdgeAppHost, _ web: EdgeWebController) -> EdgeAppHost {
         host.barRect = { web.bar?.capsule }

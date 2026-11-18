@@ -19,6 +19,11 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         bar: TabSpec(bar: "nav.tabbar", items: "nav.tabbar .tab[data-tab]", key: "data-tab",
                      symbols: ["home": "house", "news": "newspaper", "industry": "building.2", "region": "map"]))
 
+    /// Dine（ごはん探し：リポジトリ eat）：日記のフォークとナイフのボタンから。URL は 設定 → ごはん（Dine）
+    static let dine = EdgeWebController(
+        name: "Dine", url: nil,
+        hint: "Dine の URL がまだ入っていません。\n\nひび手帳に戻って（左端から右へスワイプ）、\n設定 →「ごはん（Dine）」に入れてください。")
+
     /// ページの下のタブバーを、iPhone 本物の Liquid Glass のバー（ひび手帳と同じ部品）に置きかえる設定。
     /// ページのバーは見えなくするだけで場所はそのまま。押されたら、ページのそのタブを押したことにする
     struct TabSpec {
