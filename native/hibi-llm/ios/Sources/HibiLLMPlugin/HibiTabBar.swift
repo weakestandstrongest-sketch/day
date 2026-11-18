@@ -53,9 +53,12 @@ struct HibiBarView: View {
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.maxWidth)
-        .offset(y: s.hidden || s.tucked ? 140 : 0)
+        // 沈む・出てくる：少し小さく・ぼかしながら、やわらかいばねで（はね返りはほんの少しだけ）
+        .scaleEffect(s.hidden || s.tucked ? 0.94 : 1, anchor: .bottom)
+        .offset(y: s.hidden || s.tucked ? 120 : 0)
         .opacity(s.hidden || s.tucked ? 0 : 1)
-        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.hidden || s.tucked)
+        .blur(radius: s.hidden || s.tucked ? 6 : 0)
+        .animation(.spring(response: 0.46, dampingFraction: 0.88), value: s.hidden || s.tucked)
     }
 
     private var items: some View {

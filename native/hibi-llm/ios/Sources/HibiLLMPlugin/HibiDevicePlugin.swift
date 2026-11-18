@@ -320,10 +320,12 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                 bar.setScheme(scheme)
             }
             let wasHidden = st.hidden
+            if wasHidden { bar.later(nil); apply(false) } // 隠れているあいだに変えておく（これから出るときも、出しはじめる前に）
             if let v = call.getBool("hidden") { bar.setJSHidden(v) } // Orbit などが上に出ているあいだは、ほかにも隠す（EdgeAppHost.coverChanged）
-            let nowHidden = st.hidden
-            if !wasHidden && nowHidden { bar.later(0.4) { apply(false) } } // 沈みきってから
-            else { bar.later(nil); apply(!wasHidden && !nowHidden) } // 出たまま：動かして変える／隠れている・これから出る：すぐ変える
+            if !wasHidden {
+                if st.hidden { bar.later(0.5) { apply(false) } } // 沈みきってから
+                else { bar.later(nil); apply(true) } // 出たまま：動かして変える
+            }
             call.resolve(["ok": true])
         }
     }
