@@ -200,4 +200,12 @@ export function mount(root) {
   }
 
   restart();
+
+  // 3D のサイコロ (使えない環境では、もとの平らなサイコロのまま)
+  let alive = true;
+  let detachDice = () => {};
+  import('../real/dice.js')
+    .then((m) => { if (alive) detachDice = m.attachDice(body.querySelector('.dice-tray'), diceEls); })
+    .catch(() => {});
+  return () => { alive = false; detachDice(); };
 }

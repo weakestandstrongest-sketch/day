@@ -1,3 +1,4 @@
+import { real } from '../real/index.js';
 import { h, icon, modal, showResult, sfx, showRules, loadPref, savePref } from '../ui.js';
 
 const RULES = `
@@ -20,7 +21,7 @@ const WALL_E = 0.9;
 const MALLET_E = 0.85;
 const FRICTION = 0.18;     // 速度の減衰率 /秒
 const SUBSTEPS = 8;
-const COLORS = ['#63c7ff', '#ff8070'];
+const COLORS = ['#8fb3d1', '#e08a76']; // 藍白と珊瑚。候のふたりの色
 
 // 色を暗くする (#rrggbb のみ)
 function shade(hex, k = 0.45) {
@@ -224,7 +225,7 @@ export function mount(root) {
       buttons: [{ label: 'メニューへ', value: 'menu' }, { label: 'もう一度', value: 'again', primary: true }],
     });
     if (again === 'again') restart();
-    else if (again === 'menu') location.hash = '#/';
+    else if (again === 'menu') location.hash = '#asobi';
   }
 
   async function pause() {
@@ -250,7 +251,7 @@ export function mount(root) {
         { label: '再開', value: 'resume', primary: true },
       ],
     });
-    if (choice === 'menu') { location.hash = '#/'; return; }
+    if (choice === 'menu') { location.hash = '#asobi'; return; }
     if (choice === 'restart') restart();
     if (choice === 'rules') await showRules('エアホッケー', RULES);
     pointers.clear();
@@ -270,11 +271,20 @@ export function mount(root) {
     const t = table.getContext('2d');
     t.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
     const bg = t.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, H * 0.75);
-    bg.addColorStop(0, '#123a5e');
-    bg.addColorStop(1, '#061527');
+    // 卓はいまの節気の深い色に、墨を重ねた漆のような地
+    const deep = getComputedStyle(document.documentElement).getPropertyValue('--k-deep').trim() || '#10111a';
+    bg.addColorStop(0, deep);
+    bg.addColorStop(1, '#050507');
     t.fillStyle = bg;
     t.fillRect(0, 0, W, H);
-    for (const [y0, y1, color] of [[H, H / 2, '99,199,255'], [0, H / 2, '255,128,112']]) {
+    // 天板のつや
+    const gloss = t.createLinearGradient(0, 0, W, H * 0.7);
+    gloss.addColorStop(0, 'rgba(255,255,255,0.07)');
+    gloss.addColorStop(0.42, 'rgba(255,255,255,0.015)');
+    gloss.addColorStop(0.5, 'rgba(255,255,255,0)');
+    t.fillStyle = gloss;
+    t.fillRect(0, 0, W, H);
+    for (const [y0, y1, color] of [[H, H / 2, '143,179,209'], [0, H / 2, '224,138,118']]) {
       const g = t.createLinearGradient(0, y0, 0, y1);
       g.addColorStop(0, `rgba(${color},0.22)`);
       g.addColorStop(1, `rgba(${color},0)`);
@@ -309,7 +319,7 @@ export function mount(root) {
       t.globalAlpha = 1;
     }
     // 枠 (ゴール口は開けておく)
-    t.strokeStyle = 'rgba(220,235,255,0.55)';
+    t.strokeStyle = 'rgba(244,240,234,0.5)';
     t.lineWidth = 1.6;
     t.beginPath();
     t.moveTo(W / 2 - GOAL_HALF, 0.8); t.lineTo(0.8, 0.8); t.lineTo(0.8, H - 0.8); t.lineTo(W / 2 - GOAL_HALF, H - 0.8);
@@ -326,6 +336,13 @@ export function mount(root) {
   }
 
   function drawMallet(m, color) {
+    const art = real.hockey(`mallet${COLORS.indexOf(color)}`);
+    if (art) {
+      // 3D で撮ったマレット (直径 1 が画像の 1/1.4)
+      const w = MALLET_R * 2.8;
+      ctx.drawImage(art, m.x - w / 2, m.y - w / 2, w, w);
+      return;
+    }
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.arc(m.x + 1, m.y + 1.6, MALLET_R, 0, Math.PI * 2); ctx.fill();
@@ -351,19 +368,25 @@ export function mount(root) {
   }
 
   function drawPuck() {
+    const art = real.hockey('puck');
+    if (art) {
+      const w = PUCK_R * 2.8;
+      ctx.drawImage(art, puck.x - w / 2, puck.y - w / 2, w, w);
+      return;
+    }
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath(); ctx.arc(puck.x + 0.8, puck.y + 1.2, PUCK_R, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowColor = '#ffd84d';
+    ctx.shadowColor = 'rgba(244,240,234,0.9)';
     ctx.shadowBlur = 10;
     const g = ctx.createRadialGradient(puck.x - 1.5, puck.y - 1.8, 0.5, puck.x, puck.y, PUCK_R);
-    g.addColorStop(0, '#fff7cf');
-    g.addColorStop(0.5, '#ffd84d');
-    g.addColorStop(1, '#c79a12');
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.5, '#f4f0ea');
+    g.addColorStop(1, '#b9b0a0');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(puck.x, puck.y, PUCK_R, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(120,80,0,0.55)';
+    ctx.strokeStyle = 'rgba(60,50,40,0.45)';
     ctx.lineWidth = 0.7;
     ctx.beginPath(); ctx.arc(puck.x, puck.y, PUCK_R * 0.62, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
@@ -373,7 +396,7 @@ export function mount(root) {
     ctx.save();
     ctx.translate(W - 7, H / 2 + (player === 0 ? 11 : -11));
     if (player === 1) ctx.rotate(Math.PI);
-    ctx.font = '800 12px ui-rounded, -apple-system, sans-serif';
+    ctx.font = 'italic 400 14px "Bodoni Moda", Didot, serif';
     ctx.textAlign = player === 0 ? 'right' : 'left';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = color;
@@ -394,7 +417,7 @@ export function mount(root) {
 
     trail.forEach((t, i) => {
       ctx.globalAlpha = (i / trail.length) * 0.22;
-      ctx.fillStyle = '#ffd84d';
+      ctx.fillStyle = '#f4f0ea';
       ctx.beginPath();
       ctx.arc(t.x, t.y, PUCK_R * (0.45 + 0.55 * i / trail.length), 0, Math.PI * 2);
       ctx.fill();
@@ -408,13 +431,13 @@ export function mount(root) {
       ctx.save();
       ctx.translate(W / 2, H / 2 + (goalScorer === 0 ? 30 : -30));
       if (goalScorer === 1) ctx.rotate(Math.PI);
-      ctx.font = '900 16px ui-rounded, -apple-system, sans-serif';
+      ctx.font = 'italic 400 20px "Bodoni Moda", Didot, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = COLORS[goalScorer];
       ctx.shadowBlur = 12;
       ctx.fillStyle = '#fff';
-      ctx.fillText(phase === 'over' ? 'WIN!' : 'GOAL!', 0, 0);
+      ctx.fillText(phase === 'over' ? 'Win.' : 'Goal.', 0, 0);
       ctx.restore();
     }
   }

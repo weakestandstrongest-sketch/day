@@ -202,7 +202,7 @@ export function toast(message, { flip = false, duration = 1600 } = {}) {
 export function gameShell(root, { title, rules, onUndo, onRestart }) {
   const undoBtn = onUndo && h('button', { class: 'icon-btn', 'aria-label': '待った', onclick: () => { sfx('tap'); onUndo(); } }, icon('undo'));
   const header = h('header', { class: 'topbar' },
-    h('button', { class: 'icon-btn', 'aria-label': 'メニューに戻る', onclick: () => { location.hash = '#/'; } }, icon('back')),
+    h('button', { class: 'icon-btn', 'aria-label': 'メニューに戻る', onclick: () => { location.hash = '#asobi'; } }, icon('back')),
     h('h1', {}, title),
     h('div', { class: 'topbar-actions' },
       undoBtn,
@@ -226,10 +226,12 @@ export function showRules(title, rules) {
 }
 
 // 対局の結果。'again' / 'close' / 'menu' を返す
-export function showResult({ title, detail, accent = 'var(--gold)', mark = null, flip = false, buttons }) {
+export function showResult({ title, detail, accent = 'var(--kc)', mark = null, flip = false, buttons }) {
+  // 印がないときは朱の判子を押す。引き分けは「和」
+  const seal = h('div', { class: 'result-seal' }, /引き分け/.test(title) ? '和' : '勝');
   const hero = h('div', { class: 'result-hero', style: { '--accent': accent } },
     h('div', { class: 'result-burst' }),
-    mark ? h('div', { class: 'result-mark' }, mark) : h('div', { class: 'result-mark', html: CROWN }));
+    mark ? h('div', { class: 'result-mark' }, mark) : seal);
   return modal({
     title,
     body: [hero, detail && h('div', { class: 'result-detail' }, detail)],
@@ -238,10 +240,6 @@ export function showResult({ title, detail, accent = 'var(--gold)', mark = null,
     buttons: buttons || [{ label: '閉じる', value: 'close' }, { label: 'もう一度', value: 'again', primary: true }],
   });
 }
-
-const CROWN = `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 22l12 10 12-18 12 18 12-10-5 28H13z" fill="currentColor"/>
-<rect x="13" y="52" width="38" height="6" rx="3" fill="currentColor"/><circle cx="8" cy="20" r="4" fill="currentColor"/>
-<circle cx="32" cy="12" r="4" fill="currentColor"/><circle cx="56" cy="20" r="4" fill="currentColor"/></svg>`;
 
 // プレイヤーの名札。flip すると上側の人から読める向きになる
 export function playerPanel({ name, mark, flip = false, color = '' }) {
@@ -337,5 +335,43 @@ export function woodTexture({ light = '#e9c27e', dark = '#c48d45', grain = '90,5
   }
   const url = c.toDataURL('image/jpeg', 0.85);
   woodCache.set(key, url);
+  return url;
+}
+
+// ---- 和紙テクスチャ (盤の地。canvas で一度だけ生成) ----
+
+const paperCache = new Map();
+
+export function paperTexture({ base = '#ebe4d4', fiber = '120,100,70', size = 512, seed = 5 } = {}) {
+  const key = [base, fiber, size, seed].join();
+  if (paperCache.has(key)) return paperCache.get(key);
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = base;
+  g.fillRect(0, 0, size, size);
+  let r = seed;
+  const rand = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+  // 雲のようなむら
+  for (let i = 0; i < 26; i++) {
+    const x = rand() * size, y = rand() * size, rad = 40 + rand() * 140;
+    const grd = g.createRadialGradient(x, y, 0, x, y, rad);
+    grd.addColorStop(0, `rgba(${fiber},${0.03 + rand() * 0.04})`);
+    grd.addColorStop(1, `rgba(${fiber},0)`);
+    g.fillStyle = grd;
+    g.fillRect(0, 0, size, size);
+  }
+  // 漉き込まれた繊維
+  for (let i = 0; i < 420; i++) {
+    const x = rand() * size, y = rand() * size, len = 6 + rand() * 26, a = rand() * Math.PI;
+    g.strokeStyle = `rgba(${fiber},${0.05 + rand() * 0.1})`;
+    g.lineWidth = 0.4 + rand() * 0.8;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a + 0.6) * len * 0.5, y + Math.sin(a + 0.6) * len * 0.5, x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  const url = c.toDataURL('image/jpeg', 0.86);
+  paperCache.set(key, url);
   return url;
 }

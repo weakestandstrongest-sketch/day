@@ -1,5 +1,6 @@
-import { h, s, gameShell, playerPanel, modal, showResult, toast, sfx, settings, fitBoard, stone, loadPref, savePref, confirm, ensureDefs, woodTexture } from '../ui.js';
+import { h, s, gameShell, playerPanel, modal, showResult, toast, sfx, settings, fitBoard, stone, loadPref, savePref, confirm, ensureDefs, paperTexture } from '../ui.js';
 import * as G from './gomoku-logic.js';
+import { real } from '../real/index.js';
 
 const RULES = `
 <p>縦・横・ななめのどれかに、自分の石を5つ並べたら勝ちです。</p>
@@ -26,7 +27,7 @@ export function mount(root) {
   ensureDefs();
   const size = pos(N - 1) + GAP;
   const svg = s('svg', { class: 'gomoku-board', viewBox: `0 0 ${size} ${size}` });
-  svg.append(s('image', { href: woodTexture({ light: '#ecc884', dark: '#d2a35a', seed: 11 }), x: 0, y: 0, width: size, height: size, preserveAspectRatio: 'none' }));
+  svg.append(s('image', { href: real.tex('kaya') || paperTexture({ seed: 11 }), x: 0, y: 0, width: size, height: size, preserveAspectRatio: 'none' }));
   const grid = s('g', { class: 'gk-grid' });
   for (let i = 0; i < N; i++) {
     grid.append(s('line', { x1: pos(0), y1: pos(i), x2: pos(N - 1), y2: pos(i) }));
@@ -125,6 +126,12 @@ export function mount(root) {
     state.board.forEach((v, i) => {
       if (!v) return;
       const cx = pos(i % N), cy = pos(Math.floor(i / N));
+      const art = real.stone(v === G.BLACK ? 'black' : 'white');
+      if (art) {
+        // 撮った石 (影ごと)。石の直径 9 に対して、画像は 1.44 倍
+        layer.append(s('image', { href: art, x: cx - 6.48, y: cy - 6.48, width: 12.96, height: 12.96, class: `gk-stone3 ${i === last ? 'new' : ''}` }));
+        return;
+      }
       layer.append(s('circle', { cx: cx + 0.5, cy: cy + 0.8, r: 4.5, class: 'gk-shadow' }));
       layer.append(s('circle', { cx, cy, r: 4.5, class: `gk-stone ${v === G.BLACK ? 'black' : 'white'} ${i === last ? 'new' : ''}` }));
     });
@@ -145,10 +152,11 @@ export function mount(root) {
       }
     }
     if (preview !== null) {
-      layer.append(s('circle', {
-        cx: pos(preview % N), cy: pos(Math.floor(preview / N)), r: 4.5,
-        class: `gk-stone preview ${state.turn === G.BLACK ? 'black' : 'white'}`,
-      }));
+      const art = real.stone(state.turn === G.BLACK ? 'black' : 'white');
+      const px = pos(preview % N), py = pos(Math.floor(preview / N));
+      layer.append(art
+        ? s('image', { href: art, x: px - 6.48, y: py - 6.48, width: 12.96, height: 12.96, class: 'gk-stone3 preview' })
+        : s('circle', { cx: px, cy: py, r: 4.5, class: `gk-stone preview ${state.turn === G.BLACK ? 'black' : 'white'}` }));
     }
     ruleBtn.textContent = `ルール: ${RULE_LABEL[rule]}`;
     hint.textContent = over ? `${state.moves.length}手で終局`

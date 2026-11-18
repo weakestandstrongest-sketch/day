@@ -1,5 +1,6 @@
-import { h, s, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs, woodTexture } from '../ui.js';
+import { h, s, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs, paperTexture } from '../ui.js';
 import * as S from './minishogi-logic.js';
+import { real } from '../real/index.js';
 
 const RULES = `
 <p>5×5マスの盤で遊ぶ小さな将棋です。相手の玉を詰ませたら勝ち。先手 (下側) から指します。</p>
@@ -19,6 +20,10 @@ const KOMA_SCALE = { K: 1, R: 0.97, B: 0.97, G: 0.94, S: 0.94, P: 0.88 };
 
 function komaEl(piece, extra = '') {
   const k = KOMA_SCALE[piece.t];
+  const art = real.koma(piece);
+  if (art) {
+    return h('img', { class: `koma koma3 ${piece.o ? 'gote' : 'sente'} ${piece.p ? 'promoted' : ''} ${extra}`, src: art, alt: S.pieceLabel(piece), draggable: 'false', style: { '--k': k } });
+  }
   const svg = s('svg', {
     viewBox: '0 0 100 110',
     class: `koma ${piece.o ? 'gote' : 'sente'} ${piece.p ? 'promoted' : ''} ${extra}`,
@@ -39,7 +44,7 @@ export function mount(root) {
   const bottom = playerPanel({ name: '先手', mark: komaEl({ o: 0, t: 'K', p: false }, 'avatar upright') });
   const panels = [bottom, top];
   const board = h('div', { class: 'shogi-board' });
-  const frame = h('div', { class: 'shogi-frame', style: { backgroundImage: `url(${woodTexture({ light: '#f0cf8c', dark: '#ddb066', seed: 3 })})` } }, board);
+  const frame = h('div', { class: 'shogi-frame', style: { backgroundImage: `url(${real.tex('kaya') || paperTexture({ base: '#e9dfc9', seed: 3 })})` } }, board);
   const wrap = h('div', { class: 'board-wrap' }, frame);
   ui.main.append(top.el, wrap, bottom.el);
   const unfit = fitBoard(ui.main, wrap, frame, 1.08);

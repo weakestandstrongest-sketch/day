@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>候 KŌ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="七十二候と時刻で色が移ろう、机の上に開いておくための一枚の絵。">
+<meta property="og:title" content="候 KŌ">
+<meta property="og:description" content="七十二候と時刻で色が移ろう、机の上に開いておくための一枚の絵。">
+<meta name="theme-color" content="#0b0b10">
+<link rel="icon" id="favicon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="候 KŌ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=DM+Mono:wght@300;400&family=Zen+Old+Mincho:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/asobi.css">
+<style>
+/* Layout: full-bleed living silk under a hairline frame — the clock sits low-left like a magazine cover line,
+   the current micro-season (七十二候) is set vertically on the right. A floating glass bar at the foot switches
+   between 候 and 遊 (two-player games, styled in css/asobi.css), which opens over the same silk. */
+:root {
+  --ink: #0b0b10;
+  --paper: #f4f0ea;
+  --paper-2: rgba(244, 240, 234, .64);
+  --paper-3: rgba(244, 240, 234, .32);
+  --line: rgba(244, 240, 234, .2);
+  --kc: #bb5548; /* 今日の色 — rewritten by script from the current 節気 */
+  --k-deep: #10111a; /* the 節気's silk palette, also rewritten by script; the game boards borrow it */
+  --k-mid: #8e3a33;
+  --k-light: #dfe3ea;
+  --f-display: "Bodoni Moda", "Bodoni 72", Didot, "Times New Roman", serif;
+  --f-jp: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  --f-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(.2, .7, .1, 1);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--f-mono);
+  font-weight: 300;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ───────── canvases & grain ───────── */
+.stage { position: fixed; inset: 0; background: var(--ink); }
+#silk, #weather { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#weather { pointer-events: none; }
+.grain {
+  position: absolute; inset: -50%;
+  pointer-events: none;
+  opacity: .16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: grain 1.2s steps(5) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -4%); } 60% { transform: translate(-4%, -1%); }
+  80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
+}
+.shade {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 0% 100%, rgba(5, 5, 10, .45), transparent 60%),
+    radial-gradient(80% 60% at 100% 0%, rgba(5, 5, 10, .25), transparent 60%);
+}
+
+/* ───────── frame ───────── */
+.frame {
+  position: relative; z-index: 3;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "top top"
+    "clock ko"
+    "en ko"
+    "bottom bottom";
+  column-gap: clamp(16px, 4vw, 64px);
+  row-gap: clamp(10px, 2vh, 24px);
+  padding-top: clamp(22px, 4vh, 44px);
+  padding-bottom: calc(var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px)) + 92px); /* room for the tab bar */
+  padding-left: max(clamp(22px, 4vw, 56px), var(--hibi-sa-left, env(safe-area-inset-left, 0px)));
+  padding-right: max(clamp(22px, 4vw, 56px), var(--hibi-sa-right, env(safe-area-inset-right, 0px)));
+  overflow: hidden;
+  overflow: clip;
+  transition: opacity 1.2s var(--ease), filter 1.2s var(--ease);
+  text-shadow: 0 0 40px rgba(0, 0, 0, .25);
+}
+.frame::before {
+  content: ""; position: absolute; pointer-events: none;
+  inset: clamp(8px, 1.4vw, 18px);
+  border: 1px solid var(--line);
+}
+.frame.is-hidden { opacity: 0; filter: blur(10px); pointer-events: none; }
+
+.label {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--paper-2);
+}
+
+/* top */
+.top {
+  grid-area: top;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 8px 24px;
+}
+.mark { display: flex; align-items: baseline; gap: .6em; }
+.mark b { font-family: var(--f-jp); font-weight: 700; font-size: 22px; letter-spacing: 0; color: var(--paper); text-transform: none; }
+.jdate { font-family: var(--f-jp); font-size: 13px; letter-spacing: .3em; color: var(--paper-2); }
+.index { text-align: right; }
+.index .is-preview { color: var(--paper); }
+
+/* clock */
+.clock-wrap { grid-area: clock; align-self: end; min-width: 0; display: grid; gap: clamp(10px, 2vh, 22px); }
+.clock {
+  /* Safari can paint text into a layer cut to each box's edges, and Bodoni's italic figures reach well past
+     theirs (the 7 overhangs right, every figure rises above the tight line-height). Each box below is
+     padded out past the ink and pulled back with an equal negative margin, so layout is unchanged but
+     no clip ever touches a glyph. Nothing inside the clock is transformed or animated for the same reason. */
+  margin: -.24em -.3em -.06em -.12em;
+  padding: .24em .3em .06em .12em;
+  will-change: transform; /* its own cached layer, sized to the padded box: rain redraws no longer repaint the figures */
+  font-family: var(--f-display);
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: "opsz" 96;
+  font-size: min(20vw, 36vh);
+  line-height: .74;
+  letter-spacing: 0;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+/* each figure sits in its own fixed cell, so italic overhangs never touch and the clock doesn't shift as digits change */
+.clock .n { display: inline-block; width: .64em; text-align: center; font-style: inherit; padding: .24em .2em .06em; margin: -.24em -.2em -.06em; box-sizing: content-box; }
+.clock .colon { display: inline-block; width: .3em; text-align: center; font-style: normal; position: relative; top: -.06em; opacity: .9; }
+.clock .ss {
+  display: inline-block;
+  vertical-align: top;
+  margin-left: .2em;
+  font-family: var(--f-mono);
+  font-style: normal;
+  font-size: max(11px, .1em);
+  letter-spacing: .1em;
+  color: var(--paper-2);
+  position: relative;
+  top: .9em;
+}
+/* the box is padded past the glyphs' ascenders so nothing is ever clipped when the page repaints */
+.digit { display: inline-block; padding: .24em .2em .06em; margin: -.24em -.2em -.06em; }
+.clock-wrap { animation: rise-d 1.8s var(--ease) backwards .1s; }
+
+.intent { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2em .8em; max-width: 46rem; }
+.intent .label { flex: none; }
+#intent {
+  font-family: var(--f-display);
+  font-style: italic;
+  font-size: clamp(1.3rem, 2.6vw, 2.2rem);
+  font-variation-settings: "opsz" 40;
+  line-height: 1.15;
+  color: var(--paper);
+  outline: none;
+  min-width: 4ch;
+  border-bottom: 1px solid transparent;
+  transition: border-color .4s;
+  overflow-wrap: anywhere;
+}
+#intent:hover, #intent:focus { border-bottom-color: var(--paper-3); }
+#intent:empty::before { content: "いま、何をしていますか"; color: var(--paper-3); font-family: var(--f-jp); font-style: normal; font-size: .7em; }
+
+/* vertical micro-season */
+.ko {
+  grid-area: ko;
+  align-self: center; justify-self: end;
+  writing-mode: vertical-rl;
+  display: flex; flex-direction: column; align-items: flex-start; gap: clamp(10px, 1.6vw, 22px);
+}
+.seal {
+  font-family: var(--f-jp); font-weight: 700;
+  font-size: 12px; letter-spacing: .2em;
+  padding: 10px 5px;
+  white-space: nowrap;
+  background: var(--kc);
+  color: var(--paper);
+  text-shadow: none;
+  transition: background 1.6s var(--ease);
+}
+.ko-name {
+  margin: 0;
+  font-family: var(--f-jp);
+  font-weight: 400;
+  font-size: min(13vh, 8.4vw);
+  line-height: 1;
+  letter-spacing: .14em;
+  white-space: nowrap;
+}
+.ko-name.brush { animation: brush 2.6s var(--ease) backwards .3s; }
+.ko-read {
+  font-family: var(--f-jp);
+  font-size: clamp(12px, 1.6vh, 15px);
+  letter-spacing: .5em;
+  color: var(--paper-2);
+  white-space: nowrap;
+  padding-top: .4em;
+}
+
+/* english / sekki notes */
+.en { grid-area: en; display: grid; gap: 8px; max-width: 34rem; animation: rise 1.8s var(--ease) backwards .5s; }
+.en em {
+  font-family: var(--f-display);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-variation-settings: "opsz" 24;
+  color: var(--paper);
+}
+.en .row { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.swatch { display: inline-flex; align-items: center; gap: 8px; }
+.swatch i { width: 10px; height: 10px; border-radius: 50%; background: var(--kc); box-shadow: 0 0 0 1px var(--line); transition: background 1.6s var(--ease); }
+.swatch span { font-family: var(--f-jp); letter-spacing: .2em; text-transform: none; }
+
+/* bottom */
+.bottom {
+  grid-area: bottom;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px clamp(14px, 2.4vw, 32px);
+  padding-top: clamp(4px, 1vh, 12px);
+}
+.frame button, .restore {
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background .3s, border-color .3s;
+}
+.frame button:hover, .restore:hover { background: rgba(244, 240, 234, .08); border-color: var(--paper-3); }
+.frame button:focus-visible, .restore:focus-visible, #intent:focus-visible, .tabbar a:focus-visible { outline: 1px solid var(--paper); outline-offset: 3px; }
+.frame button.is-on { background: var(--paper); color: var(--ink); border-color: var(--paper); text-shadow: none; }
+.nav { display: flex; align-items: center; gap: 6px; }
+.nav button { padding: 9px 11px; }
+#nowBtn { font-family: var(--f-jp); letter-spacing: 0; }
+.hints { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--paper-3); }
+
+.restore {
+  position: fixed; z-index: 4;
+  right: calc(18px + var(--hibi-sa-right, env(safe-area-inset-right, 0px)));
+  bottom: calc(18px + var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px)));
+  opacity: .5;
+}
+
+/* ───────── motion ───────── */
+@keyframes rise { from { opacity: 0; transform: translateY(.22em); filter: blur(10px); } }
+@keyframes rise-d { from { opacity: 0; transform: translateY(.22em); } }
+@keyframes brush { from { clip-path: inset(0 0 100% 0); filter: blur(6px); } to { clip-path: inset(0 0 0 0); } }
+
+/* ───────── narrow screens ───────── */
+@media (max-width: 720px) {
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "top" "ko" "clock" "en" "bottom";
+  }
+  .ko { align-self: start; padding-top: 2vh; }
+  .ko-name { font-size: min(10vh, 15vw); }
+  .clock { font-size: min(25vw, 22vh); }
+  .jdate { order: 3; flex-basis: 100%; }
+  .hints { display: none; }
+  .bottom { justify-items: end; }
+}
+@media (max-height: 520px) and (min-width: 721px) {
+  .hints { display: none; }
+}
+
+
+/* ───────── tab bar — the floating glass pill from Jam: the highlight slides on a spring and squishes like jelly ───────── */
+.tabbar {
+  position: fixed; z-index: 15;
+  left: 50%; bottom: calc(14px + var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px)));
+  width: 208px; height: 62px; padding: 4px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-radius: 31px;
+  background: rgba(14, 14, 20, .42);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .38), inset 0 0 0 .5px rgba(244, 240, 234, .3), inset 0 1px 0 rgba(255, 255, 255, .16);
+  transform: translateX(-50%);
+  transition: transform .55s var(--ease), opacity .4s var(--ease);
+  animation: bar-in 1.2s var(--ease) backwards .7s;
+}
+.tabbar.is-gone { transform: translate(-50%, 150%); opacity: 0; pointer-events: none; }
+@keyframes bar-in { from { opacity: 0; transform: translate(-50%, 60%); } }
+.tab-pill {
+  position: absolute; top: 4px; bottom: 4px; left: 4px;
+  width: calc((100% - 8px) / 2);
+  transform: translateX(calc(var(--tab, 0) * 100%));
+  transition: transform 620ms cubic-bezier(.34, 1.45, .5, 1);
+  pointer-events: none;
+}
+.tab-pill i {
+  display: block; width: 100%; height: 100%;
+  border-radius: 999px;
+  background: rgba(244, 240, 234, .13);
+  box-shadow: inset 0 0 0 .5px rgba(244, 240, 234, .32);
+}
+.tab-pill i.jelly { animation: jelly 560ms cubic-bezier(.3, .9, .4, 1) both; }
+@keyframes jelly {
+  0% { transform: scale(1, 1); }
+  28% { transform: scale(1.32, .84); }
+  58% { transform: scale(.94, 1.1); }
+  80% { transform: scale(1.03, .98); }
+  100% { transform: scale(1, 1); }
+}
+.tabbar a {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border-radius: 999px;
+  color: var(--paper-3);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .3s, transform .2s;
+}
+.tabbar a b { font-family: var(--f-jp); font-weight: 400; font-size: 20px; line-height: 1; }
+.tabbar a small { font-family: var(--f-mono); font-size: 9px; letter-spacing: .24em; text-transform: uppercase; }
+.tabbar a[aria-current] { color: var(--paper); }
+.tabbar a:active { transform: scale(.9); }
+body.pre .tabbar { animation-play-state: paused; }
+
+/* while 遊 is open, the 候 frame steps back and only the silk shows through */
+.frame { transition: opacity .6s var(--ease), filter 1.2s var(--ease), visibility 0s; }
+body[data-view="asobi"] .frame, body[data-view="game"] .frame,
+body[data-view="asobi"] .restore, body[data-view="game"] .restore { opacity: 0; visibility: hidden; transition: opacity .4s var(--ease), visibility 0s .4s; }
+
+/* ───────── opening — a hairline is drawn, a seal is pressed, then the fusuma slide apart ───────── */
+.top { animation: rise 1.6s var(--ease) backwards .15s; }
+.bottom { animation: rise 1.6s var(--ease) backwards .55s; }
+.seal, .ko-read { animation: rise 1.6s var(--ease) backwards 1s; }
+body.pre .clock-wrap, body.pre .en, body.pre .ko-name, body.pre .top, body.pre .bottom,
+body.pre .seal, body.pre .ko-read { animation-play-state: paused; }
+
+.intro { position: fixed; inset: 0; z-index: 20; cursor: pointer; }
+.door {
+  position: absolute; top: 0; bottom: 0; width: 50.2%;
+  background: var(--ink);
+  overflow: hidden;
+  transition: transform 1.5s cubic-bezier(.77, 0, .18, 1);
+}
+.door.l { left: 0; }
+.door.r { right: 0; }
+.intro.open .door.l { transform: translateX(-101%); }
+.intro.open .door.r { transform: translateX(101%); }
+.intro.open .door.r { transition-delay: .06s; }
+
+.i-line {
+  position: absolute; left: 50%; top: 16%; height: 68%; width: 1px;
+  margin-left: -.5px;
+  background: var(--paper);
+  transform-origin: top;
+  animation: draw 1.1s cubic-bezier(.7, 0, .2, 1) both .2s;
+}
+.intro.open .i-line { animation: flare .7s var(--ease) both; }
+@keyframes draw { from { transform: scaleY(0); } }
+@keyframes flare {
+  0% { box-shadow: 0 0 0 0 rgba(244, 240, 234, 0); }
+  30% { box-shadow: 0 0 40px 6px rgba(244, 240, 234, .55); opacity: 1; }
+  100% { box-shadow: 0 0 80px 30px rgba(244, 240, 234, 0); opacity: 0; transform: scaleY(1.3); }
+}
+
+.i-name {
+  position: absolute; top: 16%; right: clamp(22px, 3.2vw, 48px);
+  writing-mode: vertical-rl;
+  display: flex; flex-direction: column; align-items: flex-start; gap: clamp(10px, 1.4vw, 18px);
+}
+.i-name b {
+  font-family: var(--f-jp); font-weight: 400;
+  font-size: clamp(30px, 6vh, 60px); letter-spacing: .28em; line-height: 1; white-space: nowrap;
+}
+.i-name b span { display: inline-block; animation: ink 1.1s var(--ease) both; animation-delay: calc(1.05s + var(--i) * .14s); }
+.i-name small {
+  font-family: var(--f-jp); font-size: 11px; letter-spacing: .5em; color: var(--paper-2); white-space: nowrap;
+  animation: fade 1.2s ease both 1.7s;
+}
+@keyframes ink { from { opacity: 0; filter: blur(10px); transform: translateY(-.25em); } }
+@keyframes fade { from { opacity: 0; } }
+
+.i-seal {
+  position: absolute; top: 16%; left: clamp(18px, 2.4vw, 34px);
+  writing-mode: vertical-rl;
+  font-family: var(--f-jp); font-weight: 700; font-size: 13px; letter-spacing: .2em;
+  padding: 12px 6px;
+  background: var(--kc); color: var(--paper);
+  animation: stamp .5s cubic-bezier(.3, 1.6, .5, 1) both .85s;
+}
+.i-seal::after {
+  content: ""; position: absolute; inset: -6px;
+  border: 1px solid var(--kc);
+  animation: ripple 1.2s var(--ease) both 1.05s;
+}
+@keyframes stamp { from { opacity: 0; transform: scale(1.8) rotate(-9deg); filter: blur(4px); } to { transform: rotate(-2deg); } }
+@keyframes ripple { from { opacity: .9; transform: scale(.8); } to { opacity: 0; transform: scale(1.9); } }
+
+.i-meta {
+  position: absolute; bottom: 16%;
+  font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--paper-2);
+  white-space: nowrap;
+  animation: fade 1.2s ease both 1.5s;
+}
+.door.l .i-meta { right: clamp(22px, 3.2vw, 48px); text-align: right; }
+.door.r .i-meta { left: clamp(18px, 2.4vw, 34px); }
+.i-meta em { display: block; font-family: var(--f-display); font-style: italic; font-size: clamp(22px, 3.4vh, 34px); letter-spacing: 0; text-transform: none; color: var(--paper); margin-bottom: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body class="pre">
+
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="door l">
+    <div class="grain"></div>
+    <div class="i-name"><b id="iName"></b><small id="iRead"></small></div>
+    <div class="i-meta" id="iDate"></div>
+  </div>
+  <div class="door r">
+    <div class="grain"></div>
+    <div class="i-seal" id="iSeal">一</div>
+    <div class="i-meta" id="iSekki"></div>
+  </div>
+  <div class="i-line"></div>
+</div>
+
+<div class="stage" id="stage">
+  <canvas id="silk" aria-hidden="true"></canvas>
+  <canvas id="weather" aria-hidden="true"></canvas>
+  <div class="shade"></div>
+  <div class="grain"></div>
+</div>
+
+<main class="frame" id="frame">
+  <header class="top">
+    <div class="mark label"><b>候</b>Kō — seventy-two seasons</div>
+    <div class="jdate" id="jdate">令和八年 十月二十九日 木曜</div>
+    <div class="index label" id="index">No. 53 / 72</div>
+  </header>
+
+  <section class="clock-wrap" aria-label="現在時刻と、いまやっていること">
+    <p class="clock" id="clock" aria-live="off"><span class="digit" style="--d:.1s" id="hh"><i class="n">1</i><i class="n">0</i></span><span class="colon">:</span><span class="digit" style="--d:.3s" id="mm"><i class="n">5</i><i class="n">7</i></span><span class="ss" id="ss">32</span></p>
+    <p class="intent">
+      <span class="label">Now, I am</span>
+      <span id="intent" contenteditable="true" spellcheck="false" role="textbox" aria-label="いまやっていること">studying, quietly.</span>
+    </p>
+  </section>
+
+  <aside class="ko" aria-live="polite">
+    <span class="seal" id="seal">五十三</span>
+    <h1 class="ko-name brush" id="koName">霎時施</h1>
+    <span class="ko-read" id="koRead">こさめときどきふる</span>
+  </aside>
+
+  <section class="en">
+    <em id="koEn">Light rains sometimes fall</em>
+    <div class="row label">
+      <span id="sekki">霜降 Sōkō · Frost descends</span>
+      <span id="koDates">Oct 28 — Nov 1 · day 2 of 5</span>
+    </div>
+    <div class="row label">
+      <span class="swatch"><i></i><span id="colorJp">紅葉</span><b id="colorEn" style="font-weight:300">Momiji #BB5548</b></span>
+    </div>
+  </section>
+
+  <footer class="bottom">
+    <div class="hints label">
+      <span>← → — seasons</span><span>H — hide</span><span>F — fullscreen</span><span>1 / 2 — 候 / 遊</span>
+    </div>
+    <nav class="nav" aria-label="季節をめくる">
+      <button id="prevBtn" type="button" aria-label="前の候">←</button>
+      <button id="nowBtn" type="button" aria-label="今の候に戻る">今</button>
+      <button id="nextBtn" type="button" aria-label="次の候">→</button>
+      <button id="hideBtn" type="button">Hide</button>
+    </nav>
+  </footer>
+</main>
+
+<button class="restore" id="restoreBtn" type="button" hidden>Show</button>
+
+<section class="asobi-view" id="asobi" aria-label="あそび" hidden>
+  <div id="app"></div>
+</section>
+
+<nav class="tabbar" id="tabbar" aria-label="候と遊を切り替える">
+  <span class="tab-pill" aria-hidden="true"><i></i></span>
+  <a href="#ko" aria-current="page"><b>候</b><small>Kō</small></a>
+  <a href="#asobi"><b>遊</b><small>Asobi</small></a>
+</nav>
+
+<script>
+(() => {
+  "use strict";
+
+  // ───────── 二十四節気 — name, romaji, english, 伝統色 (name, romaji, hex), silk palette deep / mid / light
+  const SEKKI = [
+    ["立春","Risshun","Beginning of spring","梅鼠","Umenezumi","#9E7A7A",["#1d1418","#7d5a5e","#e3c8c6"]],
+    ["雨水","Usui","Rainwater","白藍","Shiroai","#C1E4E9",["#0f1c24","#3f6f80","#c1e4e9"]],
+    ["啓蟄","Keichitsu","Insects awaken","萌黄","Moegi","#AAB838",["#121a0e","#5f7a2a","#dce6a8"]],
+    ["春分","Shunbun","Spring equinox","桃","Momo","#F09199",["#22121a","#b55a6a","#f6c3c8"]],
+    ["清明","Seimei","Pure and clear","薄桜","Usuzakura","#FDEFF2",["#1e1823","#94708a","#fdeff2"]],
+    ["穀雨","Kokuu","Grain rain","藤","Fuji","#BBBCDE",["#14132a","#5f5ca0","#d6d4ef"]],
+    ["立夏","Rikka","Beginning of summer","若竹","Wakatake","#68BE8D",["#0b1d16","#2f7a56","#bfe5cf"]],
+    ["小満","Shōman","Lesser ripening","紅","Kurenai","#D7003A",["#1c060c","#a3163a","#f0bcc6"]],
+    ["芒種","Bōshu","Grain beards and seeds","青竹","Aotake","#7EBEA5",["#0a1c1b","#2f7569","#cfe8df"]],
+    ["夏至","Geshi","Summer solstice","菖蒲","Shōbu","#674196",["#110a1f","#58378a","#cdb8e6"]],
+    ["小暑","Shōsho","Lesser heat","瓶覗","Kamenozoki","#A2D7DD",["#08161d","#2f7a8e","#d5eef1"]],
+    ["大暑","Taisho","Greater heat","向日葵","Himawari","#FCC800",["#1f1306","#b8780c","#f8e09a"]],
+    ["立秋","Risshū","Beginning of autumn","浅葱","Asagi","#00A3AF",["#03141a","#086a75","#bfe7ea"]],
+    ["処暑","Shosho","Manageable heat","女郎花","Ominaeshi","#D8D27A",["#17170c","#8f8538","#efecbe"]],
+    ["白露","Hakuro","White dew","露草","Tsuyukusa","#38A1DB",["#081422","#245f95","#cfe6f5"]],
+    ["秋分","Shūbun","Autumn equinox","竜胆","Rindō","#9079AD",["#120e22","#5f4a8a","#dcd2ea"]],
+    ["寒露","Kanro","Cold dew","柿","Kaki","#ED6D3D",["#200c07","#a8431f","#f4c7b0"]],
+    ["霜降","Sōkō","Frost descends","紅葉","Momiji","#BB5548",["#10111a","#8e3a33","#dfe3ea"]],
+    ["立冬","Rittō","Beginning of winter","臙脂","Enji","#B94047",["#160a0d","#80262f","#ecc7c9"]],
+    ["小雪","Shōsetsu","Lesser snow","鉛","Namari","#7B8D98",["#0e1316","#4a5a64","#d3dde3"]],
+    ["大雪","Taisetsu","Greater snow","藍","Ai","#165E83",["#050f17","#14506f","#e6eef3"]],
+    ["冬至","Tōji","Winter solstice","柚子","Yuzu","#F2C14E",["#090c18","#8f6a1e","#f5e2a6"]],
+    ["小寒","Shōkan","Lesser cold","鉄紺","Tetsukon","#17184B",["#06071a","#262a6e","#c8c9ea"]],
+    ["大寒","Daikan","Greater cold","白鼠","Shironezumi","#DCDDDD",["#0d0e11","#555b68","#e8eaee"]],
+  ];
+
+  // ───────── 七十二候 (略本暦) — kanji | reading | english | start month | start day. Three per 節気, in order.
+  const KO = `東風解凍|はるかぜこおりをとく|East wind melts the ice|2|4
+黄鶯睍睆|うぐいすなく|Bush warblers start singing|2|9
+魚上氷|うおこおりをいずる|Fish emerge from the ice|2|14
+土脉潤起|つちのしょううるおいおこる|Rain moistens the soil|2|19
+霞始靆|かすみはじめてたなびく|Mist starts to linger|2|24
+草木萌動|そうもくめばえいずる|Grass sprouts, trees bud|3|1
+蟄虫啓戸|すごもりむしとをひらく|Hibernating insects surface|3|6
+桃始笑|ももはじめてさく|First peach blossoms|3|11
+菜虫化蝶|なむしちょうとなる|Caterpillars become butterflies|3|16
+雀始巣|すずめはじめてすくう|Sparrows start to nest|3|21
+桜始開|さくらはじめてひらく|First cherry blossoms|3|26
+雷乃発声|かみなりすなわちこえをはっす|Distant thunder|3|31
+玄鳥至|つばめきたる|Swallows return|4|5
+鴻雁北|こうがんかえる|Wild geese fly north|4|10
+虹始見|にじはじめてあらわる|First rainbows|4|15
+葭始生|あしはじめてしょうず|First reeds sprout|4|20
+霜止出苗|しもやんでなえいずる|Last frost, rice seedlings grow|4|25
+牡丹華|ぼたんはなさく|Peonies bloom|4|30
+蛙始鳴|かわずはじめてなく|Frogs start singing|5|5
+蚯蚓出|みみずいずる|Worms surface|5|10
+竹笋生|たけのこしょうず|Bamboo shoots sprout|5|15
+蚕起食桑|かいこおきてくわをはむ|Silkworms feast on mulberry|5|21
+紅花栄|べにばなさかう|Safflowers bloom|5|26
+麦秋至|むぎのときいたる|Wheat ripens and is harvested|5|31
+蟷螂生|かまきりしょうず|Praying mantises hatch|6|6
+腐草為螢|くされたるくさほたるとなる|Rotten grass becomes fireflies|6|11
+梅子黄|うめのみきばむ|Plums turn yellow|6|16
+乃東枯|なつかれくさかるる|Self-heal withers|6|21
+菖蒲華|あやめはなさく|Irises bloom|6|26
+半夏生|はんげしょうず|Crow-dipper sprouts|7|2
+温風至|あつかぜいたる|Warm winds blow|7|7
+蓮始開|はすはじめてひらく|First lotus blossoms|7|12
+鷹乃学習|たかすなわちわざをならう|Hawks learn to fly|7|17
+桐始結花|きりはじめてはなをむすぶ|Paulownia trees bear seeds|7|23
+土潤溽暑|つちうるおうてむしあつし|Earth is damp, air is humid|7|28
+大雨時行|たいうときどきふる|Great rains sometimes fall|8|2
+涼風至|すずかぜいたる|Cool winds blow|8|7
+寒蝉鳴|ひぐらしなく|Evening cicadas sing|8|13
+蒙霧升降|ふかききりまとう|Thick fog descends|8|18
+綿柎開|わたのはなしべひらく|Cotton flowers bloom|8|23
+天地始粛|てんちはじめてさむし|Heat starts to die down|8|28
+禾乃登|こくものすなわちみのる|Rice ripens|9|2
+草露白|くさのつゆしろし|Dew glistens white on grass|9|7
+鶺鴒鳴|せきれいなく|Wagtails sing|9|12
+玄鳥去|つばめさる|Swallows leave|9|17
+雷乃収声|かみなりすなわちこえをおさむ|Thunder ceases|9|23
+蟄虫坏戸|むしかくれてとをふさぐ|Insects hole up underground|9|28
+水始涸|みずはじめてかるる|Farmers drain the fields|10|3
+鴻雁来|こうがんきたる|Wild geese return|10|8
+菊花開|きくのはなひらく|Chrysanthemums bloom|10|13
+蟋蟀在戸|きりぎりすとにあり|Crickets chirp by the door|10|18
+霜始降|しもはじめてふる|First frost|10|23
+霎時施|こさめときどきふる|Light rains sometimes fall|10|28
+楓蔦黄|もみじつたきばむ|Maple and ivy turn yellow|11|2
+山茶始開|つばきはじめてひらく|Camellias bloom|11|7
+地始凍|ちはじめてこおる|Land starts to freeze|11|12
+金盞香|きんせんかさく|Daffodils bloom|11|17
+虹蔵不見|にじかくれてみえず|Rainbows hide|11|22
+朔風払葉|きたかぜこのはをはらう|North wind strips the leaves|11|27
+橘始黄|たちばなはじめてきばむ|Tachibana citrus turns yellow|12|2
+閉塞成冬|そらさむくふゆとなる|Cold sets in, winter begins|12|7
+熊蟄穴|くまあなにこもる|Bears retreat to their dens|12|12
+鱖魚群|さけのうおむらがる|Salmon gather and swim upstream|12|16
+乃東生|なつかれくさしょうず|Self-heal sprouts|12|21
+麋角解|さわしかのつのおつる|Deer shed their antlers|12|26
+雪下出麦|ゆきわたりてむぎのびる|Wheat sprouts under the snow|12|31
+芹乃栄|せりすなわちさかう|Parsley flourishes|1|5
+水泉動|しみずあたたかをふくむ|Springs thaw|1|10
+雉始雊|きじはじめてなく|Pheasants start to call|1|15
+款冬華|ふきのはなさく|Butterburs bud|1|20
+水沢腹堅|さわみずこおりつめる|Ice thickens on the streams|1|25
+鶏始乳|にわとりはじめてとやにつく|Hens start laying eggs|1|30`
+    .split("\n").map(l => { const [k, r, e, m, d] = l.split("|"); return { k, r, e, m: +m, d: +d }; });
+
+  // What falls across the screen during each 候 (1-based numbers). Everything else gets drifting motes.
+  const WEATHER = {};
+  [4, 12, 27, 36, 53].forEach(n => WEATHER[n] = "rain");
+  [61, 62, 66, 71].forEach(n => WEATHER[n] = "snow");
+  [8, 11, 18].forEach(n => WEATHER[n] = "petals");
+  [26, 32].forEach(n => WEATHER[n] = "fireflies");
+  [54, 59].forEach(n => WEATHER[n] = "leaves");
+  [43, 52, 56].forEach(n => WEATHER[n] = "frost");
+
+  const $ = id => document.getElementById(id);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const store = {
+    get(k, f) { try { const v = localStorage.getItem(k); return v === null ? f : v; } catch { return f; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+
+  const KJ = "〇一二三四五六七八九";
+  const kj = n => n < 10 ? KJ[n] : (n >= 20 ? KJ[Math.floor(n / 10)] : "") + "十" + (n % 10 ? KJ[n % 10] : "");
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const pad = n => String(n).padStart(2, "0");
+  const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const DAY = 864e5;
+
+  // the 候 that contains `date`, with its real start and end
+  function koAt(date) {
+    const t = midnight(date);
+    let best = null;
+    for (const y of [t.getFullYear() - 1, t.getFullYear()])
+      KO.forEach((k, i) => {
+        const s = new Date(y, k.m - 1, k.d);
+        if (s <= t && (!best || s > best.start)) best = { i, start: s };
+      });
+    return best;
+  }
+  function span(i, year) {
+    const k = KO[i], n = KO[(i + 1) % 72];
+    const start = new Date(year, k.m - 1, k.d);
+    let next = new Date(year, n.m - 1, n.d);
+    if (next <= start) next = new Date(year + 1, n.m - 1, n.d);
+    return { start, end: new Date(next - DAY), len: Math.round((next - start) / DAY) };
+  }
+
+  // ───────── state
+  let offset = 0;           // browsing other 候 with ← →
+  let shownIndex = -1;
+  const hex3 = h => [1, 3, 5].map(o => parseInt(h.slice(o, o + 2), 16) / 255);
+  const pal = { cur: null, target: null };
+
+  function render(force) {
+    const now = new Date();
+    const here = koAt(now);
+    const i = ((here.i + offset) % 72 + 72) % 72;
+    if (i === shownIndex && !force) return;
+    shownIndex = i;
+
+    const k = KO[i], s = SEKKI[Math.floor(i / 3)];
+    const sp = span(i, offset === 0 ? here.start.getFullYear() : now.getFullYear());
+    $("seal").textContent = kj(i + 1);
+    const name = $("koName");
+    name.textContent = k.k;
+    name.classList.remove("brush"); void name.offsetWidth; name.classList.add("brush");
+    $("koRead").textContent = k.r;
+    $("koEn").textContent = k.e;
+    $("sekki").textContent = `${s[0]} ${s[1]} · ${s[2]}`;
+    const range = `${MON[sp.start.getMonth()]} ${sp.start.getDate()} — ${MON[sp.end.getMonth()]} ${sp.end.getDate()}`;
+    $("koDates").textContent = offset === 0
+      ? `${range} · day ${Math.floor((midnight(now) - here.start) / DAY) + 1} of ${sp.len}`
+      : `${range} · ${sp.len} days`;
+    $("colorJp").textContent = s[3];
+    $("colorEn").textContent = `${s[4]} ${s[5]}`;
+    $("index").innerHTML = offset === 0
+      ? `No. ${i + 1} / 72`
+      : `<span class="is-preview">Preview</span> · No. ${i + 1} / 72`;
+    $("nowBtn").classList.toggle("is-on", offset !== 0);
+    const root = document.documentElement.style;
+    root.setProperty("--kc", s[5]);
+    root.setProperty("--k-deep", s[6][0]);
+    root.setProperty("--k-mid", s[6][1]);
+    root.setProperty("--k-light", s[6][2]);
+    if (offset === 0) setFavicon(s);
+
+    pal.target = s[6].map(hex3);
+    if (!pal.cur) pal.cur = pal.target.map(c => c.slice());
+    weather.set(WEATHER[i + 1] || "motes", s);
+  }
+
+  // tab icon: one hairline and a seal on this season's silk (design B)
+  function setFavicon(s) {
+    const [d, m] = s[6], k = s[5];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="a" cx=".25" cy=".2" r="1"><stop offset="0" stop-color="${m}"/><stop offset="1" stop-color="${d}"/></radialGradient><radialGradient id="b" cx=".85" cy=".9" r=".7"><stop offset="0" stop-color="${k}" stop-opacity=".9"/><stop offset="1" stop-color="${k}" stop-opacity="0"/></radialGradient></defs><rect width="100" height="100" fill="url(#a)"/><rect width="100" height="100" fill="url(#b)"/><line x1="50" y1="16" x2="50" y2="84" stroke="#f4f0ea" stroke-width="6"/><rect x="58" y="16" width="12" height="19" fill="${k}"/></svg>`;
+    $("favicon").href = "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+
+  // ───────── clock
+  let lastSec = -1;
+  const setDigits = (el, v) => [...el.children].forEach((c, i) => { if (c.textContent !== v[i]) c.textContent = v[i]; });
+  function tickClock(now) {
+    if (now.getSeconds() === lastSec) return;
+    lastSec = now.getSeconds();
+    setDigits($("hh"), pad(now.getHours()));
+    setDigits($("mm"), pad(now.getMinutes()));
+    $("ss").textContent = pad(now.getSeconds());
+    const y = now.getFullYear();
+    $("jdate").textContent =
+      `令和${kj(y - 2018)}年 ${kj(now.getMonth() + 1)}月${kj(now.getDate())}日 ${"日月火水木金土"[now.getDay()]}曜`;
+    if (lastSec === 0) render(false); // the 候 can turn over at midnight
+  }
+
+  // ───────── intention
+  const intent = $("intent");
+  intent.textContent = store.get("ko-intent", "studying, quietly.");
+  intent.addEventListener("input", () => store.set("ko-intent", intent.textContent));
+  intent.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); intent.blur(); } });
+  intent.addEventListener("paste", e => {
+    e.preventDefault();
+    document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text").replace(/\s+/g, " "));
+  });
+
+  // ───────── navigation & visibility
+  const go = d => { offset = d === 0 ? 0 : offset + d; render(true); };
+  $("prevBtn").addEventListener("click", () => go(-1));
+  $("nextBtn").addEventListener("click", () => go(1));
+  $("nowBtn").addEventListener("click", () => go(0));
+
+  const frame = $("frame"), restore = $("restoreBtn");
+  function setHidden(h) {
+    frame.classList.toggle("is-hidden", h);
+    restore.hidden = !h;
+  }
+  $("hideBtn").addEventListener("click", () => setHidden(true));
+  restore.addEventListener("click", () => setHidden(false));
+  $("stage").addEventListener("click", () => { if (frame.classList.contains("is-hidden")) setHidden(false); });
+
+  function fullscreen() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    } catch {}
+  }
+
+  addEventListener("keydown", e => {
+    if (!opened) { e.preventDefault(); openIntro(); return; }
+    if (document.activeElement === intent || e.metaKey || e.ctrlKey || e.altKey) return;
+    const view = document.body.dataset.view || "ko";
+    if (view === "game") return; // the games own the keyboard
+    if (e.key === "1") { location.hash = "#ko"; return; }
+    if (e.key === "2") { location.hash = "#asobi"; return; }
+    if (view !== "ko") return;
+    if (e.key === "h" || e.key === "H") setHidden(!frame.classList.contains("is-hidden"));
+    else if (e.key === "f" || e.key === "F") fullscreen();
+    else if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === "ArrowRight") go(1);
+    else if (e.key === "Escape" || e.key === "0") { go(0); setHidden(false); }
+  });
+
+  // ───────── silk (WebGL)
+  const silk = { gl: null, prog: null, u: {}, t0: performance.now(), fade: 0, pulse: 0, mouse: [0, 0], mt: [0, 0], last: 0 };
+  (function initSilk() {
+    const c = $("silk");
+    const gl = c.getContext("webgl", { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: true });
+    if (!gl) return;
+    const vs = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }`;
+    const fs = `
+      precision highp float;
+      uniform vec2 R; uniform float T, DAY, FADE, PULSE; uniform vec2 M;
+      uniform vec3 C0, C1, C2;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float n(vec2 p){
+        vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+        return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y);
+      }
+      float fbm(vec2 p){
+        float v = 0., a = .5;
+        mat2 r = mat2(.8, .6, -.6, .8);
+        for (int i = 0; i < 5; i++) { v += a*n(p); p = r*p*2.02 + 3.1; a *= .5; }
+        return v;
+      }
+      void main(){
+        vec2 p = (gl_FragCoord.xy - .5*R) / min(R.x, R.y);
+        float t = T * .035;
+        vec2 q = vec2(fbm(p*1.3 + vec2(0., t)), fbm(p*1.3 + vec2(5.2, 1.3) - t));
+        vec2 r = vec2(fbm(p*1.5 + 3.2*q + vec2(1.7, 9.2) + t*1.6 + M*.35),
+                      fbm(p*1.5 + 3.2*q + vec2(8.3, 2.8) - t*1.1));
+        float f = fbm(p*1.15 + 3.6*r);
+        float folds = pow(.5 + .5*sin(f*10. + r.x*7. - T*.12), 7.);
+        vec3 col = mix(C0, C1, smoothstep(.18, .82, f));
+        col = mix(col, C2, smoothstep(.62, 1.05, length(r)) * (.3 + .35*DAY));
+        col += C2 * folds * (.10 + .12*DAY);
+        col = mix(col, C0, smoothstep(.55, .95, q.y) * .55);
+        col *= mix(.5, .92, DAY) + PULSE*.35;
+        col *= 1. - .5*dot(p*.75, p*.75);
+        gl_FragColor = vec4(col * FADE, 1.);
+      }`;
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "p");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    ["R", "T", "DAY", "FADE", "PULSE", "M", "C0", "C1", "C2"].forEach(k => silk.u[k] = gl.getUniformLocation(prog, k));
+    silk.gl = gl;
+  })();
+
+  // 0 at night, 1 at solar noon — the silk dims and brightens with the hour
+  function dayness(d) {
+    const h = d.getHours() + d.getMinutes() / 60;
+    return Math.max(0, Math.sin((h - 5.5) / 13 * Math.PI)) ** .8;
+  }
+
+  function drawSilk(now, dt) {
+    if (!pal.cur) return;
+    const k = Math.min(1, dt * 1.4);
+    for (let a = 0; a < 3; a++) for (let c = 0; c < 3; c++) pal.cur[a][c] += (pal.target[a][c] - pal.cur[a][c]) * k;
+    if (!silk.gl) {
+      const css = pal.cur.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(",")})`);
+      $("stage").style.background = `radial-gradient(120% 90% at 70% 30%, ${css[1]}, ${css[0]} 70%)`;
+      return;
+    }
+    const gl = silk.gl, c = gl.canvas;
+    const scale = .55 * Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(innerWidth * scale)), h = Math.max(1, Math.round(innerHeight * scale));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; gl.viewport(0, 0, w, h); }
+    silk.fade = Math.min(1, silk.fade + dt / 2.6);
+    silk.pulse = Math.max(0, silk.pulse - dt / 3);
+    silk.mouse[0] += (silk.mt[0] - silk.mouse[0]) * Math.min(1, dt * .8);
+    silk.mouse[1] += (silk.mt[1] - silk.mouse[1]) * Math.min(1, dt * .8);
+    const T = (now - silk.t0) / 1000 * (reduced ? .2 : 1);
+    gl.uniform2f(silk.u.R, w, h);
+    gl.uniform1f(silk.u.T, T + 40);
+    gl.uniform1f(silk.u.DAY, dayness(new Date()));
+    gl.uniform1f(silk.u.FADE, reduced ? 1 : 1 - (1 - silk.fade) ** 3);
+    gl.uniform1f(silk.u.PULSE, Math.sin(silk.pulse * Math.PI) * silk.pulse);
+    gl.uniform2f(silk.u.M, silk.mouse[0], silk.mouse[1]);
+    gl.uniform3fv(silk.u.C0, pal.cur[0]);
+    gl.uniform3fv(silk.u.C1, pal.cur[1]);
+    gl.uniform3fv(silk.u.C2, pal.cur[2]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  addEventListener("pointermove", e => { silk.mt = [e.clientX / innerWidth - .5, .5 - e.clientY / innerHeight]; });
+
+  // ───────── weather (2D canvas)
+  const weather = (() => {
+    const c = $("weather"), ctx = c.getContext("2d");
+    let type = "", parts = [], W = 0, H = 0, dpr = 1, tint = "#bb5548";
+    const R = (a, b) => a + Math.random() * (b - a);
+    const COUNT = { rain: 150, snow: 130, petals: 46, leaves: 30, fireflies: 38, frost: 70, motes: 46 };
+
+    function resize() {
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      W = innerWidth; H = innerHeight;
+      c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function spawn(p, anywhere) {
+      p.x = R(-.1, 1.1) * W;
+      p.y = anywhere ? R(0, H) : -20;
+      p.ph = R(0, 6.28);
+      switch (type) {
+        case "rain": p.v = R(650, 1050); p.l = R(12, 30); p.a = R(.08, .26); break;
+        case "snow": p.v = R(18, 55); p.r = R(.6, 2.4); p.a = R(.25, .8); break;
+        case "petals": case "leaves": p.v = R(22, 50); p.vx = R(8, 36); p.s = R(3, 6.5) * (type === "leaves" ? 1.3 : 1); p.rot = R(0, 6.28); p.spin = R(.6, 1.8); p.col = Math.random() < .5 ? tint : (type === "leaves" ? "#c98a3a" : "#f7d3da"); break;
+        case "fireflies": p.vx = 0; p.vy = 0; p.y = R(.35, 1) * H; p.sp = R(.6, 1.6); break;
+        case "frost": p.y = R(0, H); p.sp = R(.3, 1.1); p.s = R(1.5, 4); break;
+        default: p.y = anywhere ? R(0, H) : H + 20; p.v = R(4, 14); p.r = R(.5, 1.5); p.a = R(.06, .3);
+      }
+      return p;
+    }
+    function set(t, sekki) {
+      tint = sekki[5];
+      if (t === type) return;
+      type = t;
+      const area = Math.min(1.4, Math.max(.45, (W * H) / (1440 * 900)));
+      parts = Array.from({ length: Math.round(COUNT[t] * area) }, () => spawn({}, true));
+    }
+    function draw(time, dt) {
+      ctx.clearRect(0, 0, W, H);
+      if (reduced) return;
+      const s = time / 1000;
+      for (const p of parts) {
+        switch (type) {
+          case "rain": {
+            p.y += p.v * dt; p.x -= p.v * .12 * dt;
+            ctx.strokeStyle = `rgba(244,240,234,${p.a})`; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.l * .12, p.y - p.l); ctx.stroke();
+            if (p.y > H + 30) spawn(p);
+            break;
+          }
+          case "snow": {
+            p.y += p.v * dt; p.x += Math.sin(s * .8 + p.ph) * 12 * dt;
+            ctx.fillStyle = `rgba(244,240,234,${p.a})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+            if (p.y > H + 10) spawn(p);
+            break;
+          }
+          case "petals": case "leaves": {
+            p.y += p.v * dt; p.x += (p.vx + Math.sin(s + p.ph) * 18) * dt; p.rot += p.spin * dt;
+            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(Math.cos(s * p.spin + p.ph), 1);
+            ctx.globalAlpha = .75; ctx.fillStyle = p.col;
+            ctx.beginPath();
+            if (type === "petals") ctx.ellipse(0, 0, p.s, p.s * .55, 0, 0, 6.283);
+            else { ctx.moveTo(0, -p.s); ctx.quadraticCurveTo(p.s * .8, 0, 0, p.s); ctx.quadraticCurveTo(-p.s * .8, 0, 0, -p.s); }
+            ctx.fill(); ctx.restore();
+            if (p.y > H + 20 || p.x > W + 40) spawn(p);
+            break;
+          }
+          case "fireflies": {
+            p.vx = (p.vx + R(-1, 1) * 40 * dt) * .985; p.vy = (p.vy + R(-1, 1) * 40 * dt) * .985;
+            p.x += p.vx * dt * 10; p.y += p.vy * dt * 10;
+            if (p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) spawn(p, true);
+            const a = Math.max(0, Math.sin(s * p.sp + p.ph)) ** 3;
+            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 14);
+            g.addColorStop(0, `rgba(236,248,170,${a * .9})`); g.addColorStop(1, "rgba(236,248,170,0)");
+            ctx.fillStyle = g; ctx.fillRect(p.x - 14, p.y - 14, 28, 28);
+            break;
+          }
+          case "frost": {
+            const a = Math.max(0, Math.sin(s * p.sp + p.ph)) ** 12 * .9;
+            if (a < .01) break;
+            ctx.strokeStyle = `rgba(244,240,234,${a})`; ctx.lineWidth = .8;
+            ctx.beginPath();
+            ctx.moveTo(p.x - p.s, p.y); ctx.lineTo(p.x + p.s, p.y);
+            ctx.moveTo(p.x, p.y - p.s); ctx.lineTo(p.x, p.y + p.s);
+            ctx.stroke();
+            break;
+          }
+          default: {
+            p.y -= p.v * dt; p.x += Math.sin(s * .3 + p.ph) * 6 * dt;
+            ctx.fillStyle = `rgba(244,240,234,${p.a})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+            if (p.y < -10) spawn(p);
+          }
+        }
+      }
+    }
+    resize();
+    addEventListener("resize", () => { resize(); const t = type; type = ""; set(t, SEKKI[Math.floor(shownIndex / 3)] || SEKKI[0]); });
+    return { set, draw };
+  })();
+
+  // ───────── loop
+  let prev = performance.now(), silkAcc = 1;
+  function frameLoop(now) {
+    const dt = Math.min(.1, (now - prev) / 1000);
+    prev = now;
+    requestAnimationFrame(frameLoop);
+    // during a game the silk and weather hold still behind the veil, leaving the device to the game
+    if (document.body.dataset.view === "game") return;
+    const d = new Date();
+    tickClock(d);
+    silkAcc += dt;
+    if (silkAcc >= (reduced ? 1 : 1 / 30)) { drawSilk(now, silkAcc); silkAcc = 0; } // ~30fps keeps the fan quiet
+    weather.draw(now, dt);
+  }
+
+  render(true);
+
+  // ───────── opening
+  let opened = false;
+  const intro = $("intro");
+  function openIntro() {
+    if (opened) return;
+    opened = true;
+    intro.classList.add("open");
+    document.body.classList.remove("pre");
+    silk.fade = 0; // the silk blooms up from black as the doors part
+    setTimeout(() => intro.remove(), 1700);
+  }
+  (function playIntro() {
+    if (reduced) { opened = true; intro.remove(); document.body.classList.remove("pre"); return; }
+    const now = new Date(), here = koAt(now), k = KO[here.i], s = SEKKI[Math.floor(here.i / 3)];
+    $("iName").innerHTML = [...k.k].map((c, n) => `<span style="--i:${n}">${c}</span>`).join("");
+    $("iRead").textContent = k.r;
+    $("iDate").innerHTML = `<em>${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}</em>${"SUN MON TUE WED THU FRI SAT".split(" ")[now.getDay()]}`;
+    $("iSekki").innerHTML = `<em>${s[1]}</em>${s[0]} · No. ${here.i + 1} / 72`;
+    // the seal's number counts up to today's 候 as it lands
+    const seal = $("iSeal"), target = here.i + 1, t0 = performance.now() + 850;
+    (function count(t) {
+      const p = Math.min(1, Math.max(0, (t - t0) / 700));
+      seal.textContent = kj(Math.max(1, Math.round((1 - (1 - p) ** 3) * target)));
+      if (p < 1 && !opened) requestAnimationFrame(count); else seal.textContent = kj(target);
+    })(performance.now());
+    intro.addEventListener("click", openIntro);
+    setTimeout(openIntro, 2900);
+  })();
+  tickClock(new Date());
+  requestAnimationFrame(frameLoop);
+})();
+</script>
+<script type="module" src="js/asobi/app.js"></script>
+</body>
+</html>
