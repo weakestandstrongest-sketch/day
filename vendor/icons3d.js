@@ -41,8 +41,9 @@ const BUILD = {
     // 本物のくさりのように組み合わせる：2つの輪を直角にひねり（それぞれ ±45°）、片方の端がもう片方の穴を通るように重ねる。
     // そのあと、左下から右上へななめに置く
     const g1 = tube(stadium(13, 7.6), 2.9, 140, true), g2 = tube(stadium(13, 7.6), 2.9, 140, true);
-    g1.rotateX(Math.PI / 4); g1.translate(-9.5, 0, 0);
-    g2.rotateX(-Math.PI / 4); g2.translate(9.5, 0, 0);
+    const tw = -50 * Math.PI / 180; // くさり全体を長さの向きのまわりにひねる（左向きで見たときに、両方の輪の面が見えるように）
+    g1.rotateX(Math.PI / 4 + tw); g1.translate(-9.5, 0, 0);
+    g2.rotateX(-Math.PI / 4 + tw); g2.translate(9.5, 0, 0);
     for (const g of [g1, g2]) g.rotateZ(Math.PI / 4);
     return [g1, g2];
   },
