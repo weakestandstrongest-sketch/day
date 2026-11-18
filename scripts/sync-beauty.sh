@@ -13,6 +13,8 @@ rm -rf "$DST"
 mkdir -p "$DST"
 for f in index.html favicon.svg apple-touch-icon.png; do cp "$SRC/$f" "$DST/$f"; done
 for d in css js vendor; do cp -R "$SRC/$d" "$DST/$d"; done
+# 「候」の画面の上の余白に、上のあき（時計の部分）を足す（元のままだと iPhone では「候 KŌ」が時計の下に入る）
+sed -i 's/  padding-top: clamp(22px, 4vh, 44px);/  padding-top: calc(clamp(22px, 4vh, 44px) + env(safe-area-inset-top, 0px));/' "$DST/index.html"
 find "$DST" -name '*.css' -o -name '*.html' | while read -r f; do
   sed -E -i 's/env\(safe-area-inset-(top|bottom|left|right)(, *0(px)?)?\)/var(--hibi-sa-\1, env(safe-area-inset-\1, 0px))/g' "$f"
 done
