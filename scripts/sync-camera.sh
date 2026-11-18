@@ -8,5 +8,7 @@ test -f "$SRC/app.js" || { echo "camera が見つかりません: $SRC" >&2; exi
 rm -rf "$DST"; mkdir -p "$DST/icons"
 for f in index.html app.js style.css manifest.webmanifest; do cp "$SRC/$f" "$DST/$f"; done
 cp "$SRC"/icons/*.png "$DST/icons/"
+# ひび手帳の中では、カメラ用のオフライン（sw.js）は使わない（ひび手帳がまとめて持っている。写さないので 404 になっていた）
+sed -i.bak "s#navigator.serviceWorker.register('sw.js')#Promise.resolve()#" "$DST/app.js" && rm -f "$DST/app.js.bak"
 ( cd "$SRC" && git log -1 --format='%H %s' ) > "$DST/VERSION.txt" 2>/dev/null || true
 echo "camera を camera/ に写しました（$(head -c 7 "$DST/VERSION.txt" 2>/dev/null)）"

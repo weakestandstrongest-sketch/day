@@ -1500,7 +1500,7 @@ async function init() {
   setTimeout(cameraReady, 3500); // カメラがなかなか起動しなくても、起動画面は閉じる
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    Promise.resolve().catch(() => {});
   }
 }
 
