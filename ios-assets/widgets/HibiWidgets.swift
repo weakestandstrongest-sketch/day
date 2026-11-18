@@ -215,7 +215,9 @@ struct HibiLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: context.attributes.symbol)
             } compactTrailing: {
-                Text(timerInterval: Date()...context.state.endAt, countsDown: true).monospacedDigit().frame(maxWidth: 52)
+                // 残り時間の数字ぶんの幅だけとって右に寄せる（幅をとりすぎると、数字の右に隙間ができた）
+                Text(timerInterval: Date()...context.state.endAt, countsDown: true).monospacedDigit()
+                    .multilineTextAlignment(.trailing).frame(width: hibiTimerWidth(context.state.endAt), alignment: .trailing)
             } minimal: {
                 Image(systemName: context.attributes.symbol)
             }
@@ -551,12 +553,18 @@ struct HibiAlarmLive: Widget {
             } compactLeading: {
                 Image(systemName: "alarm")
             } compactTrailing: {
-                HibiAlarmCountdown(state: context.state).monospacedDigit().frame(maxWidth: 52)
+                HibiAlarmCountdown(state: context.state).monospacedDigit().multilineTextAlignment(.trailing).frame(width: 46, alignment: .trailing)
             } minimal: {
                 Image(systemName: "alarm")
             }
         }
     }
+}
+
+/// ダイナミックアイランドの右側の数字の幅（9:59 まで・59:59 まで・それ以上）
+func hibiTimerWidth(_ end: Date) -> CGFloat {
+    let left = end.timeIntervalSinceNow
+    return left < 600 ? 36 : left < 3600 ? 46 : 62
 }
 
 @available(iOS 26.0, *)
