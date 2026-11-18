@@ -39,6 +39,10 @@ final class HibiPassView: UIView {
 }
 
 struct HibiBarView: View {
+    /// 沈む：0.28 秒（ease-in-out）。出てくる：0.5 秒でやわらかく止まる（ease-out）
+    static let sinkTime = 0.28
+    static let sink = Animation.timingCurve(0.45, 0, 0.75, 0.6, duration: sinkTime)
+    static let rise = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.5)
     @ObservedObject var s: HibiTabState
     var onTab: (String) -> Void
     var onFab: () -> Void
@@ -53,12 +57,13 @@ struct HibiBarView: View {
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .animation(.spring(response: 0.34, dampingFraction: 0.86), value: s.maxWidth)
-        // 沈む・出てくる：少し小さく・ぼかしながら、やわらかいばねで（はね返りはほんの少しだけ）
-        .scaleEffect(s.hidden || s.tucked ? 0.94 : 1, anchor: .bottom)
-        .offset(y: s.hidden || s.tucked ? 120 : 0)
+        // 沈む・出てくる：沈むときはすっと速く（なめらかに加速）、出てくるときはふわっと減速して止まる（はね返らない）。
+        // 動く距離・縮み・ぼかしを小さめにして、目で追いやすい動きにする
+        .scaleEffect(s.hidden || s.tucked ? 0.96 : 1, anchor: .bottom)
+        .offset(y: s.hidden || s.tucked ? 84 : 0)
         .opacity(s.hidden || s.tucked ? 0 : 1)
-        .blur(radius: s.hidden || s.tucked ? 6 : 0)
-        .animation(.spring(response: 0.46, dampingFraction: 0.88), value: s.hidden || s.tucked)
+        .blur(radius: s.hidden || s.tucked ? 3 : 0)
+        .animation(s.hidden || s.tucked ? HibiBarView.sink : HibiBarView.rise, value: s.hidden || s.tucked)
     }
 
     private var items: some View {
@@ -86,7 +91,7 @@ struct HibiBarView: View {
             }
         }
         .padding(5)
-        .animation(.spring(response: 0.38, dampingFraction: 0.78), value: s.selected)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: s.selected) // 選んだタブの丸：すべるように移る（はね返りは控えめ）
     }
 
     @ViewBuilder private var bar: some View {

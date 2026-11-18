@@ -370,7 +370,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
             if wasHidden { bar.later(nil); apply(false) } // 隠れているあいだに変えておく（これから出るときも、出しはじめる前に）
             if let v = call.getBool("hidden") { bar.setJSHidden(v) } // Orbit などが上に出ているあいだは、ほかにも隠す（EdgeAppHost.coverChanged）
             if !wasHidden {
-                if st.hidden { bar.later(0.5) { apply(false) } } // 沈みきってから
+                if st.hidden { bar.later(HibiBarView.sinkTime + 0.04) { apply(false) } } // 沈みきったらすぐ（待ちを短く）
                 else { bar.later(nil); apply(true) } // 出たまま：動かして変える
             }
             call.resolve(["ok": true])
