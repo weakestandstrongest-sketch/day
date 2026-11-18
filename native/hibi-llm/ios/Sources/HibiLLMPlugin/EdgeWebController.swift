@@ -1,5 +1,6 @@
 import UIKit
 import WebKit
+import SwiftUI
 
 /// ひび手帳の上に画面いっぱいで開くウェブアプリの WebView（Jam：リポジトリ communication／Gyoukai：リポジトリ gyoukai）。
 /// ログイン（Google）を覚えておけるように、ふつうの（消えない）データ置き場を使う。
@@ -22,7 +23,11 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
     /// Dine（ごはん探し：リポジトリ eat）：日記のフォークとナイフのボタンから。URL は 設定 → ごはん（Dine）
     static let dine = EdgeWebController(
         name: "Dine", url: nil,
-        hint: "Dine の URL がまだ入っていません。\n\nひび手帳に戻って（左端から右へスワイプ）、\n設定 →「ごはん（Dine）」に入れてください。")
+        hint: "Dine の URL がまだ入っていません。\n\nひび手帳に戻って（左端から右へスワイプ）、\n設定 →「ごはん（Dine）」に入れてください。",
+        glass: [GlassSpec(sel: "#search-form button[type=submit]", title: "検索", tinted: true),
+                GlassSpec(sel: "#here", symbol: "location.fill", title: "現在地"),
+                GlassSpec(sel: "#detail-close", symbol: "xmark"),
+                GlassSpec(sel: ".login button[type=submit]", title: "ログイン", tinted: true)])
 
     /// ページの下のタブバーを、iPhone 本物の Liquid Glass のバー（ひび手帳と同じ部品）に置きかえる設定。
     /// ページのバーは見えなくするだけで場所はそのまま。押されたら、ページのそのタブを押したことにする
@@ -34,19 +39,31 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         var hideWhen: String? = nil   // これが見えているあいだはバーを隠す（起動のアニメーションなど）
     }
 
+    /// ページのボタンの上に、iPhone 本物の Liquid Glass のボタンを重ねる設定（ひび手帳の丸いボタンと同じ部品）。
+    /// ページのボタンは見えなくするだけ。押されたら、ページのそのボタンを押したことにする
+    struct GlassSpec {
+        let sel: String
+        var symbol: String = ""
+        var title: String = ""
+        var tinted: Bool = false  // ページのボタンの色（Dine はコーラルピンク）を、ガラスの色にする
+    }
+
     private let name: String
     private let hint: String
     private let barSpec: TabSpec?
+    private let glassSpec: [GlassSpec]
+    private var glass: HibiGlass?
     private(set) var url: URL?
     private var tabBar: HibiTabBar?
     /// 下のバー（出入りのときに下へしまう：EdgeAppHost）
     var bar: HibiTabBar? { tabBar }
 
-    init(name: String, url: URL?, hint: String, bar: TabSpec? = nil) {
+    init(name: String, url: URL?, hint: String, bar: TabSpec? = nil, glass: [GlassSpec] = []) {
         self.name = name
         self.url = url
         self.hint = hint
         self.barSpec = bar
+        self.glassSpec = glass
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -60,6 +77,10 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         if let spec = barSpec {
             config.userContentController.add(self, contentWorld: .defaultClient, name: "edgeBar")
             config.userContentController.addUserScript(WKUserScript(source: Self.barScript(spec), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
+        }
+        if !glassSpec.isEmpty {
+            config.userContentController.add(self, contentWorld: .defaultClient, name: "edgeGlass")
+            config.userContentController.addUserScript(WKUserScript(source: Self.glassScript(glassSpec), injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
         }
         let w = WKWebView(frame: .zero, configuration: config)
         w.navigationDelegate = self
@@ -107,6 +128,12 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
             tb.setHidden(true)
             tabBar = tb
         }
+        if !glassSpec.isEmpty {
+            let g = HibiGlass()
+            g.onTap = { [weak self] id in self?.tapGlass(id) }
+            g.install(on: self)
+            glass = g
+        }
         if let url {
             web.load(URLRequest(url: url)) // 初めて開くときに読み込む
             showMessage(nil)
@@ -153,7 +180,73 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
         """
     }
 
+    // MARK: Liquid Glass のボタン
+
+    /// ページに入れるスクリプト：ボタンの場所（画面の左上から）と色を知らせ、ページのボタンを見えなくする。
+    /// ほかのもの（お店の画面など）の下に隠れているボタン・画面の外のボタンは知らせない
+    private static func glassScript(_ list: [GlassSpec]) -> String {
+        let cfg = list.enumerated().map { i, g in ["id": "g\(i)", "sel": g.sel, "symbol": g.symbol, "title": g.title, "tinted": g.tinted] as [String: Any] }
+        let json = (try? JSONSerialization.data(withJSONObject: cfg)).map { String(decoding: $0, as: UTF8.self) } ?? "[]"
+        return """
+        (function (L) {
+          var last = '', raf = 0;
+          var st = document.createElement('style');
+          st.textContent = L.map(function (g) { return g.sel; }).join(',') + '{opacity:0!important}';
+          (document.head || document.documentElement).appendChild(st);
+          function find(g) { var a = document.querySelectorAll(g.sel); for (var i = 0; i < a.length; i++) if (a[i].getClientRects().length) return a[i]; return null; }
+          function send() {
+            raf = 0;
+            var vv = window.visualViewport, ox = vv ? vv.offsetLeft : 0, oy = vv ? vv.offsetTop : 0, zoom = vv && Math.abs(vv.scale - 1) > 0.01;
+            var items = [];
+            if (!zoom && document.visibilityState !== 'hidden') L.forEach(function (g) {
+              var el = find(g); if (!el || el.disabled) return;
+              var r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return;
+              var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+              if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) return;
+              var hit = document.elementFromPoint(cx, cy); if (!hit || !(hit === el || el.contains(hit))) return; // 上に何かかぶさっている
+              var cs = getComputedStyle(el);
+              items.push({ id: g.id, x: Math.round(r.left - ox), y: Math.round(r.top - oy), w: Math.round(r.width), h: Math.round(r.height),
+                symbol: g.symbol, title: g.title, tint: g.tinted ? cs.backgroundColor : '', ink: g.tinted ? cs.color : '' });
+            });
+            var s = JSON.stringify(items);
+            if (s !== last) { last = s; try { window.webkit.messageHandlers.edgeGlass.postMessage(s); } catch (e) {} }
+          }
+          function soon() { if (!raf) raf = requestAnimationFrame(send); }
+          window.__edgeGlassTap = function (id) { var g = L.filter(function (x) { return x.id === id; })[0], el = g && find(g); if (el) el.click(); };
+          new MutationObserver(soon).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'hidden', 'open', 'style', 'disabled'] });
+          addEventListener('scroll', soon, true); addEventListener('resize', soon);
+          if (window.visualViewport) { visualViewport.addEventListener('scroll', soon); visualViewport.addEventListener('resize', soon); }
+          addEventListener('transitionend', soon, true); addEventListener('animationend', soon, true);
+          addEventListener('pageshow', soon); setInterval(soon, 400); soon();
+        })(\(json));
+        """
+    }
+
+    private func setGlass(_ text: String) {
+        guard let g = glass, let arr = (try? JSONSerialization.jsonObject(with: Data(text.utf8))) as? [[String: Any]] else { return }
+        let num: (Any?) -> CGFloat = { v in CGFloat((v as? NSNumber)?.doubleValue ?? 0) }
+        let list = arr.map { o in
+            HibiGlassItem(id: (o["id"] as? String) ?? "",
+                          frame: CGRect(x: num(o["x"]), y: num(o["y"]), width: num(o["w"]), height: num(o["h"])),
+                          symbol: (o["symbol"] as? String) ?? "",
+                          ink: Color.hibi(o["ink"] as? String) ?? .primary,
+                          tint: Color.hibi(o["tint"] as? String),
+                          title: (o["title"] as? String) ?? "")
+        }
+        if list != g.state.items {
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) { g.state.items = list }
+        }
+    }
+
+    private func tapGlass(_ id: String) {
+        let arg = (try? JSONSerialization.data(withJSONObject: [id])).map { String(decoding: $0, as: UTF8.self) } ?? "[\"\"]"
+        web.evaluateJavaScript("window.__edgeGlassTap && window.__edgeGlassTap(\(arg)[0])", in: nil, in: .defaultClient) { _ in }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "edgeGlass", let text = message.body as? String { setGlass(text); return }
         guard message.name == "edgeBar", let tb = tabBar, let text = message.body as? String,
               let o = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] else { return }
         let tabs = ((o["tabs"] as? [[String: Any]]) ?? []).map {

@@ -58,6 +58,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "gyoukaiClose", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitData", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "dineOpen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "kbdLock", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
@@ -291,6 +292,24 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     /// { url }：Dine（ごはん探し）を右から画面いっぱいに開く。閉じたら "dine" {open:false}
+    /// one に書いているあいだ：iPhone がキーボードに合わせて画面（WKWebView）を上へずらすのを止める。
+    /// 入力欄の場所はページが決めて固定する（ずらされると、見出しと入力欄が画面の上へ消えた）
+    private var kbdObs: NSKeyValueObservation?
+    @objc func kbdLock(_ call: CAPPluginCall) {
+        let on = call.getBool("on") ?? false
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let sv = self.bridge?.webView?.scrollView else { return call.resolve() }
+            self.kbdObs?.invalidate(); self.kbdObs = nil
+            if on {
+                sv.contentOffset = .zero
+                self.kbdObs = sv.observe(\.contentOffset, options: [.new]) { sv, _ in
+                    if sv.contentOffset != .zero { sv.contentOffset = .zero }
+                }
+            }
+            call.resolve()
+        }
+    }
+
     @objc func dineOpen(_ call: CAPPluginCall) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let vc = self.bridge?.viewController else { return call.reject("no view") }
