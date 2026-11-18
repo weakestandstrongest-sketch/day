@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>コード名検索 × 純正律</title>
+  <meta name="description" content="構成音からコード名を判定し、純正律で各音を平均律から何セント動かせばよいかを表示します。">
+  <meta name="theme-color" content="#0c0d10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="純正コード">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=DM+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/style.css?v=20261118033638">
+  <link rel="stylesheet" href="embed.css?v=20261118033638">
+</head>
+<body>
+  <main class="wrap">
+    <header class="masthead">
+      <div class="mast-row">
+        <p class="eyebrow">Just Intonation<span class="dot">·</span>Tuner</p>
+        <button class="pitch-pill" id="pitch-pill" aria-label="基準ピッチの設定へ">A4 <b id="pill-a4">442</b><small>Hz</small></button>
+      </div>
+      <h1 class="mast-title">Pure <em>Harmony</em>.</h1>
+      <svg class="mast-waves" id="mast-waves" viewBox="0 0 360 44" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <p class="mast-lead">構成音を入れるだけで、コード名と、その和音を純正に響かせるための各音のずれ（セント）がわかります。</p>
+    </header>
+
+    <section id="finder">
+      <div class="field">
+        <input id="notes-input" type="text" inputmode="text" placeholder="ドミソ / C E G"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               aria-label="構成音（低い音から順に）">
+        <button id="clear-input" class="field-clear" aria-label="入力を消す">✕</button>
+      </div>
+      <p class="hint">低い音から順に入力。例：ソ♭シド・れふぁ#ら・AbCEb・C3 E4 G4</p>
+      <div id="chips" class="chips" aria-live="polite"></div>
+
+      <details class="block keyboard-box" id="keyboard-box">
+        <summary>
+          <span>鍵盤で入力</span>
+          <span class="summary-sub">タップで追加・もう一度で削除</span>
+        </summary>
+        <div class="keyboard-tools">
+          <span>黒鍵の表記</span>
+          <div class="seg small" id="spelling-seg">
+            <button data-value="sharp">♯</button>
+            <button data-value="flat">♭</button>
+          </div>
+          <button id="kb-clear" class="btn-ghost">全消去</button>
+        </div>
+        <div class="keyboard-scroll" id="keyboard-scroll">
+          <div class="keyboard" id="keyboard"></div>
+        </div>
+      </details>
+
+      <section class="stage" id="stage" aria-live="polite">
+        <div class="stage-label" id="stage-label"></div>
+        <div class="chord-name" id="chord-name"></div>
+        <div class="stage-ratio" id="ratio-line"></div>
+        <div class="examples" id="examples" hidden></div>
+        <div class="gauge-wrap" id="gauge-wrap">
+          <svg id="gauge" viewBox="0 0 320 190" role="img" aria-label="各音の平均律からのずれ"></svg>
+        </div>
+        <div class="play-row" id="play-row">
+          <button class="play" id="play-et"><span class="pi">▶</span>平均律</button>
+          <button class="play primary" id="play-ji"><span class="pi">▶</span>純正律</button>
+          <button class="play" id="play-ab"><span class="pi">⇄</span>聴き比べ</button>
+        </div>
+        <p class="play-status" id="play-status"></p>
+      </section>
+
+      <section class="block" id="cand-block" hidden>
+        <div class="block-head">
+          <h2>コード名の候補</h2>
+          <span class="block-sub">数字はスコア（0 に近いほど一般的）</span>
+        </div>
+        <div class="cands" id="cands"></div>
+        <p class="hint" id="cand-note"></p>
+      </section>
+
+
+      <section class="block" id="ji" hidden>
+        <div class="block-head">
+          <h2>純正律チューナー</h2>
+          <span class="block-sub" id="ji-basis"></span>
+        </div>
+        <div id="ji-rows" class="ji-rows"></div>
+        <p class="hint">比をタップすると別の純正比に切り替わります。セント値は「A4 = <span class="a4-echo">442</span> Hz の平均律」からのずれなので、チューナーを同じ基準ピッチにして、針をこの値に合わせてください。</p>
+      </section>
+
+      <section class="block" id="settings">
+        <div class="block-head"><h2>チューニング設定</h2></div>
+        <div class="setting">
+          <span class="setting-label">音律</span>
+          <div class="seg" id="mode-seg">
+            <button data-value="just5">純正律<small>5リミット</small></button>
+            <button data-value="just7">純正律<small>7リミット</small></button>
+            <button data-value="pyth">ピタゴラス<small>3リミット</small></button>
+          </div>
+        </div>
+        <div class="setting">
+          <span class="setting-label">0セントの基準</span>
+          <div class="seg" id="ref-seg">
+            <button data-value="root">ルート</button>
+            <button data-value="bass">最低音</button>
+            <button data-value="key">調の主音</button>
+          </div>
+          <label class="tonic" id="tonic-setting" hidden>
+            <span>主音</span>
+            <select id="tonic-select"></select>
+          </label>
+        </div>
+        <div class="setting">
+          <span class="setting-label">基準ピッチ A4</span>
+          <div class="pitch-row">
+            <div class="seg" id="a4-seg">
+              <button data-value="440">440</button>
+              <button data-value="442">442</button>
+              <button data-value="443">443</button>
+            </div>
+            <label class="a4-custom"><input id="a4-input" type="number" inputmode="decimal" min="400" max="480" step="0.5" value="442" aria-label="基準ピッチ（Hz）"><span>Hz</span></label>
+          </div>
+          <p class="hint">日本のオーケストラや吹奏楽で一般的な 442 Hz が既定です。</p>
+        </div>
+      </section>
+
+    </section>
+
+
+    <article class="about">
+      <details class="about-box">
+      <summary>純正律の解説<span>このアプリについて・純正律の見方・0セントの基準・入力のしかた</span></summary>
+      <h2>このアプリについて</h2>
+      <p>与えられた構成音からコード名を判定し、その和音を<strong>純正律</strong>で響かせるには各音を平均律から何セント動かせばよいかを、チューナー感覚で確かめるためのツールです。耳コピや作曲・編曲でのコード判定に加えて、合唱・弦楽器・管楽器のハーモニー練習や、純正律そのものの探求に使えます。</p>
+
+      <h2>純正律の見方</h2>
+      <p>純正律では和音の各音が簡単な整数比になるように調律します。C メジャー（ドミソ）は周波数比 <strong>4 : 5 : 6</strong>。</p>
+      <dl class="facts">
+        <div><dt>ルート C</dt><dd>1/1</dd><dd class="v zero-t">0.0¢</dd></div>
+        <div><dt>長3度 E</dt><dd>5/4</dd><dd class="v neg-t">−13.7¢</dd></div>
+        <div><dt>完全5度 G</dt><dd>3/2</dd><dd class="v pos-t">+2.0¢</dd></div>
+        <div><dt>短3度（マイナー）</dt><dd>6/5</dd><dd class="v pos-t">+15.6¢</dd></div>
+        <div><dt>属七の7度（5リミット）</dt><dd>16/9</dd><dd class="v neg-t">−3.9¢</dd></div>
+        <div><dt>属七の7度（倍音列）</dt><dd>7/4</dd><dd class="v neg-t">−31.2¢</dd></div>
+      </dl>
+
+      <h2>0セントの基準</h2>
+      <ul>
+        <li><strong>ルート</strong>：ルートを平均律のまま固定し、他の音をルートに合わせます。</li>
+        <li><strong>最低音</strong>：ベースの音を固定します。転回形・分数コードで便利です。</li>
+        <li><strong>調の主音</strong>：主音を固定し、ルート自体も主音に対して純正にとります。ハ長調で Am を鳴らすと、ルートの A は 5/3 で <strong>−15.6¢</strong>。進行によってシントニック・コンマ（約21.5¢）のずれが現れる様子を観察できます。</li>
+      </ul>
+
+      <h2>入力のしかた</h2>
+      <ul>
+        <li>カタカナ・ひらがな：ドレミファソラシ（♯ / # / ♭ / b）</li>
+        <li>英字：C D E F G A B。大文字を含むときは英字の直後の小文字 b をフラットとして扱います（AbCEb）。小文字だけのとき、b は音名の B（シ）です（gbd = G B D）。</li>
+        <li>英字の後ろの数字でオクターブを指定できます（C4 = 中央のド）。省略すると下から順に積み重ねます。</li>
+      </ul>
+      </details>
+    </article>
+
+    <footer class="credits">ピアノ音源：Salamander Grand Piano V3 — Alexander Holm（CC BY 3.0）</footer>
+  </main>
+
+  <script src="js/engine.js?v=20261118033638"></script>
+  <script src="js/audio.js?v=20261118033638"></script>
+  <script src="js/app.js?v=20261118033638"></script>
+  <script src="embed.js?v=20261118033638"></script>
+</body>
+</html>

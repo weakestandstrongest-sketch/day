@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="コードホイール">
+<meta name="description" content="五度圏のコードホイール。タップでコードを鳴らし、構成音（C・E・G など）を表示します。">
+<meta name="theme-color" content="#1E9873">
+<title>Chord Wheel</title>
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: circle-of-fifths wheel on the left (top on phones), now-playing panel + chord list + progression on the right. */
+:root {
+  --bg: #EDF0F3;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7F9;
+  --ink: #18202B;
+  --muted: #5B6777;
+  --line: #D3DAE2;
+  --major: #1E9873;
+  --minor: #4A7BB5;
+  --dim: #B07062;
+  --idle: #DCE2E8;
+  --idle-ink: #7A8696;
+  --accent: #E0A230;
+  --on-seg: #FFFFFF;
+  --key-white: #FFFFFF;
+  --key-black: #222A35;
+  --font-display: "Outfit", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141920;
+    --surface: #1D242E;
+    --surface-2: #232B36;
+    --ink: #E6ECF2;
+    --muted: #94A1B2;
+    --line: #2D3744;
+    --major: #20AE84;
+    --minor: #5888C2;
+    --dim: #B47F71;
+    --idle: #252D38;
+    --idle-ink: #5E6A7A;
+    --accent: #F0BF4C;
+    --on-seg: #FFFFFF;
+    --key-white: #E9EDF2;
+    --key-black: #0E1217;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141920;
+  --surface: #1D242E;
+  --surface-2: #232B36;
+  --ink: #E6ECF2;
+  --muted: #94A1B2;
+  --line: #2D3744;
+  --major: #20AE84;
+  --minor: #5888C2;
+  --dim: #B47F71;
+  --idle: #252D38;
+  --idle-ink: #5E6A7A;
+  --accent: #F0BF4C;
+  --on-seg: #FFFFFF;
+  --key-white: #E9EDF2;
+  --key-black: #0E1217;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  padding-inline: 16px;
+  padding-block: 20px 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+button, select, input { font: inherit; color: inherit; }
+button { touch-action: manipulation; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 900px) {
+  .app { grid-template-columns: minmax(360px, 460px) minmax(0, 1fr); align-items: start; gap: 28px; }
+  .left { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+}
+.left, .right { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+header.top h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.01em; }
+header.top h1 small { font-family: var(--font-body); font-weight: 500; font-size: 13px; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
+
+/* Key controls */
+.keybar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.keybar label { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; }
+.select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 30px 7px 12px; font-weight: 700;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 2px; }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 8px; font-weight: 500; font-size: 14px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.iconbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; width: 36px; height: 36px; display: inline-grid; place-items: center; font-size: 14px; color: var(--muted); }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); user-select: none; cursor: pointer; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--major); margin: 0; }
+
+/* Wheel */
+.wheel-wrap { width: 100%; max-width: 460px; margin: 0 auto; aspect-ratio: 1 / 1; }
+#wheel { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+#wheel .s { cursor: pointer; stroke: var(--bg); stroke-width: 2.5; transition: filter .12s; }
+#wheel .s:hover { filter: brightness(1.08); }
+#wheel .s.major { fill: var(--major); }
+#wheel .s.minor { fill: var(--minor); }
+#wheel .s.dim { fill: var(--dim); }
+#wheel .s.idle { fill: var(--idle); }
+#wheel text { pointer-events: none; text-anchor: middle; dominant-baseline: central; font-family: var(--font-display); font-weight: 600; }
+#wheel text.on { fill: var(--on-seg); }
+#wheel text.off { fill: var(--idle-ink); }
+#wheel text .sfx { font-size: 0.66em; font-weight: 500; }
+#wheel text.rn { font-family: var(--font-display); font-weight: 500; opacity: .82; }
+#wheel .hl { fill: none; stroke: var(--accent); stroke-width: 4; pointer-events: none; stroke-linejoin: round; }
+#wheel .hl.pulse { animation: pulse .5s ease-out; }
+#wheel .hub { fill: var(--surface); stroke: var(--line); stroke-width: 1; cursor: pointer; }
+#wheel .hub-key { font-size: 26px; fill: var(--ink); font-weight: 700; }
+#wheel .hub-ja { font-family: var(--font-body); font-size: 11px; fill: var(--muted); font-weight: 500; }
+@keyframes pulse { from { stroke-width: 10; opacity: .4; } to { stroke-width: 4; opacity: 1; } }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* Diatonic strip */
+.dia { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.dia button {
+  border: 0; border-radius: 10px; padding: 6px 2px 7px; color: var(--on-seg);
+  display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.2; min-width: 0;
+}
+.dia button b { font-family: var(--font-display); font-size: 16px; font-weight: 600; white-space: nowrap; }
+.dia button small { font-family: var(--font-display); font-size: 11px; opacity: .85; }
+.dia .major { background: var(--major); } .dia .minor { background: var(--minor); } .dia .dim { background: var(--dim); }
+.hint { font-size: 12px; color: var(--muted); text-align: center; margin: 0; }
+.hint kbd { font-family: var(--font-display); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-size: 11px; background: var(--surface); }
+@media (hover: none) { .desk-only { display: none; } }
+
+/* Panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+.snd { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
+.panel h2 { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+/* Now playing */
+.now-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.now-name { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1; letter-spacing: -0.01em; }
+.now-name .sfx { font-size: 0.6em; font-weight: 600; margin-left: 2px; }
+.now-meta { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+.now-meta .q { font-weight: 700; font-size: 15px; }
+.now-meta .rn { font-family: var(--font-display); font-size: 14px; color: var(--muted); }
+.now-meta .rn b { display: inline-block; padding: 0 7px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); font-weight: 600; }
+.formula { margin: 12px 0 10px; font-size: 15px; }
+.formula b { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: 0.02em; }
+.formula span { color: var(--muted); }
+.tones { display: flex; gap: 8px; flex-wrap: wrap; }
+.tone {
+  min-width: 58px; padding: 8px 10px 6px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; line-height: 1.15;
+}
+.tone b { font-family: var(--font-display); font-size: 24px; font-weight: 600; }
+.tone span { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.tone i { font-style: normal; font-family: var(--font-display); font-size: 12px; font-weight: 600; margin-top: 4px; padding: 0 6px; border-radius: 5px; background: var(--line); color: var(--ink); }
+.tone.root { border-color: var(--accent); }
+.tone.root i { background: var(--accent); color: #1B1406; }
+.kbd-wrap { margin-top: 14px; }
+#kbd { width: 100%; height: auto; display: block; }
+#kbd .w { fill: var(--key-white); stroke: var(--line); stroke-width: 1; cursor: pointer; }
+#kbd .b { fill: var(--key-black); cursor: pointer; }
+#kbd .w.hit, #kbd .b.hit { fill: var(--major); }
+#kbd .w.root, #kbd .b.root { fill: var(--accent); }
+#kbd text { pointer-events: none; text-anchor: middle; font-family: var(--font-display); font-weight: 600; font-size: 10px; fill: #FFFFFF; }
+#kbd text.c { fill: var(--idle-ink); font-weight: 500; font-size: 8px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Explorer */
+.roots { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+@media (max-width: 560px) { .roots { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.roots button {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 6px 0;
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; min-width: 0;
+}
+.roots button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.quals { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 6px; margin-top: 12px; }
+.quals button {
+  text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 10px 8px;
+  display: flex; flex-direction: column; gap: 1px; line-height: 1.25; min-width: 0;
+}
+.quals button b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.quals button b .sfx { font-size: .8em; }
+.quals button small { font-size: 11px; color: var(--muted); }
+.quals button em { font-style: normal; font-family: var(--font-display); font-size: 13px; color: var(--ink); opacity: .85; overflow-wrap: anywhere; }
+.quals button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.subrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 500; letter-spacing: 0; }
+
+/* Progression */
+.prog { display: flex; gap: 6px; flex-wrap: wrap; min-height: 54px; }
+.chip {
+  position: relative; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+  padding: 6px 30px 6px 10px; display: flex; flex-direction: column; line-height: 1.2; min-width: 78px; cursor: pointer; text-align: left;
+}
+.chip b { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.chip b .sfx { font-size: .78em; }
+.chip small { font-family: var(--font-display); font-size: 11px; color: var(--muted); }
+.chip .x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 6px; border: 0; background: transparent; color: var(--muted); font-size: 14px; line-height: 1; display: grid; place-items: center; }
+.chip .x:hover { background: var(--line); color: var(--ink); }
+.chip.cur { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.prog-empty { color: var(--muted); font-size: 14px; align-self: center; }
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.num { width: 70px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; font-family: var(--font-display); font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.controls .lbl { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+footer.note { max-width: 1120px; margin: 24px auto 0; font-size: 12px; color: var(--muted); }
+footer.note p { margin: 4px 0; }
+
+@media (prefers-reduced-motion: reduce) { #wheel .hl.pulse { animation: none; } #wheel .s { transition: none; } }
+</style>
+<link rel="stylesheet" href="embed.css?v=20261118033638">
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <header class="top">
+      <h1>Chord Wheel<small>タップで鳴らす・構成音を表示</small></h1>
+    </header>
+    <div class="keybar">
+      <label for="keySel">キー</label>
+      <button class="iconbtn" id="keyPrev" aria-label="五度下のキーへ">◀</button>
+      <select class="select" id="keySel"></select>
+      <button class="iconbtn" id="keyNext" aria-label="五度上のキーへ">▶</button>
+      <div class="seg" role="group" aria-label="長調・短調">
+        <button id="modeMaj" aria-pressed="true">メジャー</button>
+        <button id="modeMin" aria-pressed="false">マイナー</button>
+      </div>
+      <label class="toggle" for="sev"><input type="checkbox" id="sev">セブンス</label>
+    </div>
+    <div class="wheel-wrap"><svg id="wheel" viewBox="-205 -205 410 410" role="img" aria-label="五度圏コードホイール"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--major)"></i>メジャー</span>
+      <span><i style="background:var(--minor)"></i>マイナー</span>
+      <span><i style="background:var(--dim)"></i>ディミニッシュ</span>
+      <span><i style="background:var(--idle)"></i>キー外（タップで鳴る）</span>
+    </div>
+    <div class="dia" id="dia" aria-label="ダイアトニックコード"></div>
+    <p class="hint desk-only">キーボードの <kbd>1</kbd>〜<kbd>7</kbd> でダイアトニックコード、<kbd>Space</kbd> で進行を再生</p>
+  </div>
+
+  <div class="right">
+    <section class="panel" aria-live="polite">
+      <h2>いま鳴らしたコード<span class="snd" id="snd"></span></h2>
+      <div class="now-head">
+        <div class="now-name" id="nowName"></div>
+        <div class="now-meta">
+          <div class="q" id="nowQ"></div>
+          <div class="rn" id="nowRn"></div>
+        </div>
+      </div>
+      <div class="formula" id="formula"></div>
+      <div class="tones" id="tones"></div>
+      <div class="kbd-wrap"><svg id="kbd" role="img" aria-label="鍵盤"></svg></div>
+      <div class="actions">
+        <button class="btn primary" id="again">▶ もう一度</button>
+        <button class="btn" id="arp">アルペジオ</button>
+        <button class="btn" id="add">＋ 進行に追加</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>すべてのコード
+        <span class="subrow">
+          <span class="seg" role="group" aria-label="臨時記号の表記">
+            <button data-spell="std" aria-pressed="true">標準</button>
+            <button data-spell="sharp" aria-pressed="false">♯</button>
+            <button data-spell="flat" aria-pressed="false">♭</button>
+          </span>
+        </span>
+      </h2>
+      <div class="roots" id="roots"></div>
+      <div class="quals" id="quals"></div>
+    </section>
+
+    <section class="panel">
+      <h2>コード進行
+        <span class="subrow">
+          <select class="select" id="preset" aria-label="定番進行を読み込む">
+            <option value="">定番進行を読み込む…</option>
+          </select>
+        </span>
+      </h2>
+      <div class="prog" id="prog"></div>
+      <div class="controls">
+        <button class="btn primary" id="playProg">▶ 再生</button>
+        <label class="lbl" for="bpm">BPM <input class="num" id="bpm" type="number" min="40" max="240" step="1" value="96"></label>
+        <label class="lbl" for="beats">1コード
+          <select class="select" id="beats">
+            <option value="2">2拍</option>
+            <option value="4" selected>4拍</option>
+            <option value="8">8拍</option>
+          </select>
+        </label>
+        <label class="toggle" for="loop"><input type="checkbox" id="loop" checked>ループ</label>
+        <button class="btn" id="clear">クリア</button>
+      </div>
+    </section>
+  </div>
+</div>
+<footer class="note">
+  <p>iPhone で音が出ないときは、本体横の消音スイッチ（マナーモード）をオフにして音量を上げてください。</p>
+  <p>構成音は音楽理論どおりの綴りで表示します（例：E♭m は E♭・G♭・B♭、B° は B・D・F）。</p>
+  <p>ピアノ音源：<a href="https://github.com/Tonejs/audio/tree/master/salamander" style="color:inherit">Salamander Grand Piano V2</a>（Alexander Holm, <a href="https://creativecommons.org/licenses/by/3.0/" style="color:inherit">CC BY 3.0</a>）</p>
+</footer>
+
+<script>
+(() => {
+  // ---------- Music theory ----------
+  const LETTERS = ['C','D','E','F','G','A','B'];
+  const NAT = [0,2,4,5,7,9,11];
+  const SOLF = ['ド','レ','ミ','ファ','ソ','ラ','シ'];
+  const IROHA = ['ハ','ニ','ホ','ヘ','ト','イ','ロ'];
+  const ROMAN = ['I','II','III','IV','V','VI','VII'];
+  const MAJ_SCALE = [0,2,4,5,7,9,11];
+  const MIN_SCALE = [0,2,3,5,7,8,10];
+
+  const acc = a => ({0:'',1:'♯',2:'♯♯','-1':'♭','-2':'♭♭'})[a] ?? '';
+  const N = s => { let a = 0; for (const ch of s.slice(1)) a += ch === '#' ? 1 : ch === 'b' ? -1 : 0; return { L: LETTERS.indexOf(s[0]), a }; };
+  const mod = (n, m) => ((n % m) + m) % m;
+  const pcOf = n => mod(NAT[n.L] + n.a, 12);
+  const nameOf = n => LETTERS[n.L] + acc(n.a);
+  const solfOf = n => SOLF[n.L] + acc(n.a);
+  const transpose = (n, semis, steps) => {
+    const L = mod(n.L + steps, 7);
+    let a = mod(pcOf(n) + semis - NAT[L], 12);
+    if (a > 6) a -= 12;
+    return { L, a };
+  };
+
+  // [semitones, letter steps, interval label]
+  const Q = {
+    '':      { ja: 'メジャー',               iv: [[0,0,'R'],[4,2,'3'],[7,4,'5']] },
+    'm':     { ja: 'マイナー',               iv: [[0,0,'R'],[3,2,'♭3'],[7,4,'5']] },
+    '°':     { ja: 'ディミニッシュ',         iv: [[0,0,'R'],[3,2,'♭3'],[6,4,'♭5']] },
+    'aug':   { ja: 'オーギュメント',         iv: [[0,0,'R'],[4,2,'3'],[8,4,'♯5']] },
+    'sus2':  { ja: 'サスツー',               iv: [[0,0,'R'],[2,1,'2'],[7,4,'5']] },
+    'sus4':  { ja: 'サスフォー',             iv: [[0,0,'R'],[5,3,'4'],[7,4,'5']] },
+    '6':     { ja: 'シックス',               iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[9,5,'6']] },
+    'm6':    { ja: 'マイナーシックス',       iv: [[0,0,'R'],[3,2,'♭3'],[7,4,'5'],[9,5,'6']] },
+    '7':     { ja: 'セブンス',               iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[10,6,'♭7']] },
+    'M7':    { ja: 'メジャーセブンス',       iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[11,6,'7']] },
+    'm7':    { ja: 'マイナーセブンス',       iv: [[0,0,'R'],[3,2,'♭3'],[7,4,'5'],[10,6,'♭7']] },
+    'mM7':   { ja: 'マイナーメジャーセブンス', iv: [[0,0,'R'],[3,2,'♭3'],[7,4,'5'],[11,6,'7']] },
+    'm7♭5':  { ja: 'ハーフディミニッシュ',   iv: [[0,0,'R'],[3,2,'♭3'],[6,4,'♭5'],[10,6,'♭7']] },
+    '°7':    { ja: 'ディミニッシュセブンス', iv: [[0,0,'R'],[3,2,'♭3'],[6,4,'♭5'],[9,6,'♭♭7']] },
+    '7sus4': { ja: 'セブンスサスフォー',     iv: [[0,0,'R'],[5,3,'4'],[7,4,'5'],[10,6,'♭7']] },
+    'add9':  { ja: 'アドナインス',           iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[14,8,'9']] },
+    '9':     { ja: 'ナインス',               iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[10,6,'♭7'],[14,8,'9']] },
+    'M9':    { ja: 'メジャーナインス',       iv: [[0,0,'R'],[4,2,'3'],[7,4,'5'],[11,6,'7'],[14,8,'9']] },
+    'm9':    { ja: 'マイナーナインス',       iv: [[0,0,'R'],[3,2,'♭3'],[7,4,'5'],[10,6,'♭7'],[14,8,'9']] },
+  };
+  const Q_ORDER = ['', 'm', '°', 'aug', 'sus2', 'sus4', '6', 'm6', '7', 'M7', 'm7', 'mM7', 'm7♭5', '°7', '7sus4', 'add9', '9', 'M9', 'm9'];
+  const ROM_SUFFIX = { '':'', 'm':'', '°':'°', 'aug':'+', 'sus2':'sus2', 'sus4':'sus4', '6':'6', 'm6':'6', '7':'7', 'M7':'M7', 'm7':'7', 'mM7':'M7', 'm7♭5':'ø7', '°7':'°7', '7sus4':'7sus4', 'add9':'add9', '9':'9', 'M9':'M9', 'm9':'9' };
+
+  const isMinorish = q => Q[q].iv.some(([s, st]) => s === 3 && st === 2);
+  const chordName = c => nameOf(c.root) + c.q;
+  const chordHTML = c => `${LETTERS[c.root.L]}<span class="sfx">${acc(c.root.a)}${c.q}</span>`;
+  const rootMidi = c => { const pc = pcOf(c.root); return 60 + pc - (pc > 6 ? 12 : 0); };
+  const tonesOf = c => Q[c.q].iv.map(([s, st, lab]) => ({ note: transpose(c.root, s, st), midi: rootMidi(c) + s, lab }));
+
+  // Circle of fifths, clockwise from C. Columns = a major key's I / vi / vii°.
+  const MAJ_ROOTS = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'].map(N);
+  const MIN_ROOTS = ['A','E','B','F#','C#','G#','D#','Bb','F','C','G','D'].map(N);
+  const DIM_ROOTS = ['B','F#','C#','G#','D#','A#','E#','C','G','D','A','E'].map(N);
+  const RING = [
+    { roots: MAJ_ROOTS, q: '',  cls: 'major', r: [148, 198], fs: 23, nameR: 180, rnR: 157 },
+    { roots: MIN_ROOTS, q: 'm', cls: 'minor', r: [100, 148], fs: 18, nameR: 130, rnR: 109 },
+    { roots: DIM_ROOTS, q: '°', cls: 'dim',   r: [60, 100],  fs: 13, nameR: 84,  rnR: 69  },
+  ];
+  const WHEEL_RN = {
+    major: [{'-1':'IV','0':'I','1':'V'}, {'-1':'ii','0':'vi','1':'iii'}, {'0':'vii°'}],
+    minor: [{'-1':'VI','0':'III','1':'VII'}, {'-1':'iv','0':'i','1':'v'}, {'0':'ii°'}],
+  };
+  // degree (1..7) -> [ring, rel position]
+  const DEG_POS = {
+    major: [[0,0],[1,-1],[1,1],[0,-1],[0,1],[1,0],[2,0]],
+    minor: [[1,0],[2,0],[0,0],[1,-1],[1,1],[0,-1],[0,1]],
+  };
+
+  const SPELL = {
+    std:   ['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'],
+    sharp: ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],
+    flat:  ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'],
+  };
+
+  // Presets as [major-scale degree 0..6, quality], relative to the major tonic (relative major in minor keys).
+  const PRESETS = [
+    { name: '王道進行（IV–V–iii–vi）', p: [[3,'M7'],[4,'7'],[2,'m7'],[5,'m']] },
+    { name: '小室進行（vi–IV–V–I）', p: [[5,'m'],[3,''],[4,''],[0,'']] },
+    { name: 'カノン進行', p: [[0,''],[4,''],[5,'m'],[2,'m'],[3,''],[0,''],[3,''],[4,'']] },
+    { name: '丸サ進行（IVM7–III7–vim7–Vm7 I7）', p: [[3,'M7'],[2,'7'],[5,'m7'],[4,'m7'],[0,'7']] },
+    { name: 'I–V–vi–IV', p: [[0,''],[4,''],[5,'m'],[3,'']] },
+    { name: 'ツーファイブワン（ii7–V7–IM7）', p: [[1,'m7'],[4,'7'],[0,'M7']] },
+    { name: '循環コード（I–vi–ii–V）', p: [[0,''],[5,'m'],[1,'m'],[4,'']] },
+  ];
+
+  // ---------- State ----------
+  const state = {
+    idx: 0, mode: 'major', seventh: false, spell: 'std',
+    expPc: 0, expQ: '',
+    prog: [], bpm: 96, beats: 4, loop: true,
+    current: { root: N('C'), q: '' }, active: null, curStep: -1,
+  };
+  const LS_KEY = 'chordwheel.v1';
+  const validChord = c => c && c.root && Number.isInteger(c.root.L) && c.root.L >= 0 && c.root.L < 7 && Number.isInteger(c.root.a) && Math.abs(c.root.a) <= 2 && Object.prototype.hasOwnProperty.call(Q, c.q);
+  function save() {
+    try {
+      const { idx, mode, seventh, spell, prog, bpm, beats, loop } = state;
+      localStorage.setItem(LS_KEY, JSON.stringify({ idx, mode, seventh, spell, prog, bpm, beats, loop }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (!s) return false;
+      if (Number.isInteger(s.idx) && s.idx >= 0 && s.idx < 12) state.idx = s.idx;
+      if (s.mode === 'major' || s.mode === 'minor') state.mode = s.mode;
+      state.seventh = !!s.seventh;
+      if (SPELL[s.spell]) state.spell = s.spell;
+      if (Array.isArray(s.prog)) state.prog = s.prog.filter(validChord).slice(0, 64);
+      if (s.bpm >= 40 && s.bpm <= 240) state.bpm = Math.round(s.bpm);
+      if ([2,4,8].includes(s.beats)) state.beats = s.beats;
+      if (typeof s.loop === 'boolean') state.loop = s.loop;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  const relOf = i => { const p = mod(i - state.idx, 12); return p > 6 ? p - 12 : p; };
+  const isDiatonic = (ring, rel) => ring < 2 ? Math.abs(rel) <= 1 : rel === 0;
+  const tonic = () => (state.mode === 'major' ? MAJ_ROOTS : MIN_ROOTS)[state.idx];
+  const majorTonic = () => MAJ_ROOTS[state.idx];
+
+  function wheelChord(ring, i) {
+    const rel = relOf(i);
+    let q = RING[ring].q;
+    if (state.seventh) {
+      const dia = isDiatonic(ring, rel);
+      if (ring === 0) q = dia && rel !== 1 ? 'M7' : '7';
+      else if (ring === 1) q = 'm7';
+      else q = dia ? 'm7♭5' : '°7';
+    }
+    return { root: RING[ring].roots[i], q };
+  }
+
+  function romanOf(c) {
+    const t = tonic();
+    const scale = state.mode === 'major' ? MAJ_SCALE : MIN_SCALE;
+    const d = mod(c.root.L - t.L, 7);
+    const sn = transpose(t, scale[d], d);
+    let diff = mod(pcOf(c.root) - pcOf(sn), 12); if (diff > 6) diff -= 12;
+    const num = isMinorish(c.q) ? ROMAN[d].toLowerCase() : ROMAN[d];
+    return acc(diff) + num + ROM_SUFFIX[c.q];
+  }
+
+  // ---------- Audio ----------
+  // Grand piano: Salamander Grand Piano V2 (Yamaha C5) sampled every minor third, pitched to the nearest note.
+  // Falls back to a simple synth until the samples are decoded, or if they cannot be loaded.
+  const SAMPLE_NOTES = ['C2','Ds2','Fs2','A2','C3','Ds3','Fs3','A3','C4','Ds4','Fs4','A4','C5','Ds5','Fs5','A5','C6'];
+  const SAMPLE_PC = { C: 0, Ds: 3, Fs: 6, A: 9 };
+  const sampleMidi = s => { const m = s.match(/^([A-Z]s?)(\d)$/); return (+m[2] + 1) * 12 + SAMPLE_PC[m[1]]; };
+  const buffers = new Map(); // midi -> AudioBuffer
+  let ctx = null, master = null;
+  let voices = [];
+  let pianoState = 'loading'; // loading | ready | failed
+  let rawSamples = null, decoding = null, fetched = false;
+
+  function prefetchPiano() {
+    rawSamples = Promise.all(SAMPLE_NOTES.map(n =>
+      fetch(`samples/piano/${n}.mp3`).then(r => r.ok ? r.arrayBuffer() : null).catch(() => null).then(ab => [n, ab])));
+    rawSamples.then(list => { fetched = true; if (!list.some(([, ab]) => ab)) pianoState = 'failed'; renderSound(); });
+  }
+  const decode = ab => new Promise((res, rej) => {
+    const p = ctx.decodeAudioData(ab, res, rej);
+    if (p && p.then) p.then(res, rej);
+  });
+  function decodePiano() {
+    decoding = rawSamples.then(list => Promise.all(list.filter(([, ab]) => ab).map(([n, ab]) =>
+      decode(ab).then(b => { buffers.set(sampleMidi(n), b); }, () => {}))))
+      .then(() => { pianoState = buffers.size ? 'ready' : 'failed'; renderSound(); });
+  }
+  function makeImpulse(sec) {
+    const rate = ctx.sampleRate, len = Math.floor(rate * sec), buf = ctx.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        const t = i / rate;
+        d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 2.2) * Math.pow(1 - i / len, 1.5) * (t < 0.015 ? t / 0.015 : 1);
+      }
+    }
+    return buf;
+  }
+  function ensureAudio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -12; comp.ratio.value = 3; comp.attack.value = 0.003; comp.release.value = 0.25;
+      master = ctx.createGain(); master.gain.value = 0.9;
+      // Concert-hall feel: a short generated reverb, darkened so it stays behind the piano.
+      const send = ctx.createGain(); send.gain.value = 0.2;
+      const conv = ctx.createConvolver(); conv.buffer = makeImpulse(2.4);
+      const damp = ctx.createBiquadFilter(); damp.type = 'lowpass'; damp.frequency.value = 4200;
+      master.connect(comp);
+      master.connect(send); send.connect(conv); conv.connect(damp); damp.connect(comp);
+      comp.connect(ctx.destination);
+      // Unlock iOS by playing one silent buffer inside the gesture.
+      try { const b = ctx.createBuffer(1, 1, 22050); const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) {}
+      if (rawSamples) decodePiano();
+    }
+    if (ctx.state !== 'running') { try { ctx.resume(); } catch (e) {} }
+    return ctx;
+  }
+  // Lift the dampers: previous notes fade out like a released pedal.
+  function silence(t) {
+    for (const v of voices) {
+      try {
+        v.kill.gain.cancelScheduledValues(t);
+        v.kill.gain.setTargetAtTime(0, t, 0.07);
+        v.srcs.forEach(s => s.stop(t + 0.9));
+      } catch (e) {}
+    }
+    voices = [];
+  }
+  function addVoice(kill, srcs, midi) {
+    if (ctx.createStereoPanner) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = Math.max(-0.5, Math.min(0.5, (midi - 62) / 44)); // low notes left, high notes right, as seen from the bench
+      kill.connect(p); p.connect(master);
+    } else kill.connect(master);
+    const v = { kill, srcs };
+    voices.push(v);
+    srcs[0].onended = () => { voices = voices.filter(x => x !== v); };
+  }
+  function nearestSample(midi) {
+    let best = null, bd = Infinity;
+    for (const m of buffers.keys()) { const d = Math.abs(m - midi); if (d < bd || (d === bd && m > midi)) { bd = d; best = m; } }
+    return best;
+  }
+  function pianoNote(midi, t, vel, hold) {
+    const sm = nearestSample(midi);
+    const src = ctx.createBufferSource();
+    src.buffer = buffers.get(sm);
+    src.playbackRate.value = Math.pow(2, (midi - sm) / 12);
+    const tone = ctx.createBiquadFilter(); tone.type = 'lowpass';
+    tone.frequency.value = 1400 + 11000 * vel * vel; // softer touch = darker tone
+    const g = ctx.createGain(); g.gain.value = 1.8 * vel; // the samples peak around -13 dBFS
+    const kill = ctx.createGain();
+    src.connect(tone); tone.connect(g); g.connect(kill);
+    src.start(t);
+    if (hold) { kill.gain.setTargetAtTime(0, t + hold, 0.12); src.stop(t + hold + 1.2); }
+    addVoice(kill, [src], midi);
+  }
+  function synthNote(midi, t, vel, hold) {
+    const dur = hold ? hold + 0.4 : 2.8;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    const env = ctx.createGain(), kill = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(9000, f * 9), t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(f * 1.6, 350), t + dur * 0.7);
+    const o1 = ctx.createOscillator(); o1.type = 'triangle'; o1.frequency.value = f;
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2;
+    const g2 = ctx.createGain(); g2.gain.value = 0.28;
+    const peak = 0.3 * vel;
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+    env.gain.exponentialRampToValueAtTime(peak * 0.4, t + 0.3);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(env); env.connect(kill);
+    [o1, o2].forEach(o => { o.start(t); o.stop(t + dur + 0.05); });
+    addVoice(kill, [o1, o2], midi);
+  }
+  const note = (midi, t, vel, hold) => (pianoState === 'ready' ? pianoNote : synthNote)(midi, t, vel, hold);
+
+  function soundChord(c, opts = {}) {
+    if (!ensureAudio()) return;
+    if (pianoState === 'loading' && decoding && !opts.waited) {
+      // First chord: wait briefly for the piano to decode instead of playing the synth.
+      const timeout = new Promise(res => setTimeout(res, 1500));
+      Promise.race([decoding, timeout]).then(() => soundChord(c, { ...opts, waited: true }));
+      return;
+    }
+    const t = ctx.currentTime + 0.03;
+    silence(t);
+    const tones = tonesOf(c);
+    const hold = opts.dur || 0; // 0 = let the strings ring out
+    if (opts.arp) {
+      const seq = tones.concat(tones.slice(0, -1).reverse());
+      seq.forEach((tn, k) => note(tn.midi, t + k * 0.17, 0.62 + Math.random() * 0.06, 0));
+      return;
+    }
+    const base = Math.min(0.8, 1.15 / Math.sqrt(tones.length));
+    note(rootMidi(c) - 12, t, 0.62, hold);
+    tones.forEach((tn, k) => {
+      const top = k === tones.length - 1; // voice the top note a little louder, as a pianist would
+      const v = Math.min(1, base * (top ? 1.12 : 1) * (0.94 + Math.random() * 0.08));
+      note(tn.midi, t + 0.008 + k * 0.011 + Math.random() * 0.004, v, hold);
+    });
+  }
+  function soundNote(midi) {
+    if (!ensureAudio()) return;
+    note(midi, ctx.currentTime + 0.01, 0.75, 0);
+  }
+  function renderSound() {
+    const el = document.getElementById('snd');
+    if (el) el.textContent = pianoState === 'failed' ? '音色：簡易シンセ' : fetched ? '音色：グランドピアノ' : 'ピアノ音源を読み込み中…';
+  }
+
+  // ---------- Rendering ----------
+  const $ = id => document.getElementById(id);
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const f2 = n => n.toFixed(2);
+  const pt = (r, a) => { const rad = a * Math.PI / 180; return [r * Math.sin(rad), -r * Math.cos(rad)]; };
+  function arc(r1, r2, a0, a1) {
+    const [x0, y0] = pt(r2, a0), [x1, y1] = pt(r2, a1), [x2, y2] = pt(r1, a1), [x3, y3] = pt(r1, a0);
+    return `M${f2(x0)} ${f2(y0)}A${r2} ${r2} 0 0 1 ${f2(x1)} ${f2(y1)}L${f2(x2)} ${f2(y2)}A${r1} ${r1} 0 0 0 ${f2(x3)} ${f2(y3)}Z`;
+  }
+  const jaKey = (n, minor) => (n.a > 0 ? '嬰' : n.a < 0 ? '変' : '') + IROHA[n.L] + (minor ? '短調' : '長調');
+
+  function renderWheel() {
+    let h = '';
+    let hl = '';
+    RING.forEach((ring, r) => {
+      for (let i = 0; i < 12; i++) {
+        const rel = relOf(i);
+        const a = rel * 30;
+        const dia = isDiatonic(r, rel);
+        const c = wheelChord(r, i);
+        const d = arc(ring.r[0], ring.r[1], a - 15, a + 15);
+        h += `<path class="s ${dia ? ring.cls : 'idle'}" d="${d}" data-r="${r}" data-i="${i}"><title>${chordName(c)}</title></path>`;
+        const rn = WHEEL_RN[state.mode][r][rel];
+        const [nx, ny] = pt(dia ? ring.nameR : (ring.r[0] + ring.r[1]) / 2, a);
+        const fs = state.seventh && r < 2 ? ring.fs * 0.86 : ring.fs;
+        h += `<text class="${dia ? 'on' : 'off'}" x="${f2(nx)}" y="${f2(ny)}" font-size="${f2(fs)}">${LETTERS[c.root.L]}<tspan class="sfx">${acc(c.root.a)}${c.q}</tspan></text>`;
+        if (dia && rn) {
+          const [rx, ry] = pt(ring.rnR, a);
+          h += `<text class="on rn" x="${f2(rx)}" y="${f2(ry)}" font-size="${r === 2 ? 9 : 11}">${rn}</text>`;
+        }
+        if (state.active && state.active.r === r && state.active.i === i) hl = `<path class="hl pulse" d="${d}"></path>`;
+      }
+    });
+    const t = tonic();
+    h += `<circle class="hub" r="54" data-hub="1"><title>主和音を鳴らす</title></circle>`;
+    h += `<text class="hub-key" x="0" y="-8">${LETTERS[t.L]}<tspan class="sfx">${acc(t.a)}${state.mode === 'minor' ? 'm' : ''}</tspan></text>`;
+    h += `<text class="hub-ja" x="0" y="18">${jaKey(t, state.mode === 'minor')}</text>`;
+    $('wheel').innerHTML = h + hl;
+  }
+
+  function renderKeySelect() {
+    const sel = $('keySel');
+    const roots = state.mode === 'major' ? MAJ_ROOTS : MIN_ROOTS;
+    sel.innerHTML = roots.map((n, i) => `<option value="${i}">${nameOf(n)}${state.mode === 'minor' ? 'm' : ''}（${jaKey(n, state.mode === 'minor')}）</option>`).join('');
+    sel.value = String(state.idx);
+    $('modeMaj').setAttribute('aria-pressed', String(state.mode === 'major'));
+    $('modeMin').setAttribute('aria-pressed', String(state.mode === 'minor'));
+    $('sev').checked = state.seventh;
+  }
+
+  function renderDiatonic() {
+    $('dia').innerHTML = DEG_POS[state.mode].map(([r, rel], k) => {
+      const i = mod(state.idx + rel, 12);
+      const c = wheelChord(r, i);
+      return `<button class="${RING[r].cls}" data-deg="${k}" aria-label="${chordName(c)}"><b>${nameOf(c.root)}${c.q}</b><small>${romanOf(c)}</small></button>`;
+    }).join('');
+  }
+
+  const KB_LO = 53, KB_HI = 83; // F3 .. B5
+  const isBlack = m => [1,3,6,8,10].includes(mod(m, 12));
+  function renderKeyboard() {
+    const c = state.current;
+    const tones = tonesOf(c);
+    const byMidi = new Map(tones.map(t => [t.midi, t]));
+    const W = 24, H = 112, BW = 15, BH = 70;
+    let x = 0, whites = '', blacks = '', labels = '';
+    const pos = {};
+    for (let m = KB_LO; m <= KB_HI; m++) { if (!isBlack(m)) { pos[m] = x; x += W; } }
+    for (let m = KB_LO; m <= KB_HI; m++) {
+      const t = byMidi.get(m);
+      const cls = t ? (t.lab === 'R' ? ' root' : ' hit') : '';
+      if (!isBlack(m)) {
+        whites += `<rect class="w${cls}" x="${pos[m] + 0.5}" y="0.5" width="${W - 1}" height="${H - 1}" rx="3" data-m="${m}"></rect>`;
+        if (t) labels += `<text x="${pos[m] + W / 2}" y="${H - 12}">${nameOf(t.note)}</text>`;
+        else if (mod(m, 12) === 0) labels += `<text class="c" x="${pos[m] + W / 2}" y="${H - 10}">C${Math.floor(m / 12) - 1}</text>`;
+      } else {
+        const bx = pos[m - 1] + W - BW / 2;
+        blacks += `<rect class="b${cls}" x="${bx}" y="0" width="${BW}" height="${BH}" rx="2.5" data-m="${m}"></rect>`;
+        if (t) labels += `<text x="${bx + BW / 2}" y="${BH - 10}" font-size="8">${nameOf(t.note)}</text>`;
+      }
+    }
+    const svg = $('kbd');
+    svg.setAttribute('viewBox', `0 0 ${x} ${H}`);
+    svg.innerHTML = whites + blacks + labels;
+  }
+
+  function renderNow() {
+    const c = state.current;
+    const tones = tonesOf(c);
+    $('nowName').innerHTML = chordHTML(c);
+    $('nowQ').textContent = Q[c.q].ja;
+    $('nowRn').innerHTML = `キー ${nameOf(tonic())}${state.mode === 'minor' ? 'm' : ''} で <b>${romanOf(c)}</b>`;
+    $('formula').innerHTML = `構成音 <b>${tones.map(t => nameOf(t.note)).join('・')}</b> <span>（${tones.map(t => solfOf(t.note)).join('・')}）</span>`;
+    $('tones').innerHTML = tones.map(t => `<div class="tone${t.lab === 'R' ? ' root' : ''}"><b>${nameOf(t.note)}</b><span>${solfOf(t.note)}</span><i>${t.lab}</i></div>`).join('');
+    renderKeyboard();
+  }
+
+  function renderExplorer() {
+    document.querySelectorAll('[data-spell]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.spell === state.spell)));
+    const names = SPELL[state.spell];
+    $('roots').innerHTML = names.map((s, pc) => {
+      const n = N(s);
+      return `<button data-pc="${pc}" aria-pressed="${pc === state.expPc}">${nameOf(n)}</button>`;
+    }).join('');
+    const root = N(names[state.expPc]);
+    $('quals').innerHTML = Q_ORDER.map(q => {
+      const c = { root, q };
+      const notes = tonesOf(c).map(t => nameOf(t.note)).join(' ');
+      return `<button data-q="${q}" aria-pressed="${q === state.expQ}"><b>${chordHTML(c)}</b><small>${Q[q].ja}</small><em>${notes}</em></button>`;
+    }).join('');
+  }
+
+  function renderProg() {
+    const el = $('prog');
+    if (!state.prog.length) {
+      el.innerHTML = '<span class="prog-empty">ホイールや一覧でコードを鳴らして「＋ 進行に追加」を押すと、ここに並びます。</span>';
+    } else {
+      el.innerHTML = state.prog.map((c, k) => `<div class="chip${k === state.curStep ? ' cur' : ''}" data-k="${k}" role="button" tabindex="0" aria-label="${chordName(c)} を鳴らす"><b>${chordHTML(c)}</b><small>${tonesOf(c).map(t => nameOf(t.note)).join(' ')}</small><button class="x" data-del="${k}" aria-label="${chordName(c)} を削除">×</button></div>`).join('');
+    }
+    $('playProg').textContent = playing ? '■ 停止' : '▶ 再生';
+    $('bpm').value = state.bpm;
+    $('beats').value = String(state.beats);
+    $('loop').checked = state.loop;
+  }
+
+  function renderAll() { renderKeySelect(); renderWheel(); renderDiatonic(); renderNow(); renderExplorer(); renderProg(); }
+
+  // ---------- Actions ----------
+  function findOnWheel(c) {
+    for (let r = 0; r < 3; r++) for (let i = 0; i < 12; i++) {
+      const w = wheelChord(r, i);
+      if (pcOf(w.root) === pcOf(c.root) && w.q === c.q) return { r, i };
+    }
+    for (let r = 0; r < 3; r++) for (let i = 0; i < 12; i++) {
+      if (pcOf(RING[r].roots[i]) === pcOf(c.root) && RING[r].q === c.q) return { r, i };
+    }
+    return null;
+  }
+  function play(c, opts = {}) {
+    state.current = c;
+    state.active = opts.pos || findOnWheel(c);
+    soundChord(c, opts);
+    renderWheel();
+    renderNow();
+  }
+
+  function setKey(idx, mode) {
+    state.idx = mod(idx, 12);
+    if (mode) state.mode = mode;
+    state.active = null;
+    renderKeySelect(); renderWheel(); renderDiatonic(); renderNow();
+    save();
+  }
+
+  // Progression playback
+  let playing = false, timer = null;
+  function stopProg() {
+    playing = false; clearTimeout(timer); state.curStep = -1; renderProg();
+  }
+  function startProg() {
+    if (!state.prog.length) return;
+    ensureAudio();
+    playing = true;
+    let step = 0;
+    let next = performance.now();
+    const tick = () => {
+      if (!playing) return;
+      if (step >= state.prog.length) {
+        if (state.loop && state.prog.length) step = 0; else { stopProg(); return; }
+      }
+      const barSec = 60 / state.bpm * state.beats;
+      state.curStep = step;
+      play(state.prog[step], { dur: Math.min(Math.max(barSec * 1.05, 1.2), 4.5) });
+      renderProg();
+      step++;
+      next += barSec * 1000;
+      timer = setTimeout(tick, Math.max(0, next - performance.now()));
+    };
+    tick();
+  }
+
+  // ---------- Events ----------
+  $('wheel').addEventListener('click', e => {
+    const s = e.target.closest('[data-r]');
+    if (s) { const r = +s.dataset.r, i = +s.dataset.i; play(wheelChord(r, i), { pos: { r, i } }); return; }
+    if (e.target.closest('[data-hub]')) $('dia').querySelector('[data-deg="0"]').click();
+  });
+  $('dia').addEventListener('click', e => {
+    const b = e.target.closest('[data-deg]'); if (!b) return;
+    const [r, rel] = DEG_POS[state.mode][+b.dataset.deg];
+    const i = mod(state.idx + rel, 12);
+    play(wheelChord(r, i), { pos: { r, i } });
+  });
+  $('keySel').addEventListener('change', e => setKey(+e.target.value));
+  $('keyPrev').addEventListener('click', () => setKey(state.idx - 1));
+  $('keyNext').addEventListener('click', () => setKey(state.idx + 1));
+  $('modeMaj').addEventListener('click', () => setKey(state.idx, 'major'));
+  $('modeMin').addEventListener('click', () => setKey(state.idx, 'minor'));
+  $('sev').addEventListener('change', e => { state.seventh = e.target.checked; state.active = null; renderWheel(); renderDiatonic(); save(); });
+
+  $('kbd').addEventListener('pointerdown', e => {
+    const k = e.target.closest('[data-m]'); if (!k) return;
+    soundNote(+k.dataset.m);
+  });
+  $('again').addEventListener('click', () => play(state.current));
+  $('arp').addEventListener('click', () => play(state.current, { arp: true }));
+  $('add').addEventListener('click', () => {
+    if (state.prog.length >= 64) return;
+    state.prog.push({ root: { ...state.current.root }, q: state.current.q });
+    renderProg(); save();
+  });
+
+  document.querySelectorAll('[data-spell]').forEach(b => b.addEventListener('click', () => { state.spell = b.dataset.spell; renderExplorer(); save(); }));
+  $('roots').addEventListener('click', e => {
+    const b = e.target.closest('[data-pc]'); if (!b) return;
+    state.expPc = +b.dataset.pc;
+    renderExplorer();
+    play({ root: N(SPELL[state.spell][state.expPc]), q: state.expQ });
+  });
+  $('quals').addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    state.expQ = b.dataset.q;
+    renderExplorer();
+    play({ root: N(SPELL[state.spell][state.expPc]), q: state.expQ });
+  });
+
+  $('prog').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) { state.prog.splice(+del.dataset.del, 1); if (!state.prog.length && playing) stopProg(); renderProg(); save(); return; }
+    const chip = e.target.closest('[data-k]');
+    if (chip) play(state.prog[+chip.dataset.k]);
+  });
+  $('prog').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-k]')) { e.preventDefault(); e.stopPropagation(); play(state.prog[+e.target.dataset.k]); }
+  });
+  $('playProg').addEventListener('click', () => { playing ? stopProg() : startProg(); renderProg(); });
+  $('bpm').addEventListener('change', e => { const v = Math.round(+e.target.value); state.bpm = Math.min(240, Math.max(40, v || 96)); e.target.value = state.bpm; save(); });
+  $('beats').addEventListener('change', e => { state.beats = +e.target.value; save(); });
+  $('loop').addEventListener('change', e => { state.loop = e.target.checked; save(); });
+  $('clear').addEventListener('click', () => { stopProg(); state.prog = []; renderProg(); save(); });
+
+  const presetSel = $('preset');
+  presetSel.innerHTML += PRESETS.map((p, k) => `<option value="${k}">${p.name}</option>`).join('');
+  presetSel.addEventListener('change', e => {
+    const p = PRESETS[+e.target.value]; e.target.value = '';
+    if (!p) return;
+    state.prog = buildPreset(p);
+    renderProg(); save();
+  });
+  function buildPreset(p) {
+    const T = majorTonic();
+    return p.p.map(([d, q]) => ({ root: transpose(T, MAJ_SCALE[d], d), q }));
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target.matches('input, select, textarea')) return;
+    if (/^[1-7]$/.test(e.key)) { $('dia').querySelector(`[data-deg="${+e.key - 1}"]`).click(); }
+    else if (e.key === ' ' && !e.target.matches('button, [role="button"]')) { e.preventDefault(); playing ? stopProg() : startProg(); renderProg(); }
+  });
+
+  // ---------- Boot ----------
+  prefetchPiano();
+  renderSound();
+  // Start the audio engine on the first touch so samples are decoded before the first chord.
+  document.addEventListener('pointerdown', () => ensureAudio(), { once: true, capture: true });
+  if (!load() || !state.prog.length) state.prog = buildPreset(PRESETS[0]);
+  state.current = wheelChord(state.mode === 'major' ? 0 : 1, state.idx);
+  renderAll();
+})();
+</script>
+<script src="embed.js?v=20261118033638"></script>
+</body>
+</html>

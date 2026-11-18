@@ -1,0 +1,134 @@
+/* Shown inside the tuner app: the same black, grey and white language as the tuner and metronome,
+   with gold as this page's own colour (the tuner is green, the metronome red). Leaves room for the tab bar. */
+:root {
+  --bg: #000000; --surface: #141416; --surface-2: #1f1f22; --surface-3: #2b2b2f; --line: #222226;
+  --fg: #f5f5f7; --muted: #7f7f87;
+  --gold: #cfa957; --gold-hi: #ecc879; --gold-ink: #17130a;
+  --flat: #4aa3ff; --sharp: #ff5a5f; --pure: #3bd45a;
+}
+body {
+  padding-bottom: 120px;
+  background: radial-gradient(110% 40% at 50% -6%, rgba(207, 169, 87, 0.12), transparent 60%), #000;
+}
+.wrap { padding-top: 0; }
+
+/* header: a small title on the left like the metronome's label, pitch and gear on the right */
+.masthead { padding-top: 10px; padding-bottom: 0; }
+.mast-row { gap: 10px; align-items: center; }
+.eyebrow, .mast-waves, .mast-lead { display: none; }
+.mast-title { flex: 1; margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 22px; line-height: 1; letter-spacing: 0; white-space: nowrap; }
+.mast-title em { font-style: italic; font-weight: 600; padding-right: .04em; }
+.pitch-pill { display: none; } /* the pitch is already on the quick chip under the input */
+.pitch-pill b { color: var(--gold-hi); }
+.gear { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-2); color: #b0b0b8;
+  display: grid; place-items: center; transition: transform .15s; }
+.gear:active { transform: scale(.9); }
+.gear svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* input: pill field + keyboard button, then quick setting chips */
+.field-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.field-row .field { flex: 1; margin: 0; }
+#notes-input { border: 0; border-radius: 999px; background: var(--surface-2); box-shadow: none; padding-left: 20px; font-size: 1.25rem; }
+#notes-input:focus { box-shadow: 0 0 0 2px var(--gold); }
+.field-clear { background: var(--surface-3); }
+.kb-btn { width: 52px; height: 52px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-2); color: #b0b0b8; display: grid; place-items: center; transition: background .2s, color .2s; }
+.kb-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.kb-btn.on { background: var(--gold-hi); color: var(--gold-ink); }
+.quick { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+.quick::-webkit-scrollbar { display: none; }
+.qchip { flex: 0 0 auto; border: 0; border-radius: 12px; padding: 8px 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--f-mono); font-size: 12px; color: #d8d8de; white-space: nowrap; }
+.qchip i { font-style: normal; color: var(--muted); margin-left: 2px; }
+.qchip b { color: var(--gold-hi); font-weight: 500; }
+.qchip:active { transform: scale(.95); }
+#finder > .hint { font-size: .72rem; margin-top: 8px; }
+.chip { border-radius: 10px; background: var(--surface); border-color: var(--line); }
+
+/* result: chord name left, ratio right, the dial below on a dark disc like the tuner */
+.stage { display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 12px;
+  background: transparent; border: 0; box-shadow: none; padding: 14px 2px 0; text-align: left; }
+.stage > * { grid-column: 1 / -1; }
+.stage-label { text-align: left; color: var(--muted); }
+.stage .chord-name { grid-column: 1; text-align: left; font-size: clamp(3.6rem, 18vw, 5rem); line-height: .95; }
+.stage .stage-ratio { grid-column: 2; text-align: right; color: var(--gold-hi); letter-spacing: .14em; margin: 0 0 6px; }
+.stage .stage-ratio small { display: block; letter-spacing: 0; }
+.gauge-wrap { margin-top: 12px; padding: 14px 8px 4px; border-radius: 190px 190px 24px 24px;
+  background: radial-gradient(120% 100% at 50% 100%, #17171c, #0b0b0e 70%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.g-arc { stroke: #2b2b30; }
+.g-arc-flat, .g-arc-sharp { opacity: .5; }
+.g-tick { stroke: #5b5b64; opacity: 1; }
+.g-tick.major { stroke: #8a8a92; }
+.g-tick.center { stroke: var(--gold-hi); }
+.g-needle line { stroke-width: 3; filter: drop-shadow(0 0 4px currentColor); }
+.g-needle.neg line { color: var(--flat); } .g-needle.pos line { color: var(--sharp); } .g-needle.zero line { color: var(--pure); }
+.g-label circle { fill: #000 !important; stroke-width: 2; }
+.g-label.neg circle { stroke: var(--flat); } .g-label.pos circle { stroke: var(--sharp); } .g-label.zero circle { stroke: var(--pure); }
+.g-label.neg text { fill: var(--flat); } .g-label.pos text { fill: var(--sharp); } .g-label.zero text { fill: var(--pure); }
+.g-hub { fill: var(--fg); stroke: var(--gold); }
+
+/* play: pill buttons, gold for the just-intonation chord */
+.play { border: 0; border-radius: 999px; background: var(--surface-2); padding: 13px 4px; }
+.play.primary { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--gold-ink); box-shadow: 0 8px 24px rgba(207, 169, 87, .25); }
+.play.playing { box-shadow: 0 0 0 3px rgba(236, 200, 121, .5); }
+
+/* cards */
+.block { background: var(--surface); border: 0; border-radius: 20px; box-shadow: inset 0 0 0 1px var(--line); }
+.block h2 { color: var(--fg); letter-spacing: .04em; }
+.block-sub { color: var(--muted); }
+#settings.flash { animation: flash 1.2s ease; }
+@keyframes flash { 0%, 40% { box-shadow: inset 0 0 0 2px var(--gold-hi); } 100% { box-shadow: inset 0 0 0 1px var(--line); } }
+.cands .cand { border-radius: 12px; background: var(--surface-2); border-color: transparent; }
+.cand.active { border-color: var(--gold); background: rgba(207, 169, 87, .1); }
+.ji-row { background: transparent; border-radius: 0; border: 0; border-top: 1px solid var(--line); padding-left: 2px; padding-right: 2px; }
+.ji-row:first-child { border-top: 0; }
+.ratio-btn { border-radius: 10px; background: var(--surface-2); border-color: transparent; }
+.ratio-btn.changed { border-color: var(--gold); }
+.deg { border-radius: 6px; }
+.seg { background: var(--surface-2); border: 0; border-radius: 12px; padding: 3px; }
+.seg button { border-radius: 9px; border: 0; }
+.seg button.active { background: var(--fg); color: #000; box-shadow: none; }
+.seg button.active small { color: #555; }
+.a4-custom input, .tonic select { background: var(--surface-2); border-color: transparent; border-radius: 12px; }
+.keyboard-box summary { color: var(--fg); }
+.key.white.on { background: var(--gold-hi); }
+.key.black.on { background: var(--gold); }
+
+/* explanations: one collapsible row */
+.about { margin-top: 18px; }
+.about-box { background: var(--surface); border-radius: 20px; box-shadow: inset 0 0 0 1px var(--line); padding: 4px 16px; }
+.about-box summary { list-style: none; cursor: pointer; padding: 14px 0; font-weight: 700; display: flex; flex-direction: column; gap: 2px; }
+.about-box summary::-webkit-details-marker { display: none; }
+.about-box summary::after { content: "＋"; position: absolute; right: 34px; color: var(--gold-hi); }
+.about-box[open] summary::after { content: "－"; }
+.about-box summary span { font-size: .72rem; font-weight: 400; color: var(--muted); }
+.about h2 { color: var(--gold); }
+.credits { color: #5c5c64; }
+
+/* empty state: no big "例をタップして試す", just the short line and the example chips */
+.stage .chord-name.empty { display: none; }
+.examples { justify-content: flex-start; margin: 10px 0 0; }
+
+/* one spacing rhythm for the whole page: 12px between every section, 12px inside cards */
+.masthead { padding-bottom: 12px; }
+#finder { display: flex; flex-direction: column; gap: 12px; }
+#finder > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+#finder > [hidden], #chips:empty, .play-status:empty, .stage-ratio:empty { display: none !important; }
+.stage { padding-top: 0; }
+.stage-label { margin: 0 0 4px; }
+.gauge-wrap, .play-row { margin-top: 12px; }
+.play-status { margin-top: 8px; }
+.block { padding: 16px; }
+.block-head { margin-bottom: 12px; }
+.setting + .setting { margin-top: 12px; }
+.keyboard-box { padding: 0 16px; }
+.keyboard-box summary { padding: 16px 0; }
+.keyboard-box[open] { padding-bottom: 16px; }
+.about { margin-top: 12px; }
+.about-box { padding: 0 16px; }
+.about-box summary { padding: 16px 0; }
+.credits { margin-top: 12px; }
+
+/* long chord names (C(omit5), Em(omit5)/C …): own row, one line, shrunk to fit by embed.js */
+.stage { grid-template-columns: 1fr; }
+.stage .chord-name { grid-column: 1 / -1; white-space: nowrap; overflow: hidden; }
+.stage .stage-ratio { grid-column: 1 / -1; text-align: left; margin: 2px 0 0; }

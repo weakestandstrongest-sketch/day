@@ -1,0 +1,1 @@
+13b895f55c71b483d3c060aa8878fbbadbdb0911 Keep long chord names on one line on Pure Harmony

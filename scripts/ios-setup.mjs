@@ -29,7 +29,7 @@ const keys = {
   CFBundleURLTypes: `<array><dict><key>CFBundleURLName</key><string>${SCHEME}</string><key>CFBundleURLSchemes</key><array><string>${SCHEME}</string></array></dict></array>`,
   NSFaceIDUsageDescription: '<string>ひび手帳のロックを Face ID で開くために使います。</string>',
   NSCameraUsageDescription: '<string>日記の写真を撮るために使います。</string>',
-  NSMicrophoneUsageDescription: '<string>カメラで撮影するときに使います（音声は保存しません）。</string>',
+  NSMicrophoneUsageDescription: '<string>カメラで撮影するときと、チューナーで音の高さを測るときに使います（音声は保存しません）。</string>',
   NSLocationWhenInUseUsageDescription: '<string>日記や「この1週間の動き」に、いる場所と天気を記録するために使います。</string>',
   NSPhotoLibraryUsageDescription: '<string>日記に写真を入れるために使います。</string>',
   NSPhotoLibraryAddUsageDescription: '<string>撮った写真を「写真」アプリに保存するために使います。</string>',
