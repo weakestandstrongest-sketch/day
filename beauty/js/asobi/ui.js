@@ -133,6 +133,7 @@ const ICONS = {
   share: 'M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6',
   people: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20a6.5 6.5 0 0113 0M16 4.5a3.5 3.5 0 010 6.5M18 14a6 6 0 013.5 6',
   sound: 'M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12',
+  cpu: 'M7 7h10v10H7zM10 10h4v4h-4zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4',
 };
 
 export function icon(name) {
@@ -197,14 +198,50 @@ export function toast(message, { flip = false, duration = 1600 } = {}) {
   }, duration);
 }
 
+// ---- CPU（ひとりで遊ぶ相手） ----
+// ゲームごとに「ふたりで」か「CPU と」（やさしい・ふつう・つよい）かを覚えておく。CPU はいつも上側（後手・2P）
+export const CPU_LEVELS = { easy: 'やさしい', normal: 'ふつう', hard: 'つよい' };
+export function cpuPref(id) {
+  const p = loadPref('cpu.' + id, null);
+  return p && typeof p === 'object' ? { on: !!p.on, level: CPU_LEVELS[p.level] ? p.level : 'normal' } : { on: false, level: 'normal' };
+}
+export async function chooseCpu(id, title) {
+  const cur = cpuPref(id);
+  const v = await modal({
+    title: '対戦相手',
+    body: h('p', {}, `${title}を、ふたりで遊ぶか、CPU と遊ぶかを選びます。CPU はいつも上側（後手）です。`),
+    buttons: [
+      { label: 'ふたりで', value: 'off', primary: !cur.on },
+      ...Object.entries(CPU_LEVELS).map(([k, l]) => ({ label: `CPU・${l}`, value: k, primary: cur.on && cur.level === k })),
+    ],
+    className: 'cpu-choose',
+  });
+  if (!v) return null;
+  const next = v === 'off' ? { on: false, level: cur.level } : { on: true, level: v };
+  savePref('cpu.' + id, next);
+  return next;
+}
+// CPU が考えているように、少し間をあける
+export const think = (ms = 520) => new Promise((r) => setTimeout(r, ms + Math.random() * 280));
+
 // ---- ゲーム画面の共通レイアウト ----
 
-export function gameShell(root, { title, rules, onUndo, onRestart }) {
+export function gameShell(root, { title, rules, onUndo, onRestart, cpu }) {
   const undoBtn = onUndo && h('button', { class: 'icon-btn', 'aria-label': '待った', onclick: () => { sfx('tap'); onUndo(); } }, icon('undo'));
+  // 対戦相手（ふたりで／CPU）。押すと選びなおせて、変えると最初から
+  let cpuNow = cpu ? cpuPref(cpu.id) : null;
+  const cpuBtn = cpu && h('button', { class: 'icon-btn cpu-btn', onclick: async () => {
+    const next = await chooseCpu(cpu.id, title); if (!next) return;
+    const changed = next.on !== cpuNow.on || (next.on && next.level !== cpuNow.level);
+    cpuNow = next; paintCpu(); if (changed) cpu.onChange(next);
+  } });
+  const paintCpu = () => { if (!cpuBtn) return; cpuBtn.replaceChildren(icon(cpuNow.on ? 'cpu' : 'people')); cpuBtn.setAttribute('aria-label', cpuNow.on ? `CPUと対戦（${CPU_LEVELS[cpuNow.level]}）` : 'ふたりで対戦'); cpuBtn.classList.toggle('on', cpuNow.on); };
+  paintCpu();
   const header = h('header', { class: 'topbar' },
     h('button', { class: 'icon-btn', 'aria-label': 'メニューに戻る', onclick: () => { location.hash = '#asobi'; } }, icon('back')),
     h('h1', {}, title),
     h('div', { class: 'topbar-actions' },
+      cpuBtn,
       undoBtn,
       onRestart && h('button', {
         class: 'icon-btn',
@@ -218,6 +255,7 @@ export function gameShell(root, { title, rules, onUndo, onRestart }) {
     header,
     main,
     setUndoEnabled(on) { if (undoBtn) undoBtn.disabled = !on; },
+    get cpu() { return cpuNow || { on: false, level: 'normal' }; },
   };
 }
 

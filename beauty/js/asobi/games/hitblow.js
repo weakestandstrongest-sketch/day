@@ -1,4 +1,5 @@
-import { h, gameShell, sfx, settings, loadPref, savePref } from '../ui.js';
+import { h, gameShell, sfx, settings, loadPref, savePref, think, CPU_LEVELS } from '../ui.js';
+import { hitblowGuess, randomCode } from '../ai.js';
 import { judge, isValidCode } from './hitblow-logic.js';
 import { real } from '../real/index.js';
 
@@ -33,15 +34,19 @@ const peg = (color, extra = '') => h('span', {
 
 export function mount(root) {
   let opts = loadPref('hitblow.opts', { colors: 6, duplicates: false });
-  let secrets, guesses, solvedAt, turn, input, busy;
-  const ui = gameShell(root, { title: 'ヒット&ブロー', rules: RULES, onRestart: restart });
+  let secrets, guesses, solvedAt, turn, input, busy, gen = 0;
+  const ui = gameShell(root, { title: 'ヒット&ブロー', rules: RULES, onRestart: restart, cpu: { id: 'hitblow', onChange: restart } });
+  // CPU と遊ぶときはプレイヤー2が CPU（秘密の並びも CPU が決める）
+  const cpuOn = () => ui.cpu.on;
+  const nameOf = (p) => (cpuOn() && p === 1 ? `CPU（${CPU_LEVELS[ui.cpu.level]}）` : PLAYER[p]);
   const body = h('div', { class: 'hb-body' });
   ui.main.append(body);
 
   const config = () => ({ length: LENGTH, colors: opts.colors, duplicates: opts.duplicates });
-  const flipFor = (p) => settings.faceToFace && p === 1;
+  const flipFor = (p) => settings.faceToFace && p === 1 && !cpuOn();
 
   function restart() {
+    gen++;
     secrets = [null, null];
     guesses = [[], []];
     solvedAt = [null, null];
@@ -67,7 +72,7 @@ export function mount(root) {
       seg('色の数', 'colors', [[6, '6色'], [8, '8色']]),
       seg('同じ色', 'duplicates', [[false, '使わない'], [true, '使ってよい']]),
       h('p', { class: 'muted' }, `4つの色の並びを当てます。最大${MAX_TURNS}回まで。`),
-      h('button', { class: 'btn primary big', onclick: () => handover(0, () => enterSecret(0), '秘密の並びを決めます') }, 'はじめる')));
+      h('button', { class: 'btn primary big', onclick: () => (cpuOn() ? enterSecret(0) : handover(0, () => enterSecret(0), '秘密の並びを決めます')) }, 'はじめる')));
   }
 
   function handover(player, next, message) {
@@ -105,12 +110,13 @@ export function mount(root) {
 
   function enterSecret(player) {
     screen(player, h('div', { class: 'hb-card' },
-      h('div', { class: `turn-badge p${player + 1}` }, PLAYER[player]),
-      h('h2', {}, '秘密の並びを決めてください'),
+      h('div', { class: `turn-badge p${player + 1}` }, nameOf(player)),
+      h('h2', {}, cpuOn() ? 'CPU に当ててもらう並びを決めてください' : '秘密の並びを決めてください'),
       h('p', { class: 'muted' }, opts.duplicates ? '同じ色を何度使ってもOK' : '同じ色は1回ずつ'),
       codeInput((code) => {
         secrets[player] = code;
         sfx('place');
+        if (cpuOn()) { secrets[1] = randomCode(config()); showTurn(); return; } // CPU の秘密はでたらめに決める
         if (player === 0) handover(1, () => enterSecret(1), '秘密の並びを決めます');
         else handover(0, showTurn, '予想スタート！先にプレイヤー1から');
       }, '決定')));
@@ -134,13 +140,21 @@ export function mount(root) {
     const list = history(turn);
     screen(turn, h('div', { class: 'hb-play' },
       h('div', { class: 'hb-status' },
-        h('span', { class: `turn-badge p${turn + 1}` }, PLAYER[turn]),
+        h('span', { class: `turn-badge p${turn + 1}` }, nameOf(turn)),
         h('span', {}, ` ${guesses[turn].length + 1}回目の予想`),
         h('small', { class: 'muted' }, `相手: ${guesses[opponent].length}回 / 最高${best}ヒット`)),
       h('div', { class: 'hb-history-wrap' }, list),
-      codeInput(submitGuess, '予想する')));
+      cpuOn() && turn === 1 ? h('p', { class: 'muted hb-cpu' }, 'CPU が考えています…') : codeInput(submitGuess, '予想する')));
     const wrap = body.querySelector('.hb-history-wrap');
     wrap.scrollTop = wrap.scrollHeight;
+    if (cpuOn() && turn === 1) cpuGuess(gen);
+  }
+
+  async function cpuGuess(g) {
+    await think(900);
+    if (g !== gen || turn !== 1) return;
+    const code = hitblowGuess(config(), guesses[1].map((x) => ({ guess: x.code, hit: x.hit, blow: x.blow })), ui.cpu.level);
+    submitGuess(code);
   }
 
   function submitGuess(code) {
@@ -151,7 +165,7 @@ export function mount(root) {
     if (result.hit === LENGTH && solvedAt[turn] === null) solvedAt[turn] = guesses[turn].length;
     sfx(result.hit === LENGTH ? 'win' : 'place');
     showTurn();
-    body.querySelector('.code-input').classList.add('locked');
+    body.querySelector('.code-input')?.classList.add('locked');
     const flash = h('div', { class: 'hb-flash' },
       result.hit === LENGTH ? h('b', {}, '正解！') : [h('b', { class: 'hit' }, `${result.hit} ヒット`), h('b', { class: 'blow' }, `${result.blow} ブロー`)]);
     body.append(flash);
@@ -169,9 +183,9 @@ export function mount(root) {
     const [a, b] = solvedAt;
     const winner = a !== null && b === null ? 0 : b !== null && a === null ? 1 : null;
     screen(null, h('div', { class: 'hb-card' },
-      h('h2', {}, winner === null ? '引き分け' : `${PLAYER[winner]}の勝ち`),
+      h('h2', {}, winner === null ? '引き分け' : `${nameOf(winner)}の勝ち`),
       [0, 1].map((p) => h('div', { class: 'hb-reveal' },
-        h('span', { class: `turn-badge p${p + 1}` }, `${PLAYER[p]}の秘密`),
+        h('span', { class: `turn-badge p${p + 1}` }, `${nameOf(p)}の秘密`),
         h('span', { class: 'peg-row' }, secrets[p].map((c) => peg(c))),
         h('small', { class: 'muted' }, solvedAt[1 - p] ? `${solvedAt[1 - p]}回で当てられた` : '当てられなかった'))),
       h('button', { class: 'btn primary big', onclick: restart }, 'もう一度')));

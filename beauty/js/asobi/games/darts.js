@@ -1,4 +1,4 @@
-import { h, gameShell, playerPanel, showResult, toast, sfx, fitBoard, loadPref, savePref, confirm } from '../ui.js';
+import { h, gameShell, playerPanel, showResult, toast, sfx, fitBoard, loadPref, savePref, confirm, think, CPU_LEVELS } from '../ui.js';
 import * as D from './darts-logic.js';
 import { real } from '../real/index.js';
 
@@ -22,8 +22,12 @@ const INDIGO = '#38506c';
 
 export function mount(root) {
   let mode = loadPref('darts.mode', 'countup');
-  let state, history, aim = null, flights = [], raf = 0, boardCache = null, cacheKey = '';
-  const ui = gameShell(root, { title: 'ダーツ', rules: RULES, onUndo: undo, onRestart: restart });
+  let state, history, aim = null, flights = [], raf = 0, boardCache = null, cacheKey = '', gen = 0;
+  const ui = gameShell(root, { title: 'ダーツ', rules: RULES, onUndo: undo, onRestart: restart, cpu: { id: 'darts', onChange: restart } });
+  // CPU と遊ぶときは 2P が CPU
+  const cpuOn = () => ui.cpu.on;
+  const cpuTurnNow = () => cpuOn() && state.turn === 1;
+  const nameOf = (p) => (cpuOn() && p === 1 ? `CPU（${CPU_LEVELS[ui.cpu.level]}）` : NAMES[p]);
 
   const seg = h('div', { class: 'segmented dt-modes' }, ['countup', '301', '501'].map((id) =>
     h('button', { 'data-mode': id, onclick: () => pickMode(id) }, D.MODES[id].label)));
@@ -42,6 +46,8 @@ export function mount(root) {
   // ---- 状態 ----
 
   function restart() {
+    gen++; aim = null;
+    plates[1].el.querySelector('.plate-name').textContent = nameOf(1);
     state = D.newGame(mode);
     history = [];
     flights = [];
@@ -60,7 +66,9 @@ export function mount(root) {
 
   function undo() {
     if (!history.length) return;
+    gen++; aim = null;
     state = history.pop();
+    while (cpuOn() && history.length && state.turn === 1) state = history.pop(); // 自分（1P）の番まで戻す
     flights = [];
     render();
   }
@@ -73,6 +81,45 @@ export function mount(root) {
     flights = [];
     render();
     if (state.over) setTimeout(finish, 300);
+    else if (cpuTurnNow()) cpuPlay(gen);
+  }
+
+  // ---- CPU：狙う場所を決めて、腕前に合わせたぶれで投げる ----
+  const RADIUS = { T: (D.RING.tripleIn + D.RING.tripleOut) / 2, D: (D.RING.doubleIn + D.RING.doubleOut) / 2, S: (D.RING.tripleOut + D.RING.doubleIn) / 2 };
+  function spot(label) {
+    if (label === 'BULL') return [0, 0];
+    if (label === '25') return [0, -(D.RING.bullIn + D.RING.bullOut) / 2];
+    const kind = /^[TD]/.test(label) ? label[0] : 'S', n = Number(label.replace(/^[TD]/, ''));
+    const a = (D.ORDER.indexOf(n) * 18 * Math.PI) / 180, r = RADIUS[kind];
+    return [r * Math.sin(a), -r * Math.cos(a)];
+  }
+  function cpuTarget() {
+    const me = state.players[1], left = 3 - state.darts.length;
+    if (mode !== 'countup') {
+      const way = D.checkout(me.score, left);
+      if (way) return way[0];
+      if (me.score < 60) return String(Math.min(20, Math.max(1, Math.floor(me.score / 2)))); // 上がりに近いときは、バーストしないよう小さめに
+    }
+    return ui.cpu.level === 'easy' ? '20' : 'T20';
+  }
+  async function cpuPlay(g) {
+    const alive = () => g === gen && cpuTurnNow() && !state.over;
+    const spread = { easy: 0.16, normal: 0.085, hard: 0.04 }[ui.cpu.level];
+    await think(600);
+    while (alive() && !state.turnOver) {
+      const [tx, ty] = spot(cpuTarget());
+      const { cx, cy, R } = geometry();
+      aim = { x: cx + tx * R, y: cy + ty * R, t0: performance.now(), seed: Math.random() * 100, id: 'cpu' };
+      await think(750);
+      if (!alive()) { aim = null; return; }
+      aim = null;
+      const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) * spread;
+      throwAt(tx + gauss(), ty + gauss());
+      await think(500);
+    }
+    if (!alive() || state.over) return;
+    await think(900);
+    if (g === gen && state.turnOver && !state.over) next(); // 矢を抜いて、あなたの番へ
   }
 
   function throwAt(nx, ny) {
@@ -92,7 +139,7 @@ export function mount(root) {
     const [a, b] = state.players.map((p) => p.score);
     const w = state.winner;
     const again = await showResult({
-      title: w === null ? '引き分け' : `${NAMES[w]}の勝ち`,
+      title: w === null ? '引き分け' : `${nameOf(w)}の勝ち`,
       accent: w === null ? undefined : PCOLOR[w],
       detail: h('div', { class: 'score-line' },
         h('span', { class: 'p1' }, h('small', {}, '1P'), h('b', {}, a)),
@@ -111,7 +158,7 @@ export function mount(root) {
       const way = zeroOne && active && !state.turnOver ? D.checkout(me.score, 3 - state.darts.length) : null;
       p.setInfo([h('span', { class: 'count' }, h('b', {}, me.score), zeroOne ? '残り' : '点'), way && h('span', { class: 'dt-way' }, way.join(' · '))]);
       p.setActive(active);
-      p.setStatus(active ? (state.turnOver ? '交代' : '投げる番') : '');
+      p.setStatus(active ? (state.turnOver ? '交代' : cpuOn() && i === 1 ? '狙っています…' : '投げる番') : '');
     });
     roundEl.replaceChildren(h('small', {}, 'ROUND'), h('b', {}, Math.min(state.round, state.rounds)), h('small', {}, `/ ${state.rounds}`));
     slots.forEach((el, i) => {
@@ -119,7 +166,7 @@ export function mount(root) {
       el.textContent = d ? d.hit.label : '';
       el.className = `dt-slot ${d ? 'on' : ''} ${d && (d.hit.m >= 2 || d.hit.n === 25) ? 'big' : ''} ${d && !d.hit.points ? 'miss' : ''}`;
     });
-    const showNext = state.turnOver && !state.over;
+    const showNext = state.turnOver && !state.over && !cpuTurnNow();
     nextBtn.hidden = !showNext;
     nextBtn.textContent = state.bust ? 'バースト — 次の人へ' : '矢を抜いて次の人へ';
     ui.setUndoEnabled(history.length > 0);
@@ -356,7 +403,7 @@ export function mount(root) {
   }
 
   function onDown(e) {
-    if (state.over) return;
+    if (state.over || cpuTurnNow()) return;
     if (state.turnOver) { next(); return; }
     canvas.setPointerCapture?.(e.pointerId);
     const [x, y] = pointFor(e);

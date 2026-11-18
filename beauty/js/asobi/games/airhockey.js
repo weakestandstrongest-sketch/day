@@ -1,5 +1,5 @@
 import { real } from '../real/index.js';
-import { h, icon, modal, showResult, sfx, showRules, loadPref, savePref } from '../ui.js';
+import { h, icon, modal, showResult, sfx, showRules, loadPref, savePref, cpuPref, CPU_LEVELS } from '../ui.js';
 
 const RULES = `
 <p>iPhone を机に置いて、上下に向かい合って遊びます。自分側の半分に指を置くと、マレット (打つ道具) がついてきます。</p>
@@ -34,6 +34,10 @@ export function mount(root) {
   let H = 180;
   let target = loadPref('airhockey.target', 7);
   let score, puck, mallets, phase, phaseTimer, raf, last, scale = 1, paused = false;
+  // CPU と遊ぶときは、上のマレットを CPU が動かす（一時停止のメニューで選ぶ）
+  let cpu = cpuPref('airhockey'), cpuT = null, cpuChanged = false;
+  const CPU_SPEED = { easy: 150, normal: 270, hard: 430 };
+  const CPU_AIM = { easy: 9, normal: 4, hard: 1.5 };
   const pointers = new Map(); // pointerId -> player
   const trail = [];
 
@@ -67,6 +71,7 @@ export function mount(root) {
   resize();
 
   function restart() {
+    cpuT = null;
     score = [0, 0];
     mallets = [
       { x: W / 2, y: H - 22, tx: W / 2, ty: H - 22, vx: 0, vy: 0 },
@@ -93,6 +98,7 @@ export function mount(root) {
     e.preventDefault();
     const p = toLogical(e);
     const player = p.y > H / 2 ? 0 : 1;
+    if (cpu.on && player === 1) return; // 上は CPU
     if ([...pointers.values()].includes(player)) return;
     pointers.set(e.pointerId, player);
     setTarget(player, p);
@@ -112,6 +118,33 @@ export function mount(root) {
     mallets[player].ty = p.y;
   }
 
+  // ---- CPU：パックの動きを先読みして、守る・打ち返す ----
+  function cpuStep(dt) {
+    const m = mallets[1];
+    if (!cpuT) cpuT = { x: m.x, y: m.y };
+    const home = { x: W / 2 + (puck.x - W / 2) * 0.45, y: MALLET_R + 10 };
+    let goal = home;
+    const mine = puck.y < H / 2 + 4;
+    if (mine && (puck.vy < 40 || puck.y < m.y + 4)) {
+      // 自分の陣地にあって、ゆっくり・または後ろにある：相手のゴールへ向けて打つ
+      const gx = W / 2 + (Math.random() - 0.5) * 2 * CPU_AIM[cpu.level], gy = H;
+      const dx = gx - puck.x, dy = gy - puck.y, d = Math.hypot(dx, dy) || 1;
+      const behind = puck.y - 2 < m.y ? 0 : 1; // パックより奥にいなければ、まず回りこむ
+      goal = behind
+        ? { x: puck.x + (dx / d) * 4, y: puck.y + (dy / d) * 4 }
+        : { x: puck.x - (dx / d) * (MALLET_R + PUCK_R), y: puck.y - (dy / d) * (MALLET_R + PUCK_R) - 6 };
+    } else if (puck.vy < 0) {
+      // こちらへ向かってくる：ゴール前の線で、来る位置を先読みして守る
+      const t = (home.y - puck.y) / puck.vy;
+      let x = puck.x + puck.vx * t;
+      for (let k = 0; k < 4 && (x < 0 || x > W); k++) x = x < 0 ? -x : 2 * W - x; // 壁の反射
+      goal = { x: W / 2 + (x - W / 2) * (cpu.level === 'easy' ? 0.6 : 0.85), y: home.y };
+    }
+    const sp = CPU_SPEED[cpu.level] * dt, ddx = goal.x - cpuT.x, ddy = goal.y - cpuT.y, dd = Math.hypot(ddx, ddy);
+    if (dd > sp) { cpuT.x += (ddx / dd) * sp; cpuT.y += (ddy / dd) * sp; } else { cpuT.x = goal.x; cpuT.y = goal.y; }
+    m.tx = cpuT.x; m.ty = cpuT.y;
+  }
+
   // ---- 物理 ----
   function clampMallet(m, player) {
     m.x = Math.min(W - MALLET_R, Math.max(MALLET_R, m.x));
@@ -121,6 +154,7 @@ export function mount(root) {
   }
 
   function step(dt) {
+    if (cpu.on) cpuStep(dt);
     mallets.forEach((m, player) => {
       const ox = m.x, oy = m.y;
       const dx = m.tx - m.x, dy = m.ty - m.y;
@@ -215,13 +249,13 @@ export function mount(root) {
   async function announceWinner(winner) {
     sfx('win');
     const again = await showResult({
-      title: `${winner === 0 ? '下' : '上'}の人の勝ち`,
+      title: cpu.on ? (winner === 0 ? 'あなたの勝ち' : 'CPU の勝ち') : `${winner === 0 ? '下' : '上'}の人の勝ち`,
       accent: COLORS[winner],
       detail: h('div', { class: 'score-line' },
         h('span', { style: { color: COLORS[0] } }, h('b', {}, score[0])),
         h('span', { class: 'vs' }, '−'),
         h('span', { style: { color: COLORS[1] } }, h('b', {}, score[1]))),
-      flip: winner === 1,
+      flip: winner === 1 && !cpu.on,
       buttons: [{ label: 'メニューへ', value: 'menu' }, { label: 'もう一度', value: 'again', primary: true }],
     });
     if (again === 'again') restart();
@@ -243,7 +277,18 @@ export function mount(root) {
             savePref('airhockey.target', n);
             e.currentTarget.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === e.currentTarget));
           },
-        }, `${n}点先取`)))),
+        }, `${n}点先取`))),
+        h('p', { class: 'muted small', style: { marginTop: '14px' } }, '対戦相手'),
+        h('div', { class: 'segmented' }, [['off', 'ふたりで'], ...Object.entries(CPU_LEVELS).map(([k, l]) => [k, `CPU・${l}`])].map(([v, label]) => h('button', {
+          class: (v === 'off' ? !cpu.on : cpu.on && cpu.level === v) ? 'on' : '',
+          onclick: (e) => {
+            const next = v === 'off' ? { on: false, level: cpu.level } : { on: true, level: v };
+            const changed = next.on !== cpu.on;
+            cpu = next; cpuT = null; savePref('cpu.airhockey', cpu);
+            e.currentTarget.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === e.currentTarget));
+            if (changed) cpuChanged = true;
+          },
+        }, label)))),
       buttons: [
         { label: 'メニューへ', value: 'menu' },
         { label: 'ルール', value: 'rules' },
@@ -252,7 +297,8 @@ export function mount(root) {
       ],
     });
     if (choice === 'menu') { location.hash = '#asobi'; return; }
-    if (choice === 'restart') restart();
+    if (choice === 'restart' || cpuChanged) restart();
+    cpuChanged = false;
     if (choice === 'rules') await showRules('エアホッケー', RULES);
     pointers.clear();
     paused = false;

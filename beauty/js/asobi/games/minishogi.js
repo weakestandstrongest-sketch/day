@@ -1,4 +1,5 @@
-import { h, s, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs, paperTexture } from '../ui.js';
+import { h, s, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs, paperTexture, think, CPU_LEVELS } from '../ui.js';
+import { shogiMove } from '../ai.js';
 import * as S from './minishogi-logic.js';
 import { real } from '../real/index.js';
 
@@ -37,9 +38,10 @@ function komaEl(piece, extra = '') {
 }
 
 export function mount(root) {
-  let state, history, positions, selected, over, lastTo;
+  let state, history, positions, selected, over, lastTo, gen = 0, cpuBusy = false;
   ensureDefs();
-  const ui = gameShell(root, { title: '5五将棋', rules: RULES, onUndo: undo, onRestart: restart });
+  const ui = gameShell(root, { title: '5五将棋', rules: RULES, onUndo: undo, onRestart: restart, cpu: { id: 'minishogi', onChange: restart } });
+  const cpuOn = () => ui.cpu.on;
   const top = playerPanel({ name: '後手', mark: komaEl({ o: 1, t: 'K', p: false }, 'avatar upright'), flip: settings.faceToFace });
   const bottom = playerPanel({ name: '先手', mark: komaEl({ o: 0, t: 'K', p: false }, 'avatar upright') });
   const panels = [bottom, top];
@@ -57,6 +59,10 @@ export function mount(root) {
   }
 
   function restart() {
+    gen++; cpuBusy = false;
+    // CPU と遊ぶときは、上の後手が CPU（名札は逆さにしない）
+    top.setFlip(settings.faceToFace && !cpuOn());
+    top.el.querySelector('.plate-name').textContent = cpuOn() ? `後手 · CPU（${CPU_LEVELS[ui.cpu.level]}）` : '後手';
     state = S.initialState();
     history = [];
     positions = [{ key: S.positionKey(state), check: false, turn: state.turn }];
@@ -68,15 +74,27 @@ export function mount(root) {
 
   function undo() {
     if (!history.length) return;
+    gen++; cpuBusy = false;
     ({ state, lastTo } = history.pop());
     positions.pop();
+    while (cpuOn() && history.length && state.turn !== 0) { ({ state, lastTo } = history.pop()); positions.pop(); } // 自分（先手）の番まで戻す
     selected = null;
     over = false;
     render();
   }
 
+  async function cpuTurn() {
+    if (!cpuOn() || over || state.turn !== 1) return;
+    const g = ++gen; cpuBusy = true; render();
+    await think(420);
+    if (g !== gen) return;
+    const m = shogiMove(state, ui.cpu.level);
+    cpuBusy = false;
+    if (m) play(m);
+  }
+
   async function tapBoard(i) {
-    if (over) return;
+    if (over || cpuBusy || (cpuOn() && state.turn === 1)) return;
     if (selected) {
       const candidates = S.legalMoves(state).filter((m) => m.to === i
         && (selected.hand ? m.drop === selected.hand : m.from === selected.sq));
@@ -108,7 +126,7 @@ export function mount(root) {
   }
 
   function tapHand(owner, t) {
-    if (over || owner !== state.turn) return;
+    if (over || owner !== state.turn || cpuBusy || (cpuOn() && owner === 1)) return;
     selected = selected && selected.hand === t ? null : { hand: t };
     sfx('tap');
     render();
@@ -139,6 +157,7 @@ export function mount(root) {
     }
     if (status.check) setTimeout(() => sfx('check'), 120);
     render(status);
+    setTimeout(cpuTurn, 300);
   }
 
   function render(status = S.gameStatus(state, positions)) {
@@ -168,7 +187,9 @@ export function mount(root) {
       panels[owner].setInfo(h('div', { class: 'hand' }, items.length ? items : h('span', { class: 'hand-empty' }, '持ち駒なし')));
       const active = !over && state.turn === owner;
       panels[owner].setActive(active);
-      panels[owner].setStatus(active ? (status.check ? '王手！' : 'あなたの番') : '');
+      const isCpu = cpuOn() && owner === 1;
+      panels[owner].setStatus(active ? (status.check ? '王手！' : isCpu ? '考え中…' : 'あなたの番') : '');
+      panels[owner].el.classList.toggle('thinking', active && isCpu);
     }
     ui.setUndoEnabled(history.length > 0);
   }

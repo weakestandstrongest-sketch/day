@@ -1302,3 +1302,10 @@ img.koma3 { width: calc(var(--k, 1) * 112%); max-width: none; height: auto; filt
 .dice-3d .die { background: transparent !important; box-shadow: none !important; transform: none !important; animation: none !important; }
 .dice-3d .die .pip { visibility: hidden; }
 .dice-3d .die.held::after { bottom: -28px; z-index: 3; }
+
+/* ───────── CPU（ひとりで遊ぶ相手） ───────── */
+.icon-btn.cpu-btn.on { color: var(--kc); border-color: color-mix(in srgb, var(--kc) 55%, transparent) !important; }
+.modal.cpu-choose .modal-buttons { flex-wrap: wrap; }
+.modal.cpu-choose .modal-buttons .btn { flex: 1 1 40%; }
+.plate.thinking .plate-status i { animation: cpu-think 1s ease-in-out infinite; }
+@keyframes cpu-think { 50% { opacity: .25; transform: scale(.7); } }

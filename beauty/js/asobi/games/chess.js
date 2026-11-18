@@ -1,4 +1,5 @@
-import { h, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs } from '../ui.js';
+import { h, gameShell, playerPanel, modal, showResult, sfx, settings, fitBoard, ensureDefs, think, CPU_LEVELS } from '../ui.js';
+import { chessMove } from '../ai.js';
 import * as C from './chess-logic.js';
 import { pieceSVG } from './chess-pieces.js';
 import { real } from '../real/index.js';
@@ -25,9 +26,10 @@ function pieceArt(t, c, extra = '') {
 const pieceEl = (p) => pieceArt(p.t, p.c);
 
 export function mount(root) {
-  let state, history, keys, selected, over, lastMove;
+  let state, history, keys, selected, over, lastMove, gen = 0, cpuBusy = false;
   ensureDefs();
-  const ui = gameShell(root, { title: 'チェス', rules: RULES, onUndo: undo, onRestart: restart });
+  const ui = gameShell(root, { title: 'チェス', rules: RULES, onUndo: undo, onRestart: restart, cpu: { id: 'chess', onChange: restart } });
+  const cpuOn = () => ui.cpu.on;
   const top = playerPanel({ name: '黒', mark: pieceArt('k', 'b'), flip: settings.faceToFace });
   const bottom = playerPanel({ name: '白', mark: pieceArt('k', 'w') });
   const panels = { w: bottom, b: top };
@@ -48,6 +50,11 @@ export function mount(root) {
   }
 
   function restart() {
+    gen++; cpuBusy = false;
+    // CPU と遊ぶときは、上の黒が CPU（名札も駒も逆さにしない）
+    top.setFlip(settings.faceToFace && !cpuOn());
+    board.classList.toggle('f2f', settings.faceToFace && !cpuOn());
+    top.el.querySelector('.plate-name').textContent = cpuOn() ? `黒 · CPU（${CPU_LEVELS[ui.cpu.level]}）` : '黒';
     state = C.initialState();
     history = [];
     keys = [C.positionKey(state)];
@@ -59,15 +66,27 @@ export function mount(root) {
 
   function undo() {
     if (!history.length) return;
+    gen++; cpuBusy = false;
     ({ state, lastMove } = history.pop());
     keys.pop();
+    while (cpuOn() && history.length && state.turn !== 'w') { ({ state, lastMove } = history.pop()); keys.pop(); } // 自分（白）の番まで戻す
     selected = null;
     over = false;
     render();
   }
 
+  async function cpuTurn() {
+    if (!cpuOn() || over || state.turn !== 'b') return;
+    const g = ++gen; cpuBusy = true; render();
+    await think(420);
+    if (g !== gen) return;
+    const m = chessMove(state, ui.cpu.level);
+    cpuBusy = false;
+    if (m) play(m);
+  }
+
   async function tap(i) {
-    if (over) return;
+    if (over || cpuBusy || (cpuOn() && state.turn === 'b')) return;
     const legal = C.legalMoves(state);
     if (selected !== null) {
       const candidates = legal.filter((m) => m.from === selected && m.to === i);
@@ -127,6 +146,7 @@ export function mount(root) {
     }
     if (status.check) setTimeout(() => sfx('check'), 120);
     render(status);
+    setTimeout(cpuTurn, 300);
   }
 
   function render(status = C.gameStatus(state, keys)) {
@@ -159,7 +179,9 @@ export function mount(root) {
       panels[color].setInfo(h('span', { class: 'captured' }, taken, adv > 0 ? h('small', {}, ` +${adv}`) : null));
       const active = !over && state.turn === color;
       panels[color].setActive(active);
-      panels[color].setStatus(active ? (status.check ? 'チェック！' : 'あなたの番') : '');
+      const isCpu = cpuOn() && color === 'b';
+      panels[color].setStatus(active ? (status.check ? 'チェック！' : isCpu ? '考え中…' : 'あなたの番') : '');
+      panels[color].el.classList.toggle('thinking', active && isCpu);
     }
     ui.setUndoEnabled(history.length > 0);
   }

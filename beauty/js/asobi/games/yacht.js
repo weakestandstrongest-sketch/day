@@ -1,4 +1,5 @@
-import { h, gameShell, showResult, toast, sfx, settings } from '../ui.js';
+import { h, gameShell, showResult, toast, sfx, settings, think, CPU_LEVELS } from '../ui.js';
+import { yachtHold, yachtCategory } from '../ai.js';
 import * as Y from './yacht-logic.js';
 
 const RULES = `
@@ -27,8 +28,12 @@ function dieFace(el, value) {
 }
 
 export function mount(root) {
-  let sheets, turn, dice, held, rollsLeft, selectedCat, rolling, over;
-  const ui = gameShell(root, { title: 'ヨット', rules: RULES, onRestart: restart });
+  let sheets, turn, dice, held, rollsLeft, selectedCat, rolling, over, gen = 0;
+  const ui = gameShell(root, { title: 'ヨット', rules: RULES, onRestart: restart, cpu: { id: 'yacht', onChange: restart } });
+  // CPU と遊ぶときは 2P が CPU
+  const cpuOn = () => ui.cpu.on;
+  const cpuTurnNow = () => cpuOn() && turn === 1;
+  const nameOf = (p) => (cpuOn() && p === 1 ? `CPU（${CPU_LEVELS[ui.cpu.level]}）` : PLAYER[p]);
 
   const table = h('table', { class: 'yacht-sheet' });
   const head = h('tr', {}, h('th', { class: 'sheet-title' }, 'SCORE'), PLAYER.map((name, p) => h('th', { class: `p${p + 1}` }, h('span', { class: 'col-chip' }, `${p + 1}P`))));
@@ -60,6 +65,7 @@ export function mount(root) {
   ui.main.append(body);
 
   function restart() {
+    gen++;
     sheets = [{}, {}];
     turn = 0;
     over = false;
@@ -72,26 +78,50 @@ export function mount(root) {
     rollsLeft = 3;
     selectedCat = null;
     rolling = false;
-    body.classList.toggle('flip', settings.faceToFace && turn === 1);
+    body.classList.toggle('flip', settings.faceToFace && turn === 1 && !cpuOn());
     render();
+    if (cpuTurnNow() && !over) cpuPlay(gen);
+  }
+
+  // CPU の番：振る → 残すサイコロを決める → もう一度振る… → 欄を選んで記入
+  async function cpuPlay(g) {
+    const alive = () => g === gen && cpuTurnNow() && !over;
+    await think(300); if (!alive()) return;
+    await roll(); if (!alive()) return;
+    while (rollsLeft > 0) {
+      await think(380); if (!alive()) return;
+      const keep = yachtHold(sheets[1], dice, rollsLeft, ui.cpu.level);
+      if (!keep) break;
+      held = keep; sfx('tap'); render();
+      await think(260); if (!alive()) return;
+      if (held.every(Boolean)) break;
+      await roll(); if (!alive()) return;
+    }
+    await think(300); if (!alive()) return;
+    selectedCat = yachtCategory(sheets[1], dice, ui.cpu.level);
+    sfx('tap'); render();
+    await think(520); if (!alive()) return;
+    commit(selectedCat);
   }
 
   function toggleHold(i) {
-    if (rolling || rollsLeft === 3 || rollsLeft === 0 || over) return;
+    if (rolling || rollsLeft === 3 || rollsLeft === 0 || over || cpuTurnNow()) return;
     held[i] = !held[i];
     sfx('tap');
     render();
   }
 
   function onAction() {
-    if (over) return;
+    if (over || cpuTurnNow()) return;
     if (selectedCat) { commit(selectedCat); return; }
     roll();
   }
 
+  // 振り終わったら解決する（CPU が待てるように）
   function roll() {
-    if (rolling || rollsLeft === 0) return;
-    if (held.every(Boolean)) { toast('全部キープしています'); return; }
+    if (rolling || rollsLeft === 0) return Promise.resolve();
+    if (held.every(Boolean)) { toast('全部キープしています'); return Promise.resolve(); }
+    let done; const finished = new Promise((r) => { done = r; });
     rolling = true;
     rollsLeft--;
     selectedCat = null;
@@ -108,13 +138,15 @@ export function mount(root) {
         rolling = false;
         diceEls.forEach((el) => el.classList.remove('rolling'));
         render();
+        setTimeout(done, 200);
       }
     }, 60);
     render();
+    return finished;
   }
 
   function tapCell(player, catId) {
-    if (over || rolling) return;
+    if (over || rolling || cpuTurnNow()) return;
     if (player !== turn || catId in sheets[turn]) return;
     if (rollsLeft === 3) { toast('まずサイコロを振ってください', { flip: body.classList.contains('flip') }); return; }
     if (selectedCat === catId) { commit(catId); return; }
@@ -143,13 +175,13 @@ export function mount(root) {
     body.classList.remove('flip');
     const winner = a === b ? null : a > b ? 0 : 1;
     const again = await showResult({
-      title: winner === null ? '引き分け' : `${PLAYER[winner]}の勝ち`,
+      title: winner === null ? '引き分け' : `${nameOf(winner)}の勝ち`,
       accent: winner === null ? undefined : `var(--p${winner + 1})`,
       detail: h('div', { class: 'score-line' },
         h('span', { class: 'p1' }, h('small', {}, '1P'), h('b', {}, a)),
         h('span', { class: 'vs' }, '−'),
         h('span', { class: 'p2' }, h('b', {}, b), h('small', {}, '2P'))),
-      flip: settings.faceToFace && winner === 1,
+      flip: settings.faceToFace && winner === 1 && !cpuOn(),
     });
     if (again === 'again') restart();
   }
@@ -194,13 +226,17 @@ export function mount(root) {
     });
     const round = Math.min(12, Object.keys(sheets[turn]).length + 1);
     status.replaceChildren(
-      h('span', { class: `turn-badge p${turn + 1}` }, PLAYER[turn]),
+      h('span', { class: `turn-badge p${turn + 1}` }, nameOf(turn)),
       h('span', { class: 'round' }, `ラウンド ${round}/12`),
       h('span', { class: 'rolls', 'aria-label': `残り${rollsLeft}回` },
         [0, 1, 2].map((i) => h('i', { class: i < rollsLeft ? 'on' : '' }))));
     if (over) {
       action.textContent = 'ゲーム終了';
       action.disabled = true;
+    } else if (cpuTurnNow()) {
+      action.classList.remove('commit');
+      action.disabled = true;
+      action.textContent = 'CPU が考えています…';
     } else if (selectedCat) {
       const cat = Y.CATEGORIES.find((c) => c.id === selectedCat);
       action.textContent = `「${cat.name}」に ${Y.score(selectedCat, dice)}点 を記入`;

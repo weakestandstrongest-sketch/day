@@ -1,1 +1,1 @@
-62d5a9f2e0a8e3f592b9b12867160d51c021b16a Yacht: score sheet in the 季節の帳 style — glass tinted with this 節気's colour, season name in the corner, a ring towards 63, big italic totals
+0c19c29fe4952a0d35fe02887307caf5ed558d00 遊: play against the CPU in all 8 games (やさしい・ふつう・つよい) — reversi, gomoku, chess and 5五将棋 search ahead; yacht weighs rerolls; hit & blow narrows the candidates; air hockey reads the puck; darts aims with a level-sized wobble

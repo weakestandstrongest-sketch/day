@@ -1,4 +1,5 @@
-import { h, s, gameShell, playerPanel, modal, showResult, toast, sfx, settings, fitBoard, stone, loadPref, savePref, confirm, ensureDefs, paperTexture } from '../ui.js';
+import { h, s, gameShell, playerPanel, modal, showResult, toast, sfx, settings, fitBoard, stone, loadPref, savePref, confirm, ensureDefs, paperTexture, think, CPU_LEVELS } from '../ui.js';
+import { gomokuMove } from '../ai.js';
 import * as G from './gomoku-logic.js';
 import { real } from '../real/index.js';
 
@@ -18,8 +19,9 @@ const STARS = [[3, 3], [3, 11], [7, 7], [11, 3], [11, 11]];
 
 export function mount(root) {
   let rule = loadPref('gomoku.rule', 'free');
-  let state, history, preview, over;
-  const ui = gameShell(root, { title: '五目並べ', rules: RULES, onUndo: undo, onRestart: restart });
+  let state, history, preview, over, gen = 0, cpuBusy = false;
+  const ui = gameShell(root, { title: '五目並べ', rules: RULES, onUndo: undo, onRestart: restart, cpu: { id: 'gomoku', onChange: restart } });
+  const cpuOn = () => ui.cpu.on;
   const top = playerPanel({ name: '白', mark: stone('white'), flip: settings.faceToFace });
   const bottom = playerPanel({ name: '黒', mark: stone('black') });
   const panels = { [G.BLACK]: bottom, [G.WHITE]: top };
@@ -45,10 +47,14 @@ export function mount(root) {
   const unfit = fitBoard(ui.main, wrap, svg);
 
   function restart() {
+    gen++; cpuBusy = false;
     state = G.initialState();
     history = [];
     preview = null;
     over = false;
+    // CPU と遊ぶときは、上の白が CPU（名札は逆さにしない）
+    top.setFlip(settings.faceToFace && !cpuOn());
+    top.el.querySelector('.plate-name').textContent = cpuOn() ? `白 · CPU（${CPU_LEVELS[ui.cpu.level]}）` : '白';
     render();
   }
 
@@ -70,14 +76,26 @@ export function mount(root) {
 
   function undo() {
     if (!history.length) return;
+    gen++; cpuBusy = false;
     state = history.pop();
+    while (cpuOn() && history.length && state.turn !== G.BLACK) state = history.pop(); // CPU と遊ぶときは、自分（黒）の番まで戻す
     preview = null;
     over = false;
     render();
   }
 
+  async function cpuTurn() {
+    if (!cpuOn() || over || state.turn !== G.WHITE) return;
+    const g = ++gen; cpuBusy = true; render();
+    await think(380);
+    if (g !== gen) return;
+    const idx = gomokuMove(state, rule, ui.cpu.level);
+    cpuBusy = false;
+    commit(idx);
+  }
+
   function onTap(e) {
-    if (over) return;
+    if (over || cpuBusy || (cpuOn() && state.turn === G.WHITE)) return;
     const rect = svg.getBoundingClientRect();
     const scale = size / rect.width;
     const c = Math.round(((e.clientX - rect.left) * scale - GAP) / GAP);
@@ -95,6 +113,10 @@ export function mount(root) {
       render();
       return;
     }
+    commit(idx);
+  }
+
+  function commit(idx) {
     const next = G.play(state, idx, rule);
     if (next.error) { sfx('error'); toast(next.error); return; }
     history.push(state);
@@ -118,6 +140,7 @@ export function mount(root) {
       return;
     }
     render();
+    setTimeout(cpuTurn, 250);
   }
 
   function render() {
@@ -164,7 +187,9 @@ export function mount(root) {
     for (const color of [G.BLACK, G.WHITE]) {
       const active = !over && state.turn === color;
       panels[color].setActive(active);
-      panels[color].setStatus(active ? 'あなたの番' : '');
+      const isCpu = cpuOn() && color === G.WHITE;
+      panels[color].setStatus(active ? (isCpu ? '考え中…' : 'あなたの番') : '');
+      panels[color].el.classList.toggle('thinking', active && isCpu);
     }
     ui.setUndoEnabled(history.length > 0);
   }
