@@ -1,1 +1,1 @@
-13b895f55c71b483d3c060aa8878fbbadbdb0911 Keep long chord names on one line on Pure Harmony
+755f021dcaa2ce8f98dbe3436fe63d7b9a25bd2b Sound: same breathing room above the A4 card as below it; keep the metronome's play triangle inside its circle

@@ -58,6 +58,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 .mini-metro:active .play{transform:scale(.9)}
 .mini-metro.on .play{background:var(--danger)}
 .mini-metro.flash .play{box-shadow:0 0 0 3px var(--warning)}
+.mini-metro .play svg{width:12px;height:12px;margin-left:2px} /* 下の大きな .play の 32px が効いて、丸からはみ出していた（三角は少し右に寄せて見た目の真ん中に） */
 
 .page{display:none;flex-direction:column;gap:14px;animation:fade .25s ease}
 .page.active{display:flex}
@@ -190,6 +191,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:0;border-radiu
 .drone-btn.on{background:var(--danger);color:#fff}
 .drone-freq{text-align:center;font-size:54px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
 .drone-freq small{display:block;font-size:13px;color:var(--label-3);font-weight:400}
+.page[data-page="sound"]{padding-top:10px} /* 上のバーと A4 のあいだを、A4 と「音名」のあいだと同じくらいに */
 .note-small{font-size:11px;color:var(--label-3);line-height:1.6;margin:0 2px}
 
 /* ===== tab bar (same as Jam) ===== */
@@ -480,15 +482,15 @@ html:not(.ready) .app,html:not(.ready) .tabbar,html:not(.ready) .embed{visibilit
     <li><button data-tab="just"><svg viewBox="0 0 24 24"><path d="M8 2v7a4 4 0 0 0 8 0V2"/><path d="M12 13v9"/><path d="M9 22h6"/></svg>純正律</button></li>
   </ul>
 </nav>
-<div class="embed" data-page="chords"><iframe data-src="chords/index.html?v=20261118033638" title="Chord Wheel"></iframe></div>
-<div class="embed" data-page="just"><iframe data-src="just/index.html?v=20261118033638" title="コード名検索 × 純正律"></iframe></div>
+<div class="embed" data-page="chords"><iframe data-src="chords/index.html?v=20261118070919" title="Chord Wheel"></iframe></div>
+<div class="embed" data-page="just"><iframe data-src="just/index.html?v=20261118070919" title="コード名検索 × 純正律"></iframe></div>
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
 'use strict';
 // Bumped by tools/bump-version.sh on every release; must match version.json.
-const APP_VERSION = '20261118033638';
+const APP_VERSION = '20261118070919';
 // GitHub Pages lets browsers reuse files for 10 minutes and home-screen apps keep them longer,
 // so ask for version.json uncached and, if a newer release is out, reopen under a fresh URL.
 async function checkForUpdate() {
