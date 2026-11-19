@@ -579,7 +579,7 @@ body.dragging-num { cursor: grabbing; user-select: none; -webkit-user-select: no
 }
 
 /* ---------- グラフ ---------- */
-.btn.graph-btn { border-color: rgba(94, 241, 255, 0.45); color: #c9fbff; }
+.tbtn.graph-btn { border-color: rgba(94, 241, 255, 0.45); color: #c9fbff; }
 .graph {
   position: fixed; inset: 0; z-index: 32; display: flex; flex-direction: column;
   padding: calc(8px + var(--hibi-sa-top, env(safe-area-inset-top, 0px))) 0 calc(6px + var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px)));

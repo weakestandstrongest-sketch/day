@@ -1,1 +1,1 @@
-53f812bb0182fd0efdb7c7592761bff4a6a0ba0b Graph: write equations and see them drawn — y=f(x), x=g(y), implicit curves, inequalities, points, sliders, own functions, math keypad, pan/zoom, tap points for zeros, peaks and intersections
+0588d23bcade7bb01fdcd720980722b15d71f3d3 Graph button in the top bar, between ホログラム and 無重力
