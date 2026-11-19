@@ -7,5 +7,10 @@
 	<array>
 		<string>group.jp.weakestandstrongest.hibi</string>
 	</array>
+	<!-- 財布の IC カード（交通系 IC の残高と履歴を読む） -->
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+	</array>
 </dict>
 </plist>

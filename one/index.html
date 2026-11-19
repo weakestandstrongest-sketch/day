@@ -91,6 +91,9 @@
   /* ホーム画面から開いたとき、iPhoneは画面の上端（時計の帯）をぼかす。カレンダーはその下から始める。
      iPhoneでは display-mode が効かないことがあるので、起動時に html へ付ける .standalone で判定する */
   .standalone #calScreen { padding-top: 56px; }
+  /* body は画面の高さちょうどなので、body の下の余白ではスクロールの長さが増えない。カレンダー自身に下のバーの分の余白を持たせ、
+     日を選んだときの下の欄がバーに隠れず、上下にスクロールして見られるようにする */
+  #calScreen { padding-bottom: calc(var(--bar-room, 104px) + env(safe-area-inset-bottom, 0px)); }
 
   /* 光の点はどの画面でも同じ高さに置く。中身の高さで位置が変わると、切り替えのたびに点が動いてしまう */
   main {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- アプリとウィジェットで「今日の予定」を分け合う場所。AltStore が署名するときに、この名前で登録する（名前が付け直されても、アプリはプロファイルから読む） -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.jp.weakestandstrongest.hibi</string>
+	</array>
+</dict>
+</plist>

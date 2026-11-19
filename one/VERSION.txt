@@ -1,1 +1,1 @@
-e52b0d8ff693c97aee0d1b1b5acd3c7d57abd6eb Words: the add button floats at the bottom right as a round glass button
+a9334603b7fbf2278a63c5781f11474b2c770643 Calendar: room for the bottom bar so the day panel scrolls clear of it

@@ -45,13 +45,16 @@ const keys = {
   NSRemindersFullAccessUsageDescription: '<string>ひび手帳のやること・課題を「ひび手帳」リマインダーに入れて、完了を両方でそろえるために使います。</string>',
   // ひび手帳の中の Orbit（ブラウザ）：http のページも WebView では開けるように（ふだんは HTTPS に切り替えて開く）
   NSAppTransportSecurity: '<dict><key>NSAllowsArbitraryLoadsInWebContent</key><true/></dict>',
+  // 財布の IC カード：交通系 IC（Suica・manaca・ICOCA・PASMO など、システムコード 0003）の残高と履歴を読む
+  NFCReaderUsageDescription: '<string>交通系 IC カードの残高と利用履歴を読むために使います（読むだけで、書き込みはしません）。</string>',
+  'com.apple.developer.nfc.readersession.felica.systemcodes': '<array><string>0003</string></array>',
   NSAlarmKitUsageDescription: '<string>目覚ましと、出発時刻のアラームを鳴らすために使います。</string>',
 };
 const plistPath = join(app, 'Info.plist');
 let plist = await readFile(plistPath, 'utf8');
 for (const [k, v] of Object.entries(keys)) {
   // remove an older copy of the key (so running twice changes nothing), then add it before the closing </dict>
-  plist = plist.replace(new RegExp(`\\s*<key>${k}</key>\\s*(<true/>|<false/>|<string>[\\s\\S]*?</string>|<dict>[\\s\\S]*?</dict>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
+  plist = plist.replace(new RegExp(`\\s*<key>${k.replace(/\./g, '\\.')}</key>\\s*(<true/>|<false/>|<string>[\\s\\S]*?</string>|<dict>[\\s\\S]*?</dict>|<array>[\\s\\S]*?</array>(?=\\s*<key>|\\s*</dict>\\s*</plist>))`), '');
   plist = plist.replace(/\n?<\/dict>\s*<\/plist>\s*$/, `\n\t<key>${k}</key>\n\t${v}\n</dict>\n</plist>\n`);
 }
 await writeFile(plistPath, plist);

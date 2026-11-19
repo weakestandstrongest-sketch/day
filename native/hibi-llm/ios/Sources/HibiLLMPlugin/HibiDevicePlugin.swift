@@ -63,6 +63,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "scanCode", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "brightness", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "readCode", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readIC", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
@@ -343,6 +344,18 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         guard let b64 = call.getString("data"), let data = Data(base64Encoded: b64) else { return call.reject("no image") }
         HibiScan.readCode(in: data) { r in
             DispatchQueue.main.async { if let r { call.resolve(["value": r.0, "format": r.1]) } else { call.resolve([:]) } }
+        }
+    }
+
+    /// 交通系 IC カードを NFC で読む → {idm, balance, hist:[...]}。やめたときは reject("cancel")、NFC がない iPhone は reject("unavailable")
+    @objc func readIC(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            HibiFelica.shared.read { r in
+                switch r {
+                case .success(let o): call.resolve(o)
+                case .failure(let e): call.reject(e.localizedDescription)
+                }
+            }
         }
     }
 
