@@ -1,4 +1,5 @@
 import { h, gameShell, sfx, loadPref, savePref, think, showResult, toast, modal, CPU_LEVELS } from '../ui.js';
+import { fanHand, backFan, plate, spread } from './cards-ui.js';
 
 // いろあわせ：色か数字（記号）が同じカードを出して、手札を先になくした人の勝ち。あなたと CPU 3 人
 const RULES = `
@@ -371,29 +372,37 @@ export function mount(root) {
     if (r === 'again') newRound(champ >= 0); else showSetup();
   }
 
-  function seatEl(p) {
+  function seat(p) {
     const n = S.hands[p].length;
-    return h('div', { class: `ct-seat ${SEAT[p]} ${S.turn === p && S.winner < 0 ? 'turn' : ''}` },
-      h('div', { class: 'ct-backs ia-backs' }, Array.from({ length: Math.min(n, 8) }, () => h('i'))),
-      h('div', { class: 'ct-name' }, h('b', {}, NAMES[p]), h('small', {}, `${n === 1 ? 'あと 1 枚！' : `${n} 枚`}${R().match ? ` ・ ${S.scores[p]} 点` : ''}`)),
-      S.last[p] ? h('span', { class: 'ct-say' }, S.last[p]) : null);
+    return [backFan(n, SEAT[p], 'iro'), plate({
+      name: NAMES[p], where: SEAT[p], sub: `${n === 1 ? 'あと 1 枚！' : `${n} 枚`}${R().match ? ` ・ ${S.scores[p]} 点` : ''}`,
+      say: S.last[p], turn: S.turn === p && S.winner < 0,
+    })];
   }
 
   function render(msg) {
     if (!S) return;
     const mine = myTurn();
     const sel = S.sel;
-    const hand = h('div', { class: 'ct-hand ia-hand', style: { '--n': S.hands[0].length } }, S.hands[0].map((c) => {
+    const W = body.clientWidth || 380;
+    const cw = Math.max(56, Math.min(72, Math.round(W / 6.2)));
+    const first = sel.length ? S.hands[0].find((x) => x.id === sel[0]) : null;
+    const hand = fanHand(S.hands[0].map((c) => {
       const picked = sel.includes(c.id);
-      const first = sel.length ? S.hands[0].find((x) => x.id === sel[0]) : null;
       const ok = mine && (first ? c.v === first.v : canPlay(c) && (!S.drew || S.drew.id === c.id));
       return cardEl(c, { cls: picked ? 'sel' : ok ? 'ok' : mine ? 'dim' : '', attrs: { role: 'button', onclick: () => tapCard(c) } });
-    }));
+    }), W, { cw, ch: Math.round(cw * 1.45) });
+    // 場：いちばん上のカードと、その下に少し前のカード
     const t = top();
-    const field = h('div', { class: 'ct-field ia-field' },
-      h('button', { class: `ia-deck ${S.pending && mine ? 'hot' : ''}`, disabled: !mine || !!S.drew, onclick: humanDeck, 'aria-label': '山から引く' },
-        h('span', {}, S.pending && mine ? `+${S.pending.n}` : '引く'), h('small', {}, `${S.draw.length}`)),
-      h('div', { class: 'ia-pile' }, cardEl(t, { color: isWild(t) ? S.color : null }), S.pending ? h('span', { class: 'ia-pend' }, `+${S.pending.n}`) : null),
+    const recent = S.pile.slice(-3);
+    const fresh = S.lastTop !== t.id; S.lastTop = t.id;
+    const sp = spread(recent, (c) => cardEl(c, { color: c === t && isWild(t) ? S.color : null }));
+    [...sp.children].forEach((el, i) => { if (i < recent.length - 1) el.style.filter = 'brightness(.55)'; });
+    if (fresh) sp.lastElementChild.classList.add('fresh');
+    const deck = h('button', { class: `ia-deck2 ${S.pending && mine ? 'hot' : ''}`, disabled: !mine || !!S.drew, onclick: humanDeck, 'aria-label': '山から引く' },
+      backFan(1, 'deck', 'iro').firstElementChild, h('span', { class: 'lbl' }, S.pending && mine ? `+${S.pending.n} 引く` : `引く ・ ${S.draw.length}`));
+    const field = h('div', { class: 't2-field' },
+      h('div', { class: 'ia-row' }, deck, h('div', { class: 'ia-pile' }, sp, S.pending ? h('span', { class: 'ia-pend' }, `+${S.pending.n}`) : null)),
       h('div', { class: 'ia-now', style: { '--cc': COLORS[S.color].hex } }, h('i'), h('span', {}, COLORS[S.color].name), h('em', {}, S.dir > 0 ? '↻' : '↺')));
     const acts = [];
     if (S.forgot >= 0) acts.push(h('button', { class: 'btn commit', onclick: () => { const q = S.forgot; S.forgot = -1; takeCards(q, 2); S.last[q] = '+2 指摘'; flash(`${NAMES[q]}はラスト宣言を忘れていました。2 枚`); sfx('check'); render(); } }, `指摘する（${NAMES[S.forgot]}）`));
@@ -413,9 +422,9 @@ export function mount(root) {
     const hint = mine ? (S.pending ? (S.hands[0].some(canPlay) ? `+${S.pending.n} がきています。重ねるか、引くか${S.w4 && R().challenge ? '、チャレンジするか' : ''}` : `+${S.pending.n} がきています。引くか${S.w4 && R().challenge ? '、チャレンジするか' : ''}選んでください`)
       : S.drew ? '引いたカードを出せます' : sel.length ? '同じ数字・記号を足せます。最後に選んだカードの色が次の色です' : '出すカードを押すか、山から引いてください') : '';
     body.replaceChildren(
-      h('div', { class: 'ct-table' }, seatEl(2), seatEl(1), field, seatEl(3)),
+      h('div', { class: 't2' }, ...seat(2), ...seat(1), ...seat(3), field),
       h('p', { class: 'ct-msg' }, msg || hint),
-      h('div', { class: 'ct-me' }, hand, acts.length ? h('div', { class: 'ct-actions' }, acts) : null));
+      h('div', { class: 't2-me' }, acts.length ? h('div', { class: 'ct-actions' }, acts) : null, h('div', { class: 't2-hand' }, hand)));
   }
 
   showSetup();

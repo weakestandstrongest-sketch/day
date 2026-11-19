@@ -1418,7 +1418,6 @@ img.koma3 { width: calc(var(--k, 1) * 112%); max-width: none; height: auto; filt
   background: repeating-linear-gradient(45deg, #2a2a33 0 4px, #1d1d24 4px 8px) !important; font-family: var(--f-jp); font-size: 12px; color: var(--paper); }
 .ia-deck small { font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
 .ia-deck:disabled { opacity: .5; }
-.ia-pile .ic-card { transform: rotate(-4deg); width: 58px; height: 84px; }
 .ia-now { position: absolute; bottom: 10px; display: flex; align-items: center; gap: 6px; font-family: var(--f-jp); font-size: 12px; letter-spacing: .1em; }
 .ia-now i { width: 12px; height: 12px; border-radius: 50%; background: var(--cc); box-shadow: 0 0 10px var(--cc); }
 .ia-now em { font-style: normal; color: var(--muted); }
@@ -1436,3 +1435,120 @@ img.koma3 { width: calc(var(--k, 1) * 112%); max-width: none; height: auto; filt
 .ia-pend { position: absolute; right: -14px; top: -10px; font-family: var(--f-display); font-weight: 700; font-size: 15px; padding: 2px 8px; background: var(--paper); color: var(--ink); border-radius: 12px; }
 .ia-deck.hot { border-color: var(--kc) !important; box-shadow: 0 0 14px color-mix(in srgb, var(--kc) 60%, transparent); }
 .ia-deck.hot span { font-family: var(--f-display); font-size: 16px; font-weight: 700; }
+
+/* ───────── カードの卓 2：扇の手札・相手の扇・大きな場札 ───────── */
+.t2 { position: relative; flex: 1; min-height: 250px; overflow: hidden; margin: 0 -10px; }
+.t2::before { content: ""; position: absolute; inset: 8% 6% 6%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--kc) 14%, transparent), transparent 75%); pointer-events: none; }
+.t2-field { position: absolute; left: 50%; top: 61%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 2; }
+.t2-field .ct-empty { font-family: var(--f-jp); font-size: 12px; letter-spacing: .2em; color: var(--muted); }
+.t2-tag { font-family: var(--f-jp); font-size: 11px; letter-spacing: .14em; color: var(--muted); }
+.t2-rev { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font-family: var(--f-jp); font-size: 13px; letter-spacing: .4em; color: var(--kc); text-shadow: 0 0 12px var(--kc); z-index: 3; white-space: nowrap; }
+.t2-me { display: flex; flex-direction: column; gap: 6px; }
+.t2-me .ct-actions { padding: 0 6px; }
+.t2-hand { position: relative; margin: 0 -10px -14px; padding-top: 22px; overflow: hidden; }
+
+/* 手札の扇 */
+.fan2 { position: relative; height: calc(var(--ch) + 30px); }
+.fan2 > .in-fan { position: absolute; left: calc(50% - var(--cw) / 2); top: 22px; --w: var(--cw); transform-origin: 50% var(--R); transform: rotate(var(--a)); transition: transform .22s var(--ease-out), filter .2s; }
+.fan2 > .in-fan.up, .fan2 > .in-fan.sel { transform: rotate(var(--a)) translateY(-20px); }
+.fan2 > .in-fan.ok { transform: rotate(var(--a)) translateY(-8px); }
+.fan2 > .in-fan.dim { filter: brightness(.48) saturate(.7); }
+.fan2 > .in-fan.up { box-shadow: 0 0 0 2px var(--kc), 0 10px 20px rgba(0, 0, 0, .55); }
+
+/* 相手の裏向きの扇 */
+.bfan2 { position: absolute; z-index: 1; pointer-events: none; }
+.bfan2 .cb2 { position: absolute; left: 0; top: 0; }
+.bfan2.s-top { left: 50%; top: -44px; width: 0; }
+.bfan2.s-top .cb2 { transform-origin: 50% -420%; transform: translateX(-50%) rotate(var(--a)); }
+.bfan2.s-left, .bfan2.s-right { top: 30%; width: 0; }
+.bfan2.s-left { left: -40px; transform: rotate(-90deg); }
+.bfan2.s-right { right: -40px; transform: rotate(90deg); }
+.bfan2.s-left .cb2, .bfan2.s-right .cb2 { transform-origin: 50% -420%; transform: translateX(-50%) rotate(var(--a)); }
+
+/* 名札 */
+.pl2 { position: absolute; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 76px; padding: 6px 10px 5px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 78%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: border-color .3s, box-shadow .3s, opacity .3s; }
+.pl2 b { font-family: var(--f-jp); font-weight: 400; font-size: 13px; letter-spacing: .12em; color: var(--paper); }
+.pl2 small { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); }
+.pl2.turn { border-color: var(--kc); box-shadow: 0 0 16px color-mix(in srgb, var(--kc) 55%, transparent); }
+.pl2.turn b { color: var(--paper); }
+.pl2.done { opacity: .55; }
+.pl2-badge { position: absolute; top: -10px; font-family: var(--f-jp); font-size: 10px; letter-spacing: .1em; padding: 1px 7px; background: var(--kc); color: var(--paper); white-space: nowrap; }
+.pl2-say { position: absolute; bottom: -12px; font-family: var(--f-jp); font-size: 11px; padding: 1px 8px; border-radius: 10px; background: var(--paper); color: var(--ink); white-space: nowrap; }
+.pl2.s-top { left: 50%; top: 58px; transform: translateX(-50%); }
+.pl2.s-left { left: 6px; top: calc(30% + 58px); }
+.pl2.s-right { right: 6px; top: calc(30% + 58px); }
+
+/* 場：少しずつ傾けて重ねる */
+.spread2 { position: relative; display: flex; justify-content: center; align-items: center; min-height: 118px; min-width: 120px; }
+.spread2 > * { --w: 80px; position: absolute !important; transform: translateX(var(--x)) rotate(var(--a)); box-shadow: 0 8px 22px rgba(0, 0, 0, .55); }
+.spread2.new > * { animation: deal-in .32s var(--ease-out) both; }
+@keyframes deal-in { from { opacity: 0; transform: translateX(var(--x)) translateY(60px) rotate(calc(var(--a) - 14deg)) scale(.9); } }
+
+/* トランプ（候の紙と墨・朱） */
+.pc2 { --w: 64px; position: relative; display: block; flex: none; width: var(--w); height: calc(var(--w) * 1.43); font-size: calc(var(--w) * .25); border-radius: calc(var(--w) * .09);
+  background: radial-gradient(120% 90% at 30% 0%, #fbf8f1, #efe7d7 70%, #e6dcc7); color: #1b1b22; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(80, 60, 30, .18), inset 0 0 0 calc(var(--w) * .045) #f7f2e7, inset 0 0 0 calc(var(--w) * .055) rgba(80, 60, 30, .12); }
+.pc2.red { color: #b0312a; }
+.pc2-ix { position: absolute; left: .26em; top: .22em; display: flex; flex-direction: column; align-items: center; line-height: .95; }
+.pc2-ix b { font-family: var(--f-display); font-weight: 700; font-size: 1.05em; letter-spacing: -.04em; }
+.pc2-ix i { font-style: normal; font-size: .78em; margin-top: .06em; }
+.pc2-ix.rot { left: auto; top: auto; right: .26em; bottom: .22em; transform: rotate(180deg); }
+.pc2-pips { position: absolute; inset: 9% 21%; }
+.pc2-pips i { position: absolute; font-style: normal; font-size: .82em; line-height: 1; transform: translate(-50%, -50%); }
+.pc2-pips i.dn { transform: translate(-50%, -50%) rotate(180deg); }
+.pc2-pips.n1 i { font-size: 2.3em; }
+.pc2.ace:not(.red) .pc2-pips.n1 i { color: var(--kc); }
+.pc2-court { position: absolute; inset: 13% 19%; display: flex; flex-direction: column; border: 1px solid currentColor; border-radius: 3px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(201, 162, 39, .16), rgba(201, 162, 39, .05) 50%, rgba(201, 162, 39, .16)); }
+.pc2-court .half { flex: 1; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; align-items: center; justify-items: center; padding: 6% 8% 0; position: relative; }
+.pc2-court .half.dn { transform: rotate(180deg); border-top: 1px solid currentColor; }
+.pc2-court svg { grid-row: 1 / 3; width: 82%; fill: rgba(201, 162, 39, .55); stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+.pc2-court b { font-family: var(--f-display); font-style: italic; font-size: .9em; line-height: 1; }
+.pc2-court i { font-style: normal; font-size: .6em; }
+.pc2.joker { color: var(--kc); }
+.pc2-jk { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pc2-jk i { font-style: normal; font-size: 2.1em; line-height: 1; text-shadow: 0 0 8px color-mix(in srgb, var(--kc) 40%, transparent); }
+.pc2-jk em { font-style: normal; font-family: var(--f-mono); font-size: .36em; letter-spacing: .3em; margin-top: .4em; color: #1b1b22; }
+
+/* 裏向き（候の朱の地に、金の格子） */
+.cb2 { --w: 44px; display: block; width: var(--w); height: calc(var(--w) * 1.43); border-radius: 5px; position: relative;
+  background: repeating-linear-gradient(45deg, transparent 0 5px, rgba(232, 196, 120, .22) 5px 6px), repeating-linear-gradient(-45deg, transparent 0 5px, rgba(232, 196, 120, .22) 5px 6px),
+    linear-gradient(160deg, color-mix(in srgb, var(--kc) 85%, #fff 5%), color-mix(in srgb, var(--kc) 70%, #000));
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .55), inset 0 0 0 1.5px #f2ead9, inset 0 0 0 3px color-mix(in srgb, var(--kc) 70%, #000), inset 0 0 0 3.6px rgba(232, 196, 120, .7); }
+.cb2 i { position: absolute; left: 50%; top: 50%; width: 30%; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(45deg); border: 1px solid rgba(232, 196, 120, .8); background: color-mix(in srgb, var(--kc) 70%, #000); }
+.cb2.iro { background: linear-gradient(135deg, #d4543f 0 25%, #e2ad2b 25% 50%, #4a9a68 50% 75%, #3d6cb3 75%); }
+.cb2.iro::before { content: ""; position: absolute; inset: 3px; border-radius: 3px; background: repeating-linear-gradient(45deg, rgba(0, 0, 0, .0) 0 4px, rgba(0, 0, 0, .18) 4px 5px), rgba(12, 10, 16, .55); }
+.cb2.iro i { border-color: rgba(255, 255, 255, .8); background: rgba(12, 10, 16, .8); }
+
+/* いろあわせのカード 2：色の地・白い縁・ひし形の窓に数字 */
+.ic-card { --w: 64px; width: var(--w) !important; height: calc(var(--w) * 1.45) !important; font-size: calc(var(--w) * .25); border-radius: calc(var(--w) * .1) !important;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cc, #333) 88%, #fff), var(--cc, #333) 45%, color-mix(in srgb, var(--cc, #333) 78%, #000)) !important;
+  box-shadow: inset 0 0 0 calc(var(--w) * .055) #fbf8f1, 0 3px 10px rgba(0, 0, 0, .5) !important; overflow: hidden; }
+.ic-card::before { content: ""; position: absolute; left: 50%; top: 50%; width: 58%; aspect-ratio: 1; transform: translate(-50%, -50%) rotate(45deg); border-radius: 18%;
+  background: rgba(255, 255, 255, .16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45); }
+.ic-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 255, .28), transparent 38%); pointer-events: none; }
+.ic-card b { position: relative; font-size: 1.95em !important; }
+.ic-card.act b { font-size: 1.45em !important; }
+.ic-card small { font-size: .5em !important; }
+.ic-card small.tl { left: .5em !important; top: .45em !important; }
+.ic-card small.br { right: .5em !important; bottom: .45em !important; }
+.ic-card.wild { background: linear-gradient(160deg, #26232e, #121016) !important; }
+.ic-card.wild[style] { box-shadow: inset 0 0 0 calc(var(--w) * .055) var(--cc), 0 3px 10px rgba(0, 0, 0, .5) !important; }
+.ic-card.wild::before { display: none; }
+.ic-card .ic-quads { inset: 26% 18% !important; transform: rotate(45deg); border-radius: 22% !important; }
+.ic-card.wild b { font-size: 1.05em !important; text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+.ia-deck2 { position: relative; border: 0 !important; background: none !important; padding: 0 !important; cursor: pointer; }
+.ia-deck2 .cb2 { --w: 64px; }
+.ia-deck2 span.lbl { position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%); white-space: nowrap; font-family: var(--f-jp); font-size: 11px; letter-spacing: .12em; color: var(--paper-2); }
+.ia-deck2.hot .cb2 { box-shadow: 0 0 18px var(--kc), inset 0 0 0 1.5px #f2ead9; }
+.ia-deck2:disabled { opacity: .55; cursor: default; }
+.ia-row { display: flex; align-items: center; gap: 26px; }
+.ia-row .spread2 > * { --w: 76px; }
+.ia-pile { position: relative; width: 96px; height: 120px; display: grid; place-items: center; }
+.ia-pile .spread2 > * { --w: 74px; }
+.ia-pile .spread2 > .fresh { animation: deal-in .32s var(--ease-out) both; }
+.ia-pile .ia-pend { z-index: 5; }
+.t2-field .ia-now { position: static; margin-top: 18px; }
+.fan2 > .ic-card.in-fan { position: absolute !important; }
+.fan2 > .ic-card.sel { box-shadow: inset 0 0 0 calc(var(--w) * .055) #fbf8f1, 0 0 0 2px var(--paper), 0 10px 20px rgba(0, 0, 0, .55) !important; }

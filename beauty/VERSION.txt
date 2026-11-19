@@ -1,1 +1,1 @@
-8b7f658d136cd8962bf00b5aa6fcfb86cceca29c 大富豪: choose house rules before starting (革命, 8切り, 7渡し, 10捨て, スペ3, 11バック, 5スキップ); いろあわせ: closer to the classic rules — start-card effects, play same number/symbol together, stack +2/+4, last-card call, +4 challenge, draw until playable, 7-0, play to 500
+01914ee4a7443fc1696a329b177f2b890dba97b2 大富豪・いろあわせ: a real card table — big fanned hand, opponents' backs fanned at the edges, played cards laid large in the middle, full pip faces and court cards, 候-red card backs

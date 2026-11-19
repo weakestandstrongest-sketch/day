@@ -1,4 +1,5 @@
 import { h, gameShell, sfx, loadPref, savePref, think, showResult, toast, CPU_LEVELS } from '../ui.js';
+import { playingCard, fanHand, backFan, plate, spread } from './cards-ui.js';
 import { SUITS, RANKS, deal, sortHand, analyze, beats, legalPlays, cpuPlay, hasEight, isRevolution, strongest, weakest, titleOf, RULE_LIST, defaultRules, countRank, isSpade3 } from './daifugo-logic.js';
 
 const RULES = `
@@ -260,13 +261,12 @@ export function mount(root) {
   }
 
   // ---- 描画 ----
-  function seatEl(p) {
+  function seat(p) {
     const n = S.hands[p].length, place = S.out.indexOf(p);
-    return h('div', { class: `ct-seat ${SEAT[p]} ${S.turn === p && place < 0 ? 'turn' : ''} ${place >= 0 ? 'done' : ''}` },
-      h('div', { class: 'ct-backs' }, Array.from({ length: Math.min(n, 8) }, () => h('i'))),
-      h('div', { class: 'ct-name' }, h('b', {}, NAMES[p]), h('small', {}, place >= 0 ? titleOf(place) : `${n} 枚`)),
-      S.prev ? h('span', { class: 'ct-title' }, titleOf(S.prev[p])) : null,
-      S.last[p] && place < 0 ? h('span', { class: 'ct-say' }, S.last[p]) : null);
+    return [backFan(n, SEAT[p]), plate({
+      name: NAMES[p], where: SEAT[p], sub: place >= 0 ? `${titleOf(place)}で上がり` : `${n} 枚`,
+      badge: S.prev ? titleOf(S.prev[p]) : null, say: place < 0 ? S.last[p] : '', turn: S.turn === p && place < 0, done: place >= 0,
+    })];
   }
 
   function render(msg, ex = {}) {
@@ -276,30 +276,36 @@ export function mount(root) {
     const selCards = S.hands[0].filter((c) => sel.has(c.id));
     const selPlay = selCards.length ? analyze(selCards) : null;
     const canPlay = myTurn && selPlay && beats(selPlay, S.field, rev(), R());
-    const hand = h('div', { class: 'ct-hand', style: { '--n': S.hands[0].length } }, S.hands[0].map((c) => cardEl(c, {
+    const W = body.clientWidth || 380;
+    const cw = Math.max(56, Math.min(74, Math.round(W / 6)));
+    const hand = fanHand(S.hands[0].map((c) => playingCard(c, {
       cls: `${sel.has(c.id) ? 'up' : ''} ${playable && !playable.has(c.id) ? 'dim' : ''}`,
-      attrs: { role: 'button', onclick: () => {
+      attrs: { role: 'button', 'aria-label': c.j ? 'ジョーカー' : `${SUITS[c.s]}${RANKS[c.r]}`, onclick: () => {
         if (ex.pick) return ex.pick(c);
         if (!myTurn) return;
         if (sel.has(c.id)) sel.delete(c.id); else sel.add(c.id);
-        sfx('tap'); render();
+        sfx('tap'); render(msg, ex);
       } },
-    })));
+    })), W, { cw, ch: Math.round(cw * 1.43) });
     const lp = S.field && S.lastPlay;
-    const field = h('div', { class: `ct-field ${rev() ? 'rev' : ''}` },
-      S.rev || S.jback ? h('span', { class: 'ct-rev' }, [S.rev ? '革命中' : '', S.jback ? '11バック中' : ''].filter(Boolean).join('・')) : null,
-      lp ? h('div', { class: `ct-play ${S.animated !== lp ? 'new' : ''}` }, lp.play.cards.map((c) => cardEl(c))) : h('span', { class: 'ct-empty' }, '場は空いています'),
-      lp ? h('small', { class: 'ct-by' }, NAMES[lp.p]) : null,
-      ex.got ? h('div', { class: 'ct-got' }, h('small', {}, 'もらったカード'), h('div', { class: 'ct-play' }, ex.got.map((c) => cardEl(c)))) : null);
+    const fresh = S.animated !== lp;
+    S.animated = lp;
+    const sp = lp ? spread(lp.play.cards, (c) => playingCard(c)) : null;
+    if (sp && fresh) sp.classList.add('new');
+    const field = h('div', { class: 't2-field' },
+      sp || h('span', { class: 'ct-empty' }, '場は空いています'),
+      lp ? h('span', { class: 't2-tag' }, NAMES[lp.p]) : null,
+      ex.got ? h('div', { class: 'ct-got' }, h('small', {}, 'もらったカード'), spread(ex.got, (c) => playingCard(c))) : null);
     const actions = ex.actions || (myTurn ? [
       h('button', { class: 'btn', disabled: !S.field, onclick: humanPass }, 'パス'),
       h('button', { class: 'btn primary', disabled: !canPlay, onclick: humanPlay }, '出す'),
     ] : []);
-    S.animated = lp;
     body.replaceChildren(
-      h('div', { class: 'ct-table' }, seatEl(2), seatEl(1), field, seatEl(3)),
+      h('div', { class: 't2' }, ...seat(2), ...seat(1), ...seat(3),
+        S.rev || S.jback ? h('span', { class: 't2-rev' }, [S.rev ? '革命中' : '', S.jback ? '11バック中' : ''].filter(Boolean).join('・')) : null,
+        field),
       h('p', { class: 'ct-msg' }, msg || (S.out.includes(0) ? `あなたは${titleOf(S.out.indexOf(0))}で上がりました` : myTurn ? (S.field ? '出すカードを選んでください' : '好きなカードを出せます') : '')),
-      h('div', { class: 'ct-me' }, hand, h('div', { class: 'ct-actions' }, actions)));
+      h('div', { class: 't2-me' }, actions.length ? h('div', { class: 'ct-actions' }, actions) : null, h('div', { class: 't2-hand' }, hand)));
   }
 
   showSetup();
