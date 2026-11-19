@@ -53,12 +53,12 @@ function renderMenu() {
   };
   const screen = h('div', { class: 'a-menu' },
     h('header', { class: 'a-top' },
-      h('div', { class: 'a-mark label' }, h('b', {}, '遊'), 'Asobi — games for two'),
+      h('div', { class: 'a-mark label' }, h('b', {}, '遊'), 'Asobi — a little play'),
       h('div', { class: 'label a-count' }, `${GAMES.length} games · 1 device`)),
     h('aside', { class: 'a-title' },
-      h('span', { class: 'a-seal' }, '二人'),
+      h('span', { class: 'a-seal' }, '一興'),
       h('h1', {}, 'あそび'),
-      h('span', { class: 'a-read' }, 'ひとつの画面を、ふたりで')),
+      h('span', { class: 'a-read' }, 'すきまに、ひと遊び')),
     h('nav', { class: 'a-list', 'aria-label': 'ゲーム' },
       GAMES.map((g, i) => h('a', {
         class: 'a-row',

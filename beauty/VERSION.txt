@@ -1,1 +1,1 @@
-63435e6195d55b79dd4f41e6ee6d90bf1f69ad2a 遊: 数独, 大富豪 and いろあわせ (colour-and-number card game) — solo puzzle and card games against 3 CPUs
+727adced4c05f4ba9e1b2d0926fc6f7cd1360539 遊: 二人 → 一興 / すきまに、ひと遊び / a little play (games for one too now)
