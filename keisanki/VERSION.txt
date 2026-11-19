@@ -1,1 +1,1 @@
-0abe23d3aa61d6dea20c5ca143cb6defd3662801 Keep the header clear of the iPhone status bar when launched from the home screen
+53f812bb0182fd0efdb7c7592761bff4a6a0ba0b Graph: write equations and see them drawn — y=f(x), x=g(y), implicit curves, inequalities, points, sliders, own functions, math keypad, pan/zoom, tap points for zeros, peaks and intersections

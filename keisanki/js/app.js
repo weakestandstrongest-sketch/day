@@ -448,6 +448,16 @@
     $('game').focus();
   });
 
+  /* ---------- グラフ ---------- */
+  const graph = new MS.Graph($('graph'), {
+    onClose: () => { world.paused = false; world.resize(); },
+  });
+  $('btnGraph').addEventListener('click', () => {
+    if (holo.active) setHolo(false);
+    world.paused = true;
+    graph.show();
+  });
+
   /* ---------- 履歴の一覧 (🕘) ---------- */
   (function historyPanel() {
     const panel = $('histPanel'), list = $('histList'), btn = $('btnHistory');
@@ -548,5 +558,5 @@
   if (pref === 'off') { $('intro').hidden = true; afterIntro(); }
   else intro.play(pref, afterIntro);
 
-  MS.app = { world, calc, inspector, spawn, holo, setHolo, game };
+  MS.app = { world, calc, inspector, spawn, holo, setHolo, game, graph };
 })(window.MS);

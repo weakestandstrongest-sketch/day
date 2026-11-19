@@ -63,6 +63,7 @@
       <div class="display-actions">
         <button type="button" class="btn" id="btnInspect">🔍 この数を調べる</button>
         <button type="button" class="btn glow" id="btnPuni">◉ ぷに化</button>
+        <button type="button" class="btn graph-btn" id="btnGraph">∿ グラフ</button>
       </div>
       <div class="keys" id="keys"></div>
       <div class="hist-panel" id="histPanel" hidden>
@@ -132,6 +133,44 @@
     <p class="g-hint">左右に動かして、離すと落ちる · 同じ数がふれると 2 倍に合体 · 点線より上に積み上がるとおしまい</p>
   </section>
 
+  <section class="graph" id="graph" hidden aria-label="グラフ">
+    <div class="gr-top">
+      <button type="button" class="g-close gr-close" id="grClose" aria-label="グラフを閉じる">✕</button>
+      <div class="g-title"><b>GRAPH</b><small>式を書くと、その場で線になる</small></div>
+      <button type="button" class="gr-ibtn" id="grSet" aria-label="設定と例">⚙</button>
+      <div class="gr-menu panel" id="grMenu" hidden>
+        <button type="button" data-set="deg">角度：ラジアン</button>
+        <button type="button" data-set="grid">方眼：あり</button>
+        <b>例を読みこむ</b>
+        <button type="button" data-set="ex:0">放物線と直線</button>
+        <button type="button" data-set="ex:1">円（r を動かす）</button>
+        <button type="button" data-set="ex:2">sin の波（a・b を動かす）</button>
+        <button type="button" data-set="ex:3">不等式</button>
+        <button type="button" data-set="ex:4">関数を作る</button>
+        <button type="button" data-set="ex:5">ハート</button>
+        <button type="button" data-set="clear" class="danger">ぜんぶ消す</button>
+      </div>
+    </div>
+    <div class="gr-plot">
+      <canvas id="grCanvas"></canvas>
+      <div class="gr-zoom">
+        <button type="button" id="grZin" aria-label="拡大">＋</button>
+        <button type="button" id="grZout" aria-label="縮小">−</button>
+        <button type="button" id="grHome" aria-label="元の大きさ">⌂</button>
+      </div>
+    </div>
+    <div class="gr-bar">
+      <button type="button" class="gr-ibtn" id="grAdd" aria-label="式を足す">＋</button>
+      <span class="gr-gap"></span>
+      <button type="button" class="gr-ibtn" id="grUndo" aria-label="もとに戻す">↶</button>
+      <button type="button" class="gr-ibtn" id="grRedo" aria-label="やり直す">↷</button>
+      <span class="gr-gap"></span>
+      <button type="button" class="gr-ibtn" id="grFold" aria-label="キーボードをしまう">⌄</button>
+    </div>
+    <div class="gr-list" id="grList"></div>
+    <div class="gr-keys" id="grKeys"></div>
+  </section>
+
   <div class="help" id="help" hidden>
     <div class="help-card panel">
       <h2>Mathspace の遊び方</h2>
@@ -161,6 +200,7 @@
   <script src="js/inspector.js?v=202611050526"></script>
   <script src="js/holo.js?v=202611050526"></script>
   <script src="js/game.js?v=202611050526"></script>
+  <script src="js/graph.js?v=202611050526"></script>
   <script src="js/intro.js?v=202611050526"></script>
   <script src="js/app.js?v=202611050526"></script>
 </body>

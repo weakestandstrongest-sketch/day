@@ -577,3 +577,66 @@ body.dragging-num { cursor: grabbing; user-select: none; -webkit-user-select: no
   .stars { animation: none; }
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* ---------- グラフ ---------- */
+.btn.graph-btn { border-color: rgba(94, 241, 255, 0.45); color: #c9fbff; }
+.graph {
+  position: fixed; inset: 0; z-index: 32; display: flex; flex-direction: column;
+  padding: calc(8px + var(--hibi-sa-top, env(safe-area-inset-top, 0px))) 0 calc(6px + var(--hibi-sa-bottom, env(safe-area-inset-bottom, 0px)));
+  background: var(--bg); outline: none;
+}
+.gr-top { position: relative; display: flex; align-items: center; gap: 12px; padding: 0 max(14px, var(--hibi-sa-right, env(safe-area-inset-right, 0px))) 8px max(14px, var(--hibi-sa-left, env(safe-area-inset-left, 0px))); }
+.gr-top .g-title { flex: 1; }
+.gr-ibtn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-hi); background: rgba(255, 255, 255, 0.04); font-size: 18px; display: grid; place-items: center; flex-shrink: 0; }
+.gr-ibtn:disabled { opacity: .3; }
+.gr-menu { position: absolute; right: 14px; top: 48px; z-index: 5; display: flex; flex-direction: column; min-width: 230px; padding: 8px; border-radius: 16px; border: 1px solid var(--line-hi); background: var(--panel-solid); box-shadow: 0 18px 50px rgba(0, 0, 0, .6); }
+.gr-menu button { text-align: left; padding: 10px 12px; border: 0; background: none; border-radius: 10px; font-size: 14px; }
+.gr-menu button:active { background: rgba(255, 255, 255, .06); }
+.gr-menu b { font-size: 11px; letter-spacing: .14em; color: var(--muted); padding: 10px 12px 4px; font-weight: 600; }
+.gr-menu .danger { color: #ff7d8a; }
+.gr-plot { position: relative; flex: 1 1 auto; min-height: 30%; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+#grCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.gr-zoom { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.gr-zoom button { width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--line-hi); background: rgba(11, 10, 20, .78); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 17px; }
+.gr-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
+.gr-gap { flex: 1; }
+.gr-list { flex: 0 1 auto; max-height: 24vh; min-height: 64px; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top: 1px solid var(--line); }
+.graph.kb-off .gr-list { max-height: 42vh; }
+.gr-row { position: relative; display: grid; grid-template-columns: 46px 1fr 40px; align-items: stretch; min-height: 54px; border-bottom: 1px solid var(--line); }
+.gr-row.on { background: rgba(150, 130, 255, .08); box-shadow: inset 3px 0 0 var(--c); }
+.gr-dot { border: 0; background: none; display: grid; place-items: center; padding: 0; }
+.gr-dot b { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 500; }
+.gr-dot i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c); }
+.gr-dot i.k-implicit, .gr-dot i.k-yineq, .gr-dot i.k-xineq { border-radius: 6px; }
+.gr-row.off .gr-dot i { background: none; box-shadow: inset 0 0 0 2px var(--c); }
+.gr-main { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 8px 0; }
+.gr-tx { flex: 1 1 auto; min-width: 40%; font-family: "Times New Roman", "Hiragino Mincho ProN", serif; font-size: 22px; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-all; cursor: text; min-height: 33px; }
+.gr-tx sup { font-size: .66em; vertical-align: .62em; line-height: 0; }
+.gr-tx .gv { font-style: italic; }
+.gr-tx .gf { font-style: normal; font-family: var(--font); font-size: .82em; }
+.gr-tx .gn { font-family: var(--font); font-size: .9em; }
+.gr-tx .go { margin: 0 .16em; font-family: var(--font); font-size: .9em; }
+.gk-caret { display: inline-block; width: 2px; height: 1.05em; margin: 0 -1px; vertical-align: -.15em; background: var(--cyan); animation: gr-blink 1.06s steps(1) infinite; }
+.gr-tx sup .gk-caret { height: .9em; }
+@keyframes gr-blink { 50% { opacity: 0; } }
+.gr-val { margin-left: auto; font-family: var(--mono); font-size: 15px; color: var(--cyan); white-space: nowrap; }
+.gr-val.small { font-size: 13px; color: var(--muted); }
+.gr-val.no { color: #ff7d8a; }
+.gr-err { margin-left: auto; font-size: 11.5px; color: #ffb36b; max-width: 60%; text-align: right; }
+.gr-slider { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding-right: 4px; }
+.gr-slider small { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.gr-slider input { flex: 1; accent-color: var(--c); }
+.gr-play { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-hi); background: none; font-size: 11px; }
+.gr-play.on { border-color: var(--c); color: var(--c); }
+.gr-miss { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-miss button { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-hi); background: rgba(94, 241, 255, .08); color: #c9fbff; }
+.gr-del { border: 0; background: none; color: var(--muted); font-size: 15px; }
+.gr-keys { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; padding: 8px max(8px, var(--hibi-sa-left, env(safe-area-inset-left, 0px))) 4px; border-top: 1px solid var(--line); background: rgba(10, 9, 18, .9); }
+.gr-keys.closed { display: none; }
+.gr-keys.k-fn { grid-template-columns: repeat(6, 1fr); }
+.gk { min-height: 44px; padding: 0; border-radius: 10px; border: 1px solid rgba(150, 130, 255, .2); background: rgba(255, 255, 255, .045); font-size: 18px; font-family: "Times New Roman", serif; font-style: italic; color: var(--text); transition: background .1s, transform .1s; }
+.gk.num { font-family: var(--font); font-style: normal; background: rgba(150, 130, 255, .16); font-size: 19px; }
+.k-fn .gk, .k-abc .gk { font-style: normal; font-family: var(--font); font-size: 15px; }
+.gk.wide2 { grid-column: span 2; font-style: normal; font-family: var(--font); font-size: 15px; }
+.gk.go { background: linear-gradient(135deg, rgba(94, 241, 255, .35), rgba(180, 140, 255, .35)); border-color: rgba(94, 241, 255, .5); font-style: normal; font-family: var(--font); }
+.gk.down { transform: scale(.94); background: rgba(94, 241, 255, .25); }
