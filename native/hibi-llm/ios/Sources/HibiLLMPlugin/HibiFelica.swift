@@ -15,8 +15,20 @@ final class HibiFelica: NSObject, NFCTagReaderSessionDelegate {
 
     static var available: Bool { NFCTagReaderSession.readingAvailable }
 
+    /// アプリを署名したときのプロファイルに、NFC で読む許可（entitlement）が入っているか。
+    /// 無料の Apple ID で入れたとき（AltStore など）は、この許可が外されて NFC が使えないことが多い
+    static var hasNFCEntitlement: Bool? {
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        let text = String(decoding: data, as: UTF8.self)
+        return text.contains("com.apple.developer.nfc.readersession.formats")
+    }
+
     func read(done: @escaping (Result<[String: Any], Error>) -> Void) {
-        guard Self.available else { return done(.failure(Fail(msg: "unavailable"))) }
+        guard Self.available else {
+            // 許可がないのか、iPhone 自体が NFC を使えないのかを分けて知らせる
+            return done(.failure(Fail(msg: Self.hasNFCEntitlement == false ? "noEntitlement" : "unavailable")))
+        }
         guard let s = NFCTagReaderSession(pollingOption: [.iso18092], delegate: self, queue: .main) else {
             return done(.failure(Fail(msg: "unavailable")))
         }
@@ -38,6 +50,8 @@ final class HibiFelica: NSObject, NFCTagReaderSessionDelegate {
         let code = (error as? NFCReaderError)?.code
         if code == .readerSessionInvalidationErrorUserCanceled || code == .readerSessionInvalidationErrorSessionTimeout {
             finish(.failure(Fail(msg: "cancel")))
+        } else if code == .readerErrorSecurityViolation || code == .readerErrorUnsupportedFeature {
+            finish(.failure(Fail(msg: "noEntitlement")))
         } else {
             finish(.failure(error))
         }
