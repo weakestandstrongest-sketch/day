@@ -1,1 +1,1 @@
-0c19c29fe4952a0d35fe02887307caf5ed558d00 遊: play against the CPU in all 8 games (やさしい・ふつう・つよい) — reversi, gomoku, chess and 5五将棋 search ahead; yacht weighs rerolls; hit & blow narrows the candidates; air hockey reads the puck; darts aims with a level-sized wobble
+63435e6195d55b79dd4f41e6ee6d90bf1f69ad2a 遊: 数独, 大富豪 and いろあわせ (colour-and-number card game) — solo puzzle and card games against 3 CPUs

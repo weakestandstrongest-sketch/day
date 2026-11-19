@@ -14,6 +14,9 @@ import * as chess from './games/chess.js';
 import * as minishogi from './games/minishogi.js';
 import * as airhockey from './games/airhockey.js';
 import * as darts from './games/darts.js';
+import * as sudoku from './games/sudoku.js';
+import * as daifugo from './games/daifugo.js';
+import * as iroawase from './games/iroawase.js';
 
 export const GAMES = [
   { id: 'yacht', title: 'ヨット', en: 'Yacht', desc: 'サイコロ5つで役をそろえる', tag: 'ダイス', mod: yacht },
@@ -24,9 +27,12 @@ export const GAMES = [
   { id: 'minishogi', title: '5五将棋', en: 'Minishogi', desc: '5×5マスの小さな将棋', tag: '盤上', mod: minishogi },
   { id: 'airhockey', title: 'エアホッケー', en: 'Air Hockey', desc: 'ふたり同時に打ち合う', tag: '卓上', mod: airhockey },
   { id: 'darts', title: 'ダーツ', en: 'Darts', desc: '狙って、離して、投げる', tag: '的', mod: darts },
+  { id: 'sudoku', title: '数独', en: 'Sudoku', desc: '1〜9 を重ならないように埋める', tag: 'ひとり', mod: sudoku },
+  { id: 'daifugo', title: '大富豪', en: 'Daifugō', desc: 'CPU 3 人と、強いカードで競う', tag: 'カード', mod: daifugo },
+  { id: 'iroawase', title: 'いろあわせ', en: 'Iroawase', desc: '色か数字をあわせて、手札をなくす', tag: 'カード', mod: iroawase },
 ];
 
-const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三'];
 const BASE_TITLE = '候 KŌ';
 
 const view = document.getElementById('asobi');

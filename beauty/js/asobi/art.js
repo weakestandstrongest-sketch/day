@@ -14,4 +14,11 @@ export const ART = {
   minishogi: svg(`<path d="M32 10l12 6 4 38H16l4-38z"/><text x="32" y="42" text-anchor="middle" font-size="17" stroke="none" fill="currentColor" font-family="Zen Old Mincho, serif">王</text>${dot(32, 50, 1.6, 'a')}`),
   airhockey: svg(`<rect x="17" y="9" width="30" height="46"/><path d="M17 32h30M27 9h10M27 55h10"/><circle cx="32" cy="45" r="5"/>${dot(36, 24, 2.6, 'a')}`),
   darts: svg(`<circle cx="30" cy="34" r="20"/><circle cx="30" cy="34" r="13" class="a s"/><circle cx="30" cy="34" r="6"/>${dot(30, 34, 1.8, 'a')}<path d="M31 33l19-19M46 12l4 2 2 4"/>`),
+  sudoku: svg(`<rect x="12" y="12" width="40" height="40"/><path d="M25.3 12v40M38.7 12v40M12 25.3h40M12 38.7h40"/>
+    <text x="18.7" y="22.5" text-anchor="middle" font-size="9" stroke="none" fill="currentColor" font-family="Bodoni Moda, serif">5</text>
+    <text x="45.3" y="49" text-anchor="middle" font-size="9" stroke="none" fill="currentColor" font-family="Bodoni Moda, serif">9</text>${dot(32, 32, 3, 'a')}`),
+  daifugo: svg(`<rect x="14" y="16" width="22" height="32" rx="2" transform="rotate(-12 25 32)"/><rect x="28" y="14" width="22" height="32" rx="2" transform="rotate(10 39 30)"/>
+    <path d="M39 24l3.5 6-3.5 6-3.5-6z" class="a"/>`),
+  iroawase: svg(`<rect x="13" y="15" width="22" height="32" rx="3" transform="rotate(-10 24 31)"/><rect x="29" y="15" width="22" height="32" rx="3" transform="rotate(8 40 31)"/>
+    <circle cx="40" cy="31" r="6" class="a"/>`),
 };
