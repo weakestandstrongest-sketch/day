@@ -414,8 +414,13 @@
 
   /* ---- 言葉（気になった言葉を、日ごとに残す）---- */
   .words .cal-top { align-items: center; }
-  .w-add { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--pill); color: var(--fg); margin-left: auto; }
-  .w-add svg { width: 22px; height: 22px; }
+  /* 言葉を追加：右下に浮かぶ丸いガラスのボタン（ひび手帳の日記の ＋ と同じ場所） */
+  .w-add { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + 76px); z-index: 41; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; color: var(--fg);
+    background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .22), inset 0 0 0 .5px var(--sep-strong), inset 0 1px 0 rgba(255, 255, 255, .35); }
+  .w-add:active { transform: scale(.92); }
+  .w-add svg { width: 26px; height: 26px; }
+  #wordsScreen[hidden] ~ * .w-add { display: none; }
   .w-stats { margin: -6px 0 4px; color: var(--muted); font: 500 13px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .04em; display: flex; gap: 22px; }
   .w-stats b { color: var(--fg); font-weight: 600; margin-left: 8px; }
   .w-list { display: grid; gap: 18px; padding-bottom: 20px; }
@@ -1266,7 +1271,7 @@
     const list = document.getElementById("wordList"), stats = document.getElementById("wordStats");
     const days = [...new Set(words.map((w) => w.date))].sort((a, b) => dateOf(b) - dateOf(a));
     stats.innerHTML = `<span>Words<b>${words.length}</b></span><span>Days<b>${days.length}</b></span>`;
-    if (!words.length) { list.innerHTML = '<div class="w-empty"><b>まだ言葉がありません</b>本やニュース、会話で気になった言葉を、<br>右上の ＋ から残しておけます。</div>'; return; }
+    if (!words.length) { list.innerHTML = '<div class="w-empty"><b>まだ言葉がありません</b>本やニュース、会話で気になった言葉を、<br>右下の ＋ から残しておけます。</div>'; return; }
     list.innerHTML = days.map((k) => {
       const d = dateOf(k);
       return `<div class="w-day"><div class="w-date"><i></i>${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${WEEK[d.getDay()]}曜日</div>${wordsOn(k).sort((a, b) => b.at - a.at).map((w) => `<button type="button" class="w-item" data-wid="${w.id}"><b></b>${w.memo ? "<small></small>" : ""}${w.urls && w.urls.length ? `<span class="lk">🔗 ${w.urls.length}</span>` : ""}</button>`).join("")}</div>`;

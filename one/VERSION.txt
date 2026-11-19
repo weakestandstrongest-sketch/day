@@ -1,1 +1,1 @@
-aed2b438fbb2ce9be0fe64eb4170929c490b48cc Words tab between today and calendar: keep words you came across with a memo and links, on any day (also earlier days), look them up on Google, Wikipedia or a dictionary; days with words get a small amber square in the calendar
+e52b0d8ff693c97aee0d1b1b5acd3c7d57abd6eb Words: the add button floats at the bottom right as a round glass button
