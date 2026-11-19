@@ -48,17 +48,36 @@ export function analyze(cards) {
   return null;
 }
 
-// play が場（field）に出せるか。rev = 革命中
-export function beats(play, field, rev) {
+// 選べるルール（はじめる前に入れたり外したりできる）
+export const RULE_LIST = [
+  { k: 'rev', name: '革命', desc: '同じ数字を 4 枚出すと、強さが逆になる', on: true },
+  { k: 'eight', name: '8切り', desc: '8 を出すと場が流れ、続けて出せる', on: true },
+  { k: 'seven', name: '7渡し', desc: '7 を出したら、その枚数だけ次の人に好きなカードを渡す', on: false },
+  { k: 'ten', name: '10捨て', desc: '10 を出したら、その枚数だけ好きなカードを捨てる', on: false },
+  { k: 'spade3', name: 'スペ3', desc: 'ジョーカー 1 枚には ♠3 で返せる（場が流れる）', on: true },
+  { k: 'jback', name: '11バック', desc: 'J を出すと、場が流れるまで強さが逆になる', on: false },
+  { k: 'five', name: '5スキップ', desc: '5 を出すと、その枚数だけ次の人を飛ばす', on: false },
+];
+export const defaultRules = () => Object.fromEntries(RULE_LIST.map((r) => [r.k, r.on]));
+// 出したカードの中の、ある数字の枚数（階段なら、その数字を通っていれば 1）
+export function countRank(play, r) {
+  if (!play || play.jokerOnly) return 0;
+  if (play.type === 'set') return play.r === r ? play.n : 0;
+  return play.r <= r && play.r + play.n - 1 >= r ? 1 : 0;
+}
+export const isSpade3 = (play) => play && play.type === 'set' && play.n === 1 && !play.jokerOnly && play.cards[0].s === 0 && play.cards[0].r === 0;
+
+// play が場（field）に出せるか。rev = 強さが逆（革命・11バック）
+export function beats(play, field, rev, R = {}) {
   if (!play) return false;
   if (!field) return true;
   if (play.type !== field.type || play.n !== field.n) return false;
-  if (field.jokerOnly) return false; // ジョーカー1枚には何も出せない
+  if (field.jokerOnly) return !!(R.spade3 && isSpade3(play)); // ジョーカー1枚には何も出せない（スペ3 だけ返せる）
   if (play.jokerOnly) return true; // ジョーカー1枚は、どの1枚にも勝つ（革命中も）
   return rev ? play.r < field.r : play.r > field.r;
 }
 
-export const hasEight = (play) => play.type === 'set' ? play.r === EIGHT && !play.jokerOnly : play.cards.some((c) => c.r === EIGHT) || (play.r <= EIGHT && play.r + play.n - 1 >= EIGHT);
+export const hasEight = (play) => countRank(play, EIGHT) > 0;
 export const isRevolution = (play) => play.type === 'set' && play.n >= 4;
 
 // 手札から出せる出し方をすべて並べる
@@ -89,14 +108,14 @@ export function allPlays(hand) {
   return out;
 }
 
-export const legalPlays = (hand, field, rev) => allPlays(hand).filter((p) => beats(p, field, rev));
+export const legalPlays = (hand, field, rev, R = {}) => allPlays(hand).filter((p) => beats(p, field, rev, R));
 
 // 手札の弱さ（革命を起こすか決めるため）：強さの平均
 const avgStrength = (hand) => hand.reduce((s, c) => s + (c.j ? 13 : c.r), 0) / Math.max(1, hand.length);
 
 // CPU が何を出すか（null ならパス）
-export function cpuPlay(hand, field, rev, level = 'normal', others = []) {
-  const plays = legalPlays(hand, field, rev);
+export function cpuPlay(hand, field, rev, level = 'normal', others = [], R = defaultRules()) {
+  const plays = legalPlays(hand, field, rev, R);
   if (!plays.length) return null;
   if (level === 'easy') {
     if (field && Math.random() < 0.25) return null;
@@ -116,12 +135,15 @@ export function cpuPlay(hand, field, rev, level = 'normal', others = []) {
     if (usesJoker(p)) sc += p.jokerOnly ? 120 : 60;
     if (!field) sc -= p.n * 14; // 自分から出すときは、たくさん出せるものを先に
     if (left(p) === 0) sc -= 1000; // 上がれるなら上がる
-    if (hasEight(p) && !field) sc += 15; // 8 は場を流したいときにとっておく
-    if (hasEight(p) && field) sc -= 25;
+    if (R.eight && hasEight(p) && !field) sc += 15; // 8 は場を流したいときにとっておく
+    if (R.eight && hasEight(p) && field) sc -= 25;
+    if (R.spade3 && isSpade3(p) && field && field.jokerOnly) sc -= 300; // ジョーカーにはスペ3 で返す
+    if (R.seven) sc -= countRank(p, 4) * 8; // 7渡し・10捨ては手札が減るので少し出したい
+    if (R.ten) sc -= countRank(p, 7) * 8;
     if (level === 'hard') {
-      if (isRevolution(p)) sc += avgStrength(hand) < 5.5 !== rev ? -200 : 200; // 手が弱いなら革命
+      if (R.rev && isRevolution(p)) sc += avgStrength(hand) < 5.5 !== rev ? -200 : 200; // 手が弱いなら革命
       if (minOther <= 2 && field) sc -= weak(p) * 6; // だれかが上がりそうなら強いので止める
-    } else if (isRevolution(p)) sc += 60;
+    } else if (R.rev && isRevolution(p)) sc += 60;
     return sc;
   };
   plays.sort((a, b) => score(a) - score(b));

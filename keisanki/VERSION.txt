@@ -1,1 +1,1 @@
-0588d23bcade7bb01fdcd720980722b15d71f3d3 Graph button in the top bar, between ホログラム and 無重力
+5e484fd5fe8cf8db1b112f0967b34358455ed469 Graph button reads f(x)

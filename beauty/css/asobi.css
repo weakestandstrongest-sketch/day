@@ -1343,7 +1343,7 @@ img.koma3 { width: calc(var(--k, 1) * 112%); max-width: none; height: auto; filt
 .sd-num:active { background: var(--glass) !important; }
 
 /* ───────── カードの卓（大富豪・いろあわせ）───────── */
-.ct-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 6px 10px 14px; gap: 8px; }
+.ct-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 6px 10px 14px; gap: 8px; overflow-y: auto; }
 .ct-table { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.6fr 1fr; grid-template-rows: auto 1fr; grid-template-areas: ". top ." "left field right"; gap: 8px; align-items: center; }
 .ct-seat { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px; transition: opacity .3s; }
 .ct-seat.s-top { grid-area: top; }
@@ -1423,3 +1423,16 @@ img.koma3 { width: calc(var(--k, 1) * 112%); max-width: none; height: auto; filt
 .ia-now i { width: 12px; height: 12px; border-radius: 50%; background: var(--cc); box-shadow: 0 0 10px var(--cc); }
 .ia-now em { font-style: normal; color: var(--muted); }
 .ia-backs i { border-radius: 4px; background: repeating-linear-gradient(45deg, #2a2a33 0 3px, #1d1d24 3px 6px); }
+.df-setup { gap: 14px; }
+.df-rules { display: grid; gap: 6px; }
+.df-rule { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "n i" "d i"; align-items: center; gap: 1px 10px; padding: 9px 12px !important; text-align: left; border: 1px solid var(--line) !important; opacity: .55; transition: opacity .2s, border-color .2s; }
+.df-rule b { grid-area: n; font-family: var(--f-jp); font-weight: 400; font-size: 14.5px; letter-spacing: .1em; color: var(--paper); }
+.df-rule small { grid-area: d; font-size: 11px; color: var(--muted); letter-spacing: .04em; line-height: 1.4; }
+.df-rule i { grid-area: i; font-style: normal; font-family: var(--f-jp); font-size: 12px; padding: 3px 10px; border: 1px solid var(--line); color: var(--muted); }
+.df-rule.on { opacity: 1; border-color: color-mix(in srgb, var(--kc) 60%, var(--line)) !important; }
+.df-rule.on i { background: var(--kc); border-color: var(--kc); color: var(--paper); }
+.ia-hand .ic-card.sel { transform: translateY(-20px); box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px var(--paper), 0 8px 16px rgba(0, 0, 0, .5); }
+.ia-pile { position: relative; }
+.ia-pend { position: absolute; right: -14px; top: -10px; font-family: var(--f-display); font-weight: 700; font-size: 15px; padding: 2px 8px; background: var(--paper); color: var(--ink); border-radius: 12px; }
+.ia-deck.hot { border-color: var(--kc) !important; box-shadow: 0 0 14px color-mix(in srgb, var(--kc) 60%, transparent); }
+.ia-deck.hot span { font-family: var(--f-display); font-size: 16px; font-weight: 700; }

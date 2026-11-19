@@ -4,12 +4,34 @@ import { h, gameShell, sfx, loadPref, savePref, think, showResult, toast, modal,
 const RULES = `
 <p>あなたと CPU 3 人の 4 人で遊びます。手札 7 枚から始めて、先に手札をなくした人の勝ちです。</p>
 <ul>
-<li>場のいちばん上のカードと<b>同じ色</b>か、<b>同じ数字・同じ記号</b>のカードを 1 枚出します。</li>
+<li>場のいちばん上のカードと<b>同じ色</b>か、<b>同じ数字・同じ記号</b>のカードを出します。</li>
 <li>出せないとき（出したくないとき）は山から 1 枚<b>引きます</b>。引いたカードが出せれば、そのまま出してもかまいません。</li>
-<li><b>休</b>（やすみ）：次の人は 1 回休み。<b>⇄</b>（はんてん）：回る向きが逆になる。<b>+2</b>：次の人は 2 枚引いて休み。</li>
-<li><b>いろ</b>：いつでも出せて、次の色を決められます。<b>いろ+4</b>：色を決め、次の人は 4 枚引いて休み。</li>
-<li>だれかが上がったら、残りの人の手札が上がった人の点になります（数字はその数、休・⇄・+2 は 20、いろ・いろ+4 は 50）。</li>
+<li><b>休</b>：次の人は 1 回休み。<b>⇄</b>：回る向きが逆になる。<b>+2</b>：次の人は 2 枚引いて休み。</li>
+<li><b>いろ</b>：いつでも出せて、次の色を決められます。<b>+4</b>：色を決め、次の人は 4 枚引いて休み。</li>
+<li>最初にめくったカードが記号なら、その効果は最初の人にかかります。</li>
+<li>だれかが上がったら、残りの人の手札がその人の点になります（数字はその数、休・⇄・+2 は 20、いろ・+4 は 50）。</li>
+</ul>
+<p>はじめる前に、次のルールを入れるか外すかを選べます。</p>
+<ul>
+<li><b>まとめて出す</b>：同じ数字・同じ記号のカードを何枚でもまとめて出せます（最初の 1 枚が出せれば OK、最後のカードの色が次の色）。休を 2 枚なら 2 人休み、+2 を 2 枚なら +4。</li>
+<li><b>+2・+4 を重ねる</b>：+2 には +2（または +4）、+4 には +4 を重ねて、たまった枚数を次の人に回せます。重ねられないと、たまった枚数をまとめて引きます。</li>
+<li><b>ラスト宣言</b>：残り 1 枚になるとき、出す前に「ラスト！」を押します。忘れて気づかれたら 2 枚引きます。CPU が忘れたら「指摘する」で 2 枚引かせられます。</li>
+<li><b>+4 チャレンジ</b>：+4 には、場の色のカードを持っていたのに出したのでは、と疑えます。当たれば出した人が引き、外れたら自分が 2 枚多く引きます。</li>
+<li><b>出せるまで引く</b>：出せるカードが来るまで山から引き続けます。</li>
+<li><b>7・0 ルール</b>：7 を出したら好きな人と手札を交換、0 を出したらみんなの手札を回る向きの次の人へ回します。</li>
+<li><b>500 点で優勝</b>：回を重ねて、先に 500 点に届いた人の優勝です。</li>
 </ul>`;
+
+const RULE_LIST = [
+  { k: 'multi', name: 'まとめて出す', desc: '同じ数字・記号のカードを、何枚でもまとめて出せる', on: true },
+  { k: 'stack', name: '+2・+4 を重ねる', desc: '+2 や +4 を重ねて、たまった枚数を次の人へ回せる', on: true },
+  { k: 'call', name: 'ラスト宣言', desc: '残り 1 枚になるとき「ラスト！」。忘れて気づかれたら 2 枚引く', on: true },
+  { k: 'challenge', name: '+4 チャレンジ', desc: '+4 を疑える。当たれば出した人が引き、外れたら 2 枚多く引く', on: true },
+  { k: 'drawall', name: '出せるまで引く', desc: '出せるカードが来るまで、山から引き続ける', on: false },
+  { k: 'sevenzero', name: '7・0 ルール', desc: '7 で好きな人と手札を交換、0 でみんなの手札を次の人へ回す', on: false },
+  { k: 'match', name: '500 点で優勝', desc: '回を重ねて、先に 500 点に届いた人の優勝', on: true },
+];
+const defaultRules = () => Object.fromEntries(RULE_LIST.map((r) => [r.k, r.on]));
 
 const COLORS = [
   { k: 0, name: '朱', hex: '#d4543f' },
@@ -54,36 +76,63 @@ function cardEl(c, { cls = '', attrs = {}, color = null } = {}) {
 
 export function mount(root) {
   let opts = loadPref('iroawase.opts', { level: 'normal' });
+  opts.rules = { ...defaultRules(), ...(opts.rules || {}) };
+  const R = () => opts.rules;
   let S = null, gen = 0;
   const ui = gameShell(root, { title: 'いろあわせ', rules: RULES, onRestart: () => { gen++; showSetup(); } });
   const body = h('div', { class: 'ct-body ia' });
   ui.main.append(body);
+  const LV = () => ({ easy: 0, normal: 1, hard: 2 }[opts.level] ?? 1);
 
   function showSetup() {
     const seg = h('div', { class: 'segmented' }, Object.entries(CPU_LEVELS).map(([k, l]) => h('button', {
       class: opts.level === k ? 'on' : '',
-      onclick: () => { opts = { level: k }; savePref('iroawase.opts', opts); sfx('tap'); showSetup(); },
+      onclick: () => { opts = { ...opts, level: k }; savePref('iroawase.opts', opts); sfx('tap'); showSetup(); },
     }, l)));
-    body.replaceChildren(h('div', { class: 'hb-card' },
+    const rules = h('div', { class: 'df-rules' }, RULE_LIST.map((r) => h('button', {
+      class: `df-rule ${opts.rules[r.k] ? 'on' : ''}`,
+      'aria-pressed': String(!!opts.rules[r.k]),
+      onclick: () => { opts.rules = { ...opts.rules, [r.k]: !opts.rules[r.k] }; savePref('iroawase.opts', opts); sfx('tap'); showSetup(); },
+    }, h('b', {}, r.name), h('small', {}, r.desc), h('i', {}, opts.rules[r.k] ? 'あり' : 'なし'))));
+    body.replaceChildren(h('div', { class: 'hb-card df-setup' },
       h('h2', {}, 'いろあわせ'),
       h('p', { class: 'muted', style: { textAlign: 'center' } }, '色か数字をあわせて、手札をなくす。あなたと CPU 3 人で遊びます'),
       h('div', { class: 'hb-option' }, h('span', {}, 'CPU の強さ'), seg),
+      h('div', { class: 'hb-option' }, h('span', {}, 'ルール（押すと あり／なし）'), rules),
       h('button', { class: 'btn primary big', onclick: () => newRound(true) }, 'はじめる')));
   }
 
-  function newRound(first) {
+  async function newRound(first) {
     const g = ++gen;
     const draw = makeDeck();
     const hands = [0, 1, 2, 3].map(() => draw.splice(0, 7).sort(order));
-    let top; do { top = draw.shift(); if (typeof top.v !== 'number') draw.push(top); } while (typeof top.v !== 'number');
-    S = { hands, draw, pile: [top], color: top.c, dir: 1, turn: first ? 0 : (S.winner + 1) % 4, scores: first ? [0, 0, 0, 0] : S.scores, drew: null, last: Array(4).fill(''), winner: -1, round: first ? 1 : S.round + 1 };
+    // 最初の 1 枚（+4 なら山に戻してめくり直す）
+    let top0; do { top0 = draw.shift(); if (top0.v === 'w4') draw.push(top0); } while (top0.v === 'w4');
+    const starter = first ? 0 : (S.winner + 1) % 4;
+    S = { hands, draw, pile: [top0], color: top0.c, dir: 1, turn: starter, scores: first ? [0, 0, 0, 0] : S.scores, drew: null, last: Array(4).fill(''), winner: -1,
+      round: first ? 1 : S.round + 1, pending: null, w4: null, sel: [], called: false, forgot: -1 };
+    // 最初のカードの効果は、最初の人にかかる
+    if (top0.v === 'skip') { S.last[starter] = '休み'; S.turn = nextOf(starter); flash(`${NAMES[starter]}は休み`); }
+    else if (top0.v === 'rev') { S.dir = -1; flash('向きが逆から'); }
+    else if (top0.v === 'd2') { S.pending = { n: 2, kind: 'd2' }; }
+    else if (top0.v === 'wild') {
+      if (starter === 0) { render('最初の色を選んでください'); S.color = await askColor(); if (g !== gen) return; }
+      else S.color = chooseColorFor(S.hands[starter]);
+      flash(`最初の色は${COLORS[S.color].name}`);
+    }
     render();
     loop(g);
   }
 
   const top = () => S.pile[S.pile.length - 1];
-  const canPlay = (c) => isWild(c) || c.c === S.color || c.v === top().v;
-  const nextOf = (p, k = 1) => (((p + S.dir * k) % 4) + 4) % 4;
+  const nextOf = (p, k = 1) => (((p + (S ? S.dir : 1) * k) % 4) + 4) % 4;
+  // 出せるか（+2・+4 がたまっているときは、重ねられるカードだけ）
+  const canPlay = (c) => {
+    if (S.pending) return !!R().stack && (c.v === S.pending.kind || (c.v === 'w4' && S.pending.kind === 'd2'));
+    return isWild(c) || c.c === S.color || c.v === top().v;
+  };
+  const askColor = () => modal({ title: '次の色', body: h('p', {}, '次の色を選んでください'), dismissible: false, className: 'ia-colors',
+    buttons: COLORS.map((k) => ({ label: k.name, value: String(k.k) })) }).then((v) => +v);
 
   function takeCards(p, n) {
     const got = [];
@@ -103,7 +152,8 @@ export function mount(root) {
       render(`${NAMES[p]}が考えています…`);
       await think(opts.level === 'easy' ? 650 : 850);
       if (g !== gen) return;
-      cpuTurn(p);
+      await cpuTurn(p);
+      if (g !== gen) return;
       await think(300);
     }
   }
@@ -115,81 +165,191 @@ export function mount(root) {
     return m ? n.indexOf(m) : rnd(4);
   }
 
+  // CPU：出すカードの組（同じ数字・記号をまとめる）を選ぶ
   function cpuPick(p) {
     const hand = S.hands[p], legal = hand.filter(canPlay);
     if (!legal.length) return null;
-    if (opts.level === 'easy') return legal[rnd(legal.length)];
-    const nx = S.hands[nextOf(p)].length;
-    const n = [0, 0, 0, 0]; hand.forEach((c) => { if (c.c >= 0) n[c.c]++; });
-    const score = (c) => {
-      let s = 0;
-      if (isWild(c)) s += c.v === 'w4' ? 60 : 40; // いろは最後のほうにとっておく
-      else s -= n[c.c] * 4 + (typeof c.v === 'number' ? c.v * 0.5 : 6); // 多い色・大きい数から減らす
-      if (nx <= 2 && (c.v === 'd2' || c.v === 'skip' || c.v === 'w4')) s -= opts.level === 'hard' ? 120 : 40; // 次の人が上がりそうなら止める
-      if (opts.level === 'hard' && hand.length <= 2 && isWild(c)) s -= 30;
-      return s;
-    };
-    return legal.sort((a, b) => score(a) - score(b))[0];
+    let c;
+    if (opts.level === 'easy') c = legal[rnd(legal.length)];
+    else {
+      const nx = S.hands[nextOf(p)].length;
+      const n = [0, 0, 0, 0]; hand.forEach((x) => { if (x.c >= 0) n[x.c]++; });
+      const score = (x) => {
+        let s = 0;
+        if (isWild(x)) s += x.v === 'w4' ? 60 : 40; // いろは最後のほうにとっておく
+        else s -= n[x.c] * 4 + (typeof x.v === 'number' ? x.v * 0.5 : 6); // 多い色・大きい数から減らす
+        if (R().multi) s -= (hand.filter((y) => y.v === x.v).length - 1) * 6; // まとめて減らせるもの
+        if (nx <= 2 && (x.v === 'd2' || x.v === 'skip' || x.v === 'w4')) s -= opts.level === 'hard' ? 120 : 40; // 次の人が上がりそうなら止める
+        if (opts.level === 'hard' && hand.length <= 2 && isWild(x)) s -= 30;
+        return s;
+      };
+      c = legal.sort((a, b) => score(a) - score(b))[0];
+    }
+    if (!R().multi || c.v === 'wild') return [c];
+    // 同じ数字・記号を全部。最後は、自分がいちばん多く持っている色にする
+    const rest = hand.filter((x) => x.id !== c.id && x.v === c.v);
+    const left = hand.filter((x) => x.v !== c.v);
+    const want = chooseColorFor(left);
+    rest.sort((a, b) => (a.c === want) - (b.c === want));
+    return [c, ...rest];
   }
 
-  function cpuTurn(p) {
-    let c = cpuPick(p);
-    if (!c) {
-      const [got] = takeCards(p, 1);
-      S.last[p] = '引いた'; sfx('flip');
-      if (got && canPlay(got) && (opts.level !== 'easy' || Math.random() < 0.6)) c = got;
+  async function cpuTurn(p) {
+    const lv = LV();
+    // +2・+4 がたまっている
+    if (S.pending) {
+      const stackable = S.hands[p].filter(canPlay);
+      if (S.w4 && R().challenge && !stackable.length && Math.random() < [0.15, 0.25, 0.35][lv]) { resolveChallenge(p); return; }
+      if (stackable.length) { const grp = cpuPick(p); await playCards(p, grp, isWild(grp[grp.length - 1]) ? chooseColorFor(S.hands[p].filter((x) => !grp.includes(x))) : null); return; }
+      drawPending(p); return;
+    }
+    let grp = cpuPick(p);
+    if (!grp) {
+      const got = drawForTurn(p);
+      S.last[p] = got.length > 1 ? `${got.length} 枚引いた` : '引いた'; sfx('flip');
+      const g1 = got[got.length - 1];
+      if (g1 && canPlay(g1) && (opts.level !== 'easy' || Math.random() < 0.6)) grp = [g1];
       else { advance(p, 1); render(); return; }
     }
-    play(p, c, isWild(c) ? chooseColorFor(S.hands[p].filter((x) => x.id !== c.id)) : null);
+    const lastC = grp[grp.length - 1];
+    await playCards(p, grp, isWild(lastC) ? chooseColorFor(S.hands[p].filter((x) => !grp.includes(x))) : null);
   }
 
-  function advance(p, steps) { S.turn = nextOf(p, steps); S.drew = null; }
+  // 山から引く（出せるまで引くルールなら、出せるカードが来るまで）
+  function drawForTurn(p) {
+    const got = [];
+    do { const [c] = takeCards(p, 1); if (!c) break; got.push(c); if (canPlay(c)) break; } while (R().drawall && got.length < 30);
+    return got;
+  }
+  function drawPending(p) {
+    const n = S.pending.n;
+    takeCards(p, n); S.last[p] = `+${n} 引いた`; sfx('flip');
+    S.pending = null; S.w4 = null;
+    advance(p, 1); render();
+  }
+  // +4 チャレンジ：p が、直前に +4 を出した人を疑う
+  function resolveChallenge(p) {
+    const w = S.w4, n = S.pending.n;
+    if (w.guilty) {
+      takeCards(w.by, n); S.last[w.by] = `+${n} 引いた`;
+      flash(`チャレンジ成功！${NAMES[w.by]}が ${n} 枚`);
+      S.pending = null; S.w4 = null; // 疑った人は、そのままふつうに出せる
+      render();
+      return 'ok';
+    }
+    takeCards(p, n + 2); S.last[p] = `+${n + 2} 引いた`;
+    flash(`チャレンジ失敗…${NAMES[p]}が ${n + 2} 枚`);
+    S.pending = null; S.w4 = null;
+    advance(p, 1); render();
+    return 'ng';
+  }
 
-  function play(p, c, color) {
-    S.hands[p] = S.hands[p].filter((x) => x.id !== c.id);
-    S.pile.push(c);
-    S.color = isWild(c) ? color : c.c;
-    S.last[p] = '';
+  function advance(p, steps) { S.turn = nextOf(p, steps); S.drew = null; S.sel = []; }
+
+  async function playCards(p, cards, color) {
+    const g = gen;
+    if (S.forgot >= 0 && S.forgot !== p) S.forgot = -1; // 指摘できるのは次の人が出すまで
+    const prevColor = S.color, hadPending = S.pending;
+    const ids = new Set(cards.map((c) => c.id));
+    S.hands[p] = S.hands[p].filter((x) => !ids.has(x.id));
+    cards.forEach((c) => S.pile.push(c));
+    const lastC = cards[cards.length - 1], k = cards.length, v = cards[0].v;
+    S.color = isWild(lastC) ? color : lastC.c;
+    S.last[p] = ''; S.drew = null; S.sel = [];
     sfx('place');
-    let steps = 1, note = '';
-    if (c.v === 'skip') { steps = 2; note = `${NAMES[nextOf(p)]}は休み`; }
-    else if (c.v === 'rev') { S.dir = -S.dir; note = '向きが逆に'; }
-    else if (c.v === 'd2') { const v = nextOf(p); takeCards(v, 2); S.last[v] = '+2'; steps = 2; note = `${NAMES[v]}は 2 枚引いて休み`; }
-    else if (c.v === 'w4') { const v = nextOf(p); takeCards(v, 4); S.last[v] = '+4'; steps = 2; note = `${NAMES[v]}は 4 枚引いて休み`; }
-    if (isWild(c)) note = `${note ? note + '・' : ''}次は${COLORS[S.color].name}`;
-    if (!S.hands[p].length) { S.winner = p; render(); endRound(); return; }
-    if (S.hands[p].length === 1) note = `${NAMES[p]}はあと 1 枚！`;
+    let steps = 1;
+    const notes = [];
+    if (k > 1) notes.push(`${k} 枚まとめて`);
+    if (v === 'skip') { steps = 1 + k; notes.push(k > 1 ? `${k} 人休み` : `${NAMES[nextOf(p)]}は休み`); }
+    else if (v === 'rev') { if (k % 2) S.dir = -S.dir; notes.push(k % 2 ? '向きが逆に' : '向きはそのまま'); }
+    else if (v === 'd2' || v === 'w4') {
+      const add = (v === 'd2' ? 2 : 4) * k;
+      // +4 を、場の色のカードを持っていたのに出したか（チャレンジ用）
+      const guilty = v === 'w4' && S.hands[p].some((x) => x.c === prevColor && !isWild(x));
+      S.pending = { n: (hadPending ? hadPending.n : 0) + add, kind: v };
+      S.w4 = v === 'w4' ? { by: p, guilty } : null;
+      notes.push(`+${S.pending.n}`);
+    }
+    if (isWild(lastC)) notes.push(`次は${COLORS[S.color].name}`);
+    // 上がり（最後が +2・+4 なら、次の人は引いてから点を数える）
+    if (!S.hands[p].length) {
+      if (S.pending) { const v2 = nextOf(p); takeCards(v2, S.pending.n); S.last[v2] = `+${S.pending.n} 引いた`; S.pending = null; S.w4 = null; }
+      S.winner = p; render(); endRound(); return;
+    }
+    // ラスト宣言
+    if (S.hands[p].length === 1 && R().call) {
+      if (p === 0) {
+        if (S.called) notes.push('ラスト！');
+        else if (Math.random() < [0.35, 0.65, 0.9][LV()]) { takeCards(0, 2); toast('ラスト宣言を忘れて、気づかれました。2 枚引きます', { duration: 2400 }); }
+      } else if (Math.random() < [0.3, 0.12, 0.04][LV()]) S.forgot = p; // CPU が言い忘れた
+      else notes.push(`${NAMES[p]}：ラスト！`);
+    } else if (S.hands[p].length === 1) notes.push(`${NAMES[p]}はあと 1 枚！`);
+    S.called = false;
+    // 7・0 ルール
+    if (R().sevenzero && v === 7) {
+      let to;
+      if (p === 0) to = await modal({ title: '7：手札を交換', body: h('p', {}, 'だれと手札を交換しますか？'), dismissible: false, className: 'ia-colors',
+        buttons: [1, 2, 3].map((q) => ({ label: `${NAMES[q]}（${S.hands[q].length} 枚）`, value: String(q) })) }).then((x) => +x);
+      else to = [0, 1, 2, 3].filter((q) => q !== p).sort((a, b) => S.hands[a].length - S.hands[b].length)[0];
+      if (g !== gen) return;
+      if (S.hands[to].length < S.hands[p].length || p === 0) { [S.hands[p], S.hands[to]] = [S.hands[to], S.hands[p]]; notes.push(`${NAMES[p]}と${NAMES[to]}が交換`); }
+      if (S.forgot === p || S.forgot === to) S.forgot = -1;
+    } else if (R().sevenzero && v === 0) {
+      const old = S.hands.slice();
+      for (let q = 0; q < 4; q++) S.hands[nextOf(q)] = old[q];
+      S.forgot = -1;
+      notes.push('手札をまわす');
+    }
     advance(p, steps);
-    if (note) flash(note);
+    if (notes.length) flash(notes.join('　'));
     render();
   }
 
   function flash(text) {
     const el = h('div', { class: 'ct-flash' }, text);
     ui.main.append(el);
-    setTimeout(() => el.remove(), 1300);
+    setTimeout(() => el.remove(), 1400);
   }
 
-  async function humanPlay(c) {
-    if (S.turn !== 0 || S.winner >= 0 || !canPlay(c)) { if (S.turn === 0) { sfx('error'); toast('そのカードは出せません'); } return; }
-    if (S.drew && S.drew.id !== c.id) { toast('引いたカードを出すか、パスしてください'); return; }
-    let color = null;
-    if (isWild(c)) {
-      color = await modal({ title: '次の色', body: h('p', {}, '次の色を選んでください'), dismissible: false, className: 'ia-colors',
-        buttons: COLORS.map((k) => ({ label: k.name, value: String(k.k) })) });
-      color = +color;
+  // ---- あなたの操作 ----
+  const myTurn = () => S && S.turn === 0 && S.winner < 0;
+  async function tapCard(c) {
+    if (!myTurn()) return;
+    if (S.drew && S.drew.id !== c.id) { toast('引いたカードを出すか、「出さずに次へ」を押してください'); return; }
+    const sel = S.sel;
+    if (sel.includes(c.id)) { // 選んだのをやめる
+      const i = sel.indexOf(c.id); S.sel = i === 0 ? [] : sel.filter((x) => x !== c.id); sfx('tap'); render(); return;
     }
-    play(0, c, color);
-    loop(gen);
+    if (sel.length) {
+      const first = S.hands[0].find((x) => x.id === sel[0]);
+      if (first && c.v === first.v) { S.sel = sel.concat(c.id); sfx('tap'); render(); return; }
+      S.sel = [];
+    }
+    if (!canPlay(c)) { sfx('error'); toast(S.pending ? `重ねられるカードがなければ、${S.pending.n} 枚引きます` : 'そのカードは出せません'); render(); return; }
+    // 同じ数字・記号がほかにもあれば、まとめて出せるように選ぶ
+    const same = S.hands[0].filter((x) => x.id !== c.id && x.v === c.v);
+    if (R().multi && same.length && !S.drew) { S.sel = [c.id]; sfx('tap'); render(); return; }
+    await humanPlay([c]);
   }
-
-  function humanDraw() {
-    if (S.turn !== 0 || S.drew || S.winner >= 0) return;
-    const [got] = takeCards(0, 1); sfx('flip');
-    if (got && canPlay(got)) { S.drew = got; render('引いたカードを出せます'); return; }
+  async function humanPlay(cards) {
+    const g = gen;
+    const lastC = cards[cards.length - 1];
+    let color = null;
+    if (isWild(lastC)) { color = await askColor(); if (g !== gen) return; }
+    await playCards(0, cards, color);
+    if (g === gen) loop(gen);
+  }
+  function humanDeck() {
+    if (!myTurn() || S.drew) return;
+    if (S.pending) { drawPending(0); loop(gen); return; }
+    S.sel = [];
+    const got = drawForTurn(0); sfx('flip');
+    const g1 = got[got.length - 1];
+    if (got.length > 1) toast(`${got.length} 枚引きました`);
+    if (g1 && canPlay(g1)) { S.drew = g1; render('引いたカードを出せます'); return; }
     advance(0, 1); render(); loop(gen);
   }
-  function humanPass() { if (S.turn !== 0 || !S.drew) return; advance(0, 1); render(); loop(gen); }
+  function humanPass() { if (!myTurn() || !S.drew) return; advance(0, 1); render(); loop(gen); }
 
   async function endRound() {
     const w = S.winner;
@@ -197,44 +357,65 @@ export function mount(root) {
     S.scores[w] += gained;
     sfx(w === 0 ? 'win' : 'check');
     const wins = loadPref('iroawase.wins', 0) + (w === 0 ? 1 : 0); savePref('iroawase.wins', wins);
+    const champ = R().match ? S.scores.findIndex((x) => x >= 500) : -1;
     await think(500);
     const r = await showResult({
-      title: w === 0 ? 'あなたの勝ち' : `${NAMES[w]}の勝ち`,
-      mark: w === 0 ? null : h('span', { class: 'df-mark' }, '負'),
+      title: champ >= 0 ? (champ === 0 ? 'あなたの優勝！' : `${NAMES[champ]}の優勝`) : w === 0 ? 'あなたの勝ち' : `${NAMES[w]}の勝ち`,
+      mark: (champ >= 0 ? champ : w) === 0 ? null : h('span', { class: 'df-mark' }, '負'),
       detail: h('div', { class: 'df-rank' },
         h('p', {}, `${NAMES[w]}に ${gained} 点`),
         [0, 1, 2, 3].map((q) => h('p', {}, h('b', {}, NAMES[q]), ` ${S.scores[q]} 点`, q !== w ? h('small', { class: 'muted' }, `（残り ${S.hands[q].length} 枚）`) : null)),
-        h('p', { class: 'muted' }, `第 ${S.round} 回 ・ あなたが勝った回数 ${wins}`)),
-      buttons: [{ label: 'やめる', value: 'close' }, { label: '次の回', value: 'again', primary: true }],
+        h('p', { class: 'muted' }, `第 ${S.round} 回${R().match ? ' ・ 500 点で優勝' : ''} ・ あなたが勝った回数 ${wins}`)),
+      buttons: [{ label: 'やめる', value: 'close' }, { label: champ >= 0 ? '新しく始める' : '次の回', value: 'again', primary: true }],
     });
-    if (r === 'again') newRound(false); else showSetup();
+    if (r === 'again') newRound(champ >= 0); else showSetup();
   }
 
   function seatEl(p) {
     const n = S.hands[p].length;
     return h('div', { class: `ct-seat ${SEAT[p]} ${S.turn === p && S.winner < 0 ? 'turn' : ''}` },
       h('div', { class: 'ct-backs ia-backs' }, Array.from({ length: Math.min(n, 8) }, () => h('i'))),
-      h('div', { class: 'ct-name' }, h('b', {}, NAMES[p]), h('small', {}, n === 1 ? 'あと 1 枚！' : `${n} 枚`)),
+      h('div', { class: 'ct-name' }, h('b', {}, NAMES[p]), h('small', {}, `${n === 1 ? 'あと 1 枚！' : `${n} 枚`}${R().match ? ` ・ ${S.scores[p]} 点` : ''}`)),
       S.last[p] ? h('span', { class: 'ct-say' }, S.last[p]) : null);
   }
 
   function render(msg) {
     if (!S) return;
-    const myTurn = S.turn === 0 && S.winner < 0;
-    const hand = h('div', { class: 'ct-hand ia-hand', style: { '--n': S.hands[0].length } }, S.hands[0].map((c) => cardEl(c, {
-      cls: myTurn && canPlay(c) && (!S.drew || S.drew.id === c.id) ? 'ok' : myTurn ? 'dim' : '',
-      attrs: { role: 'button', onclick: () => humanPlay(c) },
-    })));
+    const mine = myTurn();
+    const sel = S.sel;
+    const hand = h('div', { class: 'ct-hand ia-hand', style: { '--n': S.hands[0].length } }, S.hands[0].map((c) => {
+      const picked = sel.includes(c.id);
+      const first = sel.length ? S.hands[0].find((x) => x.id === sel[0]) : null;
+      const ok = mine && (first ? c.v === first.v : canPlay(c) && (!S.drew || S.drew.id === c.id));
+      return cardEl(c, { cls: picked ? 'sel' : ok ? 'ok' : mine ? 'dim' : '', attrs: { role: 'button', onclick: () => tapCard(c) } });
+    }));
     const t = top();
     const field = h('div', { class: 'ct-field ia-field' },
-      h('button', { class: 'ia-deck', disabled: !myTurn || !!S.drew, onclick: humanDraw, 'aria-label': '山から引く' }, h('span', {}, '引く'), h('small', {}, `${S.draw.length}`)),
-      h('div', { class: 'ia-pile' }, cardEl(t, { color: isWild(t) ? S.color : null })),
+      h('button', { class: `ia-deck ${S.pending && mine ? 'hot' : ''}`, disabled: !mine || !!S.drew, onclick: humanDeck, 'aria-label': '山から引く' },
+        h('span', {}, S.pending && mine ? `+${S.pending.n}` : '引く'), h('small', {}, `${S.draw.length}`)),
+      h('div', { class: 'ia-pile' }, cardEl(t, { color: isWild(t) ? S.color : null }), S.pending ? h('span', { class: 'ia-pend' }, `+${S.pending.n}`) : null),
       h('div', { class: 'ia-now', style: { '--cc': COLORS[S.color].hex } }, h('i'), h('span', {}, COLORS[S.color].name), h('em', {}, S.dir > 0 ? '↻' : '↺')));
-    const actions = myTurn && S.drew ? [h('button', { class: 'btn', onclick: humanPass }, '出さずに次へ')] : [];
+    const acts = [];
+    if (S.forgot >= 0) acts.push(h('button', { class: 'btn commit', onclick: () => { const q = S.forgot; S.forgot = -1; takeCards(q, 2); S.last[q] = '+2 指摘'; flash(`${NAMES[q]}はラスト宣言を忘れていました。2 枚`); sfx('check'); render(); } }, `指摘する（${NAMES[S.forgot]}）`));
+    if (mine) {
+      const left = S.hands[0].length - Math.max(1, sel.length);
+      if (R().call && left === 1 && !S.called && !S.pending) acts.push(h('button', { class: 'btn commit', onclick: () => { S.called = true; sfx('check'); flash('ラスト！'); render(); } }, 'ラスト！'));
+      if (S.pending) {
+        acts.push(h('button', { class: 'btn', onclick: humanDeck }, `${S.pending.n} 枚引く`));
+        if (S.w4 && R().challenge && S.w4.by !== 0) acts.push(h('button', { class: 'btn', onclick: () => { if (resolveChallenge(0) === 'ng') loop(gen); } }, 'チャレンジ'));
+      }
+      if (S.drew) acts.push(h('button', { class: 'btn', onclick: humanPass }, '出さずに次へ'));
+      if (sel.length) {
+        acts.push(h('button', { class: 'btn', onclick: () => { S.sel = []; render(); } }, 'やめる'));
+        acts.push(h('button', { class: 'btn primary', onclick: () => humanPlay(sel.map((id) => S.hands[0].find((x) => x.id === id))) }, sel.length > 1 ? `${sel.length} 枚出す` : '出す'));
+      }
+    }
+    const hint = mine ? (S.pending ? (S.hands[0].some(canPlay) ? `+${S.pending.n} がきています。重ねるか、引くか${S.w4 && R().challenge ? '、チャレンジするか' : ''}` : `+${S.pending.n} がきています。引くか${S.w4 && R().challenge ? '、チャレンジするか' : ''}選んでください`)
+      : S.drew ? '引いたカードを出せます' : sel.length ? '同じ数字・記号を足せます。最後に選んだカードの色が次の色です' : '出すカードを押すか、山から引いてください') : '';
     body.replaceChildren(
       h('div', { class: 'ct-table' }, seatEl(2), seatEl(1), field, seatEl(3)),
-      h('p', { class: 'ct-msg' }, msg || (myTurn ? (S.drew ? '引いたカードを出せます' : '出すカードを押すか、山から引いてください') : '')),
-      h('div', { class: 'ct-me' }, hand, actions.length ? h('div', { class: 'ct-actions' }, actions) : null));
+      h('p', { class: 'ct-msg' }, msg || hint),
+      h('div', { class: 'ct-me' }, hand, acts.length ? h('div', { class: 'ct-actions' }, acts) : null));
   }
 
   showSetup();

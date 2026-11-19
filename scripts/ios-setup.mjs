@@ -45,9 +45,6 @@ const keys = {
   NSRemindersFullAccessUsageDescription: '<string>ひび手帳のやること・課題を「ひび手帳」リマインダーに入れて、完了を両方でそろえるために使います。</string>',
   // ひび手帳の中の Orbit（ブラウザ）：http のページも WebView では開けるように（ふだんは HTTPS に切り替えて開く）
   NSAppTransportSecurity: '<dict><key>NSAllowsArbitraryLoadsInWebContent</key><true/></dict>',
-  // 財布の IC カード：交通系 IC（Suica・manaca・ICOCA・PASMO など、システムコード 0003）の残高と履歴を読む
-  NFCReaderUsageDescription: '<string>交通系 IC カードの残高と利用履歴を読むために使います（読むだけで、書き込みはしません）。</string>',
-  'com.apple.developer.nfc.readersession.felica.systemcodes': '<array><string>0003</string></array>',
   NSAlarmKitUsageDescription: '<string>目覚ましと、出発時刻のアラームを鳴らすために使います。</string>',
 };
 const plistPath = join(app, 'Info.plist');

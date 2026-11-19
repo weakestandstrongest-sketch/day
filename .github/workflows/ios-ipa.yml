@@ -146,7 +146,6 @@ jobs:
           codesign -f -s - --entitlements ios-assets/hibi-widgets.entitlements "$APP/PlugIns/HibiWidgets.appex"
           codesign -f -s - --entitlements ios-assets/hibi.entitlements "$APP"
           codesign -d --entitlements - "$APP" | grep -c application-groups
-          codesign -d --entitlements - "$APP" | grep -c nfc.readersession.formats
           rm -rf Payload hibi-unsigned.ipa
           mkdir Payload
           cp -R "$APP" Payload/
