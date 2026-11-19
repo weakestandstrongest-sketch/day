@@ -193,12 +193,20 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
           var st = document.createElement('style');
           st.textContent = L.map(function (g) { return g.sel; }).join(',') + '{opacity:0!important}';
           (document.head || document.documentElement).appendChild(st);
+          // キーボードが出ているあいだは、画面が上下にずれてガラスの位置が合わなくなるので、ページのボタンをそのまま見せる
+          function typing() {
+            var a = document.activeElement; if (!a) return false;
+            if (a.isContentEditable) return true;
+            if (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT') return true;
+            return a.tagName === 'INPUT' && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/i.test(a.type || '');
+          }
           function find(g) { var a = document.querySelectorAll(g.sel); for (var i = 0; i < a.length; i++) if (a[i].getClientRects().length) return a[i]; return null; }
           function send() {
             raf = 0;
             var vv = window.visualViewport, ox = vv ? vv.offsetLeft : 0, oy = vv ? vv.offsetTop : 0, zoom = vv && Math.abs(vv.scale - 1) > 0.01;
-            var items = [];
-            if (!zoom && document.visibilityState !== 'hidden') L.forEach(function (g) {
+            var items = [], kb = typing();
+            st.disabled = kb;
+            if (!kb && !zoom && document.visibilityState !== 'hidden') L.forEach(function (g) {
               var el = find(g); if (!el || el.disabled) return;
               var r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return;
               var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -217,6 +225,7 @@ final class EdgeWebController: UIViewController, WKNavigationDelegate, WKUIDeleg
           addEventListener('scroll', soon, true); addEventListener('resize', soon);
           if (window.visualViewport) { visualViewport.addEventListener('scroll', soon); visualViewport.addEventListener('resize', soon); }
           addEventListener('transitionend', soon, true); addEventListener('animationend', soon, true);
+          addEventListener('focusin', soon, true); addEventListener('focusout', function () { setTimeout(soon, 60); }, true);
           addEventListener('pageshow', soon); setInterval(soon, 400); soon();
         })(\(json));
         """
