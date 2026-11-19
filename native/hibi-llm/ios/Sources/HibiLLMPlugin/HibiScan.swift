@@ -47,6 +47,36 @@ final class HibiScan: NSObject, VNDocumentCameraViewControllerDelegate, DataScan
         controller.dismiss(animated: true); docDone?(nil); docDone = nil
     }
 
+    // MARK: 写真・スクショからバーコードを読む（Vision）
+
+    /// 画像の中のバーコード・QR を見つけて {値, 種類} を返す（なければ nil）。重いので裏で
+    nonisolated static func readCode(in data: Data, done: @escaping @Sendable ((String, String)?) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let img = UIImage(data: data), let cg = img.cgImage else { return done(nil) }
+            let req = VNDetectBarcodesRequest()
+            let handler = VNImageRequestHandler(cgImage: cg, orientation: Self.orientation(img.imageOrientation), options: [:])
+            try? handler.perform([req])
+            // いちばん大きく写っているものを選ぶ
+            let found = (req.results ?? []).filter { ($0.payloadStringValue ?? "").isEmpty == false }
+                .max { $0.boundingBox.width * $0.boundingBox.height < $1.boundingBox.width * $1.boundingBox.height }
+            if let f = found, let v = f.payloadStringValue { done((v, Self.format(f.symbology))) } else { done(nil) }
+        }
+    }
+
+    nonisolated private static func orientation(_ o: UIImage.Orientation) -> CGImagePropertyOrientation {
+        switch o {
+        case .up: return .up
+        case .down: return .down
+        case .left: return .left
+        case .right: return .right
+        case .upMirrored: return .upMirrored
+        case .downMirrored: return .downMirrored
+        case .leftMirrored: return .leftMirrored
+        case .rightMirrored: return .rightMirrored
+        @unknown default: return .up
+        }
+    }
+
     // MARK: バーコード
 
     static var codeSupported: Bool { DataScannerViewController.isSupported && DataScannerViewController.isAvailable }
@@ -79,7 +109,7 @@ final class HibiScan: NSObject, VNDocumentCameraViewControllerDelegate, DataScan
     }
 
     /// ページのバーコードの種類の名前へ
-    static func format(_ s: VNBarcodeSymbology) -> String {
+    nonisolated static func format(_ s: VNBarcodeSymbology) -> String {
         switch s {
         case .qr, .microQR: return "qr"
         case .ean13: return "ean13"

@@ -62,6 +62,7 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "scanDoc", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "scanCode", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "brightness", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readCode", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "orbitRestore", returnType: CAPPluginReturnPromise),
     ]
 
@@ -334,6 +335,14 @@ public class HibiDevicePlugin: CAPPlugin, CAPBridgedPlugin {
                     if let r { call.resolve(["value": r.0, "format": r.1]) } else { call.resolve([:]) }
                 }
             }
+        }
+    }
+
+    /// 写真・スクショ（JPEG の base64）からバーコード・QR を読む → {value, format}（見つからなければ {}）
+    @objc func readCode(_ call: CAPPluginCall) {
+        guard let b64 = call.getString("data"), let data = Data(base64Encoded: b64) else { return call.reject("no image") }
+        HibiScan.readCode(in: data) { r in
+            DispatchQueue.main.async { if let r { call.resolve(["value": r.0, "format": r.1]) } else { call.resolve([:]) } }
         }
     }
 
