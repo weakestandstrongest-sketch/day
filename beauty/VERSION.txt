@@ -1,1 +1,1 @@
-01914ee4a7443fc1696a329b177f2b890dba97b2 大富豪・いろあわせ: a real card table — big fanned hand, opponents' backs fanned at the edges, played cards laid large in the middle, full pip faces and court cards, 候-red card backs
+3715884cddeebc90e1c3a1d68a4b6dc532ccca51 いろあわせ: 記号で上がれない rule (last card a symbol → draw 2), readable hand when it grows, fix crash when the first card is a wild; message boxes stay centred and inside

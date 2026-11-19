@@ -220,7 +220,7 @@ export function mount(root) {
   }
 
   function flash(text) {
-    const el = h('div', { class: 'ct-flash' }, text);
+    const el = h('div', { class: `ct-flash ${text.length > 11 ? 'long' : ''}` }, text);
     ui.main.append(el);
     setTimeout(() => el.remove(), 1300);
   }

@@ -20,6 +20,7 @@ const RULES = `
 <li><b>+4 チャレンジ</b>：+4 には、場の色のカードを持っていたのに出したのでは、と疑えます。当たれば出した人が引き、外れたら自分が 2 枚多く引きます。</li>
 <li><b>出せるまで引く</b>：出せるカードが来るまで山から引き続けます。</li>
 <li><b>7・0 ルール</b>：7 を出したら好きな人と手札を交換、0 を出したらみんなの手札を回る向きの次の人へ回します。</li>
+<li><b>記号で上がれない</b>：休・⇄・+2・いろ・+4 で上がることはできません。カードを出して残りが 1 枚になったとき、その 1 枚が記号カードなら 2 枚引きます。</li>
 <li><b>500 点で優勝</b>：回を重ねて、先に 500 点に届いた人の優勝です。</li>
 </ul>`;
 
@@ -30,6 +31,7 @@ const RULE_LIST = [
   { k: 'challenge', name: '+4 チャレンジ', desc: '+4 を疑える。当たれば出した人が引き、外れたら 2 枚多く引く', on: true },
   { k: 'drawall', name: '出せるまで引く', desc: '出せるカードが来るまで、山から引き続ける', on: false },
   { k: 'sevenzero', name: '7・0 ルール', desc: '7 で好きな人と手札を交換、0 でみんなの手札を次の人へ回す', on: false },
+  { k: 'nosym', name: '記号で上がれない', desc: '休・⇄・+2・いろ・+4 では上がれない。最後の 1 枚が記号になったら 2 枚引く', on: true },
   { k: 'match', name: '500 点で優勝', desc: '回を重ねて、先に 500 点に届いた人の優勝', on: true },
 ];
 const defaultRules = () => Object.fromEntries(RULE_LIST.map((r) => [r.k, r.on]));
@@ -45,6 +47,7 @@ const SEAT = ['s-me', 's-left', 's-top', 's-right'];
 // v: 0-9 数字 / 'skip' / 'rev' / 'd2' / 'wild' / 'w4'
 const SYM = { skip: '休', rev: '⇄', d2: '+2', wild: 'いろ', w4: '+4' };
 const isWild = (c) => c.v === 'wild' || c.v === 'w4';
+const isSym = (c) => typeof c.v !== 'number';
 const points = (c) => (typeof c.v === 'number' ? c.v : isWild(c) ? 50 : 20);
 const rnd = (n) => Math.floor(Math.random() * n);
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -201,19 +204,28 @@ export function mount(root) {
     if (S.pending) {
       const stackable = S.hands[p].filter(canPlay);
       if (S.w4 && R().challenge && !stackable.length && Math.random() < [0.15, 0.25, 0.35][lv]) { resolveChallenge(p); return; }
-      if (stackable.length) { const grp = cpuPick(p); await playCards(p, grp, isWild(grp[grp.length - 1]) ? chooseColorFor(S.hands[p].filter((x) => !grp.includes(x))) : null); return; }
+      const sgrp = stackable.length ? fixFinish(p, cpuPick(p)) : null;
+      if (sgrp) { const grp = sgrp; await playCards(p, grp, isWild(grp[grp.length - 1]) ? chooseColorFor(S.hands[p].filter((x) => !grp.includes(x))) : null); return; }
       drawPending(p); return;
     }
     let grp = cpuPick(p);
+    grp = fixFinish(p, grp);
     if (!grp) {
       const got = drawForTurn(p);
       S.last[p] = got.length > 1 ? `${got.length} 枚引いた` : '引いた'; sfx('flip');
       const g1 = got[got.length - 1];
-      if (g1 && canPlay(g1) && (opts.level !== 'easy' || Math.random() < 0.6)) grp = [g1];
+      if (g1 && canPlay(g1) && !endsOnSym(p, [g1]) && (opts.level !== 'easy' || Math.random() < 0.6)) grp = [g1];
       else { advance(p, 1); render(); return; }
     }
     const lastC = grp[grp.length - 1];
     await playCards(p, grp, isWild(lastC) ? chooseColorFor(S.hands[p].filter((x) => !grp.includes(x))) : null);
+  }
+
+  // 記号で上がれない：出すと手札がなくなり、出すカードに記号があるとき
+  const endsOnSym = (p, cards) => !!R().nosym && S.hands[p].length === cards.length && cards.some(isSym);
+  function fixFinish(p, grp) {
+    if (!grp || !endsOnSym(p, grp)) return grp;
+    return grp.length > 1 ? grp.slice(0, -1) : null; // 1 枚残す（残ったのが記号なら 2 枚引くことになる）
   }
 
   // 山から引く（出せるまで引くルールなら、出せるカードが来るまで）
@@ -277,6 +289,11 @@ export function mount(root) {
       if (S.pending) { const v2 = nextOf(p); takeCards(v2, S.pending.n); S.last[v2] = `+${S.pending.n} 引いた`; S.pending = null; S.w4 = null; }
       S.winner = p; render(); endRound(); return;
     }
+    // 記号で上がれない：残りの 1 枚が記号なら 2 枚引く
+    if (R().nosym && S.hands[p].length === 1 && isSym(S.hands[p][0])) {
+      takeCards(p, 2); S.last[p] = '記号が残って +2';
+      notes.push(`${NAMES[p]}：最後が記号なので 2 枚`);
+    }
     // ラスト宣言
     if (S.hands[p].length === 1 && R().call) {
       if (p === 0) {
@@ -307,7 +324,7 @@ export function mount(root) {
   }
 
   function flash(text) {
-    const el = h('div', { class: 'ct-flash' }, text);
+    const el = h('div', { class: `ct-flash ${text.length > 11 ? 'long' : ''}` }, text);
     ui.main.append(el);
     setTimeout(() => el.remove(), 1400);
   }
@@ -330,10 +347,12 @@ export function mount(root) {
     // 同じ数字・記号がほかにもあれば、まとめて出せるように選ぶ
     const same = S.hands[0].filter((x) => x.id !== c.id && x.v === c.v);
     if (R().multi && same.length && !S.drew) { S.sel = [c.id]; sfx('tap'); render(); return; }
+    if (endsOnSym(0, [c])) { sfx('error'); toast('記号カードでは上がれません。山から引いてください'); return; }
     await humanPlay([c]);
   }
   async function humanPlay(cards) {
     const g = gen;
+    if (endsOnSym(0, cards)) { sfx('error'); toast('記号カードでは上がれません'); return; }
     const lastC = cards[cards.length - 1];
     let color = null;
     if (isWild(lastC)) { color = await askColor(); if (g !== gen) return; }
@@ -385,25 +404,27 @@ export function mount(root) {
     const mine = myTurn();
     const sel = S.sel;
     const W = body.clientWidth || 380;
-    const cw = Math.max(56, Math.min(72, Math.round(W / 6.2)));
+    const nH = S.hands[0].length;
+    // 手札が多いときは少し小さくして扇を広げ、左上の数字が見えるだけの幅を空ける
+    const cw = Math.max(48, Math.min(72, Math.round(W / 6.2) - Math.max(0, nH - 8) * 2));
     const first = sel.length ? S.hands[0].find((x) => x.id === sel[0]) : null;
     const hand = fanHand(S.hands[0].map((c) => {
       const picked = sel.includes(c.id);
-      const ok = mine && (first ? c.v === first.v : canPlay(c) && (!S.drew || S.drew.id === c.id));
+      const ok = mine && (first ? c.v === first.v : canPlay(c) && (!S.drew || S.drew.id === c.id) && !endsOnSym(0, [c]));
       return cardEl(c, { cls: picked ? 'sel' : ok ? 'ok' : mine ? 'dim' : '', attrs: { role: 'button', onclick: () => tapCard(c) } });
     }), W, { cw, ch: Math.round(cw * 1.45) });
     // 場：いちばん上のカードと、その下に少し前のカード
     const t = top();
     const recent = S.pile.slice(-3);
     const fresh = S.lastTop !== t.id; S.lastTop = t.id;
-    const sp = spread(recent, (c) => cardEl(c, { color: c === t && isWild(t) ? S.color : null }));
+    const sp = spread(recent, (c) => cardEl(c, { color: c === t && isWild(t) && COLORS[S.color] ? S.color : null }));
     [...sp.children].forEach((el, i) => { if (i < recent.length - 1) el.style.filter = 'brightness(.55)'; });
     if (fresh) sp.lastElementChild.classList.add('fresh');
     const deck = h('button', { class: `ia-deck2 ${S.pending && mine ? 'hot' : ''}`, disabled: !mine || !!S.drew, onclick: humanDeck, 'aria-label': '山から引く' },
       backFan(1, 'deck', 'iro').firstElementChild, h('span', { class: 'lbl' }, S.pending && mine ? `+${S.pending.n} 引く` : `引く ・ ${S.draw.length}`));
     const field = h('div', { class: 't2-field' },
       h('div', { class: 'ia-row' }, deck, h('div', { class: 'ia-pile' }, sp, S.pending ? h('span', { class: 'ia-pend' }, `+${S.pending.n}`) : null)),
-      h('div', { class: 'ia-now', style: { '--cc': COLORS[S.color].hex } }, h('i'), h('span', {}, COLORS[S.color].name), h('em', {}, S.dir > 0 ? '↻' : '↺')));
+      h('div', { class: 'ia-now', style: { '--cc': COLORS[S.color] ? COLORS[S.color].hex : '#888' } }, h('i'), h('span', {}, COLORS[S.color] ? COLORS[S.color].name : '色を選ぶ'), h('em', {}, S.dir > 0 ? '↻' : '↺')));
     const acts = [];
     if (S.forgot >= 0) acts.push(h('button', { class: 'btn commit', onclick: () => { const q = S.forgot; S.forgot = -1; takeCards(q, 2); S.last[q] = '+2 指摘'; flash(`${NAMES[q]}はラスト宣言を忘れていました。2 枚`); sfx('check'); render(); } }, `指摘する（${NAMES[S.forgot]}）`));
     if (mine) {
