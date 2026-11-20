@@ -1,1 +1,1 @@
-4977b5024408449d69a5c82fba4ae0e553b79126 コード・純正律 are now part of this page (shadow DOM) instead of pages inside iframes: they open like the other tabs, at the top, without the load wait
+c58764e86bfa67c9f1f55fec25ca1891d506ba13 合奏モード: the room level no longer learns the player's own tone (falls fast, rises ≈1.5 dB/s), a slightly lower bar, a gliding threshold line; mic off: a 止める button by the input meter and a chip on the other pages, and the audio is rebuilt for playback so the metronome stops sounding like a phone call

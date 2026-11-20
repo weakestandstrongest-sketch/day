@@ -83,6 +83,11 @@ h2{font-size:12px;font-weight:600;color:var(--label-3);margin:4px 2px -4px;lette
 .start-overlay{position:absolute;inset:0;display:grid;place-items:center}
 .start-btn{background:var(--te-green);color:#04200c;font-weight:800;padding:14px 24px;border-radius:999px;font-size:15px;box-shadow:0 8px 30px #3bd45a55}
 .start-btn:active{transform:scale(.95)}
+.mic-off{margin-left:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--label-2);font-size:12px;font-weight:700}
+.mic-off:active{transform:scale(.94)}
+.mic-chip{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translateX(-50%);z-index:50;padding:8px 14px;border-radius:999px;
+  background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.55);color:#ff8a80;font-size:13px;font-weight:700;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.mic-chip:active{transform:translateX(-50%) scale(.95)}
 .ens{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:-4px}
 .ens label{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--label-2);cursor:pointer}
 .ens.on label{color:var(--te-green)}
@@ -363,7 +368,7 @@ html:not(.ready) .app,html:not(.ready) .tabbar,html:not(.ready) .embed{visibilit
       </svg>
       <div class="start-overlay" id="start-overlay"><button class="start-btn" id="mic-btn">🎤 マイクを開始</button></div>
     </div>
-    <div class="level"><span>入力</span><div class="lbar"><div class="lfill" id="lfill"></div><div class="lth" id="lth"></div></div><span id="ldb">—</span></div>
+    <div class="level"><span>入力</span><div class="lbar"><div class="lfill" id="lfill"></div><div class="lth" id="lth"></div></div><span id="ldb">—</span><button class="mic-off" id="mic-off" hidden aria-label="マイクを止める">止める</button></div>
     <div class="readout">
       <div class="note off" id="note">–</div>
       <div class="cents"><span id="cents">±0.0</span><small>cents</small></div>
@@ -483,6 +488,7 @@ html:not(.ready) .app,html:not(.ready) .tabbar,html:not(.ready) .embed{visibilit
 </nav>
 <div class="embed" data-page="chords" data-dir="chords/" aria-label="Chord Wheel"></div>
 <div class="embed" data-page="just" data-dir="just/" aria-label="コード名検索 × 純正律"></div>
+<button class="mic-chip" id="mic-chip" hidden>🎤 マイク使用中 ・ 止める</button>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -571,6 +577,13 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && ctx && ctx.state !== 'running') ctx.resume();
   if (document.visibilityState === 'visible' && (tuner.on || M.playing || drone)) keepAwake(true);
 });
+// the mic switch: next to the input meter on the tuner, and a chip on the other pages (metronome etc.)
+function micUi() {
+  const on = tuner.on;
+  $('#mic-off').hidden = !on;
+  const onTuner = document.querySelector('.page.active')?.dataset.page === 'tuner';
+  $('#mic-chip').hidden = !on || onTuner;
+}
 function toast(msg, ms = 2200) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms);
@@ -620,16 +633,18 @@ function minRms() { return 0.0004 * Math.pow(1.57, 10 - S.sens); }
 
 // 合奏モード: in a room full of players, only trust a clean, steady pitch that is clearly louder than the
 // room (the player's own instrument, nearest the mic) and, if a target note is chosen, is that note.
-const ENS_MARGIN = 3.2; // ≈ +10 dB over the room
+const ENS_MARGIN = 2.2; // ≈ +7 dB over the room
 function ensThreshold() { return Math.max(minRms(), tuner.floor * ENS_MARGIN); }
-// room level = the quieter end (10th percentile) of the last ~4 s: other players sound continuously,
-// while the player's own playing has breaths and gaps. Not learnt while a note is locked, so a long
-// tone never raises the bar against the player holding it.
-function updateRoomLevel() {
-  const h = tuner.lvHist;
-  h.push(tuner.level); if (h.length > 240) h.shift();
-  const sorted = [...h].sort((x, y) => x - y);
-  tuner.floor = sorted[Math.floor(sorted.length * 0.1)];
+// room level: follows the room down at once (a breath, a rest) but rises only slowly (≈ 1.5 dB/s).
+// Before, it was the quiet end of the last 4 s and was learnt whenever no note was locked yet — so after
+// half a second of the player's own tone (before it was accepted) the bar sat ~10 dB above it and nothing
+// was ever caught, and the threshold line jumped around. Other players who keep sounding still lift it.
+function updateRoomLevel(dt) {
+  const lv = tuner.level;
+  if (!tuner.floor) tuner.floor = lv;
+  else if (lv < tuner.floor) tuner.floor = tuner.floor * 0.6 + lv * 0.4;
+  else tuner.floor = Math.min(lv, tuner.floor * Math.pow(1.19, dt || 1 / 60)); // +1.5 dB per second at most
+  tuner.floor = Math.min(tuner.floor, 0.05);
 }
 // once a note is caught, keep following it while the same note continues (down to −12 dB of its peak)
 function ensembleAccepts(f, now) {
@@ -707,6 +722,7 @@ async function startTuner() {
     // iOS ends the mic when the app is interrupted (a call, Siri, another app recording): offer to restart
     stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => stopTuner('マイクが止まりました。もう一度押すと再開します')));
     $('#start-overlay').style.display = 'none';
+    micUi();
     keepAwake(true);
   } catch (e) {
     if (!tuner.on) audioSession('playback');
@@ -723,8 +739,18 @@ function stopTuner(msg) {
   try { tuner.src.disconnect(); } catch (e) {}
   tuner.freqs = []; tuner.lastT = 0; tuner.note = null; tuner.susNote = null;
   audioSession('playback');
+  // the audio was opened for recording (it sounds like a phone call): build it again for playback only,
+  // and carry on with the metronome / drone if they were sounding
+  const wasMetro = M.playing, wasDrone = !!drone;
+  if (wasMetro) stopMetro();
+  if (wasDrone) stopDrone();
+  try { ctx && ctx.close(); } catch (e) {}
+  ctx = null; master = null;
+  if (wasMetro) startMetro();
+  if (wasDrone) startDrone();
   $('#start-overlay').style.display = '';
   $('#mic-btn').textContent = '🎤 マイクを再開';
+  micUi();
   if (msg) toast(msg, 5000);
   keepAwake(false);
 }
@@ -828,19 +854,21 @@ function tunerFrame(now) {
   const dt = tuner.lastT ? Math.min(0.1, (now - tuner.lastT) / 1000) : 0;
   tuner.lastT = now;
   tuner.analyser.getFloatTimeDomainData(tuner.buf);
-  let f = detectPitch(tuner.buf, ctx.sampleRate, S.ens ? 0.1 : 0.15);
+  let f = detectPitch(tuner.buf, ctx.sampleRate, S.ens ? 0.12 : 0.15);
   if (S.ens) {
     const ok = f > 0 && f <= 4200 && ensembleAccepts(f, now);
     if (!ok) f = -1;
     if (tuner.lock && now - tuner.lock.t > 300) tuner.lock = null; // the note has ended
-    if (!tuner.lock) updateRoomLevel();
+    if (!tuner.lock) updateRoomLevel(dt);
   }
   const pos = r => Math.max(0, Math.min(100, (20 * Math.log10(r + 1e-9) + 70) / 70 * 100));
   const lv = pos(tuner.level);
   $('#lfill').style.width = lv + '%';
   const gate = S.ens ? ensThreshold() : minRms();
   $('#lfill').style.background = tuner.level >= gate ? 'var(--te-green)' : '#4aa3ff';
-  $('#lth').style.left = pos(gate) + '%';
+  // the threshold line glides instead of jumping every frame
+  tuner.gateShown = tuner.gateShown == null ? pos(gate) : tuner.gateShown + (pos(gate) - tuner.gateShown) * 0.15;
+  $('#lth').style.left = tuner.gateShown + '%';
   $('#ldb').textContent = Math.round(20 * Math.log10(tuner.level + 1e-9)) + ' dB';
   $('#lvl-l').setAttribute('stroke-dasharray', `${lv} 100`); $('#lvl-r').setAttribute('stroke-dasharray', `${lv} 100`);
   const silent = f <= 0 || f > 4200;
@@ -1300,6 +1328,7 @@ function selectTab(name) {
   if (embed) mountSub(embed); // まだなら、いま組み込む（ふだんは起動のあとに組み込みずみ）
   document.body.classList.toggle('embedded', !!embed);
   document.body.classList.toggle('ymode', name === 'metro');
+  setTimeout(micUi, 0);
   const hl = $('#tab-hl'), blob = hl.firstElementChild;
   hl.style.transform = `translateX(${Math.max(idx, 0) * 100}%)`;
   hl.style.opacity = idx < 0 ? 0 : 1;
@@ -1311,6 +1340,8 @@ function selectTab(name) {
 function init() {
   // tuner
   $('#mic-btn').onclick = startTuner;
+  $('#mic-off').onclick = () => stopTuner('マイクを止めました');
+  $('#mic-chip').onclick = () => stopTuner('マイクを止めました。メトロノームなどの音がふつうに戻ります');
   // drone
   chips($('#d-oct'), [2, 3, 4, 5, 6].map(o => [o, String(o)]), v => v === S.dOct, v => { S.dOct = v; refreshDrone(); });
   chips($('#d-wave'), [['sine', 'サイン'], ['triangle', 'ソフト'], ['organ', 'オルガン'], ['reed', 'リード'], ['sawtooth', 'ブライト']],
